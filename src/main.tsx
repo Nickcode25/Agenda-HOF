@@ -13,6 +13,9 @@ import Waitlist from './pages/schedule/Waitlist'
 import ProfessionalsList from './pages/professionals/ProfessionalsList'
 import ProfessionalForm from './pages/professionals/ProfessionalForm'
 import ProfessionalDetail from './pages/professionals/ProfessionalDetail'
+import ProceduresList from './pages/procedures/ProceduresList'
+import ProcedureForm from './pages/procedures/ProcedureForm'
+import ProcedureDetail from './pages/procedures/ProcedureDetail'
 
 const router = createBrowserRouter([
   {
@@ -22,6 +25,10 @@ const router = createBrowserRouter([
       { index: true, element: <ScheduleCalendar /> },
       { path: 'agenda/nova', element: <AppointmentForm /> },
       { path: 'agenda/fila', element: <Waitlist /> },
+
+      { path: 'procedimentos', element: <ProceduresList /> },
+      { path: 'procedimentos/novo', element: <ProcedureForm /> },
+      { path: 'procedimentos/:id', element: <ProcedureDetail /> },
 
       { path: 'profissionais', element: <ProfessionalsList /> },
       { path: 'profissionais/novo', element: <ProfessionalForm /> },

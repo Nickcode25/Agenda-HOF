@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope } from 'lucide-react'
+import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope, Scissors } from 'lucide-react'
 import { useState } from 'react'
 
 export default function App() {
@@ -36,6 +36,10 @@ export default function App() {
             <NavLink to="/agenda/fila" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
               <ListChecks size={22}/>
               {sidebarOpen && <span className="font-medium">Fila de Espera</span>}
+            </NavLink>
+            <NavLink to="/procedimentos" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              <Scissors size={22}/>
+              {sidebarOpen && <span className="font-medium">Procedimentos</span>}
             </NavLink>
             <NavLink to="/profissionais" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
               <Stethoscope size={22}/>
