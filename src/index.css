@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #f97316; /* orange-500 */
+}
+
+body {
+  @apply bg-gray-900 text-gray-100;
+}
