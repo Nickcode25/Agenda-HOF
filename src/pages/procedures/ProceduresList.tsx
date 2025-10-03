@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
+import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState } from 'react'
-import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Diamond, Gem, Flower2, Palette, Triangle } from 'lucide-react'
 
 export default function ProceduresList() {
   const { procedures, toggleActive } = useProcedures(s => ({ procedures: s.procedures, toggleActive: s.toggleActive }))
@@ -16,11 +17,72 @@ export default function ProceduresList() {
     )
   }, [q, procedures])
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value)
+
+  const getProcedureIcon = (procedureName: string) => {
+    const name = procedureName.toLowerCase()
+    
+    // Toxina Botulínica / Botox / Full Face
+    if (name.includes('botox') || name.includes('toxina') || name.includes('botulínica') || name.includes('full face')) {
+      return { icon: Syringe, color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' }
+    }
+    
+    // Preenchimento
+    if (name.includes('preenchimento') || name.includes('ácido hialurônico') || name.includes('hialuronico')) {
+      return { icon: Droplet, color: 'text-purple-400', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' }
+    }
+    
+    // Harmonização Facial
+    if (name.includes('harmonização') || name.includes('facial')) {
+      return { icon: Sparkles, color: 'text-pink-400', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30' }
+    }
+    
+    // Rinomodelação
+    if (name.includes('rino') || name.includes('nariz')) {
+      return { icon: Triangle, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' }
+    }
+    
+    // Lábios
+    if (name.includes('labial') || name.includes('lábio') || name.includes('labio')) {
+      return { icon: Heart, color: 'text-rose-400', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/30' }
+    }
+    
+    // Olheiras / Olhos
+    if (name.includes('olheira') || name.includes('olho') || name.includes('pálpebra') || name.includes('palpebra')) {
+      return { icon: Eye, color: 'text-indigo-400', bgColor: 'bg-indigo-500/10', borderColor: 'border-indigo-500/30' }
+    }
+    
+    // Sorriso / Gengival
+    if (name.includes('sorriso') || name.includes('gengival') || name.includes('gummy')) {
+      return { icon: Smile, color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' }
+    }
+    
+    // Laser / Tecnologia
+    if (name.includes('laser') || name.includes('ipl') || name.includes('radiofrequência')) {
+      return { icon: Zap, color: 'text-cyan-400', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' }
+    }
+    
+    // Peeling / Tratamento de Pele
+    if (name.includes('peeling') || name.includes('pele') || name.includes('acne') || name.includes('manchas')) {
+      return { icon: Star, color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' }
+    }
+    
+    // Microagulhamento
+    if (name.includes('microagulhamento') || name.includes('microneedling')) {
+      return { icon: Gem, color: 'text-teal-400', bgColor: 'bg-teal-500/10', borderColor: 'border-teal-500/30' }
+    }
+    
+    // Limpeza / Hidratação
+    if (name.includes('limpeza') || name.includes('hidratação') || name.includes('hidratante')) {
+      return { icon: Flower2, color: 'text-green-400', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' }
+    }
+    
+    // Maquiagem / Micropigmentação
+    if (name.includes('maquiagem') || name.includes('micropigmentação') || name.includes('sobrancelha')) {
+      return { icon: Palette, color: 'text-violet-400', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30' }
+    }
+    
+    // Padrão (procedimentos não categorizados)
+    return { icon: Sparkles, color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' }
   }
 
   return (
@@ -69,16 +131,20 @@ export default function ProceduresList() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {filtered.map(proc => (
-            <div 
-              key={proc.id} 
-              className="bg-gray-800 border border-gray-700 rounded-2xl p-6 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"
-            >
-              <div className="flex items-center gap-4">
-                {/* Icon */}
-                <div className="h-16 w-16 rounded-xl bg-orange-500/10 flex items-center justify-center border-2 border-orange-500/30">
-                  <Scissors size={28} className="text-orange-500" />
-                </div>
+          {filtered.map(proc => {
+            const iconConfig = getProcedureIcon(proc.name)
+            const IconComponent = iconConfig.icon
+            
+            return (
+              <div 
+                key={proc.id} 
+                className="bg-gray-800 border border-gray-700 rounded-2xl p-6 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"
+              >
+                <div className="flex items-center gap-4">
+                  {/* Icon */}
+                  <div className={`h-16 w-16 rounded-xl ${iconConfig.bgColor} flex items-center justify-center border-2 ${iconConfig.borderColor}`}>
+                    <IconComponent size={28} className={iconConfig.color} />
+                  </div>
                 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -98,7 +164,18 @@ export default function ProceduresList() {
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-1.5 text-gray-300">
                       <DollarSign size={16} className="text-green-500" />
-                      <span className="font-semibold text-green-400">{formatCurrency(proc.value)}</span>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">Valor à Vista:</span>
+                          <span className="font-semibold text-green-400">{formatCurrency(proc.cashValue || proc.value)}</span>
+                        </div>
+                        {(proc.cardValue) && (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-gray-400">Cartão:</span>
+                            <span className="text-xs text-gray-300">{formatCurrency(proc.cardValue)}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {proc.duration && (
                       <div className="flex items-center gap-1.5 text-gray-400">
@@ -109,27 +186,38 @@ export default function ProceduresList() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => toggleActive(proc.id)}
-                    className={`p-2 rounded-lg transition-all ${proc.active ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
-                    title={proc.active ? 'Desativar' : 'Ativar'}
-                  >
-                    {proc.active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-                  </button>
-                  <Link
-                    to={`/procedimentos/${proc.id}`}
-                    className="text-gray-400 hover:text-orange-500 transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/procedimentos/${proc.id}/editar`}
+                      className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all border border-transparent hover:border-orange-500/30"
+                      title="Editar procedimento"
+                    >
+                      <Edit size={18} />
+                    </Link>
+                    
+                    <button
+                      onClick={() => toggleActive(proc.id)}
+                      className={`p-2 rounded-lg transition-all ${proc.active ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
+                      title={proc.active ? 'Desativar' : 'Ativar'}
+                    >
+                      {proc.active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                    </button>
+                    
+                    <Link
+                      to={`/procedimentos/${proc.id}`}
+                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
+                      title="Ver detalhes"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

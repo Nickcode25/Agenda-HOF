@@ -12,11 +12,26 @@ export default function PatientEdit() {
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(patient?.photoUrl)
   const [cpf, setCpf] = useState(patient?.cpf || '')
   const [phone, setPhone] = useState(patient?.phone || '')
+  const [cep, setCep] = useState(patient?.cep || '')
+  const [street, setStreet] = useState(patient?.street || '')
+  const [neighborhood, setNeighborhood] = useState(patient?.neighborhood || '')
+  const [city, setCity] = useState(patient?.city || '')
+  const [state, setState] = useState(patient?.state || '')
+  const [number, setNumber] = useState(patient?.number || '')
+  const [complement, setComplement] = useState(patient?.complement || '')
+  const [isLoadingCep, setIsLoadingCep] = useState(false)
 
   useEffect(() => {
     if (patient) {
       setCpf(patient.cpf || '')
       setPhone(patient.phone || '')
+      setCep(patient.cep || '')
+      setStreet(patient.street || '')
+      setNeighborhood(patient.neighborhood || '')
+      setCity(patient.city || '')
+      setState(patient.state || '')
+      setNumber(patient.number || '')
+      setComplement(patient.complement || '')
       setPhotoUrl(patient.photoUrl)
     }
   }, [patient])
@@ -58,6 +73,52 @@ export default function PatientEdit() {
     setPhone(formatted)
   }
 
+  // Máscara de CEP: 00000-000
+  function formatCEP(value: string) {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length <= 8) {
+      return numbers.replace(/(\d{5})(\d)/, '$1-$2')
+    }
+    return cep
+  }
+
+  // Busca endereço pelo CEP
+  async function fetchAddressByCEP(cepValue: string) {
+    const cleanCep = cepValue.replace(/\D/g, '')
+    if (cleanCep.length !== 8) return
+
+    setIsLoadingCep(true)
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+      const data = await response.json()
+      
+      if (!data.erro) {
+        setStreet(data.logradouro || '')
+        setNeighborhood(data.bairro || '')
+        setCity(data.localidade || '')
+        setState(data.uf || '')
+      } else {
+        alert('CEP não encontrado')
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
+      alert('Erro ao buscar CEP')
+    } finally {
+      setIsLoadingCep(false)
+    }
+  }
+
+  function handleCEPChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const formatted = formatCEP(e.target.value)
+    setCep(formatted)
+    
+    // Busca endereço quando CEP estiver completo
+    const cleanCep = formatted.replace(/\D/g, '')
+    if (cleanCep.length === 8) {
+      fetchAddressByCEP(formatted)
+    }
+  }
+
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -75,9 +136,14 @@ export default function PatientEdit() {
       name: String(data.get('name')||''),
       cpf: cpf,
       phone: phone,
-      address: String(data.get('address')||''),
-      medicalHistory: String(data.get('medicalHistory')||''),
-      allergies: String(data.get('allergies')||''),
+      cep: cep,
+      street: street,
+      number: number,
+      complement: complement,
+      neighborhood: neighborhood,
+      city: city,
+      state: state,
+      clinicalInfo: String(data.get('clinicalInfo')||''),
       notes: String(data.get('notes')||''),
       photoUrl,
     })
@@ -143,10 +209,75 @@ export default function PatientEdit() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Endereço</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">CEP</label>
             <input 
-              name="address" 
-              defaultValue={patient.address}
+              value={cep}
+              onChange={handleCEPChange}
+              placeholder="00000-000"
+              maxLength={9}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            />
+            {isLoadingCep && <p className="text-xs text-orange-400 mt-1">Buscando endereço...</p>}
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Rua</label>
+            <input 
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              placeholder="Rua será preenchida automaticamente"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Número *</label>
+            <input 
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
+              placeholder="123"
+              required
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Complemento</label>
+            <input 
+              value={complement}
+              onChange={(e) => setComplement(e.target.value)}
+              placeholder="Apto 101, Bloco A..."
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Bairro</label>
+            <input 
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              placeholder="Bairro será preenchido automaticamente"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Cidade</label>
+            <input 
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Cidade será preenchida automaticamente"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Estado</label>
+            <input 
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="UF"
+              maxLength={2}
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
             />
           </div>
@@ -154,22 +285,13 @@ export default function PatientEdit() {
         
         <div className="mt-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Histórico Médico</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Informações Clínicas</label>
             <textarea 
-              name="medicalHistory" 
-              defaultValue={patient.medicalHistory}
+              name="clinicalInfo" 
+              defaultValue={patient.clinicalInfo}
+              placeholder="Ex: Histórico médico, alergias, medicamentos em uso, condições especiais..."
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              rows={3}
-            ></textarea>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Alergias</label>
-            <textarea 
-              name="allergies" 
-              defaultValue={patient.allergies}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              rows={2}
+              rows={4}
             ></textarea>
           </div>
           

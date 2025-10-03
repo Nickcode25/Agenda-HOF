@@ -9,6 +9,7 @@ Sistema web moderno para consultório de Harmonização Orofacial (HOF), com int
 - Zustand (estado global com persistência)
 - date-fns (manipulação de datas)
 - Lucide React (ícones)
+- Supabase (backend, autenticação e banco de dados)
 
 ## Scripts
 ```bash
@@ -83,8 +84,14 @@ src/
   types/
     patient.ts             # Tipos TypeScript
     schedule.ts            # Tipos TypeScript
+  lib/
+    supabase.ts            # Cliente Supabase
+    supabaseTest.ts        # Teste de conexão
+  services/
+    # Serviços de integração com Supabase (a implementar)
   App.tsx                  # Layout com sidebar
   main.tsx                 # Rotas
+  vite-env.d.ts            # Tipos do Vite e variáveis de ambiente
 ```
 
 ## Rotas
@@ -99,7 +106,6 @@ src/
 
 1. **Instalar dependências:**
 ```bash
-cd /home/nicolas/CascadeProjects/hof-clinic
 npm install
 ```
 
@@ -108,7 +114,16 @@ npm install
 npm run dev
 ```
 
-3. **Acessar:** http://localhost:5173 (ou porta indicada)
+3. **Acessar:** http://localhost:5173
+
+## Armazenamento de Dados
+
+Atualmente, os dados são armazenados localmente no navegador usando Zustand com persistência (localStorage).
+
+Para integrar com um banco de dados:
+1. Configure seu backend preferido (Supabase, Firebase, API própria, etc.)
+2. Crie serviços em `src/services/`
+3. Atualize os stores em `src/store/` para usar os serviços
 
 ## Próximos módulos planejados
 - 💊 Procedimentos (calculadora, controle de sessões)

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
+import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import type { ProcedureType } from '@/types/schedule'
 import { Save, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -12,8 +13,14 @@ const procedures: ProcedureType[] = ['Avaliação','Botox','Preenchimento','Bioe
 export default function AppointmentForm() {
   const patients = usePatients(s => s.patients)
   const professionals = useProfessionals(s => s.professionals.filter(p => p.active))
+  const { selectedProfessional } = useProfessionalContext()
   const add = useSchedule(s => s.addAppointment)
   const navigate = useNavigate()
+  
+  // Obter nome do profissional selecionado
+  const selectedProfessionalName = selectedProfessional 
+    ? professionals.find(p => p.id === selectedProfessional)?.name || ''
+    : ''
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -41,7 +48,14 @@ export default function AppointmentForm() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-white mb-1">Novo Agendamento</h1>
-          <p className="text-gray-400">Preencha os dados do agendamento</p>
+          <div className="flex items-center gap-2">
+            <p className="text-gray-400">Preencha os dados do agendamento</p>
+            {selectedProfessionalName && (
+              <div className="flex items-center gap-2 bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm border border-orange-500/30">
+                <span>Agenda: {selectedProfessionalName}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -67,7 +81,12 @@ export default function AppointmentForm() {
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Profissional *</label>
-            <select name="professional" required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all">
+            <select 
+              name="professional" 
+              required 
+              defaultValue={selectedProfessionalName}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            >
               <option value="">Selecione um profissional</option>
               {professionals.map(prof => (
                 <option key={prof.id} value={prof.name}>{prof.name} - {prof.specialty}</option>
