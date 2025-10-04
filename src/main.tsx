@@ -25,6 +25,13 @@ import SaleForm from './pages/sales/SaleForm'
 import SalesProfessionalForm from './pages/sales/ProfessionalForm'
 import Dashboard from './pages/dashboard/Dashboard'
 import LandingPage from './pages/landing/LandingPage'
+import PlansList from './pages/subscriptions/PlansList'
+import PlanForm from './pages/subscriptions/PlanForm'
+import PlanDetail from './pages/subscriptions/PlanDetail'
+import SubscribersList from './pages/subscriptions/SubscribersList'
+import SubscriptionForm from './pages/subscriptions/SubscriptionForm'
+import SubscriptionReports from './pages/subscriptions/SubscriptionReports'
+import SubscriptionsMain from './pages/subscriptions/SubscriptionsMain'
 
 const router = createBrowserRouter([
   {
@@ -61,6 +68,15 @@ const router = createBrowserRouter([
       { path: 'vendas', element: <SalesList /> },
       { path: 'vendas/nova', element: <SaleForm /> },
       { path: 'vendas/profissionais/novo', element: <SalesProfessionalForm /> },
+
+      { path: 'mensalidades', element: <SubscriptionsMain /> },
+      { path: 'mensalidades/planos', element: <PlansList /> },
+      { path: 'mensalidades/planos/novo', element: <PlanForm /> },
+      { path: 'mensalidades/planos/:id', element: <PlanDetail /> },
+      { path: 'mensalidades/planos/:id/editar', element: <PlanForm /> },
+      { path: 'mensalidades/assinantes', element: <SubscribersList /> },
+      { path: 'mensalidades/assinantes/novo', element: <SubscriptionForm /> },
+      { path: 'mensalidades/relatorios', element: <SubscriptionReports /> },
     ],
   },
 ])

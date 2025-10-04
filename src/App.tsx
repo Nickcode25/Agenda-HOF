@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown } from 'lucide-react'
+import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard } from 'lucide-react'
 import { useState } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -95,6 +95,10 @@ export default function App() {
             <NavLink to="/app/vendas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
               <ShoppingCart size={22}/>
               {sidebarOpen && <span className="font-medium">Venda de Produtos</span>}
+            </NavLink>
+            <NavLink to="/app/mensalidades" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              <CreditCard size={22}/>
+              {sidebarOpen && <span className="font-medium">Mensalidades</span>}
             </NavLink>
           </nav>
 
