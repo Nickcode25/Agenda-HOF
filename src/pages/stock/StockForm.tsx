@@ -30,26 +30,23 @@ export default function StockForm() {
     const data = new FormData(e.currentTarget)
     
     const id = addItem({
-      name: String(data.get('name') || ''),
-      description: String(data.get('description') || '') || undefined,
       category: String(data.get('category') || ''),
+      brand: String(data.get('brand') || ''),
+      name: String(data.get('name') || ''),
       quantity: Number(data.get('quantity') || 0),
       minQuantity: Number(data.get('minQuantity') || 0),
       unit: String(data.get('unit') || ''),
       cost: parseCurrency(cost),
-      supplier: String(data.get('supplier') || '') || undefined,
-      expirationDate: String(data.get('expirationDate') || '') || undefined,
-      batchNumber: String(data.get('batchNumber') || '') || undefined,
     })
     
-    navigate('/estoque')
+    navigate('/app/estoque')
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/estoque" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to="/app/estoque" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div>
@@ -61,26 +58,19 @@ export default function StockForm() {
       {/* Form */}
       <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-8">
         <div className="grid gap-6 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Produto *</label>
-            <input 
-              name="name" 
-              required 
-              placeholder="Ex: Ácido Hialurônico 2ml"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            />
-          </div>
-          
+          {/* Categoria */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Categoria *</label>
-            <select 
-              name="category" 
+            <select
+              name="category"
               required
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
               <option value="">Selecione uma categoria</option>
-              <option value="Preenchedores">Preenchedores</option>
               <option value="Toxina Botulínica">Toxina Botulínica</option>
+              <option value="Preenchedores">Preenchedores</option>
+              <option value="Bioestimuladores">Bioestimuladores</option>
+              <option value="Fios de Sustentação">Fios de Sustentação</option>
               <option value="Anestésicos">Anestésicos</option>
               <option value="Materiais Descartáveis">Materiais Descartáveis</option>
               <option value="Equipamentos">Equipamentos</option>
@@ -89,30 +79,53 @@ export default function StockForm() {
               <option value="Outros">Outros</option>
             </select>
           </div>
-          
+
+          {/* Marca */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade Atual *</label>
-            <input 
-              name="quantity" 
+            <label className="block text-sm font-medium text-gray-300 mb-2">Marca *</label>
+            <input
+              name="brand"
+              required
+              placeholder="Ex: Rennova, Allergan, Galderma..."
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          {/* Produto */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Produto *</label>
+            <input
+              name="name"
+              required
+              placeholder="Ex: Nabota, Botulift, Dysport..."
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          {/* Quantidade */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade *</label>
+            <input
+              name="quantity"
               type="number"
               min="0"
-              step="0.1"
-              required 
-              placeholder="0"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              step="1"
+              required
+              placeholder="Ex: 100"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade Mínima *</label>
-            <input 
-              name="minQuantity" 
+            <input
+              name="minQuantity"
               type="number"
               min="0"
-              step="0.1"
-              required 
+              step="1"
+              required
               placeholder="0"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">Quantidade para alerta de estoque baixo</p>
           </div>
@@ -138,51 +151,14 @@ export default function StockForm() {
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Custo Unitário *</label>
-            <input 
+            <input
               value={cost}
               onChange={handleCostChange}
-              required 
+              required
               placeholder="R$ 0,00"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">Custo por unidade do produto</p>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Fornecedor</label>
-            <input 
-              name="supplier" 
-              placeholder="Ex: Allergan, Galderma..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Data de Vencimento</label>
-            <input 
-              name="expirationDate" 
-              type="date"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Número do Lote</label>
-            <input 
-              name="batchNumber" 
-              placeholder="Ex: LOT123456"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            />
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
-            <textarea 
-              name="description" 
-              placeholder="Descrição detalhada do produto..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              rows={4}
-            ></textarea>
           </div>
         </div>
         
@@ -195,7 +171,7 @@ export default function StockForm() {
             Adicionar Produto
           </button>
           <Link
-            to="/estoque"
+            to="/app/estoque"
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
           >
             Cancelar

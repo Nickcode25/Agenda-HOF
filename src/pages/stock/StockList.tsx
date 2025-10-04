@@ -60,7 +60,7 @@ export default function StockList() {
           <p className="text-gray-400">Gerencie seus produtos e materiais</p>
         </div>
         <Link
-          to="/estoque/novo"
+          to="/app/estoque/novo"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
         >
           <Plus size={18} />
@@ -121,7 +121,7 @@ export default function StockList() {
             {searchQuery || categoryFilter ? 'Tente ajustar os filtros de busca' : 'Comece adicionando produtos ao seu estoque'}
           </p>
           <Link
-            to="/estoque/novo"
+            to="/app/estoque/novo"
             className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             <Plus size={18} />
@@ -132,18 +132,18 @@ export default function StockList() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map(item => {
             const stockStatus = getStockStatus(item)
-            const isExpiringSoon = item.expirationDate && 
-              new Date(item.expirationDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
             return (
               <div key={item.id} className={`bg-gray-800 border rounded-2xl p-6 hover:border-gray-600 transition-all ${stockStatus.border}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-white mb-1">{item.name}</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-white">{item.name}</h3>
+                      <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full border border-orange-500/30">
+                        {item.brand}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-400 mb-2">{item.category}</p>
-                    {item.description && (
-                      <p className="text-sm text-gray-500 mb-3">{item.description}</p>
-                    )}
                   </div>
                   <div className="flex gap-2">
                     <Link
@@ -188,20 +188,6 @@ export default function StockList() {
                       {formatCurrency(item.quantity * item.cost)}
                     </span>
                   </div>
-                  {item.supplier && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Fornecedor:</span>
-                      <span className="text-white">{item.supplier}</span>
-                    </div>
-                  )}
-                  {item.expirationDate && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Vencimento:</span>
-                      <span className={isExpiringSoon ? 'text-yellow-400' : 'text-white'}>
-                        {new Date(item.expirationDate).toLocaleDateString('pt-BR')}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
             )

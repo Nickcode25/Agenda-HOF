@@ -110,8 +110,8 @@ export default function PatientsList() {
           <h1 className="text-3xl font-bold text-white mb-1">Pacientes</h1>
           <p className="text-gray-400">Gerencie o cadastro de pacientes</p>
         </div>
-        <Link 
-          to="/pacientes/novo" 
+        <Link
+          to="/app/pacientes/novo"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:scale-105"
         >
           <UserPlus size={20} />
@@ -138,8 +138,8 @@ export default function PatientsList() {
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">Nenhum paciente encontrado</h3>
           <p className="text-gray-400 mb-6">Tente ajustar sua busca ou cadastre um novo paciente</p>
-          <Link 
-            to="/pacientes/novo" 
+          <Link
+            to="/app/pacientes/novo"
             className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             <UserPlus size={18} />
@@ -172,7 +172,7 @@ export default function PatientsList() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">
-                        <Link to={`/pacientes/${p.id}`} className="text-lg font-semibold text-white hover:text-orange-400 transition-colors">
+                        <Link to={`/app/pacientes/${p.id}`} className="text-lg font-semibold text-white hover:text-orange-400 transition-colors">
                           {p.name}
                         </Link>
                         <div className="flex items-center gap-2 text-xs">
@@ -231,7 +231,7 @@ export default function PatientsList() {
                       </button>
 
                       <Link
-                        to={`/pacientes/${p.id}`}
+                        to={`/app/pacientes/${p.id}`}
                         className="p-2 hover:bg-gray-700 text-gray-400 hover:text-orange-400 rounded-lg transition-colors"
                         title="Ver ficha completa"
                       >

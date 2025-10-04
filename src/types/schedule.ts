@@ -5,6 +5,12 @@ export type Appointment = {
   patientId: string
   patientName: string
   procedure: ProcedureType
+  procedureId?: string // ID do procedimento cadastrado
+  selectedProducts?: Array<{
+    category: string // Categoria do produto (ex: "Toxina Botulínica")
+    stockItemId: string // ID do produto específico escolhido
+    quantity: number // Quantidade a ser usada
+  }>
   professional: string
   room?: string
   start: string // ISO

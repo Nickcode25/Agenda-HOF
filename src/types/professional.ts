@@ -6,7 +6,14 @@ export type Professional = {
   cpf?: string
   phone?: string
   email?: string
-  address?: string
+  // Endereço separado
+  cep?: string
+  street?: string
+  number?: string
+  complement?: string
+  neighborhood?: string
+  city?: string
+  state?: string
   photoUrl?: string
   active: boolean
   createdAt: string

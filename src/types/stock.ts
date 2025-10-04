@@ -1,15 +1,12 @@
 export interface StockItem {
   id: string
-  name: string
-  description?: string
-  category: string
+  category: string // Ex: Toxina Botulínica
+  brand: string // Ex: Rennova
+  name: string // Ex: Nabota (nome do produto)
   quantity: number
   minQuantity: number // Quantidade mínima para alerta
   unit: string // ml, g, unidade, etc.
   cost: number // Custo por unidade
-  supplier?: string
-  expirationDate?: string
-  batchNumber?: string
   createdAt: string
   updatedAt: string
 }

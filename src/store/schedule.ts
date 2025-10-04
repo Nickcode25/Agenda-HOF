@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Appointment, WaitlistItem } from '@/types/schedule'
+import { useStock } from './stock'
+import { useProcedures } from './procedures'
 
 export type ScheduleState = {
   appointments: Appointment[]
@@ -77,8 +79,24 @@ export const useSchedule = create<ScheduleState>()(
       },
 
       updateAppointmentStatus: (id, status) => {
-        set({ 
-          appointments: get().appointments.map(ap => 
+        const appointment = get().appointments.find(ap => ap.id === id)
+
+        // Se está marcando como concluído e tem produtos selecionados, subtrair do estoque
+        if (status === 'done' && appointment?.selectedProducts && appointment.selectedProducts.length > 0) {
+          const stock = useStock.getState()
+
+          // Subtrair cada produto do estoque
+          appointment.selectedProducts.forEach(product => {
+            const stockItem = stock.items.find(s => s.id === product.stockItemId)
+            if (stockItem) {
+              const newQuantity = stockItem.quantity - product.quantity
+              stock.updateQuantity(product.stockItemId, newQuantity >= 0 ? newQuantity : 0)
+            }
+          })
+        }
+
+        set({
+          appointments: get().appointments.map(ap =>
             ap.id === id ? { ...ap, status } : ap
           )
         })

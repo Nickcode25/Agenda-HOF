@@ -23,24 +23,27 @@ export default function ProcedureEdit() {
       setName(procedure.name)
       setDescription(procedure.description || '')
       setDuration(procedure.duration?.toString() || '')
-      setValue(formatCurrency(procedure.value.toString()))
-      setCashValue(procedure.cashValue ? formatCurrency(procedure.cashValue.toString()) : '')
-      setCardValue(procedure.cardValue ? formatCurrency(procedure.cardValue.toString()) : '')
+      setValue(formatCurrency(procedure.value))
+      setCashValue(procedure.cashValue ? formatCurrency(procedure.cashValue) : '')
+      setCardValue(procedure.cardValue ? formatCurrency(procedure.cardValue) : '')
     }
   }, [procedure])
 
   function formatCurrency(val: string | number) {
-    // Se for número, converte para string com centavos
+    // Se for número (vindo do banco), formata diretamente
     if (typeof val === 'number') {
-      val = (val * 100).toString()
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(val)
     }
-    
+
     // Remove tudo que não é número
     const numbers = val.replace(/\D/g, '')
-    
+
     // Converte para centavos
     const cents = Number(numbers) / 100
-    
+
     // Formata como moeda
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -77,15 +80,15 @@ export default function ProcedureEdit() {
       description: description || undefined,
       duration: duration ? Number(duration) : undefined,
     })
-    
-    navigate(`/procedimentos/${procedure.id}`)
+
+    navigate(`/app/procedimentos/${procedure.id}`)
   }
 
   if (!procedure) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Link to="/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+          <Link to="/app/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
             <ArrowLeft size={20} className="text-gray-400" />
           </Link>
           <div>
@@ -101,7 +104,7 @@ export default function ProcedureEdit() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to="/app/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div>
@@ -187,7 +190,7 @@ export default function ProcedureEdit() {
             <Save size={20} />
             Salvar Alterações
           </button>
-          <Link to="/procedimentos" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
+          <Link to="/app/procedimentos" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
             Cancelar
           </Link>
         </div>

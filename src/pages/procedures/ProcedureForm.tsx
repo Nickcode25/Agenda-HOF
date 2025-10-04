@@ -1,16 +1,39 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
+import { useStock } from '@/store/stock'
 import { parseCurrency } from '@/utils/currency'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react'
 
 export default function ProcedureForm() {
   const add = useProcedures(s => s.add)
+  const { items: stockItems } = useStock()
   const navigate = useNavigate()
 
   const [value, setValue] = useState('')
   const [cashValue, setCashValue] = useState('')
   const [cardValue, setCardValue] = useState('')
+  const [stockCategories, setStockCategories] = useState<Array<{
+    category: string
+    quantityUsed: number
+  }>>([])
+
+  // Obter categorias únicas do estoque
+  const uniqueCategories = [...new Set(stockItems.map(item => item.category))].sort()
+
+  const addStockCategory = () => {
+    setStockCategories([...stockCategories, { category: '', quantityUsed: 1 }])
+  }
+
+  const removeStockCategory = (index: number) => {
+    setStockCategories(stockCategories.filter((_, i) => i !== index))
+  }
+
+  const updateStockCategory = (index: number, field: 'category' | 'quantityUsed', value: string | number) => {
+    const updated = [...stockCategories]
+    updated[index] = { ...updated[index], [field]: value }
+    setStockCategories(updated)
+  }
 
   function formatCurrency(val: string) {
     // Remove tudo que não é número
@@ -53,15 +76,16 @@ export default function ProcedureForm() {
       description: String(data.get('description')||''),
       duration: Number(data.get('duration')) || undefined,
       active: true,
+      stockCategories: stockCategories.filter(item => item.category && item.quantityUsed > 0)
     })
-    navigate(`/procedimentos/${id}`)
+    navigate(`/app/procedimentos/${id}`)
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to="/app/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div>
@@ -131,12 +155,76 @@ export default function ProcedureForm() {
           
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
-            <textarea 
-              name="description" 
+            <textarea
+              name="description"
               placeholder="Descreva o procedimento..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               rows={4}
             ></textarea>
+          </div>
+
+          {/* Categorias de Produtos */}
+          <div className="md:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300">Categorias de Produtos Utilizados</label>
+                <p className="text-xs text-gray-400 mt-1">Defina as categorias. A marca/produto específico será escolhido no agendamento.</p>
+              </div>
+              <button
+                type="button"
+                onClick={addStockCategory}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 transition-all"
+              >
+                <Plus size={16} />
+                Adicionar Categoria
+              </button>
+            </div>
+
+            {stockCategories.length === 0 ? (
+              <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-6 text-center">
+                <p className="text-gray-400 text-sm">Nenhuma categoria adicionada. Exemplo: "Toxina Botulínica" - o produto específico será escolhido no agendamento.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stockCategories.map((item, index) => (
+                  <div key={index} className="flex gap-3 items-start bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-400 mb-2">Categoria</label>
+                      <select
+                        value={item.category}
+                        onChange={(e) => updateStockCategory(index, 'category', e.target.value)}
+                        className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                      >
+                        <option value="">Selecione uma categoria</option>
+                        {uniqueCategories.map(category => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="w-32">
+                      <label className="block text-xs font-medium text-gray-400 mb-2">Quantidade</label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={item.quantityUsed}
+                        onChange={(e) => updateStockCategory(index, 'quantityUsed', Number(e.target.value))}
+                        className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeStockCategory(index)}
+                      className="mt-7 p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         
@@ -145,7 +233,7 @@ export default function ProcedureForm() {
             <Save size={20} />
             Salvar Procedimento
           </button>
-          <Link to="/procedimentos" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
+          <Link to="/app/procedimentos" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
             Cancelar
           </Link>
         </div>

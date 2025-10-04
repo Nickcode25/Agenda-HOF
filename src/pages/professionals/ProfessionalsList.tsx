@@ -25,8 +25,8 @@ export default function ProfessionalsList() {
           <h1 className="text-3xl font-bold text-white mb-1">Profissionais</h1>
           <p className="text-gray-400">Gerencie os profissionais do consultório</p>
         </div>
-        <Link 
-          to="/profissionais/novo" 
+        <Link
+          to="/app/profissionais/novo"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:scale-105"
         >
           <UserPlus size={20} />
@@ -53,8 +53,8 @@ export default function ProfessionalsList() {
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">Nenhum profissional encontrado</h3>
           <p className="text-gray-400 mb-6">Cadastre os profissionais que trabalham no consultório</p>
-          <Link 
-            to="/profissionais/novo" 
+          <Link
+            to="/app/profissionais/novo"
             className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             <UserPlus size={18} />

@@ -14,14 +14,14 @@ export default function ProfessionalDetail() {
   if (!professional) return (
     <div>
       <p className="text-gray-400">Profissional não encontrado.</p>
-      <Link to="/profissionais" className="text-orange-500 hover:text-orange-400 hover:underline">Voltar</Link>
+      <Link to="/app/profissionais" className="text-orange-500 hover:text-orange-400 hover:underline">Voltar</Link>
     </div>
   )
 
   const handleDelete = () => {
     if (confirm(`Tem certeza que deseja remover ${professional.name}?`)) {
       remove(professional.id)
-      window.location.href = '/profissionais'
+      window.location.href = '/app/profissionais'
     }
   }
 
@@ -29,7 +29,7 @@ export default function ProfessionalDetail() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to="/app/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div className="flex-1">

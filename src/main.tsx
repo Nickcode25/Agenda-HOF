@@ -24,14 +24,20 @@ import SalesList from './pages/sales/SalesList'
 import SaleForm from './pages/sales/SaleForm'
 import SalesProfessionalForm from './pages/sales/ProfessionalForm'
 import Dashboard from './pages/dashboard/Dashboard'
+import LandingPage from './pages/landing/LandingPage'
 
 const router = createBrowserRouter([
   {
     path: '/',
+    element: <LandingPage />,
+  },
+  {
+    path: '/app',
     element: <App />,
     children: [
-      { index: true, element: <ScheduleCalendar /> },
+      { index: true, element: <Dashboard /> },
       { path: 'dashboard', element: <Dashboard /> },
+      { path: 'agenda', element: <ScheduleCalendar /> },
       { path: 'agenda/nova', element: <AppointmentForm /> },
       { path: 'agenda/fila', element: <Waitlist /> },
 

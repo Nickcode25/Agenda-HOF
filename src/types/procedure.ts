@@ -7,5 +7,9 @@ export type Procedure = {
   description?: string
   duration?: number // duração em minutos
   active: boolean
+  stockCategories?: Array<{
+    category: string // Ex: "Toxina Botulínica"
+    quantityUsed: number
+  }>
   createdAt: string
 }

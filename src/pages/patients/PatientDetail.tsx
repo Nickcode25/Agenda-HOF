@@ -414,7 +414,7 @@ export default function PatientDetail() {
                     <div className="flex items-center justify-center w-10 h-10 bg-green-500/20 rounded-lg border border-green-500/30">
                       <CheckCircle size={20} className="text-green-400" />
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h4 className="font-medium text-white">{proc.procedureName}</h4>
@@ -422,20 +422,20 @@ export default function PatientDetail() {
                           {proc.quantity}x
                         </span>
                         <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">
-                          {proc.paymentType === 'cash' ? 'Desconto' : 
+                          {proc.paymentType === 'cash' ? 'Desconto' :
                            proc.paymentType === 'card' ? 'Parcelado' : 'À Vista'}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-6 mb-2">
                         <span className="text-sm text-gray-400">Unitário: {formatCurrency(proc.unitValue)}</span>
                         <span className="text-sm font-medium text-green-400">Total: {formatCurrency(proc.totalValue)}</span>
                       </div>
-                      
+
                       {proc.notes && (
                         <p className="text-sm text-gray-400 mb-2">{proc.notes}</p>
                       )}
-                      
+
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span>Planejado em {new Date(proc.createdAt).toLocaleDateString('pt-BR')}</span>
                         {proc.completedAt && (
@@ -443,6 +443,14 @@ export default function PatientDetail() {
                         )}
                       </div>
                     </div>
+
+                    <button
+                      onClick={() => handleRemoveProcedure(proc.id)}
+                      className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/30 transition-colors"
+                      title="Excluir procedimento realizado"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
               ))}

@@ -93,8 +93,8 @@ export default function ProceduresList() {
           <h1 className="text-3xl font-bold text-white mb-1">Procedimentos</h1>
           <p className="text-gray-400">Gerencie os procedimentos e valores</p>
         </div>
-        <Link 
-          to="/procedimentos/novo" 
+        <Link
+          to="/app/procedimentos/novo"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:scale-105"
         >
           <Plus size={20} />
@@ -121,8 +121,8 @@ export default function ProceduresList() {
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">Nenhum procedimento encontrado</h3>
           <p className="text-gray-400 mb-6">Cadastre os procedimentos oferecidos pelo consultório</p>
-          <Link 
-            to="/procedimentos/novo" 
+          <Link
+            to="/app/procedimentos/novo"
             className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             <Plus size={18} />
@@ -189,13 +189,13 @@ export default function ProceduresList() {
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     <Link
-                      to={`/procedimentos/${proc.id}/editar`}
+                      to={`/app/procedimentos/${proc.id}/editar`}
                       className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all border border-transparent hover:border-orange-500/30"
                       title="Editar procedimento"
                     >
                       <Edit size={18} />
                     </Link>
-                    
+
                     <button
                       onClick={() => toggleActive(proc.id)}
                       className={`p-2 rounded-lg transition-all ${proc.active ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
@@ -203,9 +203,9 @@ export default function ProceduresList() {
                     >
                       {proc.active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                     </button>
-                    
+
                     <Link
-                      to={`/procedimentos/${proc.id}`}
+                      to={`/app/procedimentos/${proc.id}`}
                       className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
                       title="Ver detalhes"
                     >

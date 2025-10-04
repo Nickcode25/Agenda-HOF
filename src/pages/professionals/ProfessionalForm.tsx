@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Upload, X } from 'lucide-react'
 
 export default function ProfessionalForm() {
   const add = useProfessionals(s => s.add)
@@ -10,6 +10,12 @@ export default function ProfessionalForm() {
   const [photoUrl, setPhotoUrl] = useState<string | undefined>()
   const [cpf, setCpf] = useState('')
   const [phone, setPhone] = useState('')
+  const [cep, setCep] = useState('')
+  const [street, setStreet] = useState('')
+  const [neighborhood, setNeighborhood] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [loadingCep, setLoadingCep] = useState(false)
 
   function formatCPF(value: string) {
     const numbers = value.replace(/\D/g, '')
@@ -56,6 +62,41 @@ export default function ProfessionalForm() {
     reader.readAsDataURL(file)
   }
 
+  async function handleCepBlur() {
+    const cepNumbers = cep.replace(/\D/g, '')
+    if (cepNumbers.length !== 8) return
+
+    setLoadingCep(true)
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`)
+      const data = await response.json()
+
+      if (!data.erro) {
+        setStreet(data.logradouro || '')
+        setNeighborhood(data.bairro || '')
+        setCity(data.localidade || '')
+        setState(data.uf || '')
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error)
+    } finally {
+      setLoadingCep(false)
+    }
+  }
+
+  function formatCep(value: string) {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length <= 8) {
+      return numbers.replace(/(\d{5})(\d)/, '$1-$2')
+    }
+    return cep
+  }
+
+  function handleCepChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const formatted = formatCep(e.target.value)
+    setCep(formatted)
+  }
+
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
@@ -66,18 +107,24 @@ export default function ProfessionalForm() {
       cpf: cpf,
       phone: phone,
       email: String(data.get('email')||''),
-      address: String(data.get('address')||''),
+      cep: cep,
+      street: street,
+      number: String(data.get('number')||''),
+      complement: String(data.get('complement')||''),
+      neighborhood: neighborhood,
+      city: city,
+      state: state,
       photoUrl,
       active: true,
     })
-    navigate(`/profissionais/${id}`)
+    navigate(`/app/profissionais/${id}`)
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to="/app/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div>
@@ -153,24 +200,120 @@ export default function ProfessionalForm() {
             />
           </div>
           
+          {/* Endereço */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-orange-500 mb-4">Endereço</h3>
+          </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Endereço</label>
-            <input 
-              name="address" 
-              placeholder="Rua, número, bairro, cidade"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            <label className="block text-sm font-medium text-gray-300 mb-2">CEP</label>
+            <input
+              value={cep}
+              onChange={handleCepChange}
+              onBlur={handleCepBlur}
+              placeholder="00000-000"
+              maxLength={9}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+            {loadingCep && <p className="text-xs text-orange-400 mt-1">Buscando CEP...</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Rua</label>
+            <input
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              placeholder="Nome da rua"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Foto</label>
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={handlePhoto} 
-              className="w-full text-gray-300" 
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Número</label>
+            <input
+              name="number"
+              placeholder="123"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
-            {photoUrl && <img src={photoUrl} alt="Prévia" className="mt-2 h-24 w-24 object-cover rounded-xl border-2 border-orange-500" />}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Complemento</label>
+            <input
+              name="complement"
+              placeholder="Apto, sala, etc."
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Bairro</label>
+            <input
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              placeholder="Bairro"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Cidade</label>
+            <input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Cidade"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Estado</label>
+            <input
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="UF"
+              maxLength={2}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Foto do Profissional</label>
+            <div className="flex items-center gap-4">
+              {photoUrl ? (
+                <div className="relative">
+                  <img src={photoUrl} alt="Prévia" className="h-32 w-32 object-cover rounded-xl border-2 border-orange-500" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoUrl(undefined)}
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="h-32 w-32 bg-gray-700 border-2 border-dashed border-gray-600 rounded-xl flex items-center justify-center">
+                  <Upload size={32} className="text-gray-500" />
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhoto}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 cursor-pointer transition-all font-medium"
+                >
+                  <Upload size={20} />
+                  {photoUrl ? 'Alterar Foto' : 'Escolher Foto'}
+                </label>
+                <p className="text-xs text-gray-400 mt-2">Formatos aceitos: JPG, PNG, GIF (máx. 5MB)</p>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -179,7 +322,7 @@ export default function ProfessionalForm() {
             <Save size={20} />
             Salvar Profissional
           </button>
-          <Link to="/profissionais" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
+          <Link to="/app/profissionais" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
             Cancelar
           </Link>
         </div>
