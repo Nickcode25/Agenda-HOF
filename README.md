@@ -1,135 +1,193 @@
-# HOF Clinic
+# 🦷 Agenda+ HOF
 
-Sistema web moderno para consultório de Harmonização Orofacial (HOF), com interface dark mode e tema laranja.
+> Sistema completo de gestão para consultório odontológico
 
-## Stack
-- React 18, TypeScript, Vite
-- Tailwind CSS
-- React Router DOM
-- Zustand (estado global com persistência)
-- date-fns (manipulação de datas)
-- Lucide React (ícones)
-- Supabase (backend, autenticação e banco de dados)
+[![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.4.1-purple.svg)](https://vitejs.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green.svg)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.1-cyan.svg)](https://tailwindcss.com/)
 
-## Scripts
+## 📋 Sobre o Projeto
+
+**Agenda+ HOF** é um sistema SaaS completo para gerenciamento de consultórios odontológicos, com funcionalidades para agendamento, controle de pacientes, procedimentos, estoque, vendas e sistema administrativo.
+
+## ✨ Funcionalidades
+
+### 👥 Para Clientes (Dentistas)
+
+- **📅 Agenda Inteligente**: Calendário completo com visualização mensal/semanal
+- **🦷 Gestão de Pacientes**: Cadastro completo com histórico de procedimentos
+- **💉 Procedimentos**: Catálogo de procedimentos com orçamentos e controle
+- **👨‍⚕️ Profissionais**: Gerenciamento de dentistas e especialidades
+- **📦 Estoque**: Controle de materiais e produtos odontológicos
+- **💰 Vendas**: Gestão de vendas de produtos
+- **💳 Mensalidades**: Sistema de planos e assinaturas recorrentes
+- **📊 Dashboard**: Métricas e KPIs do consultório
+
+### 🔐 Para Administradores (SaaS)
+
+- **📊 Dashboard Admin**: Visão geral do sistema SaaS
+- **💹 Métricas SaaS**: MRR, Churn Rate, LTV, Growth Rate
+- **👥 Gestão de Clientes**: Controle de clientes que usam o sistema
+- **🛒 Gestão de Compras**: Controle de pagamentos e assinaturas
+- **📝 Activity Logs**: Registro automático de todas as ações
+- **🚨 Alertas Inteligentes**: Notificações sobre situações críticas
+- **🎁 Usuários Cortesia**: Criar acessos gratuitos para testes
+
+## 🚀 Tecnologias
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Estilização**: Tailwind CSS + Lucide Icons
+- **Estado**: Zustand + Persist
+- **Roteamento**: React Router DOM v6
+- **Backend**: Supabase (PostgreSQL + Auth + Realtime)
+- **Data**: React Hook Form + Date-fns
+
+## 📦 Instalação
+
+### Pré-requisitos
+
+- Node.js 18+
+- npm ou yarn
+- Conta no Supabase
+
+### 1. Clone o repositório
+
 ```bash
-# instalar dependências
-npm install
-
-# rodar em desenvolvimento
-npm run dev
-
-# build de produção
-npm run build
-npm run preview
+git clone https://github.com/seu-usuario/agenda-hof.git
+cd agenda-hof
 ```
 
-## Funcionalidades
+### 2. Instale as dependências
 
-### ✅ Implementado
-
-#### 📅 Agenda
-- **Calendário visual mensal** com navegação entre meses
-- Visualização de agendamentos por dia
-- Modal com detalhes completos do agendamento
-- Cores e status diferenciados (Agendado, Confirmado, Concluído, Cancelado)
-- Botão "Hoje" para voltar ao mês atual
-- Clique nos agendamentos para ver detalhes/remover
-
-#### 👥 Pacientes
-- cadastro completo com foto (upload local base64)
-- Lista com busca por nome ou CPF
-- Cards modernos com hover effects
-- Ficha do paciente com dados clínicos
-
-#### 📋 Agendamentos
-- Formulário completo de agendamento
-- Seleção de paciente, procedimento, profissional, sala
-- Data/hora de início e término
-- Campo de observações
-- Validação de campos obrigatórios
-
-#### ⏳ Fila de Espera
-- Adicionar pacientes aguardando agendamento
-- Informações: nome, telefone, procedimento desejado
-- Remoção de pacientes da fila
-
-### 🎨 Design
-- **Sidebar fixa** com navegação por ícones
-- Layout responsivo (desktop, tablet, mobile)
-- Tema dark com destaque em laranja
-- Gradientes e sombras modernas
-- Efeitos de hover e transições suaves
-- Cards com bordas arredondadas
-- Estados vazios elegantes com ícones
-
-## Estrutura de pastas
-```
-src/
-  components/
-    Calendar.tsx           # Calendário mensal visual
-    AppointmentModal.tsx   # Modal de detalhes do agendamento
-  pages/
-    patients/
-      PatientForm.tsx      # cadastro de pacientes
-      PatientsList.tsx     # Lista com busca
-      PatientDetail.tsx    # Ficha do paciente
-    schedule/
-      AppointmentForm.tsx  # Novo agendamento
-      ScheduleCalendar.tsx # Página principal com calendário
-      Waitlist.tsx         # Fila de espera
-  store/
-    patients.ts            # Estado global de pacientes
-    schedule.ts            # Estado global de agenda
-  types/
-    patient.ts             # Tipos TypeScript
-    schedule.ts            # Tipos TypeScript
-  lib/
-    supabase.ts            # Cliente Supabase
-    supabaseTest.ts        # Teste de conexão
-  services/
-    # Serviços de integração com Supabase (a implementar)
-  App.tsx                  # Layout com sidebar
-  main.tsx                 # Rotas
-  vite-env.d.ts            # Tipos do Vite e variáveis de ambiente
-```
-
-## Rotas
-- `/` - Agenda (calendário visual)
-- `/agenda/nova` - Novo agendamento
-- `/agenda/fila` - Fila de espera
-- `/pacientes` - Lista de pacientes
-- `/pacientes/novo` - Cadastrar paciente
-- `/pacientes/:id` - Detalhes do paciente
-
-## Como usar
-
-1. **Instalar dependências:**
 ```bash
 npm install
 ```
 
-2. **Iniciar servidor:**
+### 3. Configure as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+```
+
+### 4. Configure o banco de dados
+
+Execute as migrations do Supabase em ordem:
+
+```bash
+# Acesse o SQL Editor do Supabase e execute os arquivos em:
+database/migrations/
+
+# Ordem de execução:
+1. 000_initial_schema.sql
+2. 001_admin_setup.sql
+3. 002_courtesy_users.sql
+4. 003_courtesy_functions.sql
+5. 004_activity_logs.sql
+```
+
+📚 Veja mais detalhes em: [database/README.md](database/README.md)
+
+### 5. Inicie o servidor de desenvolvimento
+
 ```bash
 npm run dev
 ```
 
-3. **Acessar:** http://localhost:5173
+Acesse: `http://localhost:5173`
 
-## Armazenamento de Dados
+## 🏗️ Estrutura do Projeto
 
-Atualmente, os dados são armazenados localmente no navegador usando Zustand com persistência (localStorage).
+```
+agenda-hof/
+├── database/              # Migrations e docs do banco
+│   ├── migrations/        # SQL migrations ordenados
+│   └── README.md
+├── src/
+│   ├── components/        # Componentes React
+│   │   ├── admin/        # Componentes do admin
+│   │   └── ...
+│   ├── pages/            # Páginas da aplicação
+│   │   ├── admin/        # Páginas do painel admin
+│   │   ├── dashboard/    # Dashboard principal
+│   │   ├── patients/     # Gestão de pacientes
+│   │   ├── procedures/   # Procedimentos
+│   │   └── ...
+│   ├── store/            # Zustand stores
+│   ├── types/            # TypeScript types
+│   ├── lib/              # Configurações (Supabase)
+│   └── utils/            # Funções utilitárias
+├── .env                  # Variáveis de ambiente
+└── package.json
+```
 
-Para integrar com um banco de dados:
-1. Configure seu backend preferido (Supabase, Firebase, API própria, etc.)
-2. Crie serviços em `src/services/`
-3. Atualize os stores em `src/store/` para usar os serviços
+## 🎯 Scripts Disponíveis
 
-## Próximos módulos planejados
-- 💊 Procedimentos (calculadora, controle de sessões)
-- 📦 Estoque (materiais, lotes, validade, alertas)
-- 💰 Financeiro (entradas/saídas, dashboard, recibos PDF)
-- 📱 Comunicação (WhatsApp/SMS/Email automático)
-- 🔐 Área do paciente (login, histórico, documentos)
-- 📊 Marketing (simulador, NPS)
-- 🔗 Integrações (Google Agenda, App Mobile, IA)
+```bash
+npm run dev          # Inicia servidor de desenvolvimento
+npm run build        # Build para produção
+npm run preview      # Preview do build
+npm run lint         # Executa ESLint
+```
+
+## 🔐 Acesso Admin
+
+Para acessar o painel administrativo:
+
+1. Acesse: `/admin/login`
+2. Use as credenciais de admin criadas no banco
+3. Gerencie clientes, métricas e alertas
+
+## 🌟 Funcionalidades Destacadas
+
+### Sistema de Activity Logs
+Registro automático via triggers SQL de:
+- Cadastro de clientes
+- Criação de compras
+- Mudanças de status
+
+### Métricas SaaS Avançadas
+- **MRR**: Monthly Recurring Revenue
+- **Churn Rate**: Taxa de cancelamento
+- **LTV**: Customer Lifetime Value
+- **Growth Rate**: Taxa de crescimento
+
+### Alertas Inteligentes
+- Pagamentos atrasados (>7 dias)
+- Alto volume de cancelamentos
+- Clientes inativos (60 dias)
+- Receita abaixo da média
+
+## 📝 Roadmap
+
+- [ ] Sistema de notificações por email
+- [ ] Exportação de relatórios (CSV/PDF)
+- [ ] Gráficos de tendência
+- [ ] Integração com WhatsApp
+- [ ] App mobile
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Por favor:
+
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'Add: Nova feature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 👨‍💻 Autor
+
+**Nicolas** - Agenda+ HOF Team
+
+---
+
+⭐ Se este projeto foi útil para você, considere dar uma estrela!

@@ -32,6 +32,16 @@ import SubscribersList from './pages/subscriptions/SubscribersList'
 import SubscriptionForm from './pages/subscriptions/SubscriptionForm'
 import SubscriptionReports from './pages/subscriptions/SubscriptionReports'
 import SubscriptionsMain from './pages/subscriptions/SubscriptionsMain'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminLayout from './components/admin/AdminLayout'
+import AdminDashboard from './pages/admin/Dashboard'
+import MetricsPage from './pages/admin/MetricsPage'
+import ActivitiesPage from './pages/admin/ActivitiesPage'
+import AlertsPage from './pages/admin/AlertsPage'
+import CourtesyUsersPage from './pages/admin/CourtesyUsersPage'
+import CustomersManager from './pages/admin/CustomersManager'
+import PurchasesManager from './pages/admin/PurchasesManager'
+import ProtectedRoute from './components/admin/ProtectedRoute'
 
 const router = createBrowserRouter([
   {
@@ -77,6 +87,28 @@ const router = createBrowserRouter([
       { path: 'mensalidades/assinantes', element: <SubscribersList /> },
       { path: 'mensalidades/assinantes/novo', element: <SubscriptionForm /> },
       { path: 'mensalidades/relatorios', element: <SubscriptionReports /> },
+    ],
+  },
+  {
+    path: '/admin/login',
+    element: <AdminLogin />,
+  },
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <AdminDashboard /> },
+      { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'metrics', element: <MetricsPage /> },
+      { path: 'customers', element: <CustomersManager /> },
+      { path: 'purchases', element: <PurchasesManager /> },
+      { path: 'activities', element: <ActivitiesPage /> },
+      { path: 'alerts', element: <AlertsPage /> },
+      { path: 'courtesy-users', element: <CourtesyUsersPage /> },
     ],
   },
 ])
