@@ -1,24 +1,49 @@
 import { useState } from 'react'
 import { Check, Calendar, Users, Clock, BarChart3, Package, ChevronRight, Sparkles, Shield, Zap, TrendingUp, Star, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/store/auth'
 
 export default function LandingPage() {
   const [showLogin, setShowLogin] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [cpf, setCpf] = useState('')
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
+  const { signIn, signUp } = useAuth()
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Aqui você implementará a lógica de autenticação
-    navigate('/app/dashboard')
+    setLoading(true)
+    setError('')
+
+    const success = await signIn(email, password)
+
+    if (success) {
+      navigate('/app/dashboard')
+    } else {
+      setError('Email ou senha incorretos')
+      setLoading(false)
+    }
   }
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Aqui você implementará a lógica de cadastro
-    navigate('/app/dashboard')
+    setLoading(true)
+    setError('')
+
+    // Redirecionar para checkout com os dados do usuário
+    navigate('/checkout', {
+      state: {
+        name: fullName,
+        email: email,
+        password: password,
+      }
+    })
   }
 
   const openRegisterModal = () => {
@@ -101,7 +126,7 @@ export default function LandingPage() {
 
   const stats = [
     { value: '350+', label: 'Profissionais' },
-    { value: '15k+', label: 'Agendamentos/mês' },
+    { value: '10x', label: 'Mais Organizado' },
     { value: '98%', label: 'Satisfação' },
     { value: '24/7', label: 'Suporte' }
   ]
@@ -204,7 +229,7 @@ export default function LandingPage() {
 
                   <div className="mb-6">
                     <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-6xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">R$79</span>
+                      <span className="text-6xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">R$109</span>
                       <span className="text-gray-400 text-xl">,90</span>
                     </div>
                     <div className="text-gray-400 text-lg">
@@ -325,6 +350,12 @@ export default function LandingPage() {
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-5">
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       E-mail
@@ -332,7 +363,10 @@ export default function LandingPage() {
                     <input
                       type="email"
                       required
-                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
+                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500 disabled:opacity-50"
                       placeholder="seu@email.com"
                     />
                   </div>
@@ -344,16 +378,20 @@ export default function LandingPage() {
                     <input
                       type="password"
                       required
-                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
+                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500 disabled:opacity-50"
                       placeholder="••••••••"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Entrar
+                    {loading ? 'Entrando...' : 'Entrar'}
                   </button>
                 </form>
 
@@ -410,6 +448,12 @@ export default function LandingPage() {
                 </div>
 
                 <form onSubmit={handleRegister} className="space-y-5">
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   <div className="grid md:grid-cols-2 gap-5">
                     {/* Nome Completo */}
                     <div className="md:col-span-2">
@@ -419,58 +463,32 @@ export default function LandingPage() {
                       <input
                         type="text"
                         required
-                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        disabled={loading}
+                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500 disabled:opacity-50"
                         placeholder="Digite seu nome completo"
                       />
                     </div>
 
-                    {/* CPF */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        CPF *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={cpf}
-                        onChange={handleCPFChange}
-                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500"
-                        placeholder="000.000.000-00"
-                        maxLength={14}
-                      />
-                    </div>
-
-                    {/* Telefone */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Telefone *
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={phone}
-                        onChange={handlePhoneChange}
-                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500"
-                        placeholder="(00) 00000-0000"
-                        maxLength={15}
-                      />
-                    </div>
-
                     {/* E-mail */}
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         E-mail *
                       </label>
                       <input
                         type="email"
                         required
-                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500 disabled:opacity-50"
                         placeholder="seu@email.com"
                       />
                     </div>
 
                     {/* Senha */}
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Senha *
                       </label>
@@ -478,7 +496,10 @@ export default function LandingPage() {
                         type="password"
                         required
                         minLength={6}
-                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500 disabled:opacity-50"
                         placeholder="Mínimo 6 caracteres"
                       />
                     </div>
@@ -511,10 +532,11 @@ export default function LandingPage() {
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Prosseguir para pagamento
-                    <ArrowRight size={20} />
+                    {loading ? 'Criando conta...' : 'Criar conta'}
+                    {!loading && <ArrowRight size={20} />}
                   </button>
                 </form>
 

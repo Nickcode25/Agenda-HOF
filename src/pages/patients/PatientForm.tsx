@@ -114,25 +114,36 @@ export default function PatientForm() {
     reader.readAsDataURL(file)
   }
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    const id = add({
-      name: String(data.get('name')||''),
-      cpf: cpf,
-      phone: phone,
-      cep: cep,
-      street: street,
-      number: number,
-      complement: complement,
-      neighborhood: neighborhood,
-      city: city,
-      state: state,
-      clinicalInfo: String(data.get('clinicalInfo')||''),
-      notes: String(data.get('notes')||''),
-      photoUrl,
-    })
-    navigate(`/pacientes/${id}`)
+
+    try {
+      const id = await add({
+        name: String(data.get('name')||''),
+        cpf: cpf,
+        phone: phone,
+        cep: cep,
+        street: street,
+        number: number,
+        complement: complement,
+        neighborhood: neighborhood,
+        city: city,
+        state: state,
+        clinicalInfo: String(data.get('clinicalInfo')||''),
+        notes: String(data.get('notes')||''),
+        photoUrl,
+      })
+
+      if (id) {
+        navigate(`/app/pacientes/${id}`)
+      } else {
+        alert('Erro ao salvar paciente')
+      }
+    } catch (error) {
+      console.error('Erro ao criar paciente:', error)
+      alert('Erro ao salvar paciente: ' + (error as Error).message)
+    }
   }
 
   return (

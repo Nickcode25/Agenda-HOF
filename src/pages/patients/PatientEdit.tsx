@@ -147,7 +147,7 @@ export default function PatientEdit() {
       notes: String(data.get('notes')||''),
       photoUrl,
     })
-    navigate(`/pacientes/${id}`)
+    navigate(`/app/pacientes/${id}`)
   }
 
   if (!patient) return (

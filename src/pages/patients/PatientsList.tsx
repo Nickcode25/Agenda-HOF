@@ -3,13 +3,20 @@ import { usePatients } from '@/store/patients'
 import { useProcedures } from '@/store/procedures'
 import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, User, Phone, MapPin, Calendar, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText } from 'lucide-react'
 
 export default function PatientsList() {
   const patients = usePatients(s => s.patients)
   const update = usePatients(s => s.update)
+  const fetchPatients = usePatients(s => s.fetchAll)
   const procedures = useProcedures(s => s.procedures)
+  const fetchProcedures = useProcedures(s => s.fetchAll)
+
+  useEffect(() => {
+    fetchPatients()
+    fetchProcedures()
+  }, [])
   const [q, setQ] = useState('')
   const [expandedPatients, setExpandedPatients] = useState<Set<string>>(new Set())
   const [showAddProcedure, setShowAddProcedure] = useState<string | null>(null)

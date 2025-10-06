@@ -12,6 +12,7 @@ type AuthState = {
 
   // Actions
   signIn: (email: string, password: string) => Promise<boolean>
+  signUp: (email: string, password: string, fullName: string) => Promise<boolean>
   signOut: () => Promise<void>
   checkSession: () => Promise<void>
   clearError: () => void
@@ -36,31 +37,25 @@ export const useAuth = create<AuthState>()(
 
           if (authError) throw authError
 
-          // 2. Verificar se é admin
-          const { data: adminData, error: adminError } = await supabase
+          // 2. Verificar se é admin (opcional - não bloqueia login)
+          const { data: adminData } = await supabase
             .from('admin_users')
             .select('*')
             .eq('email', email)
             .maybeSingle()
 
-          if (adminError) {
-            await supabase.auth.signOut()
-            throw new Error(`Erro ao verificar permissões: ${adminError.message}`)
-          }
+          // 3. Mapear admin se existir
+          let adminUser: AdminUser | null = null
 
-          if (!adminData) {
-            await supabase.auth.signOut()
-            throw new Error('Usuário não tem permissão de administrador')
-          }
-
-          // 3. Mapear para formato da aplicação
-          const adminUser: AdminUser = {
-            id: adminData.id,
-            email: adminData.email,
-            fullName: adminData.full_name,
-            role: adminData.role,
-            createdAt: adminData.created_at,
-            updatedAt: adminData.updated_at,
+          if (adminData) {
+            adminUser = {
+              id: adminData.id,
+              email: adminData.email,
+              fullName: adminData.full_name,
+              role: adminData.role,
+              createdAt: adminData.created_at,
+              updatedAt: adminData.updated_at,
+            }
           }
 
           set({
@@ -70,6 +65,45 @@ export const useAuth = create<AuthState>()(
           })
 
           return true
+        } catch (error: any) {
+          set({
+            error: error.message,
+            loading: false,
+            user: null,
+            adminUser: null,
+          })
+          return false
+        }
+      },
+
+      signUp: async (email: string, password: string, fullName: string) => {
+        set({ loading: true, error: null })
+        try {
+          // 1. Criar conta no Supabase Auth
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+              }
+            }
+          })
+
+          if (authError) throw authError
+
+          // 2. Fazer login automaticamente se confirmação de email não for necessária
+          if (authData.user) {
+            set({
+              user: authData.user,
+              adminUser: null,
+              loading: false,
+            })
+            return true
+          }
+
+          set({ loading: false })
+          return false
         } catch (error: any) {
           set({
             error: error.message,
@@ -105,26 +139,24 @@ export const useAuth = create<AuthState>()(
             return
           }
 
-          // Verificar se ainda é admin
+          // Verificar se é admin (opcional - não força logout)
           const { data: adminData } = await supabase
             .from('admin_users')
             .select('*')
             .eq('email', session.user.email)
             .maybeSingle()
 
-          if (!adminData) {
-            await supabase.auth.signOut()
-            set({ user: null, adminUser: null, loading: false })
-            return
-          }
+          let adminUser: AdminUser | null = null
 
-          const adminUser: AdminUser = {
-            id: adminData.id,
-            email: adminData.email,
-            fullName: adminData.full_name,
-            role: adminData.role,
-            createdAt: adminData.created_at,
-            updatedAt: adminData.updated_at,
+          if (adminData) {
+            adminUser = {
+              id: adminData.id,
+              email: adminData.email,
+              fullName: adminData.full_name,
+              role: adminData.role,
+              createdAt: adminData.created_at,
+              updatedAt: adminData.updated_at,
+            }
           }
 
           set({

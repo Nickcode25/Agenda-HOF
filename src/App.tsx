@@ -1,13 +1,21 @@
-import { Outlet, NavLink } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard } from 'lucide-react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
+import { useAuth } from '@/store/auth'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { professionals } = useProfessionals()
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
+  const { signOut, user } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/')
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex">
@@ -102,12 +110,25 @@ export default function App() {
             </NavLink>
           </nav>
 
-          {/* Footer */}
-          {sidebarOpen && (
-            <div className="p-4 border-t border-gray-700">
-              <p className="text-xs text-gray-500 text-center">© 2025 Agenda+ HOF</p>
-            </div>
-          )}
+          {/* User Info & Logout */}
+          <div className="p-4 border-t border-gray-700">
+            {sidebarOpen && user && (
+              <div className="mb-3 pb-3 border-b border-gray-700">
+                <p className="text-xs text-gray-400 mb-1">Logado como:</p>
+                <p className="text-sm text-white truncate">{user.email}</p>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-gray-400 hover:bg-red-500/10 hover:text-red-400 ${!sidebarOpen && 'justify-center'}`}
+            >
+              <LogOut size={22} />
+              {sidebarOpen && <span className="font-medium">Sair</span>}
+            </button>
+            {sidebarOpen && (
+              <p className="text-xs text-gray-500 text-center mt-3">© 2025 Agenda+ HOF</p>
+            )}
+          </div>
         </div>
       </aside>
 

@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom'
 import { useStock } from '@/store/stock'
 import { formatCurrency } from '@/utils/currency'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Package, AlertTriangle, Calendar, TrendingDown, TrendingUp, Edit, Trash2 } from 'lucide-react'
 
+
 export default function StockList() {
-  const { items, removeItem, generateAlerts, getUnreadAlerts } = useStock()
+  const { items, removeItem, generateAlerts, getUnreadAlerts, fetchItems } = useStock()
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
 
+  useEffect(() => {
+    fetchItems()
+  }, [])
   // Gerar alertas ao carregar a página
   useMemo(() => {
     generateAlerts()

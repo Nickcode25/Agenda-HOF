@@ -14,6 +14,7 @@ import Waitlist from './pages/schedule/Waitlist'
 import ProfessionalsList from './pages/professionals/ProfessionalsList'
 import ProfessionalForm from './pages/professionals/ProfessionalForm'
 import ProfessionalDetail from './pages/professionals/ProfessionalDetail'
+import ProfessionalEdit from './pages/professionals/ProfessionalEdit'
 import ProceduresList from './pages/procedures/ProceduresList'
 import ProcedureForm from './pages/procedures/ProcedureForm'
 import ProcedureDetail from './pages/procedures/ProcedureDetail'
@@ -25,6 +26,7 @@ import SaleForm from './pages/sales/SaleForm'
 import SalesProfessionalForm from './pages/sales/ProfessionalForm'
 import Dashboard from './pages/dashboard/Dashboard'
 import LandingPage from './pages/landing/LandingPage'
+import Checkout from './pages/Checkout'
 import PlansList from './pages/subscriptions/PlansList'
 import PlanForm from './pages/subscriptions/PlanForm'
 import PlanDetail from './pages/subscriptions/PlanDetail'
@@ -49,6 +51,10 @@ const router = createBrowserRouter([
     element: <LandingPage />,
   },
   {
+    path: '/checkout',
+    element: <Checkout />,
+  },
+  {
     path: '/app',
     element: <App />,
     children: [
@@ -66,6 +72,7 @@ const router = createBrowserRouter([
       { path: 'profissionais', element: <ProfessionalsList /> },
       { path: 'profissionais/novo', element: <ProfessionalForm /> },
       { path: 'profissionais/:id', element: <ProfessionalDetail /> },
+      { path: 'profissionais/:id/editar', element: <ProfessionalEdit /> },
 
       { path: 'pacientes', element: <PatientsList /> },
       { path: 'pacientes/novo', element: <PatientForm /> },

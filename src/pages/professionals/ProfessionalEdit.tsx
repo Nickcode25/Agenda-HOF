@@ -1,11 +1,17 @@
-import { FormEvent, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { FormEvent, useState, useEffect } from 'react'
+import { useNavigate, Link, useParams } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
 import { Save, ArrowLeft, Upload, X } from 'lucide-react'
 
-export default function ProfessionalForm() {
-  const add = useProfessionals(s => s.add)
+export default function ProfessionalEdit() {
+  const { id } = useParams()
+  const { professionals, update, fetchAll } = useProfessionals(s => ({ 
+    professionals: s.professionals, 
+    update: s.update,
+    fetchAll: s.fetchAll
+  }))
   const navigate = useNavigate()
+  const professional = professionals.find(p => p.id === id)
 
   const [photoUrl, setPhotoUrl] = useState<string | undefined>()
   const [cpf, setCpf] = useState('')
@@ -15,7 +21,37 @@ export default function ProfessionalForm() {
   const [neighborhood, setNeighborhood] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
+  const [number, setNumber] = useState('')
+  const [complement, setComplement] = useState('')
   const [loadingCep, setLoadingCep] = useState(false)
+
+  useEffect(() => {
+    fetchAll()
+  }, [])
+
+  useEffect(() => {
+    if (professional) {
+      setPhotoUrl(professional.photoUrl)
+      setCpf(professional.cpf || '')
+      setPhone(professional.phone || '')
+      setCep(professional.cep || '')
+      setStreet(professional.street || '')
+      setNeighborhood(professional.neighborhood || '')
+      setCity(professional.city || '')
+      setState(professional.state || '')
+      setNumber(professional.number || '')
+      setComplement(professional.complement || '')
+    }
+  }, [professional])
+
+  if (!professional) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <p className="text-gray-400">Profissional não encontrado.</p>
+        <Link to="/app/profissionais" className="text-orange-500 hover:text-orange-400 hover:underline">Voltar</Link>
+      </div>
+    )
+  }
 
   function formatCPF(value: string) {
     const numbers = value.replace(/\D/g, '')
@@ -100,38 +136,35 @@ export default function ProfessionalForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    const id = await add({
-      name: String(data.get('name')||''),
-      specialty: String(data.get('specialty')||''),
-      registrationNumber: String(data.get('registrationNumber')||''),
+    await update(id!, {
+      name: String(data.get('name') || ''),
+      specialty: String(data.get('specialty') || ''),
+      registrationNumber: String(data.get('registrationNumber') || ''),
       cpf: cpf,
       phone: phone,
-      email: String(data.get('email')||''),
+      email: String(data.get('email') || ''),
       cep: cep,
       street: street,
-      number: String(data.get('number')||''),
-      complement: String(data.get('complement')||''),
+      number: number,
+      complement: complement,
       neighborhood: neighborhood,
       city: city,
       state: state,
       photoUrl,
-      active: true,
     })
-    if (id) {
-      navigate(`/app/profissionais/${id}`)
-    }
+    navigate(`/app/profissionais/${id}`)
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/app/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to={`/app/profissionais/${id}`} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Novo Profissional</h1>
-          <p className="text-gray-400">Cadastre um profissional do consultório</p>
+          <h1 className="text-3xl font-bold text-white mb-1">Editar Profissional</h1>
+          <p className="text-gray-400">Edite as informações do profissional</p>
         </div>
       </div>
 
@@ -140,71 +173,72 @@ export default function ProfessionalForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Nome Completo *</label>
-            <input 
-              name="name" 
-              required 
+            <input
+              name="name"
+              required
+              defaultValue={professional.name}
               placeholder="Dr(a). Nome Completo"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Especialidade *</label>
-            <input 
-              name="specialty" 
-              required 
+            <input
+              name="specialty"
+              required
+              defaultValue={professional.specialty}
               placeholder="Ex: Harmonização Orofacial"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Registro Profissional *</label>
-            <input 
-              name="registrationNumber" 
-              required 
-              placeholder="CRO, CRM, etc"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+            <input
+              name="registrationNumber"
+              required
+              defaultValue={professional.registrationNumber}
+              placeholder="Ex: CRO-MG 12345"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">CPF</label>
-            <input 
-              name="cpf" 
+            <input
               value={cpf}
               onChange={handleCPFChange}
               placeholder="000.000.000-00"
               maxLength={14}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
-            <input 
-              name="phone" 
+            <input
               value={phone}
               onChange={handlePhoneChange}
               placeholder="(00) 00000-0000"
               maxLength={15}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">E-mail</label>
-            <input 
-              name="email" 
+            <input
+              name="email"
               type="email"
+              defaultValue={professional.email}
               placeholder="email@exemplo.com"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
-          {/* Endereço */}
+
           <div className="md:col-span-2">
-            <h3 className="text-lg font-semibold text-orange-500 mb-4">Endereço</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Endereço</h3>
           </div>
 
           <div>
@@ -217,24 +251,25 @@ export default function ProfessionalForm() {
               maxLength={9}
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
-            {loadingCep && <p className="text-xs text-orange-400 mt-1">Buscando CEP...</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Rua</label>
-            <input
-              value={street}
-              onChange={(e) => setStreet(e.target.value)}
-              placeholder="Nome da rua"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
+            {loadingCep && <p className="text-xs text-orange-400 mt-1">Buscando endereço...</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Número</label>
             <input
-              name="number"
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
               placeholder="123"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Logradouro</label>
+            <input
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              placeholder="Rua, Avenida..."
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
@@ -242,8 +277,9 @@ export default function ProfessionalForm() {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Complemento</label>
             <input
-              name="complement"
-              placeholder="Apto, sala, etc."
+              value={complement}
+              onChange={(e) => setComplement(e.target.value)}
+              placeholder="Apto, Sala..."
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
@@ -300,31 +336,36 @@ export default function ProfessionalForm() {
               )}
               <div className="flex-1">
                 <input
-                  id="photo-upload"
+                  id="professional-photo-upload"
                   type="file"
                   accept="image/*"
                   onChange={handlePhoto}
                   className="hidden"
                 />
                 <label
-                  htmlFor="photo-upload"
+                  htmlFor="professional-photo-upload"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 cursor-pointer transition-all font-medium"
                 >
                   <Upload size={20} />
                   {photoUrl ? 'Alterar Foto' : 'Escolher Foto'}
                 </label>
-                <p className="text-xs text-gray-400 mt-2">Formatos aceitos: JPG, PNG, GIF (máx. 5MB)</p>
               </div>
             </div>
           </div>
         </div>
-        
-        <div className="flex gap-3 mt-8">
-          <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40">
-            <Save size={20} />
-            Salvar Profissional
+
+        <div className="flex gap-4 mt-8">
+          <button
+            type="submit"
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
+          >
+            <Save size={18} />
+            Salvar Alterações
           </button>
-          <Link to="/app/profissionais" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
+          <Link
+            to={`/app/profissionais/${id}`}
+            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
+          >
             Cancelar
           </Link>
         </div>

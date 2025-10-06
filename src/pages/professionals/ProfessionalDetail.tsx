@@ -1,13 +1,14 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
-import { Stethoscope, Award, Phone, Mail, ArrowLeft, Trash2, FileText, MapPin } from 'lucide-react'
+import { Stethoscope, Award, Phone, Mail, ArrowLeft, Trash2, FileText, MapPin, Edit } from 'lucide-react'
 
 export default function ProfessionalDetail() {
   const { id } = useParams()
-  const { professionals, remove, toggleActive } = useProfessionals(s => ({ 
-    professionals: s.professionals, 
+  const navigate = useNavigate()
+  const { professionals, remove, toggleActive } = useProfessionals(s => ({
+    professionals: s.professionals,
     remove: s.remove,
-    toggleActive: s.toggleActive 
+    toggleActive: s.toggleActive
   }))
   const professional = professionals.find(p => p.id === id)
 
@@ -18,10 +19,10 @@ export default function ProfessionalDetail() {
     </div>
   )
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirm(`Tem certeza que deseja remover ${professional.name}?`)) {
-      remove(professional.id)
-      window.location.href = '/app/profissionais'
+      await remove(professional.id)
+      navigate('/app/profissionais')
     }
   }
 
@@ -106,12 +107,22 @@ export default function ProfessionalDetail() {
                 </div>
               )}
               
-              {professional.address && (
+              {(professional.street || professional.cep) && (
                 <div className="flex items-center gap-3">
                   <MapPin size={18} className="text-orange-500" />
                   <div>
                     <p className="text-xs text-gray-400">Endereço</p>
-                    <p className="text-white font-medium">{professional.address}</p>
+                    <p className="text-white font-medium">
+                      {[
+                        professional.street,
+                        professional.number,
+                        professional.complement,
+                        professional.neighborhood,
+                        professional.city,
+                        professional.state,
+                        professional.cep
+                      ].filter(Boolean).join(', ')}
+                    </p>
                   </div>
                 </div>
               )}
@@ -121,6 +132,13 @@ export default function ProfessionalDetail() {
 
         {/* Actions */}
         <div className="flex gap-3 mt-8 pt-6 border-t border-gray-700">
+          <Link
+            to={`/app/profissionais/${professional.id}/editar`}
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
+          >
+            <Edit size={18} />
+            Editar
+          </Link>
           <button
             onClick={() => toggleActive(professional.id)}
             className={`px-6 py-3 rounded-xl font-medium transition-colors ${professional.active ? 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30'}`}

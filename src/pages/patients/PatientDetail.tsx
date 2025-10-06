@@ -23,7 +23,7 @@ export default function PatientDetail() {
   const handleDelete = () => {
     if (confirm(`Tem certeza que deseja remover ${patient?.name}?`)) {
       remove(id!)
-      window.location.href = '/pacientes'
+      window.location.href = '/app/pacientes'
     }
   }
 
@@ -126,7 +126,7 @@ export default function PatientDetail() {
   if (!patient) return (
     <div>
       <p className="text-gray-400">Paciente não encontrado.</p>
-      <Link to="/pacientes" className="text-orange-500 hover:text-orange-400 hover:underline">Voltar</Link>
+      <Link to="/app/pacientes" className="text-orange-500 hover:text-orange-400 hover:underline">Voltar</Link>
     </div>
   )
 
@@ -134,7 +134,7 @@ export default function PatientDetail() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/pacientes" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to="/app/pacientes" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div className="flex-1">
@@ -483,7 +483,7 @@ export default function PatientDetail() {
         {/* Actions */}
         <div className="flex gap-3 mt-8 pt-6 border-t border-gray-700">
           <Link
-            to={`/pacientes/${patient.id}/editar`}
+            to={`/app/pacientes/${patient.id}/editar`}
             className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
           >
             <Edit size={18} />

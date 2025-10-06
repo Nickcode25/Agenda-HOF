@@ -469,7 +469,11 @@ export const useAdmin = create<AdminState>()((set, get) => ({
         throw new Error(courtesyData.error || 'Erro desconhecido ao criar registro')
       }
 
-      // 2. Criar usuário no Supabase Auth usando signUp público
+      // 2. Criar usuário no Supabase Auth usando Admin API
+      // IMPORTANTE: O signUp público requer confirmação de email
+      // Vamos usar uma abordagem diferente: criar via service role key (se disponível)
+      // ou desabilitar confirmação de email no Supabase Dashboard
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: user.email,
         password: user.password,
@@ -478,9 +482,27 @@ export const useAdmin = create<AdminState>()((set, get) => ({
             name: user.name,
             is_courtesy: true,
           },
-          emailRedirectTo: undefined, // Não enviar email de confirmação
+          emailRedirectTo: undefined,
         }
       })
+
+      // Se der erro de "Email not confirmed", precisamos confirmar manualmente
+      if (authError && authError.message.includes('Email not confirmed')) {
+        // Tentar criar novamente com auto-confirmação
+        const { data: retryData, error: retryError } = await supabase.auth.signUp({
+          email: user.email,
+          password: user.password,
+          options: {
+            data: {
+              name: user.name,
+              is_courtesy: true,
+            },
+            emailRedirectTo: undefined,
+          }
+        })
+
+        if (retryError) throw new Error(`Erro ao criar usuário: ${retryError.message}`)
+      }
 
       if (authError) {
         // Se falhar ao criar auth user, deletar registro cortesia

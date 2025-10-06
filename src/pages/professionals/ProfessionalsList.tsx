@@ -1,11 +1,20 @@
 import { Link } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Search, UserPlus, Stethoscope, Phone, Mail, Award, ToggleLeft, ToggleRight } from 'lucide-react'
 
 export default function ProfessionalsList() {
-  const { professionals, toggleActive } = useProfessionals(s => ({ professionals: s.professionals, toggleActive: s.toggleActive }))
+  const { professionals, toggleActive, fetchAll, loading } = useProfessionals(s => ({
+    professionals: s.professionals,
+    toggleActive: s.toggleActive,
+    fetchAll: s.fetchAll,
+    loading: s.loading
+  }))
   const [q, setQ] = useState('')
+
+  useEffect(() => {
+    fetchAll()
+  }, [])
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
@@ -122,7 +131,7 @@ export default function ProfessionalsList() {
                     {prof.active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                   </button>
                   <Link
-                    to={`/profissionais/${prof.id}`}
+                    to={`/app/profissionais/${prof.id}`}
                     className="text-gray-400 hover:text-orange-500 transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

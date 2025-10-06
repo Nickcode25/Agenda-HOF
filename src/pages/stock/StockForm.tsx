@@ -25,21 +25,23 @@ export default function StockForm() {
     setCost(formatted)
   }
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
     
-    const id = addItem({
+    const id = await addItem({
       category: String(data.get('category') || ''),
-      brand: String(data.get('brand') || ''),
+      supplier: String(data.get('brand') || ''),
       name: String(data.get('name') || ''),
       quantity: Number(data.get('quantity') || 0),
       minQuantity: Number(data.get('minQuantity') || 0),
       unit: String(data.get('unit') || ''),
-      cost: parseCurrency(cost),
+      costPrice: parseCurrency(cost),
     })
     
-    navigate('/app/estoque')
+    if (id) {
+      navigate('/app/estoque')
+    }
   }
 
   return (
@@ -150,15 +152,14 @@ export default function StockForm() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Custo Unitário *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Custo Unitário</label>
             <input
               value={cost}
               onChange={handleCostChange}
-              required
               placeholder="R$ 0,00"
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
-            <p className="text-xs text-gray-400 mt-1">Custo por unidade do produto</p>
+            <p className="text-xs text-gray-400 mt-1">Custo por unidade do produto (opcional)</p>
           </div>
         </div>
         
