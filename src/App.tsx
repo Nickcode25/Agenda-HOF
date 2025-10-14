@@ -20,8 +20,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-900 flex">
       {/* Sidebar */}
-      <aside className={`fixed lg:sticky top-0 left-0 h-screen bg-gray-800 border-r border-gray-700 transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-0 lg:w-20'} overflow-hidden`}>
-        <div className="flex flex-col h-full">
+      <aside
+        tabIndex={0}
+        className={`fixed lg:sticky top-0 left-0 h-screen bg-gray-800 border-r border-gray-700 transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-0 lg:w-20'} overflow-y-auto overflow-x-hidden scrollbar-hide focus:outline-none`}
+      >
+        <div className="flex flex-col min-h-full">
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700">
             <NavLink to="/app" className="flex items-center gap-3 hover:opacity-80 transition-opacity">

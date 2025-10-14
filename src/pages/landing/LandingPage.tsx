@@ -399,8 +399,8 @@ export default function LandingPage() {
                   <span className="text-gray-400">Não tem uma conta? </span>
                   <button
                     onClick={() => {
-                      const confirmed = window.confirm('Deseja criar uma nova conta?')
-                      if (confirmed) handleRegister(new Event('submit') as any)
+                      setShowLogin(false)
+                      openRegisterModal()
                     }}
                     className="text-orange-500 hover:text-orange-400 font-medium transition-colors"
                   >

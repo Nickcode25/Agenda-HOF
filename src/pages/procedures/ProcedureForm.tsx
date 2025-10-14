@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
@@ -7,7 +7,8 @@ import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react'
 
 export default function ProcedureForm() {
   const add = useProcedures(s => s.add)
-  const { items: stockItems } = useStock()
+  const error = useProcedures(s => s.error)
+  const { items: stockItems, fetchItems } = useStock()
   const navigate = useNavigate()
 
   const [value, setValue] = useState('')
@@ -17,6 +18,11 @@ export default function ProcedureForm() {
     category: string
     quantityUsed: number
   }>>([])
+
+  // Carregar itens do estoque ao montar o componente
+  useEffect(() => {
+    fetchItems()
+  }, [])
 
   // Obter categorias únicas do estoque
   const uniqueCategories = [...new Set(stockItems.map(item => item.category))].sort()
@@ -65,20 +71,30 @@ export default function ProcedureForm() {
   }
 
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    const id = add({
+
+    const durationValue = data.get('duration')
+    const procedureData = {
       name: String(data.get('name')||''),
-      value: parseCurrency(value),
+      price: parseCurrency(value),
       cashValue: cashValue ? parseCurrency(cashValue) : undefined,
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: String(data.get('description')||''),
-      duration: Number(data.get('duration')) || undefined,
-      active: true,
+      durationMinutes: durationValue ? Number(durationValue) : undefined,
+      isActive: true,
       stockCategories: stockCategories.filter(item => item.category && item.quantityUsed > 0)
-    })
-    navigate(`/app/procedimentos/${id}`)
+    }
+
+    const id = await add(procedureData)
+
+    if (id) {
+      navigate(`/app/procedimentos/${id}`)
+    } else {
+      const errorMsg = error || 'Erro ao criar procedimento'
+      alert(`Erro: ${errorMsg}`)
+    }
   }
 
   return (
@@ -93,6 +109,13 @@ export default function ProcedureForm() {
           <p className="text-gray-400">Cadastre um novo procedimento</p>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8 shadow-xl">
@@ -195,13 +218,20 @@ export default function ProcedureForm() {
                         onChange={(e) => updateStockCategory(index, 'category', e.target.value)}
                         className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                       >
-                        <option value="">Selecione uma categoria</option>
+                        <option value="">
+                          {uniqueCategories.length === 0 ? 'Nenhuma categoria no estoque' : 'Selecione uma categoria'}
+                        </option>
                         {uniqueCategories.map(category => (
                           <option key={category} value={category}>
                             {category}
                           </option>
                         ))}
                       </select>
+                      {uniqueCategories.length === 0 && (
+                        <p className="text-xs text-yellow-400 mt-1">
+                          Cadastre produtos no <Link to="/app/estoque" className="underline hover:text-yellow-300">estoque</Link> primeiro
+                        </p>
+                      )}
                     </div>
                     <div className="w-32">
                       <label className="block text-xs font-medium text-gray-400 mb-2">Quantidade</label>

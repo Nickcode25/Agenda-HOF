@@ -100,6 +100,9 @@ export default function ProfessionalForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
+
+    console.log('🔄 Tentando salvar profissional...')
+
     const id = await add({
       name: String(data.get('name')||''),
       specialty: String(data.get('specialty')||''),
@@ -117,8 +120,13 @@ export default function ProfessionalForm() {
       photoUrl,
       active: true,
     })
+
     if (id) {
+      console.log('✅ Profissional salvo com sucesso!', id)
       navigate(`/app/profissionais/${id}`)
+    } else {
+      console.error('❌ Erro ao salvar profissional')
+      alert('Erro ao salvar profissional. Verifique o console para mais detalhes.')
     }
   }
 

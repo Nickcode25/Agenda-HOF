@@ -6,9 +6,15 @@ export type Procedure = {
   name: string
   description?: string
   price: number
+  cashValue?: number
+  cardValue?: number
   durationMinutes: number
   category?: string
   isActive: boolean
+  stockCategories?: Array<{
+    category: string
+    quantityUsed: number
+  }>
   createdAt: string
 }
 
@@ -47,9 +53,12 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
         name: p.name,
         description: p.description || '',
         price: parseFloat(p.price),
+        cashValue: p.cash_value ? parseFloat(p.cash_value) : undefined,
+        cardValue: p.card_value ? parseFloat(p.card_value) : undefined,
         durationMinutes: p.duration_minutes,
         category: p.category || '',
         isActive: p.is_active,
+        stockCategories: p.stock_categories || [],
         createdAt: p.created_at,
       }))
 
@@ -65,17 +74,22 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      const insertData = {
+        user_id: user.id,
+        name: p.name,
+        description: p.description || null,
+        price: p.price,
+        cash_value: p.cashValue || null,
+        card_value: p.cardValue || null,
+        duration_minutes: p.durationMinutes || null,
+        category: p.category || null,
+        is_active: p.isActive,
+        stock_categories: p.stockCategories || [],
+      }
+
       const { data, error } = await supabase
         .from('procedures')
-        .insert({
-          user_id: user.id,
-          name: p.name,
-          description: p.description || null,
-          price: p.price,
-          duration_minutes: p.durationMinutes,
-          category: p.category || null,
-          is_active: p.isActive,
-        })
+        .insert(insertData)
         .select()
         .single()
 
@@ -86,9 +100,12 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
         name: data.name,
         description: data.description || '',
         price: parseFloat(data.price),
+        cashValue: data.cash_value ? parseFloat(data.cash_value) : undefined,
+        cardValue: data.card_value ? parseFloat(data.card_value) : undefined,
         durationMinutes: data.duration_minutes,
         category: data.category || '',
         isActive: data.is_active,
+        stockCategories: data.stock_categories || [],
         createdAt: data.created_at,
       }
 
@@ -107,9 +124,12 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
       if (patch.name !== undefined) updateData.name = patch.name
       if (patch.description !== undefined) updateData.description = patch.description || null
       if (patch.price !== undefined) updateData.price = patch.price
+      if (patch.cashValue !== undefined) updateData.cash_value = patch.cashValue || null
+      if (patch.cardValue !== undefined) updateData.card_value = patch.cardValue || null
       if (patch.durationMinutes !== undefined) updateData.duration_minutes = patch.durationMinutes
       if (patch.category !== undefined) updateData.category = patch.category || null
       if (patch.isActive !== undefined) updateData.is_active = patch.isActive
+      if (patch.stockCategories !== undefined) updateData.stock_categories = patch.stockCategories || []
 
       const { error } = await supabase
         .from('procedures')

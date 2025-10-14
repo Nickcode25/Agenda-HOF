@@ -6,10 +6,14 @@ import { Save, ArrowLeft } from 'lucide-react'
 
 export default function ProcedureEdit() {
   const { id } = useParams()
-  const { procedures, update } = useProcedures(s => ({ procedures: s.procedures, update: s.update }))
+  const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
   const navigate = useNavigate()
 
   const procedure = procedures.find(p => p.id === id)
+
+  useEffect(() => {
+    fetchAll()
+  }, [])
 
   const [value, setValue] = useState('')
   const [cashValue, setCashValue] = useState('')
@@ -22,8 +26,8 @@ export default function ProcedureEdit() {
     if (procedure) {
       setName(procedure.name)
       setDescription(procedure.description || '')
-      setDuration(procedure.duration?.toString() || '')
-      setValue(formatCurrency(procedure.value))
+      setDuration(procedure.durationMinutes?.toString() || '')
+      setValue(formatCurrency(procedure.price))
       setCashValue(procedure.cashValue ? formatCurrency(procedure.cashValue) : '')
       setCardValue(procedure.cardValue ? formatCurrency(procedure.cardValue) : '')
     }
@@ -67,18 +71,18 @@ export default function ProcedureEdit() {
   }
 
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    
+
     if (!procedure) return
 
-    update(procedure.id, {
+    await update(procedure.id, {
       name,
-      value: parseCurrency(value),
+      price: parseCurrency(value),
       cashValue: cashValue ? parseCurrency(cashValue) : undefined,
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: description || undefined,
-      duration: duration ? Number(duration) : undefined,
+      durationMinutes: duration ? Number(duration) : undefined,
     })
 
     navigate(`/app/procedimentos/${procedure.id}`)

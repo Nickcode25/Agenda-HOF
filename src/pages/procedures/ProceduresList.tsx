@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { formatCurrency } from '@/utils/currency'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Diamond, Gem, Flower2, Palette, Triangle } from 'lucide-react'
 
 export default function ProceduresList() {
-  const { procedures, toggleActive } = useProcedures(s => ({ procedures: s.procedures, toggleActive: s.toggleActive }))
+  const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
   const [q, setQ] = useState('')
+
+  useEffect(() => {
+    fetchAll()
+  }, [])
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
@@ -150,37 +154,43 @@ export default function ProceduresList() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="text-lg font-semibold text-white">{proc.name}</h3>
-                    {!proc.active && (
+                    {!proc.isActive && (
                       <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">
                         Inativo
                       </span>
                     )}
                   </div>
-                  
+
                   {proc.description && (
                     <p className="text-sm text-gray-400 mb-2">{proc.description}</p>
                   )}
-                  
+
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-1.5 text-gray-300">
                       <DollarSign size={16} className="text-green-500" />
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400">Valor à Vista:</span>
-                          <span className="font-semibold text-green-400">{formatCurrency(proc.cashValue || proc.value)}</span>
+                          <span className="text-xs text-gray-400">Valor Padrão:</span>
+                          <span className="font-semibold text-green-400">{formatCurrency(proc.price)}</span>
                         </div>
-                        {(proc.cardValue) && (
+                        {proc.cashValue && (
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-gray-400">Cartão:</span>
-                            <span className="text-xs text-gray-300">{formatCurrency(proc.cardValue)}</span>
+                            <span className="text-xs text-gray-400">À vista c/ desconto:</span>
+                            <span className="text-xs text-blue-400">{formatCurrency(proc.cashValue)}</span>
+                          </div>
+                        )}
+                        {proc.cardValue && (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-gray-400">Parcelado:</span>
+                            <span className="text-xs text-purple-400">{formatCurrency(proc.cardValue)}</span>
                           </div>
                         )}
                       </div>
                     </div>
-                    {proc.duration && (
+                    {proc.durationMinutes && (
                       <div className="flex items-center gap-1.5 text-gray-400">
                         <Clock size={16} className="text-orange-500" />
-                        <span>{proc.duration} min</span>
+                        <span>{proc.durationMinutes} min</span>
                       </div>
                     )}
                   </div>
@@ -197,11 +207,11 @@ export default function ProceduresList() {
                     </Link>
 
                     <button
-                      onClick={() => toggleActive(proc.id)}
-                      className={`p-2 rounded-lg transition-all ${proc.active ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
-                      title={proc.active ? 'Desativar' : 'Ativar'}
+                      onClick={() => update(proc.id, { isActive: !proc.isActive })}
+                      className={`p-2 rounded-lg transition-all ${proc.isActive ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
+                      title={proc.isActive ? 'Desativar' : 'Ativar'}
                     >
-                      {proc.active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                      {proc.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                     </button>
 
                     <Link

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -12,9 +12,15 @@ import type { Appointment } from '@/types/schedule'
 type ViewMode = 'day' | 'week' | 'month'
 
 export default function ScheduleCalendar() {
-  const { appointments, removeAppointment } = useSchedule()
-  const { professionals } = useProfessionals()
+  const { appointments, removeAppointment, fetchAppointments } = useSchedule()
+  const { professionals, fetchAll: fetchProfessionals } = useProfessionals()
   const { selectedProfessional } = useProfessionalContext()
+
+  // Carregar profissionais e agendamentos ao montar o componente
+  useEffect(() => {
+    fetchProfessionals()
+    fetchAppointments()
+  }, [])
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
   const [dayAppointments, setDayAppointments] = useState<Appointment[]>([])

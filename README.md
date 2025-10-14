@@ -76,21 +76,14 @@ VITE_SUPABASE_ANON_KEY=sua_chave_anonima
 
 ### 4. Configure o banco de dados
 
-Execute as migrations do Supabase em ordem:
+Execute o arquivo de schema no SQL Editor do Supabase:
 
 ```bash
-# Acesse o SQL Editor do Supabase e execute os arquivos em:
-database/migrations/
-
-# Ordem de execução:
-1. 000_initial_schema.sql
-2. 001_admin_setup.sql
-3. 002_courtesy_users.sql
-4. 003_courtesy_functions.sql
-5. 004_activity_logs.sql
+# Acesse o SQL Editor do Supabase e execute:
+database/SCHEMA.sql
 ```
 
-📚 Veja mais detalhes em: [database/README.md](database/README.md)
+Este arquivo contém a estrutura completa do banco de dados com todas as tabelas, índices, políticas RLS e triggers necessários.
 
 ### 5. Inicie o servidor de desenvolvimento
 
@@ -104,24 +97,28 @@ Acesse: `http://localhost:5173`
 
 ```
 agenda-hof/
-├── database/              # Migrations e docs do banco
-│   ├── migrations/        # SQL migrations ordenados
-│   └── README.md
+├── database/
+│   └── SCHEMA.sql         # Schema completo do banco de dados
 ├── src/
-│   ├── components/        # Componentes React
-│   │   ├── admin/        # Componentes do admin
+│   ├── components/        # Componentes React reutilizáveis
+│   │   ├── admin/        # Componentes do painel admin
 │   │   └── ...
 │   ├── pages/            # Páginas da aplicação
-│   │   ├── admin/        # Páginas do painel admin
+│   │   ├── admin/        # Painel administrativo
 │   │   ├── dashboard/    # Dashboard principal
+│   │   ├── landing/      # Landing page pública
 │   │   ├── patients/     # Gestão de pacientes
 │   │   ├── procedures/   # Procedimentos
+│   │   ├── professionals/ # Profissionais
+│   │   ├── schedule/     # Agenda e agendamentos
+│   │   ├── stock/        # Controle de estoque
 │   │   └── ...
-│   ├── store/            # Zustand stores
-│   ├── types/            # TypeScript types
-│   ├── lib/              # Configurações (Supabase)
+│   ├── store/            # Zustand stores (gerenciamento de estado)
+│   ├── contexts/         # React contexts
+│   ├── types/            # TypeScript types e interfaces
+│   ├── lib/              # Configurações (Supabase, etc)
 │   └── utils/            # Funções utilitárias
-├── .env                  # Variáveis de ambiente
+├── .env                  # Variáveis de ambiente (não versionado)
 └── package.json
 ```
 

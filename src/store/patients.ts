@@ -26,13 +26,20 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      console.log('🔍 Buscando pacientes para user:', user.id)
+
       const { data, error } = await supabase
         .from('patients')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Erro ao buscar pacientes:', error)
+        throw error
+      }
+
+      console.log('✅ Pacientes encontrados:', data?.length || 0)
 
       const patients = (data || []).map(p => ({
         id: p.id,
@@ -100,6 +107,20 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      console.log('👤 Usuário autenticado (patients):', user.id)
+      console.log('📝 Dados a serem inseridos (patients):', {
+        user_id: user.id,
+        name: p.name,
+        cpf: p.cpf || null,
+        phone: p.phone || null,
+        email: p.email || null,
+        birth_date: p.birthDate || null,
+        address: p.address || null,
+        notes: p.notes || null,
+        photo_url: p.photoUrl || null,
+        planned_procedures: p.plannedProcedures || [],
+      })
+
       const { data, error } = await supabase
         .from('patients')
         .insert({
@@ -117,7 +138,12 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Erro do Supabase (patients):', error)
+        throw error
+      }
+
+      console.log('✅ Paciente inserido:', data)
 
       const newPatient: Patient = {
         id: data.id,

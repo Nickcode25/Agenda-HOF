@@ -64,6 +64,26 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      console.log('👤 Usuário autenticado:', user.id)
+      console.log('📝 Dados a serem inseridos:', {
+        user_id: user.id,
+        name: p.name,
+        specialty: p.specialty || null,
+        cro: p.registrationNumber || null,
+        cpf: p.cpf || null,
+        phone: p.phone || null,
+        email: p.email || null,
+        zip_code: p.cep || null,
+        street: p.street || null,
+        number: p.number || null,
+        complement: p.complement || null,
+        neighborhood: p.neighborhood || null,
+        city: p.city || null,
+        state: p.state || null,
+        photo_url: p.photoUrl || null,
+        is_active: p.active ?? true,
+      })
+
       const { data, error } = await supabase
         .from('professionals')
         .insert({
@@ -87,12 +107,18 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Erro do Supabase:', error)
+        throw error
+      }
+
+      console.log('✅ Profissional inserido:', data)
 
       await get().fetchAll()
       set({ loading: false })
       return data.id
     } catch (error: any) {
+      console.error('❌ Erro completo:', error)
       set({ error: error.message, loading: false })
       return null
     }
