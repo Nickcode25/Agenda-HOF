@@ -151,7 +151,7 @@ export default function StockList() {
                   </div>
                   <div className="flex gap-2">
                     <Link
-                      to={`/estoque/${item.id}/editar`}
+                      to={`/app/estoque/${item.id}/editar`}
                       className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
                     >
                       <Edit size={16} />

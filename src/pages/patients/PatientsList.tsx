@@ -25,13 +25,50 @@ export default function PatientsList() {
   const [procedureQuantity, setProcedureQuantity] = useState(1)
   const [paymentType, setPaymentType] = useState<'default' | 'cash' | 'card'>('default')
 
+  // Função para remover acentos
+  const removeAccents = (str: string) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  }
+
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
-    if (!query) return patients
-    return patients.filter(p =>
-      p.name.toLowerCase().includes(query) ||
-      p.cpf.replace(/\D/g,'').includes(query.replace(/\D/g,''))
-    )
+
+    console.log('🔍 [BUSCA] Estado q:', q)
+    console.log('🔍 [BUSCA] Query processada:', query)
+    console.log('🔍 [BUSCA] Total pacientes:', patients.length)
+
+    if (!query) {
+      console.log('✅ [BUSCA] Query vazia, retornando todos')
+      return patients
+    }
+
+    const normalizedQuery = removeAccents(query)
+    console.log('🔍 [BUSCA] Query normalizada:', normalizedQuery)
+
+    const result = patients.filter(p => {
+      const normalizedName = removeAccents(p.name.toLowerCase())
+
+      // Dividir o nome em palavras para buscar no início de cada palavra
+      const nameWords = normalizedName.split(' ')
+      const matchesNameWord = nameWords.some(word => word.startsWith(normalizedQuery))
+      const matchName = matchesNameWord || normalizedName.startsWith(normalizedQuery)
+
+      // Só busca no CPF/telefone se a query tiver números
+      const normalizedQueryCpf = query.replace(/\D/g, '')
+      let matchCpf = false
+      let matchPhone = false
+
+      if (normalizedQueryCpf.length > 0) {
+        const normalizedCpf = p.cpf.replace(/\D/g, '')
+        matchCpf = normalizedCpf.includes(normalizedQueryCpf)
+        matchPhone = p.phone ? p.phone.replace(/\D/g, '').includes(normalizedQueryCpf) : false
+      }
+
+      return matchName || matchCpf || matchPhone
+    })
+
+    console.log('📊 [BUSCA] Total resultados:', result.length)
+    return result
   }, [q, patients])
 
   const toggleExpanded = (patientId: string) => {
@@ -52,8 +89,8 @@ export default function PatientsList() {
 
     // Encontrar o procedimento selecionado para obter o valor
     const selectedProc = procedures.find(p => p.name === selectedProcedure)
-    let unitValue = selectedProc?.value || 0
-    
+    let unitValue = selectedProc?.price || 0
+
     // Ajustar valor baseado no tipo de pagamento
     if (paymentType === 'cash' && selectedProc?.cashValue) {
       unitValue = selectedProc.cashValue
@@ -263,7 +300,7 @@ export default function PatientsList() {
                             className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500"
                           >
                             <option value="">Selecione um procedimento</option>
-                            {procedures.filter(proc => proc.active).map(proc => (
+                            {procedures.filter(proc => proc.isActive).map(proc => (
                               <option key={proc.id} value={proc.name}>
                                 {proc.name}
                               </option>
@@ -300,14 +337,14 @@ export default function PatientsList() {
                           <div className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-green-400 text-sm font-medium">
                             {(() => {
                               const selectedProc = procedures.find(p => p.name === selectedProcedure)
-                              let unitValue = selectedProc?.value || 0
-                              
+                              let unitValue = selectedProc?.price || 0
+
                               if (paymentType === 'cash' && selectedProc?.cashValue) {
                                 unitValue = selectedProc.cashValue
                               } else if (paymentType === 'card' && selectedProc?.cardValue) {
                                 unitValue = selectedProc.cardValue
                               }
-                              
+
                               return formatCurrency(procedureQuantity * unitValue)
                             })()}
                           </div>

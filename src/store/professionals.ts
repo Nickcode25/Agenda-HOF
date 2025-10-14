@@ -6,7 +6,8 @@ export type ProfessionalsState = {
   professionals: Professional[]
   loading: boolean
   error: string | null
-  fetchAll: () => Promise<void>
+  fetched: boolean
+  fetchAll: (force?: boolean) => Promise<void>
   add: (p: Omit<Professional, 'id' | 'createdAt'>) => Promise<string | null>
   update: (id: string, patch: Partial<Professional>) => Promise<void>
   remove: (id: string) => Promise<void>
@@ -17,12 +18,24 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
   professionals: [],
   loading: false,
   error: null,
+  fetched: false,
 
-  fetchAll: async () => {
+  fetchAll: async (force = false) => {
+    // Se já carregou e não é forçado, não carrega novamente
+    if (get().fetched && !force) {
+      console.log('⚡ [PROFESSIONALS] Usando cache - dados já carregados')
+      return
+    }
+
     set({ loading: true, error: null })
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Usuário não autenticado')
+      if (!user) {
+        console.error('❌ [PROFESSIONALS] Usuário não autenticado')
+        throw new Error('Usuário não autenticado')
+      }
+
+      console.log('👤 [PROFESSIONALS] Buscando para user:', user.id, '| Email:', user.email)
 
       const { data, error } = await supabase
         .from('professionals')
@@ -30,7 +43,12 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ [PROFESSIONALS] Erro do Supabase:', error)
+        throw error
+      }
+
+      console.log(`✅ [PROFESSIONALS] ${data?.length || 0} profissionais encontrados`)
 
       const professionals: Professional[] = (data || []).map(row => ({
         id: row.id,
@@ -52,9 +70,10 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
         createdAt: row.created_at,
       }))
 
-      set({ professionals, loading: false })
+      set({ professionals, loading: false, fetched: true })
     } catch (error: any) {
-      set({ error: error.message, loading: false })
+      console.error('❌ [PROFESSIONALS] Erro ao buscar:', error)
+      set({ error: error.message, loading: false, fetched: false })
     }
   },
 

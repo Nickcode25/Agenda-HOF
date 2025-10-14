@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Users, TrendingUp, X, Trash2, FileText } from 'lucide-react'
+import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Users, TrendingUp, X, Trash2, FileText, Search } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
 import { format } from 'date-fns'
@@ -11,25 +11,49 @@ export default function PlanDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { plans, subscriptions, addSubscription, addPayment, confirmPayment, removeSubscription, generateNextPayment } = useSubscriptionStore()
-  const { patients } = usePatients()
+  const { patients, fetchAll: fetchPatients } = usePatients()
 
-  const plan = plans.find(p => p.id === id)
-  const planSubscriptions = subscriptions.filter(s => s.planId === id)
-
-  // Filtrar pacientes que ainda não são assinantes deste plano
-  const subscribedPatientIds = planSubscriptions.map(s => s.patientId)
-  const availablePatients = patients.filter(p => !subscribedPatientIds.includes(p.id))
-
+  // Estados do componente
   const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState('')
   const [selectedPaymentId, setSelectedPaymentId] = useState('')
   const [selectedPatientId, setSelectedPatientId] = useState('')
+  const [searchPatient, setSearchPatient] = useState('')
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [paidAmount, setPaidAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('PIX')
   const [confirmPaymentMethod, setConfirmPaymentMethod] = useState('PIX')
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null)
+
+  // Carregar pacientes ao montar o componente
+  useEffect(() => {
+    fetchPatients()
+  }, [])
+
+  const plan = plans.find(p => p.id === id)
+  const planSubscriptions = subscriptions.filter(s => s.planId === id)
+
+  // Função para remover acentos
+  const removeAccents = (str: string) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  }
+
+  // Filtrar pacientes que ainda não são assinantes deste plano
+  const subscribedPatientIds = planSubscriptions.map(s => s.patientId)
+  const allAvailablePatients = patients.filter(p => !subscribedPatientIds.includes(p.id))
+
+  // Só mostrar pacientes quando houver busca (mínimo 2 caracteres)
+  const availablePatients = searchPatient && searchPatient.length >= 2
+    ? allAvailablePatients.filter(p => {
+        const search = removeAccents(searchPatient.toLowerCase())
+        return (
+          removeAccents(p.name.toLowerCase()).includes(search) ||
+          p.cpf.replace(/\D/g, '').includes(search.replace(/\D/g, '')) ||
+          p.phone.replace(/\D/g, '').includes(search.replace(/\D/g, ''))
+        )
+      })
+    : []
 
   if (!plan) {
     return (
@@ -104,6 +128,7 @@ export default function PlanDetail() {
 
   const resetForm = () => {
     setSelectedPatientId('')
+    setSearchPatient('')
     setPaymentDate(new Date().toISOString().split('T')[0])
     setPaidAmount(plan.price.toString())
     setPaymentMethod('PIX')
@@ -417,7 +442,7 @@ export default function PlanDetail() {
       {/* Modal Adicionar Assinante */}
       {showAddSubscriberModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-2xl">
+          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Adicionar Assinante ao {plan.name}</h2>
               <button onClick={() => setShowAddSubscriberModal(false)} className="text-gray-400 hover:text-white">
@@ -425,7 +450,7 @@ export default function PlanDetail() {
               </button>
             </div>
 
-            {availablePatients.length === 0 ? (
+            {allAvailablePatients.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="mx-auto mb-4 text-gray-500" size={48} />
                 <h3 className="text-xl font-semibold text-gray-300 mb-2">
@@ -446,25 +471,71 @@ export default function PlanDetail() {
                 )}
               </div>
             ) : (
-              <form onSubmit={handleAddSubscriber} className="space-y-4">
+              <form onSubmit={handleAddSubscriber} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Paciente *</label>
-                  <select
-                    required
-                    value={selectedPatientId}
-                    onChange={(e) => setSelectedPatientId(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                  >
-                    <option value="">Selecione um paciente</option>
-                    {availablePatients.map((patient) => (
-                      <option key={patient.id} value={patient.id}>
-                        {patient.name} - {patient.cpf}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-sm text-gray-400 mt-2">
-                    {availablePatients.length} paciente(s) disponível(is)
-                  </p>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                    Buscar e Selecionar Paciente
+                  </label>
+
+                  {/* Campo de Busca */}
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nome, CPF ou telefone..."
+                      value={searchPatient}
+                      onChange={(e) => setSearchPatient(e.target.value)}
+                      className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-orange-500"
+                    />
+                  </div>
+
+                  {/* Grid de Cards de Pacientes */}
+                  {!searchPatient || searchPatient.length < 2 ? (
+                    <div className="text-center py-12 bg-gray-700/30 rounded-lg border border-gray-600">
+                      <Search className="mx-auto mb-3 text-gray-500" size={40} />
+                      <p className="text-gray-400 mb-1">Digite ao menos 2 caracteres para buscar</p>
+                      <p className="text-sm text-gray-500">
+                        {allAvailablePatients.length} paciente(s) disponível(is)
+                      </p>
+                    </div>
+                  ) : availablePatients.length === 0 ? (
+                    <div className="text-center py-8 bg-gray-700/30 rounded-lg border border-gray-600">
+                      <Search className="mx-auto mb-3 text-gray-500" size={40} />
+                      <p className="text-gray-400">Nenhum paciente encontrado com "{searchPatient}"</p>
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1 scrollbar-hide">
+                      {availablePatients.map((patient) => (
+                        <button
+                          key={patient.id}
+                          type="button"
+                          onClick={() => setSelectedPatientId(patient.id)}
+                          className={`text-left p-4 rounded-lg border-2 transition-all ${
+                            selectedPatientId === patient.id
+                              ? 'border-orange-500 bg-orange-500/10'
+                              : 'border-gray-600 bg-gray-700 hover:border-gray-500 hover:bg-gray-650'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-white mb-1">{patient.name}</h3>
+                              <p className="text-sm text-gray-400">{patient.cpf}</p>
+                              <p className="text-sm text-gray-400">{patient.phone}</p>
+                            </div>
+                            {selectedPatientId === patient.id && (
+                              <CheckCircle className="text-orange-400 flex-shrink-0" size={20} />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {!selectedPatientId && (
+                    <p className="text-sm text-yellow-400 mt-2">
+                      ⚠️ Selecione um paciente para continuar
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">

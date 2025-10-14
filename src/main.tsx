@@ -81,6 +81,7 @@ const router = createBrowserRouter([
 
       { path: 'estoque', element: <StockList /> },
       { path: 'estoque/novo', element: <StockForm /> },
+      { path: 'estoque/:id/editar', element: <StockForm /> },
 
       { path: 'vendas', element: <SalesList /> },
       { path: 'vendas/nova', element: <SaleForm /> },

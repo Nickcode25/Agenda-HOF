@@ -6,8 +6,9 @@ export type PatientsState = {
   patients: Patient[]
   loading: boolean
   error: string | null
+  fetched: boolean
   // Actions
-  fetchAll: () => Promise<void>
+  fetchAll: (force?: boolean) => Promise<void>
   search: (query: string) => Promise<void>
   add: (p: Omit<Patient, 'id' | 'createdAt'>) => Promise<string | null>
   update: (id: string, patch: Partial<Patient>) => Promise<void>
@@ -19,14 +20,24 @@ export const usePatients = create<PatientsState>()((set, get) => ({
   patients: [],
   loading: false,
   error: null,
+  fetched: false,
 
-  fetchAll: async () => {
+  fetchAll: async (force = false) => {
+    // Se já carregou e não é forçado, não carrega novamente
+    if (get().fetched && !force) {
+      console.log('⚡ [PATIENTS] Usando cache - dados já carregados')
+      return
+    }
+
     set({ loading: true, error: null })
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Usuário não autenticado')
+      if (!user) {
+        console.error('❌ [PATIENTS] Usuário não autenticado')
+        throw new Error('Usuário não autenticado')
+      }
 
-      console.log('🔍 Buscando pacientes para user:', user.id)
+      console.log('👤 [PATIENTS] Buscando para user:', user.id, '| Email:', user.email)
 
       const { data, error } = await supabase
         .from('patients')
@@ -35,29 +46,35 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ Erro ao buscar pacientes:', error)
+        console.error('❌ [PATIENTS] Erro do Supabase:', error)
         throw error
       }
 
-      console.log('✅ Pacientes encontrados:', data?.length || 0)
+      console.log(`✅ [PATIENTS] ${data?.length || 0} pacientes encontrados`)
 
       const patients = (data || []).map(p => ({
         id: p.id,
         name: p.name,
         cpf: p.cpf || '',
         phone: p.phone || '',
-        email: p.email || '',
-        birthDate: p.birth_date || '',
-        address: p.address || '',
+        cep: p.cep || '',
+        street: p.street || '',
+        number: p.number || '',
+        complement: p.complement || '',
+        neighborhood: p.neighborhood || '',
+        city: p.city || '',
+        state: p.state || '',
+        clinicalInfo: p.clinical_info || '',
         notes: p.notes || '',
         photoUrl: p.photo_url || undefined,
         plannedProcedures: p.planned_procedures || [],
         createdAt: p.created_at,
       }))
 
-      set({ patients, loading: false })
+      set({ patients, loading: false, fetched: true })
     } catch (error: any) {
-      set({ error: error.message, loading: false })
+      console.error('❌ [PATIENTS] Erro ao buscar:', error)
+      set({ error: error.message, loading: false, fetched: false })
     }
   },
 
@@ -86,9 +103,14 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         name: p.name,
         cpf: p.cpf || '',
         phone: p.phone || '',
-        email: p.email || '',
-        birthDate: p.birth_date || '',
-        address: p.address || '',
+        cep: p.cep || '',
+        street: p.street || '',
+        number: p.number || '',
+        complement: p.complement || '',
+        neighborhood: p.neighborhood || '',
+        city: p.city || '',
+        state: p.state || '',
+        clinicalInfo: p.clinical_info || '',
         notes: p.notes || '',
         photoUrl: p.photo_url || undefined,
         plannedProcedures: p.planned_procedures || [],
@@ -107,30 +129,21 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      console.log('👤 Usuário autenticado (patients):', user.id)
-      console.log('📝 Dados a serem inseridos (patients):', {
-        user_id: user.id,
-        name: p.name,
-        cpf: p.cpf || null,
-        phone: p.phone || null,
-        email: p.email || null,
-        birth_date: p.birthDate || null,
-        address: p.address || null,
-        notes: p.notes || null,
-        photo_url: p.photoUrl || null,
-        planned_procedures: p.plannedProcedures || [],
-      })
-
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('patients')
         .insert({
           user_id: user.id,
           name: p.name,
           cpf: p.cpf || null,
           phone: p.phone || null,
-          email: p.email || null,
-          birth_date: p.birthDate || null,
-          address: p.address || null,
+          cep: p.cep || null,
+          street: p.street || null,
+          number: p.number || null,
+          complement: p.complement || null,
+          neighborhood: p.neighborhood || null,
+          city: p.city || null,
+          state: p.state || null,
+          clinical_info: p.clinicalInfo || null,
           notes: p.notes || null,
           photo_url: p.photoUrl || null,
           planned_procedures: p.plannedProcedures || [],
@@ -143,16 +156,19 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         throw error
       }
 
-      console.log('✅ Paciente inserido:', data)
-
       const newPatient: Patient = {
         id: data.id,
         name: data.name,
         cpf: data.cpf || '',
         phone: data.phone || '',
-        email: data.email || '',
-        birthDate: data.birth_date || '',
-        address: data.address || '',
+        cep: data.cep || '',
+        street: data.street || '',
+        number: data.number || '',
+        complement: data.complement || '',
+        neighborhood: data.neighborhood || '',
+        city: data.city || '',
+        state: data.state || '',
+        clinicalInfo: data.clinical_info || '',
         notes: data.notes || '',
         photoUrl: data.photo_url || undefined,
         plannedProcedures: data.planned_procedures || [],
@@ -178,9 +194,14 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       if (patch.name !== undefined) updateData.name = patch.name
       if (patch.cpf !== undefined) updateData.cpf = patch.cpf || null
       if (patch.phone !== undefined) updateData.phone = patch.phone || null
-      if (patch.email !== undefined) updateData.email = patch.email || null
-      if (patch.birthDate !== undefined) updateData.birth_date = patch.birthDate || null
-      if (patch.address !== undefined) updateData.address = patch.address || null
+      if (patch.cep !== undefined) updateData.cep = patch.cep || null
+      if (patch.street !== undefined) updateData.street = patch.street || null
+      if (patch.number !== undefined) updateData.number = patch.number || null
+      if (patch.complement !== undefined) updateData.complement = patch.complement || null
+      if (patch.neighborhood !== undefined) updateData.neighborhood = patch.neighborhood || null
+      if (patch.city !== undefined) updateData.city = patch.city || null
+      if (patch.state !== undefined) updateData.state = patch.state || null
+      if (patch.clinicalInfo !== undefined) updateData.clinical_info = patch.clinicalInfo || null
       if (patch.notes !== undefined) updateData.notes = patch.notes || null
       if (patch.photoUrl !== undefined) updateData.photo_url = patch.photoUrl || null
       if (patch.plannedProcedures !== undefined) updateData.planned_procedures = patch.plannedProcedures

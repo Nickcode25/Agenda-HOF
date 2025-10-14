@@ -22,7 +22,8 @@ type ProceduresState = {
   procedures: Procedure[]
   loading: boolean
   error: string | null
-  fetchAll: () => Promise<void>
+  fetched: boolean
+  fetchAll: (force?: boolean) => Promise<void>
   add: (p: Omit<Procedure, 'id' | 'createdAt'>) => Promise<string | null>
   update: (id: string, patch: Partial<Procedure>) => Promise<void>
   remove: (id: string) => Promise<void>
@@ -33,12 +34,24 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
   procedures: [],
   loading: false,
   error: null,
+  fetched: false,
 
-  fetchAll: async () => {
+  fetchAll: async (force = false) => {
+    // Se já carregou e não é forçado, não carrega novamente
+    if (get().fetched && !force) {
+      console.log('⚡ [PROCEDURES] Usando cache - dados já carregados')
+      return
+    }
+
     set({ loading: true, error: null })
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Usuário não autenticado')
+      if (!user) {
+        console.error('❌ [PROCEDURES] Usuário não autenticado')
+        throw new Error('Usuário não autenticado')
+      }
+
+      console.log('👤 [PROCEDURES] Buscando para user:', user.id, '| Email:', user.email)
 
       const { data, error } = await supabase
         .from('procedures')
@@ -46,7 +59,12 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
         .eq('user_id', user.id)
         .order('name', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ [PROCEDURES] Erro do Supabase:', error)
+        throw error
+      }
+
+      console.log(`✅ [PROCEDURES] ${data?.length || 0} procedimentos encontrados`)
 
       const procedures = (data || []).map(p => ({
         id: p.id,
@@ -62,9 +80,10 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
         createdAt: p.created_at,
       }))
 
-      set({ procedures, loading: false })
+      set({ procedures, loading: false, fetched: true })
     } catch (error: any) {
-      set({ error: error.message, loading: false })
+      console.error('❌ [PROCEDURES] Erro ao buscar:', error)
+      set({ error: error.message, loading: false, fetched: false })
     }
   },
 

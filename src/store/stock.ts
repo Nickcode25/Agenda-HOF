@@ -9,9 +9,10 @@ interface StockStore {
   alerts: StockAlert[]
   loading: boolean
   error: string | null
-  
+  fetched: boolean
+
   // Fetch data
-  fetchItems: () => Promise<void>
+  fetchItems: (force?: boolean) => Promise<void>
   
   // Stock Items
   addItem: (item: Omit<StockItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string | null>
@@ -42,12 +43,24 @@ export const useStock = create<StockStore>()(
       alerts: [],
       loading: false,
       error: null,
+      fetched: false,
 
-      fetchItems: async () => {
+      fetchItems: async (force = false) => {
+        // Se já carregou e não é forçado, não carrega novamente
+        if (get().fetched && !force) {
+          console.log('⚡ [STOCK] Usando cache - dados já carregados')
+          return
+        }
+
         set({ loading: true, error: null })
         try {
           const { data: { user } } = await supabase.auth.getUser()
-          if (!user) throw new Error('Usuário não autenticado')
+          if (!user) {
+            console.error('❌ [STOCK] Usuário não autenticado')
+            throw new Error('Usuário não autenticado')
+          }
+
+          console.log('👤 [STOCK] Buscando para user:', user.id)
 
           const { data, error } = await supabase
             .from('stock')
@@ -55,7 +68,12 @@ export const useStock = create<StockStore>()(
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
 
-          if (error) throw error
+          if (error) {
+            console.error('❌ [STOCK] Erro do Supabase:', error)
+            throw error
+          }
+
+          console.log(`✅ [STOCK] ${data?.length || 0} itens encontrados`)
 
           const items: StockItem[] = (data || []).map(row => ({
             id: row.id,
@@ -73,10 +91,11 @@ export const useStock = create<StockStore>()(
             updatedAt: row.updated_at,
           }))
 
-          set({ items, loading: false })
+          set({ items, loading: false, fetched: true })
           get().generateAlerts()
         } catch (error: any) {
-          set({ error: error.message, loading: false })
+          console.error('❌ [STOCK] Erro ao buscar:', error)
+          set({ error: error.message, loading: false, fetched: false })
         }
       },
 

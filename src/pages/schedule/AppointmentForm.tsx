@@ -7,7 +7,7 @@ import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import type { PlannedProcedure } from '@/types/patient'
-import { Save, ArrowLeft, Package } from 'lucide-react'
+import { Save, ArrowLeft, Package, AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/currency'
 
@@ -18,7 +18,7 @@ export default function AppointmentForm() {
   const professionals = useProfessionals(s => s.professionals.filter(p => p.active))
   const fetchProfessionals = useProfessionals(s => s.fetchAll)
   const { procedures: registeredProcedures, fetchAll: fetchProcedures } = useProcedures()
-  const { items: stockItems, fetchItems: fetchStock } = useStock()
+  const { items: stockItems, fetchItems } = useStock()
   const { selectedProfessional } = useProfessionalContext()
   const add = useSchedule(s => s.addAppointment)
   const fetchAppointments = useSchedule(s => s.fetchAppointments)
@@ -29,15 +29,10 @@ export default function AppointmentForm() {
     fetchPatients()
     fetchProfessionals()
     fetchProcedures()
-    fetchStock()
+    fetchItems()
   }, [])
 
   const [selectedProcedureId, setSelectedProcedureId] = useState('')
-  const [selectedProducts, setSelectedProducts] = useState<Array<{
-    category: string
-    stockItemId: string
-    quantity: number
-  }>>([])
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
 
@@ -47,6 +42,11 @@ export default function AppointmentForm() {
     : ''
 
   const selectedProcedure = registeredProcedures.find(p => p.id === selectedProcedureId)
+
+  // Obter produtos disponíveis da categoria do procedimento selecionado
+  const availableProducts = selectedProcedure?.category
+    ? stockItems.filter(item => item.category === selectedProcedure.category)
+    : []
 
   // Calcular horário de término automaticamente baseado na duração do procedimento
   const handleStartTimeChange = (time: string) => {
@@ -63,26 +63,9 @@ export default function AppointmentForm() {
     }
   }
 
-  // Quando o procedimento mudar, inicializar os produtos selecionados
+  // Quando o procedimento mudar
   const handleProcedureChange = (procId: string) => {
     setSelectedProcedureId(procId)
-    const proc = registeredProcedures.find(p => p.id === procId)
-
-    if (proc?.stockCategories && proc.stockCategories.length > 0) {
-      setSelectedProducts(proc.stockCategories.map(cat => ({
-        category: cat.category,
-        stockItemId: '',
-        quantity: cat.quantityUsed
-      })))
-    } else {
-      setSelectedProducts([])
-    }
-  }
-
-  const updateSelectedProduct = (index: number, field: 'stockItemId' | 'quantity', value: string | number) => {
-    const updated = [...selectedProducts]
-    updated[index] = { ...updated[index], [field]: value }
-    setSelectedProducts(updated)
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -106,16 +89,12 @@ export default function AppointmentForm() {
     const start = startDateTime.toISOString()
     const end = endDateTime.toISOString()
 
-    // Filtrar apenas produtos que têm stockItemId selecionado
-    const validProducts = selectedProducts.filter(p => p.stockItemId)
-
     // Adicionar agendamento
     const appointmentId = await add({
       patientId,
       patientName: patient?.name || '',
       procedure: selectedProcedure?.name || '',
       procedureId: selectedProcedureId || undefined,
-      selectedProducts: validProducts.length > 0 ? validProducts : undefined,
       professional: professional?.name || '',
       room: String(data.get('room')||''),
       start,
@@ -213,60 +192,89 @@ export default function AppointmentForm() {
             )}
           </div>
 
-          {/* Produtos utilizados no procedimento */}
-          {selectedProducts.length > 0 && (
+          {/* Mostrar categoria e produtos disponíveis (apenas visualização) */}
+          {selectedProcedure && (
             <div className="md:col-span-2">
-              <div className="bg-gray-700/30 border border-gray-600 rounded-xl p-4">
+              <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
                 <div className="flex items-center gap-2 mb-3">
-                  <Package size={18} className="text-orange-400" />
-                  <h4 className="text-sm font-medium text-gray-300">Selecione os produtos que serão utilizados:</h4>
+                  <Package size={18} className="text-orange-500" />
+                  <h4 className="font-medium text-white">
+                    Categoria: {selectedProcedure.category || 'Não definida'}
+                  </h4>
                 </div>
-                <div className="space-y-3">
-                  {selectedProducts.map((product, index) => {
-                    // Filtrar produtos da categoria
-                    const productsInCategory = stockItems.filter(item => item.category === product.category)
 
-                    return (
-                      <div key={index} className="bg-gray-700/50 rounded-lg p-3 border border-gray-600">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1">
-                            <label className="block text-xs font-medium text-orange-400 mb-2">
-                              {product.category}
-                            </label>
-                            <select
-                              value={product.stockItemId}
-                              onChange={(e) => updateSelectedProduct(index, 'stockItemId', e.target.value)}
-                              className="w-full bg-gray-600 border border-gray-500 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20"
-                            >
-                              <option value="">Selecione marca/produto</option>
-                              {productsInCategory.map(item => (
-                                <option key={item.id} value={item.id}>
-                                  {item.brand} - {item.name} (Estoque: {item.quantity} {item.unit})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="w-28">
-                            <label className="block text-xs font-medium text-gray-400 mb-2">Quantidade</label>
-                            <input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={product.quantity}
-                              onChange={(e) => updateSelectedProduct(index, 'quantity', parseInt(e.target.value) || 1)}
-                              className="w-full bg-gray-600 border border-gray-500 text-white rounded px-3 py-2 text-center focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20"
+                {selectedProcedure.category ? (
+                  availableProducts.length > 0 ? (
+                    <div>
+                      <p className="text-sm text-gray-400 mb-3">
+                        Produtos disponíveis nesta categoria:
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {availableProducts.map(product => (
+                          <div
+                            key={product.id}
+                            className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg border border-gray-600"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white truncate">
+                                {product.name}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                Estoque: {product.quantity} {product.unit}
+                              </p>
+                            </div>
+                            <div
+                              className={`ml-2 w-2 h-2 rounded-full ${
+                                product.quantity > product.minQuantity
+                                  ? 'bg-green-500'
+                                  : product.quantity > 0
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
+                              }`}
+                              title={
+                                product.quantity > product.minQuantity
+                                  ? 'Em estoque'
+                                  : product.quantity > 0
+                                  ? 'Estoque baixo'
+                                  : 'Sem estoque'
+                              }
                             />
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    )
-                  })}
-                </div>
+                      <p className="text-xs text-gray-500 mt-3">
+                        💡 O produto específico será escolhido durante a realização do procedimento
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                      <AlertTriangle size={16} className="text-yellow-500" />
+                      <p className="text-sm text-yellow-500">
+                        Nenhum produto cadastrado na categoria "{selectedProcedure.category}".{' '}
+                        <Link to="/app/estoque/novo" className="underline hover:text-yellow-400">
+                          Cadastrar produto
+                        </Link>
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <AlertTriangle size={16} className="text-blue-400" />
+                    <p className="text-sm text-blue-400">
+                      Este procedimento não possui categoria definida.{' '}
+                      <Link
+                        to={`/app/procedimentos/${selectedProcedure.id}/editar`}
+                        className="underline hover:text-blue-300"
+                      >
+                        Editar procedimento
+                      </Link>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Profissional *</label>
             <select

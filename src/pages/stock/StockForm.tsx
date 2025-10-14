@@ -1,14 +1,47 @@
-import { FormEvent, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { FormEvent, useState, useEffect } from 'react'
+import { useNavigate, Link, useParams } from 'react-router-dom'
 import { useStock } from '@/store/stock'
 import { parseCurrency } from '@/utils/currency'
 import { Save, ArrowLeft } from 'lucide-react'
 
 export default function StockForm() {
-  const { addItem } = useStock()
+  const { id } = useParams()
+  const { items, addItem, updateItem, fetchItems } = useStock()
   const navigate = useNavigate()
+  const isEditMode = !!id
+
+  const item = isEditMode ? items.find(i => i.id === id) : null
 
   const [cost, setCost] = useState('')
+  const [category, setCategory] = useState('')
+  const [brand, setBrand] = useState('')
+  const [name, setName] = useState('')
+  const [quantity, setQuantity] = useState('')
+  const [minQuantity, setMinQuantity] = useState('')
+  const [unit, setUnit] = useState('')
+
+  // Carregar item ao editar
+  useEffect(() => {
+    if (isEditMode) {
+      fetchItems()
+    }
+  }, [isEditMode])
+
+  // Preencher formulário quando em modo de edição
+  useEffect(() => {
+    if (item) {
+      setCategory(item.category)
+      setBrand(item.supplier || '')
+      setName(item.name)
+      setQuantity(item.quantity.toString())
+      setMinQuantity(item.minQuantity.toString())
+      setUnit(item.unit)
+      setCost(new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(item.costPrice || 0))
+    }
+  }, [item])
 
   // Função para formatar moeda durante a digitação
   function formatCurrency(value: string): string {
@@ -27,20 +60,25 @@ export default function StockForm() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const data = new FormData(e.currentTarget)
-    
-    const id = await addItem({
-      category: String(data.get('category') || ''),
-      supplier: String(data.get('brand') || ''),
-      name: String(data.get('name') || ''),
-      quantity: Number(data.get('quantity') || 0),
-      minQuantity: Number(data.get('minQuantity') || 0),
-      unit: String(data.get('unit') || ''),
+
+    const itemData = {
+      category,
+      supplier: brand,
+      name,
+      quantity: Number(quantity),
+      minQuantity: Number(minQuantity),
+      unit,
       costPrice: parseCurrency(cost),
-    })
-    
-    if (id) {
+    }
+
+    if (isEditMode && id) {
+      await updateItem(id, itemData)
       navigate('/app/estoque')
+    } else {
+      const newId = await addItem(itemData)
+      if (newId) {
+        navigate('/app/estoque')
+      }
     }
   }
 
@@ -52,8 +90,12 @@ export default function StockForm() {
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Adicionar Produto</h1>
-          <p className="text-gray-400">Cadastre um novo produto no estoque</p>
+          <h1 className="text-3xl font-bold text-white mb-1">
+            {isEditMode ? 'Editar Produto' : 'Adicionar Produto'}
+          </h1>
+          <p className="text-gray-400">
+            {isEditMode ? 'Atualize as informações do produto' : 'Cadastre um novo produto no estoque'}
+          </p>
         </div>
       </div>
 
@@ -64,7 +106,8 @@ export default function StockForm() {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Categoria *</label>
             <select
-              name="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
               required
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
@@ -86,7 +129,8 @@ export default function StockForm() {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Marca *</label>
             <input
-              name="brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
               required
               placeholder="Ex: Rennova, Allergan, Galderma..."
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
@@ -97,7 +141,8 @@ export default function StockForm() {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Produto *</label>
             <input
-              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
               placeholder="Ex: Nabota, Botulift, Dysport..."
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
@@ -108,7 +153,8 @@ export default function StockForm() {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade *</label>
             <input
-              name="quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
               type="number"
               min="0"
               step="1"
@@ -117,11 +163,12 @@ export default function StockForm() {
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade Mínima *</label>
             <input
-              name="minQuantity"
+              value={minQuantity}
+              onChange={(e) => setMinQuantity(e.target.value)}
               type="number"
               min="0"
               step="1"
@@ -131,11 +178,12 @@ export default function StockForm() {
             />
             <p className="text-xs text-gray-400 mt-1">Quantidade para alerta de estoque baixo</p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Unidade *</label>
-            <select 
-              name="unit" 
+            <select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
               required
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >

@@ -1,18 +1,21 @@
 import { FormEvent, useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
+import { useStock } from '@/store/stock'
 import { parseCurrency } from '@/utils/currency'
 import { Save, ArrowLeft } from 'lucide-react'
 
 export default function ProcedureEdit() {
   const { id } = useParams()
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
+  const { items: stockItems, fetchItems } = useStock()
   const navigate = useNavigate()
 
   const procedure = procedures.find(p => p.id === id)
 
   useEffect(() => {
     fetchAll()
+    fetchItems()
   }, [])
 
   const [value, setValue] = useState('')
@@ -21,12 +24,17 @@ export default function ProcedureEdit() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
+  const [category, setCategory] = useState('')
+
+  // Obter categorias únicas do estoque
+  const uniqueCategories = [...new Set(stockItems.map(item => item.category))].sort()
 
   useEffect(() => {
     if (procedure) {
       setName(procedure.name)
       setDescription(procedure.description || '')
       setDuration(procedure.durationMinutes?.toString() || '')
+      setCategory(procedure.category || '')
       setValue(formatCurrency(procedure.price))
       setCashValue(procedure.cashValue ? formatCurrency(procedure.cashValue) : '')
       setCardValue(procedure.cardValue ? formatCurrency(procedure.cardValue) : '')
@@ -83,6 +91,7 @@ export default function ProcedureEdit() {
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: description || undefined,
       durationMinutes: duration ? Number(duration) : undefined,
+      category: category || undefined,
     })
 
     navigate(`/app/procedimentos/${procedure.id}`)
@@ -122,15 +131,36 @@ export default function ProcedureEdit() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Procedimento *</label>
-            <input 
+            <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required 
+              required
               placeholder="Ex: Botox, Preenchimento Labial..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Categoria do Procedimento</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            >
+              <option value="">Selecione uma categoria</option>
+              {uniqueCategories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">
+              {uniqueCategories.length === 0
+                ? 'Nenhuma categoria disponível. Cadastre produtos no estoque primeiro.'
+                : 'Selecione a categoria de produto deste procedimento (ex: Toxina Botulínica, Preenchimento, etc.)'}
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Valor à Vista *</label>
             <input 

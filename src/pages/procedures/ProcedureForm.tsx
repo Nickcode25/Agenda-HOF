@@ -14,6 +14,7 @@ export default function ProcedureForm() {
   const [value, setValue] = useState('')
   const [cashValue, setCashValue] = useState('')
   const [cardValue, setCardValue] = useState('')
+  const [category, setCategory] = useState('')
   const [stockCategories, setStockCategories] = useState<Array<{
     category: string
     quantityUsed: number
@@ -83,6 +84,7 @@ export default function ProcedureForm() {
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: String(data.get('description')||''),
       durationMinutes: durationValue ? Number(durationValue) : undefined,
+      category: category || undefined,
       isActive: true,
       stockCategories: stockCategories.filter(item => item.category && item.quantityUsed > 0)
     }
@@ -122,14 +124,35 @@ export default function ProcedureForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Procedimento *</label>
-            <input 
-              name="name" 
-              required 
+            <input
+              name="name"
+              required
               placeholder="Ex: Botox, Preenchimento Labial..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Categoria do Procedimento</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            >
+              <option value="">Selecione uma categoria</option>
+              {uniqueCategories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">
+              {uniqueCategories.length === 0
+                ? 'Nenhuma categoria disponível. Cadastre produtos no estoque primeiro.'
+                : 'Selecione a categoria de produto deste procedimento (ex: Toxina Botulínica, Preenchimento, etc.)'}
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Valor à Vista *</label>
             <input 
