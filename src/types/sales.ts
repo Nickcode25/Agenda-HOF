@@ -33,7 +33,11 @@ export interface Sale {
   id: string
   professionalId: string
   professionalName: string
+  patientId?: string
+  patientName?: string
   items: SaleItem[]
+  subtotal: number
+  discount?: number
   totalAmount: number
   totalProfit: number
   paymentMethod: 'cash' | 'card' | 'pix' | 'transfer' | 'check'

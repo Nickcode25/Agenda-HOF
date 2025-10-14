@@ -1,4 +1,4 @@
-export type ProcedureType = 'Botox' | 'Preenchimento' | 'Bioestimulador' | 'Avaliação'
+export type ProcedureType = string
 
 export type Appointment = {
   id: string

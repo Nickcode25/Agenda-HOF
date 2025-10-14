@@ -25,7 +25,6 @@ export const usePatients = create<PatientsState>()((set, get) => ({
   fetchAll: async (force = false) => {
     // Se já carregou e não é forçado, não carrega novamente
     if (get().fetched && !force) {
-      console.log('⚡ [PATIENTS] Usando cache - dados já carregados')
       return
     }
 
@@ -33,11 +32,8 @@ export const usePatients = create<PatientsState>()((set, get) => ({
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        console.error('❌ [PATIENTS] Usuário não autenticado')
         throw new Error('Usuário não autenticado')
       }
-
-      console.log('👤 [PATIENTS] Buscando para user:', user.id, '| Email:', user.email)
 
       const { data, error } = await supabase
         .from('patients')
@@ -46,11 +42,9 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ [PATIENTS] Erro do Supabase:', error)
         throw error
       }
 
-      console.log(`✅ [PATIENTS] ${data?.length || 0} pacientes encontrados`)
 
       const patients = (data || []).map(p => ({
         id: p.id,
@@ -73,7 +67,6 @@ export const usePatients = create<PatientsState>()((set, get) => ({
 
       set({ patients, loading: false, fetched: true })
     } catch (error: any) {
-      console.error('❌ [PATIENTS] Erro ao buscar:', error)
       set({ error: error.message, loading: false, fetched: false })
     }
   },

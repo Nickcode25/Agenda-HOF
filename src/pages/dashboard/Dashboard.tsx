@@ -205,7 +205,7 @@ export default function Dashboard() {
                 <Scissors size={16} className="text-yellow-400" />
                 <div>
                   <p className="text-white font-medium">{proc.name}</p>
-                  <p className="text-xs text-yellow-400">{formatCurrency(proc.value)}</p>
+                  <p className="text-xs text-yellow-400">{formatCurrency(proc.value || proc.price)}</p>
                 </div>
               </div>
             ))}

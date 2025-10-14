@@ -24,7 +24,7 @@ export default function LandingPage() {
     const success = await signIn(email, password)
 
     if (success) {
-      navigate('/app/dashboard')
+      navigate('/app/agenda')
     } else {
       setError('Email ou senha incorretos')
       setLoading(false)

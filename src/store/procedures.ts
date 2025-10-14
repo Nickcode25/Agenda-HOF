@@ -6,6 +6,7 @@ export type Procedure = {
   name: string
   description?: string
   price: number
+  value?: number // alias para price (compatibilidade)
   cashValue?: number
   cardValue?: number
   durationMinutes: number
@@ -71,6 +72,7 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
         name: p.name,
         description: p.description || '',
         price: parseFloat(p.price),
+        value: parseFloat(p.price), // alias para compatibilidade
         cashValue: p.cash_value ? parseFloat(p.cash_value) : undefined,
         cardValue: p.card_value ? parseFloat(p.card_value) : undefined,
         durationMinutes: p.duration_minutes,

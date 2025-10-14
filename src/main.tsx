@@ -34,6 +34,8 @@ import SubscribersList from './pages/subscriptions/SubscribersList'
 import SubscriptionForm from './pages/subscriptions/SubscriptionForm'
 import SubscriptionReports from './pages/subscriptions/SubscriptionReports'
 import SubscriptionsMain from './pages/subscriptions/SubscriptionsMain'
+import StaffManagement from './pages/staff/StaffManagement'
+import RoleGuard from './components/RoleGuard'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminLayout from './components/admin/AdminLayout'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -58,8 +60,22 @@ const router = createBrowserRouter([
     path: '/app',
     element: <App />,
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: 'dashboard', element: <Dashboard /> },
+      {
+        index: true,
+        element: (
+          <RoleGuard requireOwner>
+            <Dashboard />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'dashboard',
+        element: (
+          <RoleGuard requireOwner>
+            <Dashboard />
+          </RoleGuard>
+        )
+      },
       { path: 'agenda', element: <ScheduleCalendar /> },
       { path: 'agenda/nova', element: <AppointmentForm /> },
       { path: 'agenda/fila', element: <Waitlist /> },
@@ -95,6 +111,15 @@ const router = createBrowserRouter([
       { path: 'mensalidades/assinantes', element: <SubscribersList /> },
       { path: 'mensalidades/assinantes/novo', element: <SubscriptionForm /> },
       { path: 'mensalidades/relatorios', element: <SubscriptionReports /> },
+
+      {
+        path: 'funcionarios',
+        element: (
+          <RoleGuard requireOwner>
+            <StaffManagement />
+          </RoleGuard>
+        )
+      },
     ],
   },
   {

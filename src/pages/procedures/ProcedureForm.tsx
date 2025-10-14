@@ -83,7 +83,7 @@ export default function ProcedureForm() {
       cashValue: cashValue ? parseCurrency(cashValue) : undefined,
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: String(data.get('description')||''),
-      durationMinutes: durationValue ? Number(durationValue) : undefined,
+      durationMinutes: durationValue ? Number(durationValue) : 0,
       category: category || undefined,
       isActive: true,
       stockCategories: stockCategories.filter(item => item.category && item.quantityUsed > 0)

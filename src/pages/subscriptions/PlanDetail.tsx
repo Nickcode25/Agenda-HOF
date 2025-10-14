@@ -50,7 +50,7 @@ export default function PlanDetail() {
         return (
           removeAccents(p.name.toLowerCase()).includes(search) ||
           p.cpf.replace(/\D/g, '').includes(search.replace(/\D/g, '')) ||
-          p.phone.replace(/\D/g, '').includes(search.replace(/\D/g, ''))
+          (p.phone?.replace(/\D/g, '') || '').includes(search.replace(/\D/g, ''))
         )
       })
     : []

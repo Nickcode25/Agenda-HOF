@@ -23,7 +23,6 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
   fetchAll: async (force = false) => {
     // Se já carregou e não é forçado, não carrega novamente
     if (get().fetched && !force) {
-      console.log('⚡ [PROFESSIONALS] Usando cache - dados já carregados')
       return
     }
 
@@ -31,11 +30,9 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        console.error('❌ [PROFESSIONALS] Usuário não autenticado')
         throw new Error('Usuário não autenticado')
       }
 
-      console.log('👤 [PROFESSIONALS] Buscando para user:', user.id, '| Email:', user.email)
 
       const { data, error } = await supabase
         .from('professionals')
@@ -44,11 +41,9 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ [PROFESSIONALS] Erro do Supabase:', error)
         throw error
       }
 
-      console.log(`✅ [PROFESSIONALS] ${data?.length || 0} profissionais encontrados`)
 
       const professionals: Professional[] = (data || []).map(row => ({
         id: row.id,
@@ -72,7 +67,6 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
 
       set({ professionals, loading: false, fetched: true })
     } catch (error: any) {
-      console.error('❌ [PROFESSIONALS] Erro ao buscar:', error)
       set({ error: error.message, loading: false, fetched: false })
     }
   },
@@ -82,26 +76,6 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
-
-      console.log('👤 Usuário autenticado:', user.id)
-      console.log('📝 Dados a serem inseridos:', {
-        user_id: user.id,
-        name: p.name,
-        specialty: p.specialty || null,
-        cro: p.registrationNumber || null,
-        cpf: p.cpf || null,
-        phone: p.phone || null,
-        email: p.email || null,
-        zip_code: p.cep || null,
-        street: p.street || null,
-        number: p.number || null,
-        complement: p.complement || null,
-        neighborhood: p.neighborhood || null,
-        city: p.city || null,
-        state: p.state || null,
-        photo_url: p.photoUrl || null,
-        is_active: p.active ?? true,
-      })
 
       const { data, error } = await supabase
         .from('professionals')
@@ -131,7 +105,6 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
         throw error
       }
 
-      console.log('✅ Profissional inserido:', data)
 
       await get().fetchAll()
       set({ loading: false })

@@ -1,16 +1,24 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { Calendar, Users, PlusCircle, ListChecks, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { useAuth } from '@/store/auth'
+import { useUserProfile } from '@/store/userProfile'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { professionals } = useProfessionals()
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
+  const { currentProfile, fetchCurrentProfile, isOwner } = useUserProfile()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) {
+      fetchCurrentProfile()
+    }
+  }, [user])
 
   const handleLogout = async () => {
     await signOut()
@@ -70,11 +78,17 @@ export default function App() {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 py-6 px-3 space-y-2">
-            <NavLink to="/app/dashboard" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
-              <BarChart3 size={22}/>
-              {sidebarOpen && <span className="font-medium">Dashboard</span>}
-            </NavLink>
+          <nav className="flex-1 py-6 px-3 space-y-1">
+            {/* Dashboard - só para owner */}
+            {currentProfile?.role === 'owner' && (
+              <NavLink to="/app/dashboard" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+                <BarChart3 size={22}/>
+                {sidebarOpen && <span className="font-medium">Dashboard</span>}
+              </NavLink>
+            )}
+
+            {/* Seção de Agendamento */}
+            {sidebarOpen && <div className="pt-4 pb-2 px-4"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Agendamento</p></div>}
             <NavLink to="/app/agenda" end className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
               <Calendar size={22}/>
               {sidebarOpen && <span className="font-medium">Agenda</span>}
@@ -87,18 +101,24 @@ export default function App() {
               <ListChecks size={22}/>
               {sidebarOpen && <span className="font-medium">Fila de Espera</span>}
             </NavLink>
-            <NavLink to="/app/procedimentos" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
-              <Scissors size={22}/>
-              {sidebarOpen && <span className="font-medium">Procedimentos</span>}
+
+            {/* Seção de Cadastros */}
+            {sidebarOpen && <div className="pt-4 pb-2 px-4"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cadastros</p></div>}
+            <NavLink to="/app/pacientes" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              <Users size={22}/>
+              {sidebarOpen && <span className="font-medium">Pacientes</span>}
             </NavLink>
             <NavLink to="/app/profissionais" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
               <Stethoscope size={22}/>
               {sidebarOpen && <span className="font-medium">Profissionais</span>}
             </NavLink>
-            <NavLink to="/app/pacientes" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
-              <Users size={22}/>
-              {sidebarOpen && <span className="font-medium">Pacientes</span>}
+            <NavLink to="/app/procedimentos" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+              <Scissors size={22}/>
+              {sidebarOpen && <span className="font-medium">Procedimentos</span>}
             </NavLink>
+
+            {/* Seção de Estoque e Vendas */}
+            {sidebarOpen && <div className="pt-4 pb-2 px-4"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Estoque & Vendas</p></div>}
             <NavLink to="/app/estoque" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
               <Package size={22}/>
               {sidebarOpen && <span className="font-medium">Estoque</span>}
@@ -107,10 +127,21 @@ export default function App() {
               <ShoppingCart size={22}/>
               {sidebarOpen && <span className="font-medium">Venda de Produtos</span>}
             </NavLink>
-            <NavLink to="/app/mensalidades" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
-              <CreditCard size={22}/>
-              {sidebarOpen && <span className="font-medium">Mensalidades</span>}
-            </NavLink>
+
+            {/* Seção Financeiro e Gestão - só para owner */}
+            {currentProfile?.role === 'owner' && (
+              <>
+                {sidebarOpen && <div className="pt-4 pb-2 px-4"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Financeiro & Gestão</p></div>}
+                <NavLink to="/app/mensalidades" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+                  <CreditCard size={22}/>
+                  {sidebarOpen && <span className="font-medium">Mensalidades</span>}
+                </NavLink>
+                <NavLink to="/app/funcionarios" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`}>
+                  <UserCog size={22}/>
+                  {sidebarOpen && <span className="font-medium">Funcionários</span>}
+                </NavLink>
+              </>
+            )}
           </nav>
 
           {/* User Info & Logout */}
@@ -118,7 +149,18 @@ export default function App() {
             {sidebarOpen && user && (
               <div className="mb-3 pb-3 border-b border-gray-700">
                 <p className="text-xs text-gray-400 mb-1">Logado como:</p>
-                <p className="text-sm text-white truncate">{user.email}</p>
+                <p className="text-sm text-white truncate">{currentProfile?.displayName || user.email}</p>
+                {currentProfile && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                      currentProfile.role === 'owner'
+                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                        : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    }`}>
+                      {currentProfile.role === 'owner' ? '👑 Administrador' : '👤 Funcionário'}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
             <button

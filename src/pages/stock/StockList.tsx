@@ -27,8 +27,8 @@ export default function StockList() {
       const query = searchQuery.toLowerCase()
       result = result.filter(item =>
         item.name.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query)
+        item.category.toLowerCase().includes(query) ||
+        item.notes?.toLowerCase().includes(query)
       )
     }
     
@@ -143,9 +143,11 @@ export default function StockList() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-white">{item.name}</h3>
-                      <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full border border-orange-500/30">
-                        {item.brand}
-                      </span>
+                      {item.supplier && (
+                        <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full border border-orange-500/30">
+                          {item.supplier}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-400 mb-2">{item.category}</p>
                   </div>
@@ -184,12 +186,12 @@ export default function StockList() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Custo unitário:</span>
-                    <span className="text-white">{formatCurrency(item.cost)}</span>
+                    <span className="text-white">{formatCurrency(item.costPrice)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Valor total:</span>
                     <span className="text-green-400 font-medium">
-                      {formatCurrency(item.quantity * item.cost)}
+                      {formatCurrency(item.quantity * item.costPrice)}
                     </span>
                   </div>
                 </div>

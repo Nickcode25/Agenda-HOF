@@ -37,7 +37,7 @@ export default function SaleForm() {
       const stockItem = stockItems.find(s => s.id === item.stockItemId)
       const salePrice = parseCurrency(item.salePrice)
       const totalPrice = salePrice * item.quantity
-      const unitCost = stockItem?.cost || 0
+      const unitCost = stockItem?.costPrice || 0
       const profit = (salePrice - unitCost) * item.quantity
 
       return {
@@ -110,6 +110,8 @@ export default function SaleForm() {
       professionalId: selectedProfessional,
       professionalName: professional.name,
       items: saleItemsData,
+      subtotal: totalAmount,
+      discount: 0,
       totalAmount,
       totalProfit,
       paymentMethod,

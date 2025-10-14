@@ -14,16 +14,17 @@
 
 ## ✨ Funcionalidades
 
-### 👥 Para Clientes (Dentistas)
+### 👥 Para Clientes (Clínicas)
 
 - **📅 Agenda Inteligente**: Calendário completo com visualização mensal/semanal
-- **🦷 Gestão de Pacientes**: Cadastro completo com histórico de procedimentos
-- **💉 Procedimentos**: Catálogo de procedimentos com orçamentos e controle
-- **👨‍⚕️ Profissionais**: Gerenciamento de dentistas e especialidades
-- **📦 Estoque**: Controle de materiais e produtos odontológicos
-- **💰 Vendas**: Gestão de vendas de produtos
+- **🦷 Gestão de Pacientes**: Cadastro completo com informações clínicas e endereço
+- **💉 Procedimentos**: Catálogo de procedimentos estéticos
+- **👨‍⚕️ Profissionais**: Gerenciamento de profissionais e especialidades
+- **📦 Estoque**: Controle de insumos e produtos
+- **💰 Vendas**: Gestão de vendas com comissionamento automático
 - **💳 Mensalidades**: Sistema de planos e assinaturas recorrentes
-- **📊 Dashboard**: Métricas e KPIs do consultório
+- **📊 Dashboard**: Métricas e KPIs da clínica (apenas owner)
+- **👤 Multi-Usuário**: Sistema de contas owner e staff com permissões diferenciadas
 
 ### 🔐 Para Administradores (SaaS)
 
@@ -76,14 +77,21 @@ VITE_SUPABASE_ANON_KEY=sua_chave_anonima
 
 ### 4. Configure o banco de dados
 
-Execute o arquivo de schema no SQL Editor do Supabase:
+Execute as migrations SQL no SQL Editor do Supabase (na ordem):
 
-```bash
-# Acesse o SQL Editor do Supabase e execute:
-database/SCHEMA.sql
+```sql
+-- 1. Sistema de roles e multi-usuário
+database/migrations/add_user_roles.sql
+
+-- 2. Permissões da tabela user_profiles
+database/migrations/grant_permissions.sql
+
+-- 3. (Opcional) Campos de endereço para pacientes
+database/migrations/add_address_fields_to_patients.sql
 ```
 
-Este arquivo contém a estrutura completa do banco de dados com todas as tabelas, índices, políticas RLS e triggers necessários.
+**Importante**: Desabilite a confirmação de email no Supabase:
+- Authentication → Providers → Email → Desmarque "Confirm email"
 
 ### 5. Inicie o servidor de desenvolvimento
 
@@ -140,6 +148,12 @@ Para acessar o painel administrativo:
 3. Gerencie clientes, métricas e alertas
 
 ## 🌟 Funcionalidades Destacadas
+
+### Sistema Multi-Usuário
+- **Owner (Proprietário)**: Acesso completo + Dashboard + Gerenciamento de funcionários
+- **Staff (Funcionário)**: Acesso operacional, sem Dashboard
+- Criação fácil de contas via `/app/funcionarios`
+- Dados compartilhados por clínica (`clinic_id`)
 
 ### Sistema de Activity Logs
 Registro automático via triggers SQL de:
