@@ -2,12 +2,15 @@ import { FormEvent, useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { Save, ArrowLeft } from 'lucide-react'
+import FileInput from '@/components/FileInput'
+import { useToast } from '@/hooks/useToast'
 
 export default function PatientEdit() {
   const { id } = useParams()
   const { patients, update } = usePatients(s => ({ patients: s.patients, update: s.update }))
   const patient = patients.find(p => p.id === id)
   const navigate = useNavigate()
+  const { show: showToast } = useToast()
 
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(patient?.photoUrl)
   const [cpf, setCpf] = useState(patient?.cpf || '')
@@ -98,11 +101,11 @@ export default function PatientEdit() {
         setCity(data.localidade || '')
         setState(data.uf || '')
       } else {
-        alert('CEP não encontrado')
+        showToast('CEP não encontrado', 'warning')
       }
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
-      alert('Erro ao buscar CEP')
+      showToast('Erro ao buscar CEP', 'error')
     } finally {
       setIsLoadingCep(false)
     }
@@ -136,6 +139,7 @@ export default function PatientEdit() {
       name: String(data.get('name')||''),
       cpf: cpf,
       phone: phone,
+      birth_date: String(data.get('birth_date')||''),
       cep: cep,
       street: street,
       number: number,
@@ -147,6 +151,7 @@ export default function PatientEdit() {
       notes: String(data.get('notes')||''),
       photoUrl,
     })
+    showToast('Paciente atualizado com sucesso!', 'success')
     navigate(`/app/pacientes/${id}`)
   }
 
@@ -164,10 +169,6 @@ export default function PatientEdit() {
         <Link to={`/pacientes/${id}`} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Editar Paciente</h1>
-          <p className="text-gray-400">Atualize os dados do paciente</p>
-        </div>
       </div>
 
       {/* Form */}
@@ -185,26 +186,36 @@ export default function PatientEdit() {
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">CPF *</label>
-            <input 
-              name="cpf" 
+            <input
+              name="cpf"
               value={cpf}
               onChange={handleCPFChange}
               placeholder="000.000.000-00"
               maxLength={14}
-              required 
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              required
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
-          
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Data de Nascimento</label>
+            <input
+              type="date"
+              name="birth_date"
+              defaultValue={patient.birth_date || ''}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
-            <input 
-              name="phone" 
+            <input
+              name="phone"
               value={phone}
               onChange={handlePhoneChange}
               placeholder="(00) 00000-0000"
               maxLength={15}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
           
@@ -307,13 +318,12 @@ export default function PatientEdit() {
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Foto</label>
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={handlePhoto} 
-              className="w-full text-gray-300" 
+            <FileInput
+              accept="image/*"
+              onChange={handlePhoto}
+              previewUrl={photoUrl}
+              buttonText="Selecionar Foto"
             />
-            {photoUrl && <img src={photoUrl} alt="Prévia" className="mt-2 h-24 w-24 object-cover rounded-xl border-2 border-orange-500" />}
           </div>
         </div>
         

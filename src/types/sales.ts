@@ -4,7 +4,9 @@ export interface Professional {
   cpf?: string
   phone?: string
   email?: string
+  birthDate?: string
   specialty?: string // Especialidade (Dermatologista, Esteticista, etc.)
+  registrationNumber?: string // CRO, CRM, COREN, etc.
   clinic?: string // Nome da clínica
   cep?: string
   street?: string

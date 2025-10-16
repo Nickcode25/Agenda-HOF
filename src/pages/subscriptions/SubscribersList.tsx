@@ -84,11 +84,7 @@ export default function SubscribersList() {
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Assinantes</h1>
-          <p className="text-gray-400">Gerencie os pacientes com planos de mensalidade</p>
-        </div>
+      <div className="flex items-center justify-end mb-8">
         <Link
           to="/app/mensalidades/assinantes/novo"
           className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors"

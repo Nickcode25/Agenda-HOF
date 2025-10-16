@@ -1,13 +1,15 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save } from 'lucide-react'
 
 export default function ProfessionalForm() {
   const { addProfessional } = useSales()
   const navigate = useNavigate()
 
   const [cep, setCep] = useState('')
+  const [cpf, setCpf] = useState('')
+  const [phone, setPhone] = useState('')
   const [isLoadingCep, setIsLoadingCep] = useState(false)
 
   // Função para formatar CEP
@@ -17,6 +19,36 @@ export default function ProfessionalForm() {
       return numbers
     }
     return `${numbers.slice(0, 5)}-${numbers.slice(5, 8)}`
+  }
+
+  // Função para formatar CPF
+  const formatCpf = (value: string) => {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length <= 3) {
+      return numbers
+    }
+    if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`
+    }
+    if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`
+    }
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`
+  }
+
+  // Função para formatar Telefone
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length <= 2) {
+      return numbers
+    }
+    if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+    }
+    if (numbers.length <= 10) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`
+    }
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
   }
 
   // Função para buscar endereço por CEP
@@ -52,57 +84,73 @@ export default function ProfessionalForm() {
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCep(e.target.value)
     setCep(formatted)
-    
+
     // Buscar automaticamente quando CEP estiver completo
-    if (formatted.length === 9) {
+    if (formatted.replace(/\D/g, '').length === 8) {
       fetchAddressByCep(formatted)
     }
   }
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCpf(e.target.value)
+    setCpf(formatted)
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value)
+    setPhone(formatted)
+  }
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    
-    const id = addProfessional({
-      name: String(data.get('name') || ''),
-      cpf: String(data.get('cpf') || '') || undefined,
-      phone: String(data.get('phone') || '') || undefined,
-      email: String(data.get('email') || '') || undefined,
-      specialty: String(data.get('specialty') || '') || undefined,
-      clinic: String(data.get('clinic') || '') || undefined,
-      cep: cep || undefined,
-      street: String(data.get('street') || '') || undefined,
-      number: String(data.get('number') || '') || undefined,
-      complement: String(data.get('complement') || '') || undefined,
-      neighborhood: String(data.get('neighborhood') || '') || undefined,
-      city: String(data.get('city') || '') || undefined,
-      state: String(data.get('state') || '') || undefined,
-      notes: String(data.get('notes') || '') || undefined,
-    })
-    
-    navigate('/vendas')
+
+    try {
+      const professionalData = {
+        name: String(data.get('name') || ''),
+        cpf: cpf || undefined,
+        phone: phone || undefined,
+        email: String(data.get('email') || '') || undefined,
+        birthDate: String(data.get('birthDate') || '') || undefined,
+        specialty: String(data.get('specialty') || '') || undefined,
+        registrationNumber: String(data.get('registrationNumber') || '') || undefined,
+        clinic: String(data.get('clinic') || '') || undefined,
+        cep: cep || undefined,
+        street: String(data.get('street') || '') || undefined,
+        number: String(data.get('number') || '') || undefined,
+        complement: String(data.get('complement') || '') || undefined,
+        neighborhood: String(data.get('neighborhood') || '') || undefined,
+        city: String(data.get('city') || '') || undefined,
+        state: String(data.get('state') || '') || undefined,
+        notes: String(data.get('notes') || '') || undefined,
+      }
+
+      console.log('📝 Salvando profissional:', professionalData)
+
+      const id = await addProfessional(professionalData)
+
+      if (id) {
+        console.log('✅ Profissional salvo com ID:', id)
+        navigate('/app/vendas')
+      } else {
+        console.error('❌ Erro ao salvar profissional')
+        alert('Erro ao cadastrar profissional. Verifique o console.')
+      }
+    } catch (error) {
+      console.error('❌ Erro ao cadastrar profissional:', error)
+      alert('Erro ao cadastrar profissional. Verifique o console.')
+    }
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/vendas" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Cadastrar Profissional</h1>
-          <p className="text-gray-400">Adicione um novo profissional comprador</p>
-        </div>
-      </div>
-
       {/* Form */}
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Basic Info */}
         <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Informações Básicas</h3>
           
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Nome Completo *</label>
               <input 
@@ -115,57 +163,78 @@ export default function ProfessionalForm() {
             
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">CPF</label>
-              <input 
-                name="cpf" 
+              <input
+                value={cpf}
+                onChange={handleCpfChange}
                 placeholder="000.000.000-00"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+                maxLength={14}
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
-              <input 
-                name="phone" 
-                type="tel"
+              <input
+                value={phone}
+                onChange={handlePhoneChange}
                 placeholder="(11) 99999-9999"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+                maxLength={15}
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">E-mail</label>
-              <input 
-                name="email" 
-                type="email"
-                placeholder="joao@exemplo.com"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              <label className="block text-sm font-medium text-gray-300 mb-2">Data de Nascimento</label>
+              <input
+                name="birthDate"
+                type="date"
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Especialidade</label>
-              <select 
+              <select
                 name="specialty"
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="">Selecione a especialidade</option>
-                <option value="Dermatologista">Dermatologista</option>
-                <option value="Cirurgião Plástico">Cirurgião Plástico</option>
-                <option value="Esteticista">Esteticista</option>
-                <option value="Fisioterapeuta Dermato-Funcional">Fisioterapeuta Dermato-Funcional</option>
-                <option value="Biomédico Esteta">Biomédico Esteta</option>
-                <option value="Enfermeiro Esteta">Enfermeiro Esteta</option>
+                <option value="Biomédico(a)">Biomédico(a)</option>
+                <option value="Biólogo(a)">Biólogo(a)</option>
                 <option value="Dentista">Dentista</option>
-                <option value="Outros">Outros</option>
+                <option value="Enfermeiro(a)">Enfermeiro(a)</option>
+                <option value="Esteticista">Esteticista</option>
+                <option value="Farmacêutico(a)">Farmacêutico(a)</option>
+                <option value="Fisioterapeuta">Fisioterapeuta</option>
+                <option value="Médico(a)">Médico(a)</option>
               </select>
             </div>
-            
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Registro Profissional</label>
+              <input
+                name="registrationNumber"
+                placeholder="CRO, CRM, COREN, etc"
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Clínica/Consultório</label>
-              <input 
-                name="clinic" 
+              <input
+                name="clinic"
                 placeholder="Nome da clínica ou consultório"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">E-mail</label>
+              <input
+                name="email"
+                type="email"
+                placeholder="joao@exemplo.com"
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
           </div>
@@ -273,7 +342,7 @@ export default function ProfessionalForm() {
             Cadastrar Profissional
           </button>
           <Link
-            to="/vendas"
+            to="/app/vendas"
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
           >
             Cancelar

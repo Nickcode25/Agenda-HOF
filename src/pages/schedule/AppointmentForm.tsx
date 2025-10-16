@@ -7,7 +7,7 @@ import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import type { PlannedProcedure } from '@/types/patient'
-import { Save, ArrowLeft, Package, AlertTriangle } from 'lucide-react'
+import { Save, Package, AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/currency'
 
@@ -140,20 +140,11 @@ export default function AppointmentForm() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/app/agenda" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Novo Agendamento</h1>
-          <div className="flex items-center gap-2">
-            <p className="text-gray-400">Preencha os dados do agendamento</p>
-            {selectedProfessionalName && (
-              <div className="flex items-center gap-2 bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm border border-orange-500/30">
-                <span>Agenda: {selectedProfessionalName}</span>
-              </div>
-            )}
+        {selectedProfessionalName && (
+          <div className="flex items-center gap-2 bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm border border-orange-500/30">
+            <span>Agenda: {selectedProfessionalName}</span>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Form */}

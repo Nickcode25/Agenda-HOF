@@ -22,6 +22,59 @@ import { ptBR } from 'date-fns/locale/pt-BR'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
 
+// Cores por tipo de procedimento
+const getProcedureColor = (procedure: string) => {
+  const procedureLower = procedure.toLowerCase()
+
+  if (procedureLower.includes('botox') || procedureLower.includes('toxina')) {
+    return {
+      bg: 'bg-purple-500/20 hover:bg-purple-500/30',
+      border: 'border-purple-500/30 hover:border-purple-500/50',
+      text: 'text-purple-300',
+      icon: 'text-purple-400'
+    }
+  }
+  if (procedureLower.includes('preenchimento') || procedureLower.includes('ácido')) {
+    return {
+      bg: 'bg-pink-500/20 hover:bg-pink-500/30',
+      border: 'border-pink-500/30 hover:border-pink-500/50',
+      text: 'text-pink-300',
+      icon: 'text-pink-400'
+    }
+  }
+  if (procedureLower.includes('bioestimulador') || procedureLower.includes('sculptra')) {
+    return {
+      bg: 'bg-cyan-500/20 hover:bg-cyan-500/30',
+      border: 'border-cyan-500/30 hover:border-cyan-500/50',
+      text: 'text-cyan-300',
+      icon: 'text-cyan-400'
+    }
+  }
+  if (procedureLower.includes('limpeza') || procedureLower.includes('peeling')) {
+    return {
+      bg: 'bg-green-500/20 hover:bg-green-500/30',
+      border: 'border-green-500/30 hover:border-green-500/50',
+      text: 'text-green-300',
+      icon: 'text-green-400'
+    }
+  }
+  if (procedureLower.includes('avaliação') || procedureLower.includes('consulta')) {
+    return {
+      bg: 'bg-blue-500/20 hover:bg-blue-500/30',
+      border: 'border-blue-500/30 hover:border-blue-500/50',
+      text: 'text-blue-300',
+      icon: 'text-blue-400'
+    }
+  }
+
+  return {
+    bg: 'bg-orange-500/20 hover:bg-orange-500/30',
+    border: 'border-orange-500/30 hover:border-orange-500/50',
+    text: 'text-orange-300',
+    icon: 'text-orange-400'
+  }
+}
+
 type ViewMode = 'day' | 'week' | 'month'
 
 type CalendarProps = {
@@ -138,22 +191,25 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                   {hour.toString().padStart(2, '0')}:00
                 </div>
                 <div className="flex-1 space-y-2">
-                  {hourAppointments.map(apt => (
-                    <button
-                      key={apt.id}
-                      onClick={() => onAppointmentClick(apt)}
-                      className="w-full text-left p-3 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 hover:border-orange-500/50 transition-all"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock size={14} className="text-orange-400" />
-                        <span className="text-orange-300 font-medium text-sm">
-                          {format(parseISO(apt.start), 'HH:mm')} - {format(parseISO(apt.end), 'HH:mm')}
-                        </span>
-                      </div>
-                      <div className="text-white font-medium">{apt.patientName}</div>
-                      <div className="text-gray-400 text-sm">{apt.procedure}</div>
-                    </button>
-                  ))}
+                  {hourAppointments.map(apt => {
+                    const colors = getProcedureColor(apt.procedure)
+                    return (
+                      <button
+                        key={apt.id}
+                        onClick={() => onAppointmentClick(apt)}
+                        className={`w-full text-left p-3 rounded-lg ${colors.bg} border ${colors.border} transition-all`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Clock size={14} className={colors.icon} />
+                          <span className={`${colors.text} font-medium text-sm`}>
+                            {format(parseISO(apt.start), 'HH:mm')} - {format(parseISO(apt.end), 'HH:mm')}
+                          </span>
+                        </div>
+                        <div className="text-white font-medium">{apt.patientName}</div>
+                        <div className="text-gray-400 text-sm">{apt.procedure}</div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )
@@ -219,18 +275,21 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                     const hourAppointments = getAppointmentsForDayAndHour(day, hour)
                     return (
                       <div key={day.toString()} className="min-h-[60px] border border-gray-700/50 rounded-lg p-1">
-                        {hourAppointments.map(apt => (
-                          <button
-                            key={apt.id}
-                            onClick={() => onAppointmentClick(apt)}
-                            className="w-full text-left p-1 rounded bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 transition-all mb-1"
-                          >
-                            <div className="text-xs text-orange-300 font-medium">
-                              {format(parseISO(apt.start), 'HH:mm')}
-                            </div>
-                            <div className="text-xs text-white truncate">{apt.patientName}</div>
-                          </button>
-                        ))}
+                        {hourAppointments.map(apt => {
+                          const colors = getProcedureColor(apt.procedure)
+                          return (
+                            <button
+                              key={apt.id}
+                              onClick={() => onAppointmentClick(apt)}
+                              className={`w-full text-left p-1 rounded ${colors.bg} border ${colors.border} transition-all mb-1`}
+                            >
+                              <div className={`text-xs ${colors.text} font-medium`}>
+                                {format(parseISO(apt.start), 'HH:mm')}
+                              </div>
+                              <div className="text-xs text-white truncate">{apt.patientName}</div>
+                            </button>
+                          )
+                        })}
                       </div>
                     )
                   })}
@@ -317,26 +376,29 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
 
                     {/* Appointments */}
                     <div className="space-y-1">
-                      {dayAppointments.slice(0, 3).map(apt => (
-                        <button
-                          key={apt.id}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onAppointmentClick(apt)
-                          }}
-                          className="w-full text-left px-2 py-1 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 hover:border-orange-500/50 transition-all group"
-                        >
-                          <div className="flex items-center gap-1 text-xs">
-                            <Clock size={10} className="text-orange-400" />
-                            <span className="text-orange-300 font-medium">
-                              {format(parseISO(apt.start), 'HH:mm')}
-                            </span>
-                          </div>
-                          <div className="text-xs text-white truncate mt-0.5">
-                            {apt.patientName}
-                          </div>
-                        </button>
-                      ))}
+                      {dayAppointments.slice(0, 3).map(apt => {
+                        const colors = getProcedureColor(apt.procedure)
+                        return (
+                          <button
+                            key={apt.id}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onAppointmentClick(apt)
+                            }}
+                            className={`w-full text-left px-2 py-1 rounded-lg ${colors.bg} border ${colors.border} transition-all group`}
+                          >
+                            <div className="flex items-center gap-1 text-xs">
+                              <Clock size={10} className={colors.icon} />
+                              <span className={`${colors.text} font-medium`}>
+                                {format(parseISO(apt.start), 'HH:mm')}
+                              </span>
+                            </div>
+                            <div className="text-xs text-white truncate mt-0.5">
+                              {apt.patientName}
+                            </div>
+                          </button>
+                        )
+                      })}
                       {dayAppointments.length > 3 && (
                         <div className="text-xs text-gray-400 text-center py-1">
                           +{dayAppointments.length - 3} mais

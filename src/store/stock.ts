@@ -238,10 +238,21 @@ export const useStock = create<StockStore>()(
       },
 
       removeStock: async (itemId, quantity, reason, procedureId, patientId) => {
+        // Força buscar os dados mais recentes do Supabase
+        await get().fetchItems(true)
+
         const item = get().getItem(itemId)
-        if (!item || item.quantity < quantity) {
+        if (!item) {
+          console.error('❌ [STOCK] Item não encontrado:', itemId)
           return false
         }
+
+        if (item.quantity < quantity) {
+          console.error('❌ [STOCK] Estoque insuficiente:', item.name, 'Disponível:', item.quantity, 'Solicitado:', quantity)
+          return false
+        }
+
+        console.log('📦 [STOCK] Removendo', quantity, 'de', item.name, '- Estoque atual:', item.quantity)
 
         await get().updateItem(itemId, {
           quantity: item.quantity - quantity
@@ -255,6 +266,8 @@ export const useStock = create<StockStore>()(
           procedureId,
           patientId
         })
+
+        console.log('✅ [STOCK] Removido com sucesso. Novo estoque:', item.quantity - quantity)
 
         return true
       },

@@ -2,10 +2,12 @@ import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { Upload, X } from 'lucide-react'
+import { useToast } from '@/hooks/useToast'
 
 export default function PatientForm() {
   const add = usePatients(s => s.add)
   const navigate = useNavigate()
+  const { show: showToast } = useToast()
 
   const [photoUrl, setPhotoUrl] = useState<string | undefined>()
   const [cpf, setCpf] = useState('')
@@ -75,11 +77,11 @@ export default function PatientForm() {
         setCity(data.localidade || '')
         setState(data.uf || '')
       } else {
-        alert('CEP não encontrado')
+        showToast('CEP não encontrado', 'warning')
       }
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
-      alert('Erro ao buscar CEP')
+      showToast('Erro ao buscar CEP', 'error')
     } finally {
       setIsLoadingCep(false)
     }
@@ -123,6 +125,7 @@ export default function PatientForm() {
         name: String(data.get('name')||''),
         cpf: cpf,
         phone: phone,
+        birth_date: String(data.get('birth_date')||''),
         cep: cep,
         street: street,
         number: number,
@@ -136,167 +139,210 @@ export default function PatientForm() {
       })
 
       if (id) {
+        showToast('Paciente cadastrado com sucesso!', 'success')
         navigate(`/app/pacientes/${id}`)
       } else {
-        alert('Erro ao salvar paciente')
+        showToast('Erro ao salvar paciente', 'error')
       }
     } catch (error) {
       console.error('Erro ao criar paciente:', error)
-      alert('Erro ao salvar paciente: ' + (error as Error).message)
+      showToast('Erro ao salvar paciente: ' + (error as Error).message, 'error')
     }
   }
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4 text-white">Novo Paciente</h2>
-      <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-800 p-4 rounded border border-gray-700">
-        <div className="col-span-1">
-          <label className="block text-sm font-medium text-gray-300">Nome</label>
-          <input name="name" required className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" />
-        </div>
-        <div className="col-span-1">
-          <label className="block text-sm font-medium text-gray-300">CPF</label>
-          <input 
-            name="cpf" 
-            value={cpf}
-            onChange={handleCPFChange}
-            placeholder="000.000.000-00"
-            maxLength={14}
-            required 
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Telefone</label>
-          <input 
-            name="phone" 
-            value={phone}
-            onChange={handlePhoneChange}
-            placeholder="(00) 00000-0000"
-            maxLength={15}
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">CEP</label>
-          <input 
-            value={cep}
-            onChange={handleCEPChange}
-            placeholder="00000-000"
-            maxLength={9}
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-          {isLoadingCep && <p className="text-xs text-orange-400 mt-1">Buscando endereço...</p>}
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-300">Rua</label>
-          <input 
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-            placeholder="Rua será preenchida automaticamente"
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Número *</label>
-          <input 
-            value={number}
-            onChange={(e) => setNumber(e.target.value)}
-            placeholder="123"
-            required
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Complemento</label>
-          <input 
-            value={complement}
-            onChange={(e) => setComplement(e.target.value)}
-            placeholder="Apto 101, Bloco A..."
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Bairro</label>
-          <input 
-            value={neighborhood}
-            onChange={(e) => setNeighborhood(e.target.value)}
-            placeholder="Bairro será preenchido automaticamente"
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Cidade</label>
-          <input 
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Cidade será preenchida automaticamente"
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300">Estado</label>
-          <input 
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            placeholder="UF"
-            maxLength={2}
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-300">Informações Clínicas</label>
-          <textarea 
-            name="clinicalInfo" 
-            placeholder="Ex: Histórico médico, alergias, medicamentos em uso, condições especiais..."
-            className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" 
-            rows={4}
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-300">Observações</label>
-          <textarea name="notes" className="mt-1 w-full bg-gray-700 border border-gray-600 text-white rounded px-3 py-2 focus:outline-none focus:border-orange-500" rows={2}></textarea>
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Foto do Paciente</label>
-          <div className="flex items-center gap-4">
-            {photoUrl ? (
-              <div className="relative">
-                <img src={photoUrl} alt="Prévia" className="h-32 w-32 object-cover rounded-xl border-2 border-orange-500" />
-                <button
-                  type="button"
-                  onClick={() => setPhotoUrl(undefined)}
-                  className="absolute -top-2 -right-2 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-white">Novo Paciente</h2>
+        <p className="text-gray-400 mt-1">Preencha as informações do paciente</p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8 shadow-xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
+            <input
+              name="name"
+              required
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">CPF *</label>
+            <input
+              name="cpf"
+              value={cpf}
+              onChange={handleCPFChange}
+              placeholder="000.000.000-00"
+              maxLength={14}
+              required
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Data de Nascimento</label>
+            <input
+              type="date"
+              name="birth_date"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
+            <input
+              name="phone"
+              value={phone}
+              onChange={handlePhoneChange}
+              placeholder="(00) 00000-0000"
+              maxLength={15}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">CEP</label>
+            <input
+              value={cep}
+              onChange={handleCEPChange}
+              placeholder="00000-000"
+              maxLength={9}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+            {isLoadingCep && <p className="text-xs text-orange-400 mt-1">Buscando endereço...</p>}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Rua</label>
+            <input
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              placeholder="Rua será preenchida automaticamente"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Número *</label>
+            <input
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
+              placeholder="123"
+              required
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Complemento</label>
+            <input
+              value={complement}
+              onChange={(e) => setComplement(e.target.value)}
+              placeholder="Apto 101, Bloco A..."
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Bairro</label>
+            <input
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              placeholder="Bairro será preenchido automaticamente"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Cidade</label>
+            <input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Cidade será preenchida automaticamente"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Estado</label>
+            <input
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="UF"
+              maxLength={2}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Informações Clínicas</label>
+            <textarea
+              name="clinicalInfo"
+              placeholder="Ex: Histórico médico, alergias, medicamentos em uso, condições especiais..."
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              rows={4}
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Observações</label>
+            <textarea
+              name="notes"
+              placeholder="Observações adicionais sobre o paciente..."
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              rows={3}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Foto do Paciente</label>
+            <div className="flex items-center gap-4">
+              {photoUrl ? (
+                <div className="relative">
+                  <img src={photoUrl} alt="Prévia" className="h-32 w-32 object-cover rounded-xl border-2 border-orange-500" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoUrl(undefined)}
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="h-32 w-32 bg-gray-700 border-2 border-dashed border-gray-600 rounded-xl flex items-center justify-center">
+                  <Upload size={32} className="text-gray-500" />
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  id="patient-photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhoto}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="patient-photo-upload"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 cursor-pointer transition-all font-medium"
                 >
-                  <X size={16} />
-                </button>
+                  <Upload size={20} />
+                  {photoUrl ? 'Alterar Foto' : 'Escolher Foto'}
+                </label>
+                <p className="text-xs text-gray-400 mt-2">Formatos aceitos: JPG, PNG, GIF (máx. 5MB)</p>
               </div>
-            ) : (
-              <div className="h-32 w-32 bg-gray-700 border-2 border-dashed border-gray-600 rounded-xl flex items-center justify-center">
-                <Upload size={32} className="text-gray-500" />
-              </div>
-            )}
-            <div className="flex-1">
-              <input
-                id="patient-photo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handlePhoto}
-                className="hidden"
-              />
-              <label
-                htmlFor="patient-photo-upload"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 cursor-pointer transition-all font-medium"
-              >
-                <Upload size={20} />
-                {photoUrl ? 'Alterar Foto' : 'Escolher Foto'}
-              </label>
-              <p className="text-xs text-gray-400 mt-2">Formatos aceitos: JPG, PNG, GIF (máx. 5MB)</p>
             </div>
           </div>
-        </div>
-        <div className="md:col-span-2 flex gap-2 mt-2">
-          <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded transition-colors">Salvar</button>
+
+          <div className="md:col-span-2 flex gap-3 mt-8">
+            <button
+              type="submit"
+              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30"
+            >
+              Salvar Paciente
+            </button>
+          </div>
         </div>
       </form>
     </div>

@@ -57,21 +57,6 @@ export default function StockList() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Estoque</h1>
-          <p className="text-gray-400">Gerencie seus produtos e materiais</p>
-        </div>
-        <Link
-          to="/app/estoque/novo"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-        >
-          <Plus size={18} />
-          Adicionar Produto
-        </Link>
-      </div>
-
       {/* Alerts */}
       {unreadAlerts.length > 0 && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
@@ -90,7 +75,7 @@ export default function StockList() {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Filters and Button */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -112,6 +97,13 @@ export default function StockList() {
             <option key={category} value={category}>{category}</option>
           ))}
         </select>
+        <Link
+          to="/app/estoque/novo"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
+        >
+          <Plus size={18} />
+          Adicionar Produto
+        </Link>
       </div>
 
       {/* Stock Grid */}

@@ -20,13 +20,6 @@ export default function AlertsPage() {
 
   return (
     <div className="p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Alertas e Notificações</h1>
-        <p className="text-gray-400">Situações que precisam de atenção</p>
-      </div>
-
-      {/* Alerts */}
       <AlertsPanel purchases={purchases} customers={customers} />
     </div>
   )

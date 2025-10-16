@@ -73,13 +73,6 @@ export default function PlanForm() {
       </button>
 
       <div className="max-w-3xl">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          {isEditing ? 'Editar Plano' : 'Novo Plano de Mensalidade'}
-        </h1>
-        <p className="text-gray-400 mb-8">
-          {isEditing ? 'Atualize as informações do plano' : 'Preencha os dados do novo plano'}
-        </p>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">

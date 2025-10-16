@@ -144,12 +144,19 @@ export default function LandingPage() {
       <header className="relative bg-gray-800/50 border-b border-gray-700/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setShowLogin(false)
+                setShowRegisterModal(false)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
                 <span className="text-white font-bold text-lg">H</span>
               </div>
               <h1 className="font-bold text-white text-xl">Agenda+ HOF</h1>
-            </div>
+            </button>
             <button
               onClick={() => setShowLogin(!showLogin)}
               className="px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all"

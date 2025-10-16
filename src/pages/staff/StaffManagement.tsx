@@ -107,11 +107,7 @@ export default function StaffManagement() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Gerenciar Funcionários</h1>
-          <p className="text-gray-400">Crie e gerencie contas de funcionários para sua clínica</p>
-        </div>
+      <div className="flex items-center justify-end">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"

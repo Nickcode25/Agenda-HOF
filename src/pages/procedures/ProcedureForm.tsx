@@ -106,10 +106,6 @@ export default function ProcedureForm() {
         <Link to="/app/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Novo Procedimento</h1>
-          <p className="text-gray-400">Cadastre um novo procedimento</p>
-        </div>
       </div>
 
       {/* Error Message */}

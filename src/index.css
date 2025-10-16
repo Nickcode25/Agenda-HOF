@@ -10,6 +10,84 @@ body {
   @apply bg-gray-900 text-gray-100;
 }
 
+/* Custom Scrollbar - Modern Design */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937; /* thumb: gray-600, track: gray-800 */
+}
+
+/* Webkit Browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #1f2937; /* gray-800 */
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4b5563 0%, #374151 100%); /* gray-600 to gray-700 */
+  border-radius: 10px;
+  border: 2px solid #1f2937; /* gray-800 - creates padding effect */
+  transition: all 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%); /* orange-500 to orange-600 */
+  border-color: #1f2937;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%); /* orange-600 to orange-700 */
+}
+
+/* Scrollbar corner */
+*::-webkit-scrollbar-corner {
+  background: #1f2937; /* gray-800 */
+}
+
+/* Sidebar Scrollbar - Hidden by default, visible on hover (VS Code style) */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.sidebar-scroll:hover {
+  scrollbar-color: #4b5563 #1f2937; /* thumb: gray-600, track: gray-800 */
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-track {
+  background: #1f2937; /* gray-800 */
+  border-radius: 10px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4b5563 0%, #374151 100%); /* gray-600 to gray-700 */
+  border: 2px solid #1f2937;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%); /* orange-500 to orange-600 */
+}
+
 /* Hide scrollbar but keep functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */

@@ -216,11 +216,6 @@ export default function SubscriptionsMain() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Mensalidades</h1>
-        <p className="text-gray-400">Gerencie planos e assinantes</p>
-      </div>
-
       {/* Stats */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, index) => {

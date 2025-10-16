@@ -109,10 +109,6 @@ export default function Checkout() {
           <button onClick={() => navigate('/')} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
             <ArrowLeft className="w-6 h-6 text-gray-400" />
           </button>
-          <div>
-            <h1 className="text-3xl font-bold text-white">Finalizar Assinatura</h1>
-            <p className="text-gray-400">Complete seu pagamento para acessar o sistema</p>
-          </div>
         </div>
 
         {error && (

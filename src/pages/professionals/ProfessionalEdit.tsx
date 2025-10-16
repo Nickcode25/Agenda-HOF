@@ -162,10 +162,6 @@ export default function ProfessionalEdit() {
         <Link to={`/app/profissionais/${id}`} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Editar Profissional</h1>
-          <p className="text-gray-400">Edite as informações do profissional</p>
-        </div>
       </div>
 
       {/* Form */}

@@ -89,14 +89,6 @@ export default function StockForm() {
         <Link to="/app/estoque" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">
-            {isEditMode ? 'Editar Produto' : 'Adicionar Produto'}
-          </h1>
-          <p className="text-gray-400">
-            {isEditMode ? 'Atualize as informações do produto' : 'Cadastre um novo produto no estoque'}
-          </p>
-        </div>
       </div>
 
       {/* Form */}

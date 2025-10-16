@@ -5,8 +5,8 @@ import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
-import { consumeStockForProcedure, checkStockAvailability } from '@/utils/stock-integration'
-import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, ArrowLeft, AlertTriangle, Package } from 'lucide-react'
+import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, ArrowLeft, AlertTriangle, Package, FileText, X } from 'lucide-react'
+import { useToast } from '@/hooks/useToast'
 
 export default function PatientDetail() {
   const { id } = useParams()
@@ -15,6 +15,7 @@ export default function PatientDetail() {
   const remove = usePatients(s => s.remove)
   const { procedures, fetchAll: fetchProcedures } = useProcedures()
   const { items: stockItems, fetchItems } = useStock()
+  const { show: showToast } = useToast()
 
   // Carregar procedimentos e estoque ao montar o componente
   useEffect(() => {
@@ -22,11 +23,16 @@ export default function PatientDetail() {
     fetchItems()
   }, [])
 
-  const [showAddProcedure, setShowAddProcedure] = useState(false)
+  const [showProcedureModal, setShowProcedureModal] = useState(false)
   const [selectedProcedure, setSelectedProcedure] = useState('')
   const [procedureNotes, setProcedureNotes] = useState('')
   const [procedureQuantity, setProcedureQuantity] = useState(1)
   const [paymentType, setPaymentType] = useState<'default' | 'cash' | 'card'>('default')
+
+  // Modal de conclusão de procedimento
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
+  const [completingProcedure, setCompletingProcedure] = useState<PlannedProcedure | null>(null)
+  const [selectedProductId, setSelectedProductId] = useState('')
 
   // Obter categoria e produtos disponíveis do procedimento selecionado
   const selectedProcedureData = procedures.find(p => p.name === selectedProcedure)
@@ -54,7 +60,7 @@ export default function PatientDetail() {
     } else if (paymentType === 'card' && selectedProc?.cardValue) {
       unitValue = selectedProc.cardValue
     }
-    
+
     const totalValue = procedureQuantity * unitValue
 
     const newPlannedProcedure: PlannedProcedure = {
@@ -74,10 +80,12 @@ export default function PatientDetail() {
       plannedProcedures: [...currentPlanned, newPlannedProcedure]
     })
 
+    // Limpar e fechar modal
     setSelectedProcedure('')
     setProcedureNotes('')
     setProcedureQuantity(1)
     setPaymentType('default')
+    setShowProcedureModal(false)
   }
 
   const handleUpdateProcedureStatus = (procId: string, status: PlannedProcedure['status']) => {
@@ -86,48 +94,83 @@ export default function PatientDetail() {
     const procedure = patient.plannedProcedures?.find(p => p.id === procId)
     if (!procedure) return
 
-    // Se está marcando como concluído, verificar e consumir estoque
+    // Se está marcando como concluído, abrir modal de seleção de produto
     if (status === 'completed' && procedure.status !== 'completed') {
-      // Verificar disponibilidade de estoque
-      const stockCheck = checkStockAvailability(procedure.procedureName, procedure.quantity)
-      
-      if (!stockCheck.available) {
-        const missingItems = stockCheck.missing.join('\n• ')
-        alert(
-          `⚠️ Estoque insuficiente para realizar este procedimento:\n\n• ${missingItems}\n\n` +
-          'Verifique o estoque antes de marcar como concluído.'
-        )
-        return
-      }
-
-      // Consumir do estoque
-      const stockResult = consumeStockForProcedure(
-        procedure.procedureName,
-        procedure.quantity,
-        procedure.id,
-        patient.id
-      )
-
-      if (!stockResult.success) {
-        const errors = stockResult.errors.join('\n• ')
-        alert(
-          `❌ Erro ao consumir estoque:\n\n• ${errors}\n\n` +
-          'O procedimento não foi marcado como concluído.'
-        )
-        return
-      }
-
-      // Se chegou até aqui, o estoque foi consumido com sucesso
-      if (stockResult.errors.length === 0) {
-        alert('✅ Procedimento concluído e estoque atualizado automaticamente!')
-      }
+      setCompletingProcedure(procedure)
+      setShowCompleteModal(true)
+      return
     }
 
+    // Para outros status, atualizar diretamente
     const updated = (patient.plannedProcedures || []).map(p =>
       p.id === procId ? { ...p, status, completedAt: status === 'completed' ? new Date().toISOString() : p.completedAt } : p
     )
 
     update(patient.id, { plannedProcedures: updated })
+  }
+
+  const handleCompleteProcedure = async () => {
+    if (!patient || !completingProcedure || !selectedProductId) return
+
+    // Buscar o produto selecionado
+    const product = stockItems.find(item => item.id === selectedProductId)
+    if (!product) {
+      showToast('Produto não encontrado', 'error')
+      return
+    }
+
+    // Verificar se há estoque suficiente
+    if (product.quantity < completingProcedure.quantity) {
+      showToast(`Estoque insuficiente de ${product.name}. Disponível: ${product.quantity} ${product.unit}`, 'error')
+      return
+    }
+
+    // Consumir do estoque usando a função removeStock do store
+    const { removeStock, fetchItems } = useStock.getState()
+
+    console.log('🔄 Consumindo estoque:', {
+      productId: selectedProductId,
+      productName: product.name,
+      quantity: completingProcedure.quantity,
+      currentStock: product.quantity
+    })
+
+    const success = await removeStock(
+      selectedProductId,
+      completingProcedure.quantity,
+      `Procedimento: ${completingProcedure.procedureName} - Paciente: ${patient.name}`,
+      completingProcedure.id,
+      patient.id
+    )
+
+    if (!success) {
+      showToast('Erro ao atualizar estoque. Tente novamente.', 'error')
+      return
+    }
+
+    // Forçar atualização do estoque
+    console.log('✅ Estoque consumido com sucesso, atualizando...')
+    await fetchItems(true)
+
+    // Atualizar procedimento como concluído
+    const updated = (patient.plannedProcedures || []).map(p =>
+      p.id === completingProcedure.id ? {
+        ...p,
+        status: 'completed' as PlannedProcedure['status'],
+        completedAt: new Date().toISOString(),
+        usedProductId: selectedProductId,
+        usedProductName: product.name
+      } : p
+    )
+
+    update(patient.id, { plannedProcedures: updated })
+
+    // Fechar modal e limpar
+    setShowCompleteModal(false)
+    setCompletingProcedure(null)
+    setSelectedProductId('')
+
+    showToast('Procedimento concluído e estoque atualizado!', 'success')
   }
   const handleRemoveProcedure = (procId: string) => {
     if (!patient) return
@@ -151,10 +194,6 @@ export default function PatientDetail() {
         <Link to="/app/pacientes" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white mb-1">Detalhes do Paciente</h1>
-          <p className="text-gray-400">Informações cadastrais</p>
-        </div>
       </div>
 
       {/* Profile Card */}
@@ -193,13 +232,31 @@ export default function PatientDetail() {
           </div>
         </div>
 
+        {/* Actions */}
+        <div className="mt-6 pt-6 border-t border-gray-700 flex flex-wrap gap-3">
+          <Link
+            to={`/app/pacientes/${id}/prontuario`}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all"
+          >
+            <FileText size={18} />
+            Prontuário Eletrônico
+          </Link>
+          <button
+            onClick={() => setShowProcedureModal(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all"
+          >
+            <Plus size={18} />
+            Adicionar Procedimento
+          </button>
+        </div>
+
         {/* Clinical Data */}
         <div className="mt-6 pt-6 border-t border-gray-700 space-y-4">
           <div>
             <h3 className="font-medium mb-2 text-orange-500">Informações Clínicas</h3>
             <p className="text-gray-300">{patient.clinicalInfo || 'Nenhuma informação clínica registrada'}</p>
           </div>
-          
+
           <div>
             <h3 className="font-medium mb-2 text-orange-500">Observações</h3>
             <p className="text-gray-300">{patient.notes || 'Nenhuma observação'}</p>
@@ -208,195 +265,9 @@ export default function PatientDetail() {
 
         {/* Planned Procedures */}
         <div className="mt-6 pt-6 border-t border-gray-700">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4">
             <h3 className="font-medium text-orange-500">Planejamento de Procedimentos</h3>
-            <button
-              onClick={() => setShowAddProcedure(!showAddProcedure)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg font-medium transition-colors border border-orange-500/30"
-            >
-              <Plus size={18} />
-              Adicionar Procedimento
-            </button>
           </div>
-
-          {/* Add Procedure Form */}
-          {showAddProcedure && (
-            <div className="mb-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento</label>
-                  <select
-                    value={selectedProcedure}
-                    onChange={(e) => setSelectedProcedure(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500"
-                  >
-                    <option value="">Selecione um procedimento</option>
-                    {procedures.filter(p => p.isActive).map(proc => (
-                      <option key={proc.id} value={proc.name}>
-                        {proc.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={procedureQuantity}
-                    onChange={(e) => setProcedureQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
-                  <select
-                    value={paymentType}
-                    onChange={(e) => setPaymentType(e.target.value as 'default' | 'cash' | 'card')}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500"
-                  >
-                    <option value="default">Valor à Vista</option>
-                    <option value="cash">Desconto Adicional</option>
-                    <option value="card">Valor Parcelado</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
-                  <div className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-green-400 font-medium">
-                    {(() => {
-                      const selectedProc = procedures.find(p => p.name === selectedProcedure)
-                      let unitValue = selectedProc?.price || 0
-
-                      if (paymentType === 'cash' && selectedProc?.cashValue) {
-                        unitValue = selectedProc.cashValue
-                      } else if (paymentType === 'card' && selectedProc?.cardValue) {
-                        unitValue = selectedProc.cardValue
-                      }
-                      
-                      return formatCurrency(procedureQuantity * unitValue)
-                    })()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Mostrar categoria e produtos disponíveis */}
-              {selectedProcedureData && (
-                <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Package size={18} className="text-orange-500" />
-                    <h4 className="font-medium text-white">
-                      Categoria: {selectedProcedureData.category || 'Não definida'}
-                    </h4>
-                  </div>
-
-                  {selectedProcedureData.category ? (
-                    availableProducts.length > 0 ? (
-                      <div>
-                        <p className="text-sm text-gray-400 mb-3">
-                          Produtos disponíveis nesta categoria:
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                          {availableProducts.map(product => (
-                            <div
-                              key={product.id}
-                              className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg border border-gray-600"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">
-                                  {product.name}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                  Estoque: {product.quantity} {product.unit}
-                                </p>
-                              </div>
-                              <div
-                                className={`ml-2 w-2 h-2 rounded-full ${
-                                  product.quantity > product.minQuantity
-                                    ? 'bg-green-500'
-                                    : product.quantity > 0
-                                    ? 'bg-yellow-500'
-                                    : 'bg-red-500'
-                                }`}
-                                title={
-                                  product.quantity > product.minQuantity
-                                    ? 'Em estoque'
-                                    : product.quantity > 0
-                                    ? 'Estoque baixo'
-                                    : 'Sem estoque'
-                                }
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-3">
-                          💡 O produto específico será escolhido automaticamente no momento da realização do procedimento
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                        <AlertTriangle size={16} className="text-yellow-500" />
-                        <p className="text-sm text-yellow-500">
-                          Nenhum produto cadastrado na categoria "{selectedProcedureData.category}".{' '}
-                          <Link to="/app/estoque/novo" className="underline hover:text-yellow-400">
-                            Cadastrar produto
-                          </Link>
-                        </p>
-                      </div>
-                    )
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                      <AlertTriangle size={16} className="text-blue-400" />
-                      <p className="text-sm text-blue-400">
-                        Este procedimento não possui categoria definida.{' '}
-                        <Link
-                          to={`/app/procedimentos/${selectedProcedureData.id}/editar`}
-                          className="underline hover:text-blue-300"
-                        >
-                          Editar procedimento
-                        </Link>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Observações (opcional)</label>
-                <textarea
-                  value={procedureNotes}
-                  onChange={(e) => setProcedureNotes(e.target.value)}
-                  placeholder="Ex: região frontal, aplicação suave..."
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 resize-none"
-                  rows={2}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAddProcedure}
-                  disabled={!selectedProcedure}
-                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-                >
-                  Adicionar
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAddProcedure(false)
-                    setSelectedProcedure('')
-                    setProcedureNotes('')
-                    setProcedureQuantity(1)
-                    setPaymentType('default')
-                  }}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Procedures List */}
           {patient.plannedProcedures && patient.plannedProcedures.filter(proc => proc.status !== 'completed').length > 0 ? (
@@ -415,19 +286,6 @@ export default function PatientDetail() {
                         <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-sm rounded-full">
                           {proc.quantity}x
                         </span>
-                        {/* Indicador de estoque */}
-                        {(() => {
-                          const stockCheck = checkStockAvailability(proc.procedureName, proc.quantity)
-                          if (!stockCheck.available && proc.status !== 'completed') {
-                            return (
-                              <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
-                                <AlertTriangle size={12} />
-                                <span>Estoque insuficiente</span>
-                              </div>
-                            )
-                          }
-                          return null
-                        })()}
                       </div>
                       
                       <div className="flex items-center gap-6 ml-8 mb-2">
@@ -593,6 +451,359 @@ export default function PatientDetail() {
           </button>
         </div>
       </div>
+
+      {/* Modal Adicionar Procedimento */}
+      {showProcedureModal && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowProcedureModal(false)}
+        >
+          <div
+            className="bg-gray-800 border border-gray-700 rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
+              <h2 className="text-2xl font-bold text-white">Adicionar Procedimento</h2>
+              <button
+                onClick={() => setShowProcedureModal(false)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X size={24} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento *</label>
+                    <select
+                      value={selectedProcedure}
+                      onChange={(e) => setSelectedProcedure(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    >
+                      <option value="">Selecione um procedimento</option>
+                      {procedures.filter(p => p.isActive).map(proc => (
+                        <option key={proc.id} value={proc.name}>
+                          {proc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={procedureQuantity}
+                      onChange={(e) => setProcedureQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
+                    <select
+                      value={paymentType}
+                      onChange={(e) => setPaymentType(e.target.value as 'default' | 'cash' | 'card')}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    >
+                      <option value="default">Valor à Vista</option>
+                      <option value="cash">Desconto Adicional</option>
+                      <option value="card">Valor Parcelado</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
+                    <div className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-green-400 font-bold text-lg">
+                      {(() => {
+                        const selectedProc = procedures.find(p => p.name === selectedProcedure)
+                        let unitValue = selectedProc?.price || 0
+
+                        if (paymentType === 'cash' && selectedProc?.cashValue) {
+                          unitValue = selectedProc.cashValue
+                        } else if (paymentType === 'card' && selectedProc?.cardValue) {
+                          unitValue = selectedProc.cardValue
+                        }
+
+                        return formatCurrency(procedureQuantity * unitValue)
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mostrar categoria e produtos disponíveis */}
+                {selectedProcedureData && (
+                  <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Package size={18} className="text-orange-500" />
+                      <h4 className="font-medium text-white">
+                        Categoria: {selectedProcedureData.category || 'Não definida'}
+                      </h4>
+                    </div>
+
+                    {selectedProcedureData.category ? (
+                      availableProducts.length > 0 ? (
+                        <div>
+                          <p className="text-sm text-gray-400 mb-3">
+                            Produtos disponíveis nesta categoria:
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {availableProducts.map(product => (
+                              <div
+                                key={product.id}
+                                className="flex items-center justify-between p-3 bg-gray-600/50 rounded-lg border border-gray-500"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-white truncate">
+                                    {product.name}
+                                  </p>
+                                  <p className="text-xs text-gray-400">
+                                    Estoque: {product.quantity} {product.unit}
+                                  </p>
+                                </div>
+                                <div
+                                  className={`ml-2 w-2 h-2 rounded-full ${
+                                    product.quantity > product.minQuantity
+                                      ? 'bg-green-500'
+                                      : product.quantity > 0
+                                      ? 'bg-yellow-500'
+                                      : 'bg-red-500'
+                                  }`}
+                                  title={
+                                    product.quantity > product.minQuantity
+                                      ? 'Em estoque'
+                                      : product.quantity > 0
+                                      ? 'Estoque baixo'
+                                      : 'Sem estoque'
+                                  }
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-3">
+                            💡 O produto específico será escolhido automaticamente no momento da realização do procedimento
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                          <AlertTriangle size={16} className="text-yellow-500" />
+                          <p className="text-sm text-yellow-500">
+                            Nenhum produto cadastrado na categoria "{selectedProcedureData.category}".{' '}
+                            <Link to="/app/estoque/novo" className="underline hover:text-yellow-400">
+                              Cadastrar produto
+                            </Link>
+                          </p>
+                        </div>
+                      )
+                    ) : (
+                      <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                        <AlertTriangle size={16} className="text-blue-400" />
+                        <p className="text-sm text-blue-400">
+                          Este procedimento não possui categoria definida.{' '}
+                          <Link
+                            to={`/app/procedimentos/${selectedProcedureData.id}/editar`}
+                            className="underline hover:text-blue-300"
+                          >
+                            Editar procedimento
+                          </Link>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Observações (opcional)</label>
+                  <textarea
+                    value={procedureNotes}
+                    onChange={(e) => setProcedureNotes(e.target.value)}
+                    placeholder="Ex: região frontal, aplicação suave..."
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-700 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setShowProcedureModal(false)
+                  setSelectedProcedure('')
+                  setProcedureNotes('')
+                  setProcedureQuantity(1)
+                  setPaymentType('default')
+                }}
+                className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddProcedure}
+                disabled={!selectedProcedure}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
+              >
+                Adicionar Procedimento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Concluir Procedimento - Selecionar Produto */}
+      {showCompleteModal && completingProcedure && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowCompleteModal(false)}
+        >
+          <div
+            className="bg-gray-800 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Concluir Procedimento</h2>
+                <p className="text-gray-400 mt-1">{completingProcedure.procedureName} - {completingProcedure.quantity}x</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCompleteModal(false)
+                  setCompletingProcedure(null)
+                  setSelectedProductId('')
+                }}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X size={24} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                    Selecione o produto utilizado *
+                  </label>
+
+                  {(() => {
+                    // Obter categoria do procedimento
+                    const procedureData = procedures.find(p => p.name === completingProcedure.procedureName)
+                    const categoryProducts = procedureData?.category
+                      ? stockItems.filter(item => item.category === procedureData.category)
+                      : []
+
+                    if (categoryProducts.length === 0) {
+                      return (
+                        <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                          <AlertTriangle size={20} className="text-yellow-500" />
+                          <p className="text-sm text-yellow-500">
+                            Nenhum produto encontrado na categoria "{procedureData?.category}".
+                          </p>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 gap-3">
+                        {categoryProducts.map(product => (
+                          <label
+                            key={product.id}
+                            className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                              selectedProductId === product.id
+                                ? 'border-orange-500 bg-orange-500/10'
+                                : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <input
+                                type="radio"
+                                name="product"
+                                value={product.id}
+                                checked={selectedProductId === product.id}
+                                onChange={(e) => setSelectedProductId(e.target.value)}
+                                className="w-5 h-5 text-orange-500 focus:ring-orange-500"
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium text-white">{product.name}</p>
+                                <div className="flex items-center gap-4 mt-1">
+                                  <p className="text-sm text-gray-400">
+                                    Estoque: {product.quantity} {product.unit}
+                                  </p>
+                                  <p className="text-sm text-gray-400">
+                                    Necessário: {completingProcedure.quantity} {product.unit}
+                                  </p>
+                                </div>
+                              </div>
+                              <div
+                                className={`w-3 h-3 rounded-full ${
+                                  product.quantity >= completingProcedure.quantity
+                                    ? 'bg-green-500'
+                                    : 'bg-red-500'
+                                }`}
+                                title={
+                                  product.quantity >= completingProcedure.quantity
+                                    ? 'Estoque suficiente'
+                                    : 'Estoque insuficiente'
+                                }
+                              />
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {selectedProductId && (() => {
+                  const product = stockItems.find(item => item.id === selectedProductId)
+                  if (product && product.quantity < completingProcedure.quantity) {
+                    return (
+                      <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <AlertTriangle size={20} className="text-red-500" />
+                        <p className="text-sm text-red-500">
+                          Estoque insuficiente. Disponível: {product.quantity} {product.unit}
+                        </p>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-700 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setShowCompleteModal(false)
+                  setCompletingProcedure(null)
+                  setSelectedProductId('')
+                }}
+                className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCompleteProcedure}
+                disabled={!selectedProductId || (() => {
+                  const product = stockItems.find(item => item.id === selectedProductId)
+                  return product ? product.quantity < completingProcedure.quantity : true
+                })()}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/40"
+              >
+                Concluir Procedimento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

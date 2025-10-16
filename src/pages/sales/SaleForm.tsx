@@ -1,15 +1,20 @@
-import { FormEvent, useState, useMemo } from 'react'
+import { FormEvent, useState, useMemo, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { useStock } from '@/store/stock'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import { SaleItem } from '@/types/sales'
-import { Save, ArrowLeft, Plus, Trash2, User } from 'lucide-react'
+import { Save, Plus, Trash2, User } from 'lucide-react'
 
 export default function SaleForm() {
-  const { professionals, createSale } = useSales()
-  const { items: stockItems, removeStock } = useStock()
+  const { professionals, createSale, fetchProfessionals } = useSales()
+  const { items: stockItems, removeStock, fetchItems } = useStock()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    fetchProfessionals()
+    fetchItems()
+  }, [])
 
   const [selectedProfessional, setSelectedProfessional] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'pix' | 'transfer' | 'check'>('cash')
@@ -72,16 +77,11 @@ export default function SaleForm() {
     setSaleItems(updated)
   }
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     if (!selectedProfessional) {
       alert('Selecione um profissional')
-      return
-    }
-
-    if (calculatedItems.length === 0) {
-      alert('Adicione pelo menos um produto à venda')
       return
     }
 
@@ -94,7 +94,7 @@ export default function SaleForm() {
     }
 
     const professional = professionals.find(p => p.id === selectedProfessional)!
-    
+
     const saleItemsData: SaleItem[] = calculatedItems.map(item => ({
       id: crypto.randomUUID(),
       stockItemId: item.stockItemId,
@@ -106,48 +106,54 @@ export default function SaleForm() {
       profit: item.profit
     }))
 
-    const saleId = createSale({
-      professionalId: selectedProfessional,
-      professionalName: professional.name,
-      items: saleItemsData,
-      subtotal: totalAmount,
-      discount: 0,
-      totalAmount,
-      totalProfit,
-      paymentMethod,
-      paymentStatus,
-      dueDate: dueDate || undefined,
-      paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
-      notes: notes || undefined
-    })
+    try {
+      // Criar a venda no Supabase
+      const saleId = await createSale({
+        professionalId: selectedProfessional,
+        professionalName: professional.name,
+        items: saleItemsData,
+        subtotal: totalAmount,
+        discount: 0,
+        totalAmount,
+        totalProfit,
+        paymentMethod,
+        paymentStatus,
+        dueDate: dueDate || undefined,
+        paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
+        notes: notes || undefined
+      })
 
-    // Subtrair do estoque
-    calculatedItems.forEach(item => {
-      removeStock(
-        item.stockItemId,
-        item.quantity,
-        `Venda para ${professional.name}`,
-        undefined, // procedureId
-        undefined  // patientId
-      )
-    })
+      if (!saleId) {
+        alert('Erro ao registrar venda')
+        return
+      }
 
-    navigate('/vendas')
+      // Subtrair do estoque
+      for (const item of calculatedItems) {
+        const success = await removeStock(
+          item.stockItemId,
+          item.quantity,
+          `Venda para ${professional.name}`,
+          undefined, // procedureId
+          undefined  // patientId
+        )
+        if (!success) {
+          console.error('❌ Erro ao remover do estoque:', item.stockItem?.name)
+        }
+      }
+
+      // Atualizar lista de produtos do estoque
+      await fetchItems(true)
+
+      navigate('/app/vendas')
+    } catch (error) {
+      console.error('❌ Erro ao registrar venda:', error)
+      alert('Erro ao registrar venda')
+    }
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/vendas" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Nova Venda</h1>
-          <p className="text-gray-400">Registre uma venda de produtos para profissional</p>
-        </div>
-      </div>
-
       {/* Form */}
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Professional Selection */}
@@ -172,7 +178,7 @@ export default function SaleForm() {
               </select>
             </div>
             <Link
-              to="/vendas/profissionais/novo"
+              to="../profissionais/novo"
               className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium transition-colors h-fit mt-7"
             >
               <User size={16} />
@@ -220,7 +226,7 @@ export default function SaleForm() {
                     <input
                       type="number"
                       min="1"
-                      step="0.1"
+                      step="1"
                       value={item.quantity}
                       onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
                       className="w-full bg-gray-600 border border-gray-500 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500"
@@ -355,7 +361,7 @@ export default function SaleForm() {
             Registrar Venda
           </button>
           <Link
-            to="/vendas"
+            to=".."
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
           >
             Cancelar

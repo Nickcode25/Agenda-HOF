@@ -10,7 +10,6 @@ import PatientDetail from './pages/patients/PatientDetail'
 import PatientEdit from './pages/patients/PatientEdit'
 import ScheduleCalendar from './pages/schedule/ScheduleCalendar'
 import AppointmentForm from './pages/schedule/AppointmentForm'
-import Waitlist from './pages/schedule/Waitlist'
 import ProfessionalsList from './pages/professionals/ProfessionalsList'
 import ProfessionalForm from './pages/professionals/ProfessionalForm'
 import ProfessionalDetail from './pages/professionals/ProfessionalDetail'
@@ -24,6 +23,9 @@ import StockForm from './pages/stock/StockForm'
 import SalesList from './pages/sales/SalesList'
 import SaleForm from './pages/sales/SaleForm'
 import SalesProfessionalForm from './pages/sales/ProfessionalForm'
+import SalesProfessionalEdit from './pages/sales/ProfessionalEdit'
+import SalesHistory from './pages/sales/SalesHistory'
+import SalesProfessionalsList from './pages/sales/SalesProfessionalsList'
 import Dashboard from './pages/dashboard/Dashboard'
 import LandingPage from './pages/landing/LandingPage'
 import Checkout from './pages/Checkout'
@@ -35,6 +37,13 @@ import SubscriptionForm from './pages/subscriptions/SubscriptionForm'
 import SubscriptionReports from './pages/subscriptions/SubscriptionReports'
 import SubscriptionsMain from './pages/subscriptions/SubscriptionsMain'
 import StaffManagement from './pages/staff/StaffManagement'
+import NotificationsPage from './pages/notifications/NotificationsPage'
+import MedicalRecordPage from './pages/medical/MedicalRecordPage'
+import AnamnesisForm from './pages/medical/AnamnesisForm'
+import ClinicalEvolutionForm from './pages/medical/ClinicalEvolutionForm'
+import PhotoUploadPage from './pages/medical/PhotoUploadPage'
+import PhotoEditPage from './pages/medical/PhotoEditPage'
+import ConsentForm from './pages/medical/ConsentForm'
 import RoleGuard from './components/RoleGuard'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminLayout from './components/admin/AdminLayout'
@@ -78,7 +87,6 @@ const router = createBrowserRouter([
       },
       { path: 'agenda', element: <ScheduleCalendar /> },
       { path: 'agenda/nova', element: <AppointmentForm /> },
-      { path: 'agenda/fila', element: <Waitlist /> },
 
       { path: 'procedimentos', element: <ProceduresList /> },
       { path: 'procedimentos/novo', element: <ProcedureForm /> },
@@ -94,6 +102,12 @@ const router = createBrowserRouter([
       { path: 'pacientes/novo', element: <PatientForm /> },
       { path: 'pacientes/:id', element: <PatientDetail /> },
       { path: 'pacientes/:id/editar', element: <PatientEdit /> },
+      { path: 'pacientes/:id/prontuario', element: <MedicalRecordPage /> },
+      { path: 'pacientes/:id/prontuario/anamnese', element: <AnamnesisForm /> },
+      { path: 'pacientes/:id/prontuario/evolucao/nova', element: <ClinicalEvolutionForm /> },
+      { path: 'pacientes/:id/prontuario/fotos/upload', element: <PhotoUploadPage /> },
+      { path: 'pacientes/:id/prontuario/fotos/:photoId/editar', element: <PhotoEditPage /> },
+      { path: 'pacientes/:id/prontuario/consentimento/novo', element: <ConsentForm /> },
 
       { path: 'estoque', element: <StockList /> },
       { path: 'estoque/novo', element: <StockForm /> },
@@ -101,7 +115,10 @@ const router = createBrowserRouter([
 
       { path: 'vendas', element: <SalesList /> },
       { path: 'vendas/nova', element: <SaleForm /> },
+      { path: 'vendas/historico', element: <SalesHistory /> },
+      { path: 'vendas/profissionais-lista', element: <SalesProfessionalsList /> },
       { path: 'vendas/profissionais/novo', element: <SalesProfessionalForm /> },
+      { path: 'vendas/profissionais/editar/:id', element: <SalesProfessionalEdit /> },
 
       { path: 'mensalidades', element: <SubscriptionsMain /> },
       { path: 'mensalidades/planos', element: <PlansList /> },
@@ -120,6 +137,8 @@ const router = createBrowserRouter([
           </RoleGuard>
         )
       },
+
+      { path: 'notificacoes', element: <NotificationsPage /> },
     ],
   },
   {

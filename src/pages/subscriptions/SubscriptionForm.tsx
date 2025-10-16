@@ -65,9 +65,6 @@ export default function SubscriptionForm() {
       </button>
 
       <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold text-white mb-2">Nova Assinatura</h1>
-        <p className="text-gray-400 mb-8">Vincule um paciente a um plano de mensalidade</p>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 space-y-6">
             <div>

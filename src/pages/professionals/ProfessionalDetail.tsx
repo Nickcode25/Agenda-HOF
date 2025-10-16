@@ -33,10 +33,6 @@ export default function ProfessionalDetail() {
         <Link to="/app/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white mb-1">Detalhes do Profissional</h1>
-          <p className="text-gray-400">Informações cadastrais</p>
-        </div>
       </div>
 
       {/* Profile Card */}

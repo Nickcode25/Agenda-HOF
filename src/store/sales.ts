@@ -8,14 +8,15 @@ interface SalesStore {
   sales: Sale[]
   loading: boolean
   error: string | null
-  
+
   // Fetch data
   fetchSales: () => Promise<void>
-  
-  // Professionals Management (local storage apenas)
-  addProfessional: (professional: Omit<Professional, 'id' | 'createdAt' | 'updatedAt'>) => string
-  updateProfessional: (id: string, updates: Partial<Professional>) => void
-  removeProfessional: (id: string) => void
+  fetchProfessionals: () => Promise<void>
+
+  // Professionals Management (Supabase)
+  addProfessional: (professional: Omit<Professional, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string | null>
+  updateProfessional: (id: string, updates: Partial<Professional>) => Promise<void>
+  removeProfessional: (id: string) => Promise<void>
   getProfessional: (id: string) => Professional | undefined
   
   // Sales Management
@@ -81,39 +82,149 @@ export const useSales = create<SalesStore>()(
         }
       },
 
-      addProfessional: (professionalData) => {
-        const id = crypto.randomUUID()
-        const now = new Date().toISOString()
-        
-        const newProfessional: Professional = {
-          ...professionalData,
-          id,
-          createdAt: now,
-          updatedAt: now,
+      fetchProfessionals: async () => {
+        set({ loading: true, error: null })
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) throw new Error('Usuário não autenticado')
+
+          const { data, error } = await supabase
+            .from('sales_professionals')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+
+          if (error) throw error
+
+          const professionals: Professional[] = (data || []).map(row => ({
+            id: row.id,
+            name: row.name,
+            cpf: row.cpf || undefined,
+            phone: row.phone || undefined,
+            email: row.email || undefined,
+            birthDate: row.birth_date || undefined,
+            specialty: row.specialty || undefined,
+            registrationNumber: row.registration_number || undefined,
+            clinic: row.clinic || undefined,
+            cep: row.cep || undefined,
+            street: row.street || undefined,
+            number: row.number || undefined,
+            complement: row.complement || undefined,
+            neighborhood: row.neighborhood || undefined,
+            city: row.city || undefined,
+            state: row.state || undefined,
+            notes: row.notes || undefined,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+          }))
+
+          set({ professionals, loading: false })
+        } catch (error: any) {
+          set({ error: error.message, loading: false })
         }
-
-        set((state) => ({
-          professionals: [...state.professionals, newProfessional]
-        }))
-        
-        return id
       },
 
-      updateProfessional: (id, updates) => {
-        set((state) => ({
-          professionals: state.professionals.map(prof =>
-            prof.id === id
-              ? { ...prof, ...updates, updatedAt: new Date().toISOString() }
-              : prof
-          )
-        }))
+      addProfessional: async (professionalData) => {
+        set({ loading: true, error: null })
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) throw new Error('Usuário não autenticado')
+
+          const { data, error } = await supabase
+            .from('sales_professionals')
+            .insert({
+              user_id: user.id,
+              name: professionalData.name,
+              cpf: professionalData.cpf || null,
+              phone: professionalData.phone || null,
+              email: professionalData.email || null,
+              birth_date: professionalData.birthDate || null,
+              specialty: professionalData.specialty || null,
+              registration_number: professionalData.registrationNumber || null,
+              clinic: professionalData.clinic || null,
+              cep: professionalData.cep || null,
+              street: professionalData.street || null,
+              number: professionalData.number || null,
+              complement: professionalData.complement || null,
+              neighborhood: professionalData.neighborhood || null,
+              city: professionalData.city || null,
+              state: professionalData.state || null,
+              notes: professionalData.notes || null,
+            })
+            .select()
+            .single()
+
+          if (error) throw error
+
+          await get().fetchProfessionals()
+          set({ loading: false })
+          return data.id
+        } catch (error: any) {
+          set({ error: error.message, loading: false })
+          return null
+        }
       },
 
-      removeProfessional: (id) => {
-        set((state) => ({
-          professionals: state.professionals.filter(prof => prof.id !== id),
-          sales: state.sales.filter(sale => sale.professionalId !== id)
-        }))
+      updateProfessional: async (id, updates) => {
+        set({ loading: true, error: null })
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) throw new Error('Usuário não autenticado')
+
+          const updateData: any = {}
+          if (updates.name !== undefined) updateData.name = updates.name
+          if (updates.cpf !== undefined) updateData.cpf = updates.cpf || null
+          if (updates.phone !== undefined) updateData.phone = updates.phone || null
+          if (updates.email !== undefined) updateData.email = updates.email || null
+          if (updates.birthDate !== undefined) updateData.birth_date = updates.birthDate || null
+          if (updates.specialty !== undefined) updateData.specialty = updates.specialty || null
+          if (updates.registrationNumber !== undefined) updateData.registration_number = updates.registrationNumber || null
+          if (updates.clinic !== undefined) updateData.clinic = updates.clinic || null
+          if (updates.cep !== undefined) updateData.cep = updates.cep || null
+          if (updates.street !== undefined) updateData.street = updates.street || null
+          if (updates.number !== undefined) updateData.number = updates.number || null
+          if (updates.complement !== undefined) updateData.complement = updates.complement || null
+          if (updates.neighborhood !== undefined) updateData.neighborhood = updates.neighborhood || null
+          if (updates.city !== undefined) updateData.city = updates.city || null
+          if (updates.state !== undefined) updateData.state = updates.state || null
+          if (updates.notes !== undefined) updateData.notes = updates.notes || null
+
+          updateData.updated_at = new Date().toISOString()
+
+          const { error } = await supabase
+            .from('sales_professionals')
+            .update(updateData)
+            .eq('id', id)
+            .eq('user_id', user.id)
+
+          if (error) throw error
+
+          await get().fetchProfessionals()
+          set({ loading: false })
+        } catch (error: any) {
+          set({ error: error.message, loading: false })
+        }
+      },
+
+      removeProfessional: async (id) => {
+        set({ loading: true, error: null })
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) throw new Error('Usuário não autenticado')
+
+          const { error } = await supabase
+            .from('sales_professionals')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id)
+
+          if (error) throw error
+
+          await get().fetchProfessionals()
+          set({ loading: false })
+        } catch (error: any) {
+          set({ error: error.message, loading: false })
+        }
       },
 
       getProfessional: (id) => {
@@ -329,7 +440,7 @@ export const useSales = create<SalesStore>()(
     {
       name: 'sales-storage',
       partialize: (state) => ({
-        professionals: state.professionals
+        // Não salvar mais nada no localStorage, tudo vai para o Supabase
       })
     }
   )
