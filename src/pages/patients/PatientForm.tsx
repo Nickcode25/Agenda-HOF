@@ -171,14 +171,13 @@ export default function PatientForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">CPF *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">CPF</label>
             <input
               name="cpf"
               value={cpf}
               onChange={handleCPFChange}
               placeholder="000.000.000-00"
               maxLength={14}
-              required
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
@@ -226,12 +225,11 @@ export default function PatientForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Número *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Número</label>
             <input
               value={number}
               onChange={(e) => setNumber(e.target.value)}
               placeholder="123"
-              required
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
