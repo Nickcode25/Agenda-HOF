@@ -57,72 +57,101 @@ export default function StockList() {
 
   return (
     <div className="space-y-6">
+      {/* Header Premium */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-500/20 rounded-xl">
+                <Package size={32} className="text-green-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Estoque</h1>
+                <p className="text-gray-400">Gerencie seus produtos e suprimentos</p>
+              </div>
+            </div>
+            <Link
+              to="/app/estoque/novo"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
+            >
+              <Plus size={18} />
+              Adicionar Produto
+            </Link>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar produtos..."
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            >
+              <option value="">Todas as categorias</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Alerts */}
       {unreadAlerts.length > 0 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={20} className="text-yellow-400" />
-            <h3 className="font-medium text-yellow-400">Alertas de Estoque ({unreadAlerts.length})</h3>
+        <div className="relative overflow-hidden bg-gradient-to-br from-yellow-500/10 to-orange-500/5 backdrop-blur-xl border border-yellow-500/30 rounded-2xl p-6">
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-2xl"></div>
           </div>
-          <div className="space-y-1">
-            {unreadAlerts.slice(0, 3).map(alert => (
-              <p key={alert.id} className="text-sm text-yellow-300">{alert.message}</p>
-            ))}
-            {unreadAlerts.length > 3 && (
-              <p className="text-sm text-yellow-400">+ {unreadAlerts.length - 3} outros alertas</p>
-            )}
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={20} className="text-yellow-400" />
+              <h3 className="font-medium text-yellow-400">Alertas de Estoque ({unreadAlerts.length})</h3>
+            </div>
+            <div className="space-y-1">
+              {unreadAlerts.slice(0, 3).map(alert => (
+                <p key={alert.id} className="text-sm text-yellow-300">{alert.message}</p>
+              ))}
+              {unreadAlerts.length > 3 && (
+                <p className="text-sm text-yellow-400">+ {unreadAlerts.length - 3} outros alertas</p>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Filters and Button */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar produtos..."
-            className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-          />
-        </div>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-        >
-          <option value="">Todas as categorias</option>
-          {categories.map(category => (
-            <option key={category} value={category}>{category}</option>
-          ))}
-        </select>
-        <Link
-          to="/app/estoque/novo"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
-        >
-          <Plus size={18} />
-          Adicionar Produto
-        </Link>
-      </div>
-
       {/* Stock Grid */}
       {filtered.length === 0 ? (
-        <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-12 text-center">
-          <div className="w-20 h-20 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Package size={40} className="text-gray-500" />
+        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/5 rounded-full blur-3xl"></div>
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">Nenhum produto encontrado</h3>
-          <p className="text-gray-400 mb-6">
-            {searchQuery || categoryFilter ? 'Tente ajustar os filtros de busca' : 'Comece adicionando produtos ao seu estoque'}
-          </p>
-          <Link
-            to="/app/estoque/novo"
-            className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            <Plus size={18} />
-            Adicionar Produto
-          </Link>
+          <div className="relative z-10">
+            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/20">
+              <Package size={40} className="text-green-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Nenhum produto encontrado</h3>
+            <p className="text-gray-400 mb-6">
+              {searchQuery || categoryFilter ? 'Tente ajustar os filtros de busca' : 'Comece adicionando produtos ao seu estoque'}
+            </p>
+            <Link
+              to="/app/estoque/novo"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
+            >
+              <Plus size={18} />
+              Adicionar Produto
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -130,7 +159,7 @@ export default function StockList() {
             const stockStatus = getStockStatus(item)
 
             return (
-              <div key={item.id} className={`bg-gray-800 border rounded-2xl p-6 hover:border-gray-600 transition-all ${stockStatus.border}`}>
+              <div key={item.id} className={`group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border rounded-2xl p-6 hover:border-gray-600/80 transition-all duration-300 ${stockStatus.border}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">

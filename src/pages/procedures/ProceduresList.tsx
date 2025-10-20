@@ -91,52 +91,74 @@ export default function ProceduresList() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Search and Button */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            value={q}
-            onChange={e=>setQ(e.target.value)}
-            placeholder="Buscar procedimento..."
-            className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-          />
+      {/* Header Premium */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"></div>
         </div>
-        <Link
-          to="/app/procedimentos/novo"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:scale-105 whitespace-nowrap"
-        >
-          <Plus size={20} />
-          Novo Procedimento
-        </Link>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-purple-500/20 rounded-xl">
+                <Sparkles size={32} className="text-purple-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Procedimentos</h1>
+                <p className="text-gray-400">Gerencie os procedimentos do consultório</p>
+              </div>
+            </div>
+            <Link
+              to="/app/procedimentos/novo"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
+            >
+              <Plus size={20} />
+              Novo Procedimento
+            </Link>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              value={q}
+              onChange={e=>setQ(e.target.value)}
+              placeholder="Buscar procedimento..."
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Procedures Grid */}
       {filtered.length === 0 ? (
-        <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-12 text-center">
-          <div className="w-20 h-20 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Scissors size={40} className="text-gray-500" />
+        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl"></div>
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">Nenhum procedimento encontrado</h3>
-          <p className="text-gray-400 mb-6">Cadastre os procedimentos oferecidos pelo consultório</p>
-          <Link
-            to="/app/procedimentos/novo"
-            className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            <Plus size={18} />
-            Cadastrar Procedimento
-          </Link>
+          <div className="relative z-10">
+            <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/20">
+              <Sparkles size={40} className="text-purple-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Nenhum procedimento encontrado</h3>
+            <p className="text-gray-400 mb-6">Cadastre os procedimentos oferecidos pelo consultório</p>
+            <Link
+              to="/app/procedimentos/novo"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
+            >
+              <Plus size={18} />
+              Cadastrar Procedimento
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4">
           {filtered.map(proc => {
             const iconConfig = getProcedureIcon(proc.name)
             const IconComponent = iconConfig.icon
-            
+
             return (
-              <div 
-                key={proc.id} 
-                className="bg-gray-800 border border-gray-700 rounded-2xl p-6 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"
+              <div
+                key={proc.id}
+                className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-gray-600/80 transition-all duration-300 hover:shadow-xl"
               >
                 <div className="flex items-center gap-4">
                   {/* Icon */}

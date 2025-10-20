@@ -58,45 +58,67 @@ export default function SalesHistory() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/app/vendas" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-        <h1 className="text-2xl font-bold text-white">Histórico de Vendas</h1>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por profissional, produto ou ID da venda..."
-            className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-          />
+      {/* Header Premium */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-        >
-          <option value="">Todos os status</option>
-          <option value="paid">Pago</option>
-          <option value="pending">Pendente</option>
-          <option value="overdue">Vencido</option>
-        </select>
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-6">
+            <Link to="/app/vendas" className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors">
+              <ArrowLeft size={24} className="text-gray-400 hover:text-white" />
+            </Link>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-orange-500/20 rounded-xl">
+                <ShoppingCart size={32} className="text-orange-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Histórico de Vendas</h1>
+                <p className="text-gray-400">Visualize todas as vendas realizadas</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por profissional, produto ou ID da venda..."
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            >
+              <option value="">Todos os status</option>
+              <option value="paid">Pago</option>
+              <option value="pending">Pendente</option>
+              <option value="overdue">Vencido</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Sales List */}
       {filtered.length === 0 ? (
-        <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-12 text-center">
-          <h3 className="text-xl font-semibold text-white mb-2">Nenhuma venda encontrada</h3>
-          <p className="text-gray-400">
-            {searchQuery || statusFilter ? 'Tente ajustar os filtros de busca' : 'Ainda não há vendas registradas'}
-          </p>
+        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl"></div>
+          </div>
+          <div className="relative z-10">
+            <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-500/20">
+              <ShoppingCart size={40} className="text-orange-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Nenhuma venda encontrada</h3>
+            <p className="text-gray-400">
+              {searchQuery || statusFilter ? 'Tente ajustar os filtros de busca' : 'Ainda não há vendas registradas'}
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

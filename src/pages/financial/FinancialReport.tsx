@@ -125,16 +125,27 @@ export default function FinancialReport() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Relatório Financeiro</h1>
-          <p className="text-gray-400">{getPeriodLabel()}</p>
+      {/* Header Premium */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 bg-green-500/20 rounded-xl">
+              <TrendingUp size={32} className="text-green-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Relatório Financeiro</h1>
+              <p className="text-gray-400">{getPeriodLabel()}</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Filter size={20} className="text-orange-400" />
           <h3 className="text-lg font-semibold text-white">Filtros</h3>
