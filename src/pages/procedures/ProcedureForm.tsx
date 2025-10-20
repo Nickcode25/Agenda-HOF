@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { parseCurrency } from '@/utils/currency'
-import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { Save, ArrowLeft } from 'lucide-react'
 
 export default function ProcedureForm() {
   const add = useProcedures(s => s.add)
@@ -15,32 +15,19 @@ export default function ProcedureForm() {
   const [cashValue, setCashValue] = useState('')
   const [cardValue, setCardValue] = useState('')
   const [category, setCategory] = useState('')
-  const [stockCategories, setStockCategories] = useState<Array<{
-    category: string
-    quantityUsed: number
-  }>>([])
 
   // Carregar itens do estoque ao montar o componente
   useEffect(() => {
     fetchItems()
   }, [])
 
-  // Obter categorias únicas do estoque
-  const uniqueCategories = [...new Set(stockItems.map(item => item.category))].sort()
+  // Categorias fixas de procedimentos em ordem alfabética
+  const procedureCategories = [
+    'Bioestimuladores de Colágeno',
+    'Preenchedores de Ácido Hialurônico',
+    'Toxina Botulínica'
+  ]
 
-  const addStockCategory = () => {
-    setStockCategories([...stockCategories, { category: '', quantityUsed: 1 }])
-  }
-
-  const removeStockCategory = (index: number) => {
-    setStockCategories(stockCategories.filter((_, i) => i !== index))
-  }
-
-  const updateStockCategory = (index: number, field: 'category' | 'quantityUsed', value: string | number) => {
-    const updated = [...stockCategories]
-    updated[index] = { ...updated[index], [field]: value }
-    setStockCategories(updated)
-  }
 
   function formatCurrency(val: string) {
     // Remove tudo que não é número
@@ -86,7 +73,7 @@ export default function ProcedureForm() {
       durationMinutes: durationValue ? Number(durationValue) : 0,
       category: category || undefined,
       isActive: true,
-      stockCategories: stockCategories.filter(item => item.category && item.quantityUsed > 0)
+      stockCategories: category ? [{ category, quantityUsed: 1 }] : []
     }
 
     const id = await add(procedureData)
@@ -136,16 +123,14 @@ export default function ProcedureForm() {
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
               <option value="">Selecione uma categoria</option>
-              {uniqueCategories.map(cat => (
+              {procedureCategories.map(cat => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
               ))}
             </select>
             <p className="text-xs text-gray-400 mt-1">
-              {uniqueCategories.length === 0
-                ? 'Nenhuma categoria disponível. Cadastre produtos no estoque primeiro.'
-                : 'Selecione a categoria de produto deste procedimento (ex: Toxina Botulínica, Preenchimento, etc.)'}
+              Selecione a categoria de produto deste procedimento
             </p>
           </div>
 
@@ -203,77 +188,6 @@ export default function ProcedureForm() {
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               rows={4}
             ></textarea>
-          </div>
-
-          {/* Categorias de Produtos */}
-          <div className="md:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Categorias de Produtos Utilizados</label>
-                <p className="text-xs text-gray-400 mt-1">Defina as categorias. A marca/produto específico será escolhido no agendamento.</p>
-              </div>
-              <button
-                type="button"
-                onClick={addStockCategory}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 transition-all"
-              >
-                <Plus size={16} />
-                Adicionar Categoria
-              </button>
-            </div>
-
-            {stockCategories.length === 0 ? (
-              <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-6 text-center">
-                <p className="text-gray-400 text-sm">Nenhuma categoria adicionada. Exemplo: "Toxina Botulínica" - o produto específico será escolhido no agendamento.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {stockCategories.map((item, index) => (
-                  <div key={index} className="flex gap-3 items-start bg-gray-700/50 p-4 rounded-lg border border-gray-600">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-400 mb-2">Categoria</label>
-                      <select
-                        value={item.category}
-                        onChange={(e) => updateStockCategory(index, 'category', e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                      >
-                        <option value="">
-                          {uniqueCategories.length === 0 ? 'Nenhuma categoria no estoque' : 'Selecione uma categoria'}
-                        </option>
-                        {uniqueCategories.map(category => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
-                      {uniqueCategories.length === 0 && (
-                        <p className="text-xs text-yellow-400 mt-1">
-                          Cadastre produtos no <Link to="/app/estoque" className="underline hover:text-yellow-300">estoque</Link> primeiro
-                        </p>
-                      )}
-                    </div>
-                    <div className="w-32">
-                      <label className="block text-xs font-medium text-gray-400 mb-2">Quantidade</label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={item.quantityUsed}
-                        onChange={(e) => updateStockCategory(index, 'quantityUsed', Number(e.target.value))}
-                        className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeStockCategory(index)}
-                      className="mt-7 p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
         

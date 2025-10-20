@@ -11,7 +11,7 @@ export default function StockList() {
   const [categoryFilter, setCategoryFilter] = useState('')
 
   useEffect(() => {
-    fetchItems()
+    fetchItems(true) // Força reload ao montar o componente
   }, [])
   // Gerar alertas ao carregar a página
   useMemo(() => {

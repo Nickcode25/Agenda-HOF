@@ -26,8 +26,12 @@ export default function ProcedureEdit() {
   const [duration, setDuration] = useState('')
   const [category, setCategory] = useState('')
 
-  // Obter categorias únicas do estoque
-  const uniqueCategories = [...new Set(stockItems.map(item => item.category))].sort()
+  // Categorias fixas de procedimentos em ordem alfabética
+  const procedureCategories = [
+    'Bioestimuladores de Colágeno',
+    'Preenchedores de Ácido Hialurônico',
+    'Toxina Botulínica'
+  ]
 
   useEffect(() => {
     if (procedure) {
@@ -143,16 +147,14 @@ export default function ProcedureEdit() {
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
               <option value="">Selecione uma categoria</option>
-              {uniqueCategories.map(cat => (
+              {procedureCategories.map(cat => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
               ))}
             </select>
             <p className="text-xs text-gray-400 mt-1">
-              {uniqueCategories.length === 0
-                ? 'Nenhuma categoria disponível. Cadastre produtos no estoque primeiro.'
-                : 'Selecione a categoria de produto deste procedimento (ex: Toxina Botulínica, Preenchimento, etc.)'}
+              Selecione a categoria de produto deste procedimento
             </p>
           </div>
 

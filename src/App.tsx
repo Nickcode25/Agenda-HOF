@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog } from 'lucide-react'
+import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -54,6 +54,7 @@ export default function App() {
       'procedimentos': 'Procedimentos',
       'estoque': 'Estoque',
       'vendas': 'Vendas',
+      'financeiro': 'Relatório Financeiro',
       'mensalidades': 'Mensalidades',
       'funcionarios': 'Funcionários',
       'notificacoes': 'Notificações',
@@ -183,6 +184,10 @@ export default function App() {
             {currentProfile?.role === 'owner' && (
               <>
                 {isExpanded && <div className="pt-4 pb-2 px-4 transition-all duration-300"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Financeiro & Gestão</p></div>}
+                <NavLink to="/app/financeiro" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Relatório Financeiro">
+                  <TrendingUp size={22} className="flex-shrink-0"/>
+                  <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Relatório Financeiro</span>
+                </NavLink>
                 <NavLink to="/app/mensalidades" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Mensalidades">
                   <CreditCard size={22} className="flex-shrink-0"/>
                   <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Mensalidades</span>

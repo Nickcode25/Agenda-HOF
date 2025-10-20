@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Check, DollarSign, Calendar, Users, TrendingUp, AlertCircle, CheckCircle, Zap } from 'lucide-react'
+import { Plus, X, Check, DollarSign, Calendar, Users, TrendingUp, AlertCircle, CheckCircle, Zap, Sparkles, CreditCard } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
 import { format } from 'date-fns'
@@ -32,7 +32,7 @@ export default function SubscriptionsMain() {
 
   const { patients } = usePatients()
 
-  const [activeTab, setActiveTab] = useState<'plans' | 'subscribers' | 'reports'>('plans')
+  const [activeTab, setActiveTab] = useState<'plans' | 'subscribers'>('plans')
 
   // Modal de novo plano
   const [showPlanModal, setShowPlanModal] = useState(false)
@@ -72,6 +72,7 @@ export default function SubscriptionsMain() {
     })
     setShowPlanModal(false)
     resetPlanForm()
+    showToast('Plano criado com sucesso!', 'success')
   }
 
   const handleCreateSubscription = (e: React.FormEvent) => {
@@ -117,6 +118,7 @@ export default function SubscriptionsMain() {
 
     setShowSubscriberModal(false)
     resetSubscriberForm()
+    showToast('Assinante adicionado com sucesso!', 'success')
   }
 
   const resetPlanForm = () => {
@@ -187,75 +189,112 @@ export default function SubscriptionsMain() {
       value: `R$ ${mrr.toFixed(2).replace('.', ',')}`,
       icon: TrendingUp,
       color: 'text-green-400',
-      bg: 'bg-green-500/20',
+      bg: 'bg-gradient-to-br from-green-500/10 to-green-600/5',
+      border: 'border-green-500/30',
+      iconBg: 'bg-green-500/20'
     },
     {
       label: 'Receita Recebida',
       value: `R$ ${receivedRevenue.toFixed(2).replace('.', ',')}`,
       icon: DollarSign,
       color: 'text-blue-400',
-      bg: 'bg-blue-500/20',
+      bg: 'bg-gradient-to-br from-blue-500/10 to-blue-600/5',
+      border: 'border-blue-500/30',
+      iconBg: 'bg-blue-500/20'
     },
     {
       label: 'Em Atraso',
       value: `R$ ${overdueRevenue.toFixed(2).replace('.', ',')}`,
       icon: AlertCircle,
       color: 'text-red-400',
-      bg: 'bg-red-500/20',
+      bg: 'bg-gradient-to-br from-red-500/10 to-red-600/5',
+      border: 'border-red-500/30',
+      iconBg: 'bg-red-500/20'
     },
     {
       label: 'Assinantes Ativos',
       value: activeCount.toString(),
       icon: Users,
-      color: 'text-orange-400',
-      bg: 'bg-orange-500/20',
+      color: 'text-purple-400',
+      bg: 'bg-gradient-to-br from-purple-500/10 to-purple-600/5',
+      border: 'border-purple-500/30',
+      iconBg: 'bg-purple-500/20'
     },
   ]
 
   const activePlans = plans.filter(p => p.active)
 
   return (
-    <div className="p-8">
-      {/* Stats */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="space-y-6">
+      {/* Header com gradiente */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 bg-purple-500/20 rounded-xl">
+              <CreditCard size={32} className="text-purple-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Planos de Mensalidade</h1>
+              <p className="text-gray-400">Gerencie planos e assinaturas recorrentes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards Modernos */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <div key={index} className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg ${stat.bg}`}>
+            <div key={index} className={`${stat.bg} border ${stat.border} rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-${stat.color}/10`}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`p-3 rounded-xl ${stat.iconBg}`}>
                   <Icon className={stat.color} size={24} />
                 </div>
+                <div className="flex-1">
+                  <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+                  <div className="text-xs text-gray-400 mt-1">{stat.label}</div>
+                </div>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-sm text-gray-400">{stat.label}</div>
             </div>
           )
         })}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-gray-700">
-        <button
-          onClick={() => setActiveTab('plans')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'plans'
-              ? 'text-orange-500 border-b-2 border-orange-500'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Planos
-        </button>
-        <button
-          onClick={() => setActiveTab('subscribers')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'subscribers'
-              ? 'text-orange-500 border-b-2 border-orange-500'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Assinantes
-        </button>
+      {/* Tabs Modernos */}
+      <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-2">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('plans')}
+            className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+              activeTab === 'plans'
+                ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Sparkles size={18} />
+              <span>Planos</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('subscribers')}
+            className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+              activeTab === 'subscribers'
+                ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Users size={18} />
+              <span>Assinantes</span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Plans Tab */}
@@ -264,7 +303,7 @@ export default function SubscriptionsMain() {
           <div className="flex justify-end mb-6">
             <button
               onClick={() => setShowPlanModal(true)}
-              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors"
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
             >
               <Plus size={20} />
               Criar Plano
@@ -272,12 +311,19 @@ export default function SubscriptionsMain() {
           </div>
 
           {plans.length === 0 ? (
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-12 text-center">
-              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Plus className="text-gray-500" size={32} />
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/30 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-16 text-center">
+              <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="text-purple-400" size={40} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-300 mb-2">Nenhum plano cadastrado</h3>
-              <p className="text-gray-500 mb-6">Comece criando seu primeiro plano de mensalidade</p>
+              <h3 className="text-2xl font-bold text-white mb-2">Nenhum plano cadastrado</h3>
+              <p className="text-gray-400 mb-8 text-lg">Comece criando seu primeiro plano de mensalidade</p>
+              <button
+                onClick={() => setShowPlanModal(true)}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
+              >
+                <Plus size={20} />
+                Criar Primeiro Plano
+              </button>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -285,29 +331,56 @@ export default function SubscriptionsMain() {
                 <button
                   key={plan.id}
                   onClick={() => navigate(`/app/mensalidades/planos/${plan.id}`)}
-                  className={`bg-gray-800 rounded-xl border ${
-                    plan.active ? 'border-orange-500/50' : 'border-gray-700'
-                  } p-6 text-left hover:border-orange-500 transition-all cursor-pointer`}
+                  className={`group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl rounded-3xl border ${
+                    plan.active ? 'border-purple-500/50 hover:border-purple-500' : 'border-gray-700 hover:border-gray-600'
+                  } p-8 text-left transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20`}
                 >
-                  <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-gray-400 text-sm mb-4">{plan.description}</p>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-3xl font-bold text-white">
-                      R$ {plan.price.toFixed(2).replace('.', ',')}
-                    </span>
-                    <span className="text-gray-400">/mês</span>
-                  </div>
-                  <p className="text-sm text-orange-400">{plan.sessionsPerYear} sessões/ano</p>
-                  {plan.benefits.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {plan.benefits.slice(0, 3).map((benefit, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <Check className="text-orange-500 mt-0.5 flex-shrink-0" size={16} />
-                          <span className="text-sm text-gray-300">{benefit}</span>
-                        </div>
-                      ))}
+                  {/* Badge de destaque */}
+                  {plan.active && (
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-purple-500/20 border border-purple-500/50 rounded-full text-xs font-medium text-purple-400">
+                      Ativo
                     </div>
                   )}
+
+                  {/* Gradiente de fundo no hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true"></div>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-purple-500/20 rounded-xl group-hover:scale-110 transition-transform duration-500">
+                        <Sparkles className="text-purple-400" size={24} />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white group-hover:text-purple-400 transition-colors">{plan.name}</h3>
+                    </div>
+
+                    <p className="text-gray-400 text-sm mb-6 line-clamp-2">{plan.description}</p>
+
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-4xl font-bold text-white group-hover:text-purple-400 transition-colors">
+                        R$ {plan.price.toFixed(2).replace('.', ',')}
+                      </span>
+                      <span className="text-gray-400">/mês</span>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full mb-6">
+                      <Calendar size={14} className="text-purple-400" />
+                      <span className="text-sm font-medium text-purple-400">{plan.sessionsPerYear} sessões/ano</span>
+                    </div>
+
+                    {plan.benefits.length > 0 && (
+                      <div className="space-y-2 pt-4 border-t border-gray-700/50">
+                        {plan.benefits.slice(0, 3).map((benefit, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <Check className="text-purple-500 mt-0.5 flex-shrink-0" size={16} />
+                            <span className="text-sm text-gray-300">{benefit}</span>
+                          </div>
+                        ))}
+                        {plan.benefits.length > 3 && (
+                          <p className="text-xs text-purple-400 mt-2">+{plan.benefits.length - 3} benefícios</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
@@ -321,7 +394,7 @@ export default function SubscriptionsMain() {
           <div className="flex justify-end mb-6">
             <button
               onClick={() => setShowSubscriberModal(true)}
-              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors"
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
             >
               <Plus size={20} />
               Adicionar Assinante
@@ -329,98 +402,121 @@ export default function SubscriptionsMain() {
           </div>
 
           {subscriptions.length === 0 ? (
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-12 text-center">
-              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="text-gray-500" size={32} />
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/30 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-16 text-center">
+              <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="text-purple-400" size={40} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-300 mb-2">Nenhum assinante</h3>
-              <p className="text-gray-500 mb-6">Adicione pacientes aos planos de mensalidade</p>
+              <h3 className="text-2xl font-bold text-white mb-2">Nenhum assinante</h3>
+              <p className="text-gray-400 mb-8 text-lg">Adicione pacientes aos planos de mensalidade</p>
+              <button
+                onClick={() => setShowSubscriberModal(true)}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
+              >
+                <Plus size={20} />
+                Adicionar Primeiro Assinante
+              </button>
             </div>
           ) : (
-            <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Paciente</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Plano</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Valor</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Próxima Cobrança</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Status Pagamento</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {subscriptions.map((sub) => {
-                    const currentPayment = getCurrentPayment(sub)
-                    return (
-                      <tr key={sub.id} className="border-b border-gray-700 hover:bg-gray-750 transition-colors">
-                        <td className="px-6 py-4 text-white font-medium">{sub.patientName}</td>
-                        <td className="px-6 py-4 text-gray-300">{sub.planName}</td>
-                        <td className="px-6 py-4 text-white">R$ {sub.price.toFixed(2).replace('.', ',')}</td>
-                        <td className="px-6 py-4 text-gray-300">
-                          <div className="flex items-center gap-2">
-                            <Calendar size={16} />
-                            {(() => {
-                              if (!sub.nextBillingDate) return '-'
-                              const dateStr = sub.nextBillingDate.split('T')[0]
-                              const [year, month, day] = dateStr.split('-').map(Number)
-                              if (!year || !month || !day) return '-'
-                              const date = new Date(year, month - 1, day)
-                              if (isNaN(date.getTime())) return '-'
-                              return format(date, "dd 'de' MMMM", { locale: ptBR })
-                            })()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {currentPayment ? (
-                            <span className={`px-3 py-1 rounded-full text-sm ${
-                              currentPayment.status === 'paid'
-                                ? 'bg-green-500/20 text-green-400'
-                                : currentPayment.status === 'pending'
-                                ? 'bg-yellow-500/20 text-yellow-400'
-                                : 'bg-red-500/20 text-red-400'
-                            }`}>
-                              {currentPayment.status === 'paid' ? 'Pago' : currentPayment.status === 'pending' ? 'Pendente' : 'Atrasado'}
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-400">
-                              Em dia
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {currentPayment && currentPayment.status !== 'paid' ? (
-                              <>
-                                <button
-                                  onClick={() => handleMarkAsPaid(sub.id, currentPayment.id, sub.patientName)}
-                                  className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
-                                >
-                                  <CheckCircle size={14} />
-                                  Marcar como Pago
-                                </button>
-                                <button
-                                  onClick={() => handleSimulatePixPayment(sub.id, sub.patientName)}
-                                  disabled={processingPayment === sub.id}
-                                  className="flex items-center gap-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <Zap size={14} />
-                                  {processingPayment === sub.id ? 'Processando...' : 'Simular PIX'}
-                                </button>
-                              </>
-                            ) : (
-                              <div className="flex items-center gap-2 text-green-400">
-                                <CheckCircle size={14} />
-                                <span className="text-sm font-medium">Pago ✅</span>
+            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-800/50 border-b border-gray-700">
+                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Paciente</th>
+                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Plano</th>
+                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Valor</th>
+                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Próxima Cobrança</th>
+                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Status</th>
+                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subscriptions.map((sub) => {
+                      const currentPayment = getCurrentPayment(sub)
+                      return (
+                        <tr key={sub.id} className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                                <Users size={18} className="text-purple-400" />
                               </div>
+                              <span className="font-medium text-white">{sub.patientName}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-sm font-medium text-purple-400">
+                              <Sparkles size={12} />
+                              {sub.planName}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="font-semibold text-white">R$ {sub.price.toFixed(2).replace('.', ',')}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 text-gray-300">
+                              <Calendar size={16} className="text-purple-400" />
+                              {(() => {
+                                if (!sub.nextBillingDate) return '-'
+                                const dateStr = sub.nextBillingDate.split('T')[0]
+                                const [year, month, day] = dateStr.split('-').map(Number)
+                                if (!year || !month || !day) return '-'
+                                const date = new Date(year, month - 1, day)
+                                if (isNaN(date.getTime())) return '-'
+                                return format(date, "dd 'de' MMMM", { locale: ptBR })
+                              })()}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            {currentPayment ? (
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
+                                currentPayment.status === 'paid'
+                                  ? 'bg-green-500/20 border border-green-500/30 text-green-400'
+                                  : currentPayment.status === 'pending'
+                                  ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-400'
+                                  : 'bg-red-500/20 border border-red-500/30 text-red-400'
+                              }`}>
+                                {currentPayment.status === 'paid' ? '✓ Pago' : currentPayment.status === 'pending' ? '○ Pendente' : '! Atrasado'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-green-500/20 border border-green-500/30 text-green-400">
+                                ✓ Em dia
+                              </span>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {currentPayment && currentPayment.status !== 'paid' ? (
+                                <>
+                                  <button
+                                    onClick={() => handleMarkAsPaid(sub.id, currentPayment.id, sub.patientName)}
+                                    className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 px-3 py-2 rounded-lg transition-all text-sm font-medium hover:scale-105"
+                                  >
+                                    <CheckCircle size={14} />
+                                    Confirmar
+                                  </button>
+                                  <button
+                                    onClick={() => handleSimulatePixPayment(sub.id, sub.patientName)}
+                                    disabled={processingPayment === sub.id}
+                                    className="flex items-center gap-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-400 px-3 py-2 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                                  >
+                                    <Zap size={14} />
+                                    {processingPayment === sub.id ? 'Processando...' : 'PIX'}
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="flex items-center gap-2 text-green-400">
+                                  <CheckCircle size={16} />
+                                  <span className="text-sm font-medium">Pago</span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -429,10 +525,10 @@ export default function SubscriptionsMain() {
       {/* Modal Criar Plano */}
       {showPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-gray-800/95 backdrop-blur-xl rounded-2xl border border-gray-700 p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Criar Novo Plano</h2>
-              <button onClick={() => setShowPlanModal(false)} className="text-gray-400 hover:text-white">
+              <button onClick={() => setShowPlanModal(false)} className="text-gray-400 hover:text-white transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -445,7 +541,7 @@ export default function SubscriptionsMain() {
                   required
                   value={planName}
                   onChange={(e) => setPlanName(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                   placeholder="Ex: Clube do Botox"
                 />
               </div>
@@ -455,7 +551,7 @@ export default function SubscriptionsMain() {
                 <textarea
                   value={planDescription}
                   onChange={(e) => setPlanDescription(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 h-20 resize-none"
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all h-20 resize-none"
                   placeholder="Descreva o plano (opcional)"
                 />
               </div>
@@ -469,7 +565,7 @@ export default function SubscriptionsMain() {
                     step="0.01"
                     value={planPrice}
                     onChange={(e) => setPlanPrice(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                     placeholder="225.00"
                   />
                 </div>
@@ -481,7 +577,7 @@ export default function SubscriptionsMain() {
                     required
                     value={planSessions}
                     onChange={(e) => setPlanSessions(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                     placeholder="3"
                   />
                 </div>
@@ -495,13 +591,13 @@ export default function SubscriptionsMain() {
                     value={newBenefit}
                     onChange={(e) => setNewBenefit(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBenefit())}
-                    className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                    className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                     placeholder="Digite um benefício"
                   />
                   <button
                     type="button"
                     onClick={handleAddBenefit}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-xl transition-colors"
                   >
                     <Plus size={20} />
                   </button>
@@ -509,12 +605,15 @@ export default function SubscriptionsMain() {
                 {planBenefits.length > 0 && (
                   <div className="space-y-2">
                     {planBenefits.map((benefit, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-2">
-                        <span className="text-white text-sm">{benefit}</span>
+                      <div key={index} className="flex items-center justify-between bg-gray-700/50 rounded-xl px-4 py-3 border border-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Check className="text-purple-400" size={16} />
+                          <span className="text-white text-sm">{benefit}</span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveBenefit(index)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-red-400 hover:text-red-300 transition-colors"
                         >
                           <X size={16} />
                         </button>
@@ -527,14 +626,14 @@ export default function SubscriptionsMain() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium"
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all"
                 >
                   Criar Plano
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowPlanModal(false)}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg"
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
@@ -547,10 +646,10 @@ export default function SubscriptionsMain() {
       {/* Modal Adicionar Assinante */}
       {showSubscriberModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-2xl">
+          <div className="bg-gray-800/95 backdrop-blur-xl rounded-2xl border border-gray-700 p-8 w-full max-w-2xl">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Adicionar Assinante ao Plano</h2>
-              <button onClick={() => setShowSubscriberModal(false)} className="text-gray-400 hover:text-white">
+              <button onClick={() => setShowSubscriberModal(false)} className="text-gray-400 hover:text-white transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -562,7 +661,7 @@ export default function SubscriptionsMain() {
                   required
                   value={selectedPatientId}
                   onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 >
                   <option value="">Selecione um paciente</option>
                   {patients.map((patient) => (
@@ -583,7 +682,7 @@ export default function SubscriptionsMain() {
                     const plan = activePlans.find(p => p.id === e.target.value)
                     if (plan) setPaidAmount(plan.price.toString())
                   }}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 >
                   <option value="">Selecione um plano</option>
                   {activePlans.map((plan) => (
@@ -602,7 +701,7 @@ export default function SubscriptionsMain() {
                     required
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                   />
                 </div>
 
@@ -614,7 +713,7 @@ export default function SubscriptionsMain() {
                     step="0.01"
                     value={paidAmount}
                     onChange={(e) => setPaidAmount(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                     placeholder="225.00"
                   />
                 </div>
@@ -626,7 +725,7 @@ export default function SubscriptionsMain() {
                   required
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 >
                   <option value="PIX">PIX</option>
                   <option value="Cartão de Crédito">Cartão de Crédito</option>
@@ -637,16 +736,19 @@ export default function SubscriptionsMain() {
               </div>
 
               {selectedPlanId && (
-                <div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-                  <h3 className="text-white font-medium mb-2">Resumo</h3>
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                  <h3 className="text-white font-medium mb-2 flex items-center gap-2">
+                    <Sparkles size={16} className="text-purple-400" />
+                    Resumo da Assinatura
+                  </h3>
                   <div className="space-y-1 text-sm">
                     <p className="text-gray-300">
                       <span className="text-gray-400">Plano:</span>{' '}
-                      {activePlans.find((p) => p.id === selectedPlanId)?.name}
+                      <span className="font-medium">{activePlans.find((p) => p.id === selectedPlanId)?.name}</span>
                     </p>
                     <p className="text-gray-300">
                       <span className="text-gray-400">Próxima cobrança:</span>{' '}
-                      {new Date(new Date(paymentDate).setMonth(new Date(paymentDate).getMonth() + 1)).toLocaleDateString('pt-BR')}
+                      <span className="font-medium">{new Date(new Date(paymentDate).setMonth(new Date(paymentDate).getMonth() + 1)).toLocaleDateString('pt-BR')}</span>
                     </p>
                   </div>
                 </div>
@@ -656,14 +758,14 @@ export default function SubscriptionsMain() {
                 <button
                   type="submit"
                   disabled={activePlans.length === 0}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium"
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all"
                 >
                   Adicionar Assinante
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSubscriberModal(false)}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg"
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>

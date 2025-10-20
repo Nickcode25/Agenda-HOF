@@ -4,6 +4,104 @@ import { useStock } from '@/store/stock'
 import { parseCurrency } from '@/utils/currency'
 import { Save, ArrowLeft } from 'lucide-react'
 
+// Produtos pré-cadastrados por categoria e marca (em ordem alfabética)
+const PREDEFINED_PRODUCTS: Record<string, Record<string, string[]>> = {
+  'Bioestimuladores de Colágeno': {
+    'Allergan Aesthetics': [
+      'HArmonyCa'
+    ],
+    'Galderma': [
+      'Sculptra'
+    ],
+    'Merz Aesthetics': [
+      'Radiesse',
+      'Radiesse (+) Lidocaine',
+      'Radiesse Duo'
+    ],
+    'Rennova': [
+      'Rennova Diamond',
+      'Rennova Diamond Lido',
+      'Rennova Elleva',
+      'Rennova Elleva C/210mg',
+      'Rennova Elleva X'
+    ]
+  },
+  'Preenchedores de Ácido Hialurônico': {
+    'Allergan Aesthetics': [
+      'Juvéderm Kysse',
+      'Juvéderm Ultra Plus XC',
+      'Juvéderm Ultra XC',
+      'Juvéderm Volbella',
+      'Juvéderm Volift',
+      'Juvéderm Voluma',
+      'Juvéderm Volux',
+      'SKINVIVE by Juvéderm'
+    ],
+    'Galderma': [
+      'Restylane',
+      'Restylane Contour',
+      'Restylane Defyne',
+      'Restylane Kysse',
+      'Restylane Lidocaine',
+      'Restylane Lyft',
+      'Restylane Refyne',
+      'Restylane Skinboosters Vital',
+      'Restylane Skinboosters Vital Light',
+      'Restylane Volyme'
+    ],
+    'Merz Aesthetics': [
+      'Belotero Balance',
+      'Belotero Hydro',
+      'Belotero Intense',
+      'Belotero Lips',
+      'Belotero Revive',
+      'Belotero Soft',
+      'Belotero Volume'
+    ],
+    'Pharmaesthetics': [
+      'Biogelis Fine Lines',
+      'Biogelis Global',
+      'Biogelis Volume',
+      'Biogelis Volumax'
+    ],
+    'Rennova': [
+      'Rennova Deep Lido',
+      'Rennova Elleva',
+      'Rennova Fill',
+      'Rennova Fill Corporal 30',
+      'Rennova Fill Eyes Lines',
+      'Rennova Fill Fine Lines',
+      'Rennova Fill Lido',
+      'Rennova Fill Soft Lips Lido',
+      'Rennova Lift',
+      'Rennova Lift Deep Line Lido',
+      'Rennova Lift Lido',
+      'Rennova Lift Lips Plus Lido',
+      'Rennova Ultra Deep',
+      'Rennova Ultra Deep Lido',
+      'Rennova Ultra Volume Lido'
+    ]
+  },
+  'Toxina Botulínica': {
+    'Allergan Aesthetics': [
+      'Botox 100U',
+      'Botox 200U',
+      'Botox 50U'
+    ],
+    'Galderma': [
+      'Dysport 300U',
+      'Dysport 500U'
+    ],
+    'Merz Aesthetics': [
+      'Xeomin 100U'
+    ],
+    'Rennova': [
+      'Nabota 100U',
+      'Nabota 200U'
+    ]
+  }
+}
+
 export default function StockForm() {
   const { id } = useParams()
   const { items, addItem, updateItem, fetchItems } = useStock()
@@ -19,6 +117,18 @@ export default function StockForm() {
   const [quantity, setQuantity] = useState('')
   const [minQuantity, setMinQuantity] = useState('')
   const [unit, setUnit] = useState('')
+
+  // Obter produtos disponíveis baseado na categoria e marca selecionadas
+  const availableProducts = category && brand && PREDEFINED_PRODUCTS[category]?.[brand]
+    ? PREDEFINED_PRODUCTS[category][brand]
+    : []
+
+  // Limpar o produto quando categoria ou marca mudarem (exceto em modo de edição)
+  useEffect(() => {
+    if (!isEditMode && name && availableProducts.length > 0 && !availableProducts.includes(name)) {
+      setName('')
+    }
+  }, [category, brand, availableProducts, isEditMode])
 
   // Carregar item ao editar
   useEffect(() => {
@@ -73,10 +183,12 @@ export default function StockForm() {
 
     if (isEditMode && id) {
       await updateItem(id, itemData)
+      await fetchItems(true) // Força reload dos dados
       navigate('/app/estoque')
     } else {
       const newId = await addItem(itemData)
       if (newId) {
+        await fetchItems(true) // Força reload dos dados
         navigate('/app/estoque')
       }
     }
@@ -104,41 +216,61 @@ export default function StockForm() {
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
               <option value="">Selecione uma categoria</option>
+              <option value="Bioestimuladores de Colágeno">Bioestimuladores de Colágeno</option>
+              <option value="Preenchedores de Ácido Hialurônico">Preenchedores de Ácido Hialurônico</option>
               <option value="Toxina Botulínica">Toxina Botulínica</option>
-              <option value="Preenchedores">Preenchedores</option>
-              <option value="Bioestimuladores">Bioestimuladores</option>
-              <option value="Fios de Sustentação">Fios de Sustentação</option>
-              <option value="Anestésicos">Anestésicos</option>
-              <option value="Materiais Descartáveis">Materiais Descartáveis</option>
-              <option value="Equipamentos">Equipamentos</option>
-              <option value="Cosméticos">Cosméticos</option>
-              <option value="Medicamentos">Medicamentos</option>
-              <option value="Outros">Outros</option>
             </select>
           </div>
 
           {/* Marca */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Marca *</label>
-            <input
+            <select
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
               required
-              placeholder="Ex: Rennova, Allergan, Galderma..."
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
+            >
+              <option value="">Selecione uma marca</option>
+              <option value="Allergan Aesthetics">Allergan Aesthetics</option>
+              <option value="Galderma">Galderma</option>
+              <option value="Merz Aesthetics">Merz Aesthetics</option>
+              <option value="Pharmaesthetics">Pharmaesthetics</option>
+              <option value="Rennova">Rennova</option>
+            </select>
           </div>
 
           {/* Produto */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Produto *</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Ex: Nabota, Botulift, Dysport..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
+            {availableProducts.length > 0 ? (
+              <select
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              >
+                <option value="">Selecione um produto</option>
+                {availableProducts.map((product) => (
+                  <option key={product} value={product}>
+                    {product}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="Digite o nome do produto..."
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            )}
+            {category && brand && availableProducts.length === 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                Nenhum produto pré-cadastrado para esta combinação. Digite manualmente.
+              </p>
+            )}
           </div>
 
           {/* Quantidade */}
