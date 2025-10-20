@@ -1,0 +1,30 @@
+name: 🚀 Deploy Automático para GoDaddy
+
+on:
+  push:
+    branches:
+      - main  # ou 'master' se for sua branch principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Clonar repositório
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Instalar dependências
+        run: npm install
+
+      - name: 🏗️ Gerar build de produção
+        run: npm run build
+
+      - name: 🚀 Enviar arquivos via FTP para GoDaddy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist
+          server-dir: /public_html/
+          dangerous-clean-slate: false
