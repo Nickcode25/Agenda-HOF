@@ -31,6 +31,7 @@ interface MedicalRecordsState {
   // Medical Photos Actions
   fetchMedicalPhotosByPatient: (patientId: string) => Promise<void>
   uploadMedicalPhoto: (patientId: string, file: File, data: MedicalPhotoFormData) => Promise<void>
+  updateMedicalPhoto: (id: string, data: Partial<MedicalPhotoFormData>) => Promise<void>
   deleteMedicalPhoto: (id: string, photoUrl: string) => Promise<void>
 
   // Informed Consents Actions

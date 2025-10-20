@@ -15,6 +15,7 @@ export type Patient = {
   id: string
   name: string
   cpf: string
+  birth_date?: string
   phone?: string
   cep?: string
   street?: string
