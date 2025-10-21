@@ -6,10 +6,12 @@ import { useToast } from '@/hooks/useToast'
 
 export default function PatientForm() {
   const add = usePatients(s => s.add)
+  const patients = usePatients(s => s.patients)
   const navigate = useNavigate()
   const { show: showToast } = useToast()
 
   const [photoUrl, setPhotoUrl] = useState<string | undefined>()
+  const [name, setName] = useState('')
   const [cpf, setCpf] = useState('')
   const [phone, setPhone] = useState('')
   const [cep, setCep] = useState('')
@@ -20,6 +22,15 @@ export default function PatientForm() {
   const [number, setNumber] = useState('')
   const [complement, setComplement] = useState('')
   const [isLoadingCep, setIsLoadingCep] = useState(false)
+
+  // Verificação de duplicação
+  const duplicateNameWarning = name.trim().length > 0 && patients.some(
+    p => p.name.toLowerCase().trim() === name.toLowerCase().trim()
+  )
+
+  const duplicateCpfWarning = cpf.replace(/\D/g, '').length > 0 && patients.some(
+    p => p.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, '')
+  )
 
   // Máscara de CPF: 000.000.000-00
   function formatCPF(value: string) {
@@ -120,9 +131,34 @@ export default function PatientForm() {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
 
+    const name = String(data.get('name')||'').trim()
+    const cleanCpf = cpf.replace(/\D/g, '')
+
+    // Validação: verificar se já existe paciente com mesmo nome
+    const existingByName = patients.find(
+      p => p.name.toLowerCase().trim() === name.toLowerCase()
+    )
+
+    if (existingByName) {
+      showToast(`Já existe um paciente cadastrado com o nome "${name}"`, 'error')
+      return
+    }
+
+    // Validação: verificar se já existe paciente com mesmo CPF (se CPF foi preenchido)
+    if (cleanCpf.length > 0) {
+      const existingByCpf = patients.find(
+        p => p.cpf.replace(/\D/g, '') === cleanCpf
+      )
+
+      if (existingByCpf) {
+        showToast(`Já existe um paciente cadastrado com o CPF ${cpf}`, 'error')
+        return
+      }
+    }
+
     try {
       const id = await add({
-        name: String(data.get('name')||''),
+        name: name,
         cpf: cpf,
         phone: phone,
         birth_date: String(data.get('birth_date')||''),
@@ -165,9 +201,20 @@ export default function PatientForm() {
             <label className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
             <input
               name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className={`w-full bg-gray-700 border ${
+                duplicateNameWarning
+                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                  : 'border-gray-600 focus:border-orange-500 focus:ring-orange-500/20'
+              } text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 transition-all`}
             />
+            {duplicateNameWarning && (
+              <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                ⚠️ Já existe um paciente cadastrado com este nome
+              </p>
+            )}
           </div>
 
           <div>
@@ -178,8 +225,17 @@ export default function PatientForm() {
               onChange={handleCPFChange}
               placeholder="000.000.000-00"
               maxLength={14}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className={`w-full bg-gray-700 border ${
+                duplicateCpfWarning
+                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                  : 'border-gray-600 focus:border-orange-500 focus:ring-orange-500/20'
+              } text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 transition-all`}
             />
+            {duplicateCpfWarning && (
+              <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                ⚠️ Já existe um paciente cadastrado com este CPF
+              </p>
+            )}
           </div>
 
           <div>
@@ -336,9 +392,14 @@ export default function PatientForm() {
           <div className="md:col-span-2 flex gap-3 mt-8">
             <button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30"
+              disabled={duplicateNameWarning || duplicateCpfWarning}
+              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all shadow-lg ${
+                duplicateNameWarning || duplicateCpfWarning
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-orange-500/20 hover:shadow-orange-500/30'
+              }`}
             >
-              Salvar Paciente
+              {duplicateNameWarning || duplicateCpfWarning ? 'Paciente Duplicado' : 'Salvar Paciente'}
             </button>
           </div>
         </div>
