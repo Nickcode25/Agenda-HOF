@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase'
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile sidebar
   const [sidebarHovered, setSidebarHovered] = useState(false) // Desktop hover
-  const [patientName, setPatientName] = useState<string | null>(null)
+  const [entityNames, setEntityNames] = useState<Record<string, string>>({})
   const { professionals } = useProfessionals()
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
@@ -37,42 +37,90 @@ export default function App() {
     }
   }, [user])
 
-  // Buscar nome do paciente quando estiver na página do paciente
+  // Buscar nomes de entidades (pacientes, procedimentos, profissionais, etc) para breadcrumbs
   useEffect(() => {
-    const fetchPatientName = async () => {
+    const fetchEntityNames = async () => {
       const paths = location.pathname.split('/').filter(Boolean)
-      const patientIndex = paths.indexOf('pacientes')
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      const newEntityNames: Record<string, string> = {}
 
-      if (patientIndex !== -1 && paths[patientIndex + 1]) {
-        const patientId = paths[patientIndex + 1]
+      // Identificar contexto e UUIDs
+      for (let i = 0; i < paths.length; i++) {
+        const path = paths[i]
+        const nextPath = paths[i + 1]
 
-        // Verificar se é um UUID (não é "novo", "nova", etc)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        if (uuidRegex.test(patientId)) {
-          try {
-            const { data, error } = await supabase
+        if (!nextPath || !uuidRegex.test(nextPath)) continue
+
+        const id = nextPath
+
+        try {
+          let data = null
+
+          // Pacientes
+          if (path === 'pacientes') {
+            const result = await supabase
               .from('patients')
               .select('name')
-              .eq('id', patientId)
+              .eq('id', id)
               .single()
-
-            if (data && !error) {
-              setPatientName(data.name)
-            } else {
-              setPatientName(null)
-            }
-          } catch (err) {
-            setPatientName(null)
+            data = result.data
+            if (data) newEntityNames[id] = data.name
           }
-        } else {
-          setPatientName(null)
+
+          // Procedimentos
+          else if (path === 'procedimentos') {
+            const result = await supabase
+              .from('procedures')
+              .select('name')
+              .eq('id', id)
+              .single()
+            data = result.data
+            if (data) newEntityNames[id] = data.name
+          }
+
+          // Profissionais
+          else if (path === 'profissionais') {
+            const result = await supabase
+              .from('professionals')
+              .select('name')
+              .eq('id', id)
+              .single()
+            data = result.data
+            if (data) newEntityNames[id] = data.name
+          }
+
+          // Sessões de caixa
+          else if (path === 'sessao') {
+            const result = await supabase
+              .from('cash_sessions')
+              .select('id, created_at')
+              .eq('id', id)
+              .single()
+            if (result.data) {
+              const date = new Date(result.data.created_at).toLocaleDateString('pt-BR')
+              newEntityNames[id] = `Sessão ${date}`
+            }
+          }
+
+          // Planos de mensalidade
+          else if (path === 'planos') {
+            const result = await supabase
+              .from('subscription_plans')
+              .select('name')
+              .eq('id', id)
+              .single()
+            data = result.data
+            if (data) newEntityNames[id] = data.name
+          }
+        } catch (err) {
+          console.error(`Erro ao buscar nome para ${path}/${id}:`, err)
         }
-      } else {
-        setPatientName(null)
       }
+
+      setEntityNames(newEntityNames)
     }
 
-    fetchPatientName()
+    fetchEntityNames()
   }, [location.pathname])
 
   const handleLogout = async () => {
@@ -119,14 +167,14 @@ export default function App() {
     }
 
     return paths.map((path, index) => {
-      // Verificar se é um UUID (ID do paciente)
+      // Verificar se é um UUID
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
       let displayName = breadcrumbMap[path] || path
 
-      // Se for um UUID e tivermos o nome do paciente, usar o nome
-      if (uuidRegex.test(path) && patientName) {
-        displayName = patientName
+      // Se for um UUID e tivermos o nome da entidade, usar o nome
+      if (uuidRegex.test(path) && entityNames[path]) {
+        displayName = entityNames[path]
       }
 
       return {

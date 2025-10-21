@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
-import { autoRegisterCashMovement } from '@/store/cash'
+import { autoRegisterCashMovement, useCash } from '@/store/cash'
 import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, ArrowLeft, AlertTriangle, Package, FileText, X } from 'lucide-react'
@@ -17,6 +17,7 @@ export default function PatientDetail() {
   const remove = usePatients(s => s.remove)
   const { procedures, fetchAll: fetchProcedures } = useProcedures()
   const { items: stockItems, fetchItems } = useStock()
+  const { movements, updateMovement, fetchMovements } = useCash()
   const { show: showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirm()
 
@@ -255,7 +256,7 @@ export default function PatientDetail() {
     setShowEditValueModal(true)
   }
 
-  const handleSaveEditedValue = () => {
+  const handleSaveEditedValue = async () => {
     if (!patient || !editingProcedure) return
 
     // Parse do valor editado
@@ -276,6 +277,36 @@ export default function PatientDetail() {
     )
 
     update(patient.id, { plannedProcedures: updated })
+
+    // Se o procedimento já foi concluído, atualizar também a movimentação de caixa
+    if (editingProcedure.status === 'completed') {
+      // Buscar movimentação relacionada a este procedimento
+      const relatedMovement = movements.find(mov =>
+        mov.referenceId === editingProcedure.id &&
+        mov.category === 'procedure'
+      )
+
+      if (relatedMovement) {
+        console.log('📝 Atualizando movimentação de caixa:', {
+          movementId: relatedMovement.id,
+          oldAmount: relatedMovement.amount,
+          newAmount: parsedValue
+        })
+
+        // Atualizar valor da movimentação
+        await updateMovement(relatedMovement.id, {
+          amount: parsedValue,
+          description: editedDescription || relatedMovement.description
+        })
+
+        // Recarregar movimentações para refletir mudanças
+        await fetchMovements()
+
+        console.log('✅ Movimentação de caixa atualizada!')
+      } else {
+        console.log('⚠️ Nenhuma movimentação de caixa encontrada para este procedimento')
+      }
+    }
 
     setShowEditValueModal(false)
     setEditingProcedure(null)

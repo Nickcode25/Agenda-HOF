@@ -28,6 +28,7 @@ interface CashStore {
   // Movements
   fetchMovements: (sessionId?: string) => Promise<void>
   addMovement: (movement: Omit<CashMovement, 'id' | 'userId' | 'createdAt'>) => Promise<string | null>
+  updateMovement: (id: string, updates: Partial<CashMovement>) => Promise<void>
   deleteMovement: (id: string) => Promise<void>
   getMovement: (id: string) => CashMovement | undefined
 
@@ -463,6 +464,30 @@ export const useCash = create<CashStore>()(
         } catch (error: any) {
           set({ error: error.message, loading: false })
           return null
+        }
+      },
+
+      updateMovement: async (id, updates) => {
+        set({ loading: true, error: null })
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) throw new Error('Usuário não autenticado')
+
+          const movement = get().getMovement(id)
+          if (!movement) throw new Error('Movimento não encontrado')
+
+          const { error } = await supabase
+            .from('cash_movements')
+            .update(updates)
+            .eq('id', id)
+            .eq('user_id', user.id)
+
+          if (error) throw error
+
+          await get().fetchMovements(movement.cashSessionId)
+          set({ loading: false })
+        } catch (error: any) {
+          set({ error: error.message, loading: false })
         }
       },
 
