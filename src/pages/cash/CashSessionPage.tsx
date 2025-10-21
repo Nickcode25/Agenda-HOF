@@ -4,7 +4,7 @@ import { useCash } from '@/store/cash'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import {
   DollarSign, ArrowLeft, Lock, Unlock, TrendingUp, TrendingDown,
-  Plus, Minus, AlertCircle, CheckCircle, Calendar, Receipt
+  Plus, Minus, AlertCircle, CheckCircle, Calendar, Receipt, Trash2
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -23,6 +23,7 @@ export default function CashSessionPage() {
     closeSession,
     fetchMovements,
     addMovement,
+    deleteMovement,
     getSessionTotal,
     getRegister
   } = useCash()
@@ -123,6 +124,28 @@ export default function CashSessionPage() {
       show(error.message || 'Erro ao registrar movimentação', 'error')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteMovement = async (movementId: string, description: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Movimentação',
+      message: `Tem certeza que deseja excluir a movimentação "${description}"?`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+
+    if (confirmed) {
+      setLoading(true)
+      try {
+        await deleteMovement(movementId)
+        show('Movimentação excluída com sucesso!', 'success')
+        await loadSession()
+      } catch (error: any) {
+        show(error.message || 'Erro ao excluir movimentação', 'error')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -314,18 +337,27 @@ export default function CashSessionPage() {
             ) : (
               <div className="space-y-3">
                 {movements.map(movement => (
-                  <div key={movement.id} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700/30">
-                    <div className="flex items-center gap-3">
+                  <div key={movement.id} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700/30 hover:border-gray-600/50 transition-all group">
+                    <div className="flex items-center gap-3 flex-1">
                       {getMovementIcon(movement.type)}
-                      <div>
+                      <div className="flex-1">
                         <div className="font-medium text-white">{movement.description}</div>
                         <div className="text-sm text-gray-400">
                           {getMovementLabel(movement.type)} • {movement.paymentMethod.toUpperCase()}
                         </div>
                       </div>
                     </div>
-                    <div className="font-bold text-lg text-white">
-                      {formatCurrency(movement.amount)}
+                    <div className="flex items-center gap-3">
+                      <div className="font-bold text-lg text-white">
+                        {formatCurrency(movement.amount)}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteMovement(movement.id, movement.description)}
+                        className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 rounded-lg transition-all"
+                        title="Excluir movimentação"
+                      >
+                        <Trash2 size={18} className="text-red-400 hover:text-red-300" />
+                      </button>
                     </div>
                   </div>
                 ))}
