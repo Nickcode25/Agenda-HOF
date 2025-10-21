@@ -13,6 +13,7 @@ import {
   LogOut
 } from 'lucide-react'
 import type { Customer } from '@/types/admin'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function CustomersManager() {
   const navigate = useNavigate()
@@ -28,6 +29,7 @@ export default function CustomersManager() {
     phone: '',
     cpf: ''
   })
+  const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
     fetchCustomers()
@@ -79,7 +81,7 @@ export default function CustomersManager() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja deletar este cliente?')) {
+    if (await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja deletar este cliente?' })) {
       await deleteCustomer(id)
     }
   }
@@ -100,6 +102,7 @@ export default function CustomersManager() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gray-900">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700">
@@ -307,5 +310,9 @@ export default function CustomersManager() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

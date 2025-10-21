@@ -4,6 +4,7 @@ import { usePatients } from '@/store/patients'
 import { useMedicalRecords } from '@/store/medicalRecords'
 import { ArrowLeft, Save, FileText, Upload, X } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function AnamnesisForm() {
   const { id } = useParams<{ id: string }>()
@@ -54,6 +55,7 @@ export default function AnamnesisForm() {
   const [consentGiven, setConsentGiven] = useState(false)
 
   const [saving, setSaving] = useState(false)
+  const { confirm, ConfirmDialog } = useConfirm()
 
   // Carregar dados do paciente
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function AnamnesisForm() {
     }
   }, [currentAnamnesis])
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (photos.length + files.length > 6) {
       show('Máximo de 6 fotos permitidas', 'warning')
@@ -106,7 +108,7 @@ export default function AnamnesisForm() {
     })
   }
 
-  const removePhoto = (index: number) => {
+  const removePhoto = async (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index))
     setPhotoPreviews(photoPreviews.filter((_, i) => i !== index))
   }
@@ -148,8 +150,8 @@ export default function AnamnesisForm() {
     }
   }
 
-  const handleCancel = () => {
-    if (confirm('Deseja realmente cancelar? Todas as alterações não salvas serão perdidas.')) {
+  const handleCancel = async () => {
+    if (await confirm({ title: 'Confirmação', message: 'Deseja realmente cancelar? Todas as alterações não salvas serão perdidas.' })) {
       navigate(`/app/pacientes/${id}/prontuario`)
     }
   }
@@ -165,6 +167,7 @@ export default function AnamnesisForm() {
   }
 
   return (
+    <>
     <div className="max-w-5xl mx-auto space-y-6 pb-8">
       {/* Header */}
       <div className="flex items-center gap-4">
@@ -564,5 +567,9 @@ export default function AnamnesisForm() {
         </div>
       </form>
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

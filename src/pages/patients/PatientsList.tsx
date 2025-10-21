@@ -5,6 +5,7 @@ import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, User, Phone, MapPin, Calendar, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText } from 'lucide-react'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function PatientsList() {
   const patients = usePatients(s => s.patients)
@@ -26,6 +27,8 @@ export default function PatientsList() {
   const [paymentType, setPaymentType] = useState<'default' | 'cash' | 'card'>('default')
 
   // Função para remover acentos
+  const { confirm, ConfirmDialog } = useConfirm()
+
   const removeAccents = (str: string) => {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   }
@@ -71,7 +74,7 @@ export default function PatientsList() {
     return result
   }, [q, patients])
 
-  const toggleExpanded = (patientId: string) => {
+  const toggleExpanded = async (patientId: string) => {
     const newExpanded = new Set(expandedPatients)
     if (newExpanded.has(patientId)) {
       newExpanded.delete(patientId)
@@ -81,7 +84,7 @@ export default function PatientsList() {
     setExpandedPatients(newExpanded)
   }
 
-  const handleAddProcedure = (patientId: string) => {
+  const handleAddProcedure = async (patientId: string) => {
     if (!selectedProcedure) return
 
     const patient = patients.find(p => p.id === patientId)
@@ -124,7 +127,7 @@ export default function PatientsList() {
     setShowAddProcedure(null)
   }
 
-  const handleUpdateProcedureStatus = (patientId: string, procId: string, status: PlannedProcedure['status']) => {
+  const handleUpdateProcedureStatus = async (patientId: string, procId: string, status: PlannedProcedure['status']) => {
     const patient = patients.find(p => p.id === patientId)
     if (!patient) return
 
@@ -137,16 +140,17 @@ export default function PatientsList() {
     update(patient.id, { plannedProcedures: updated })
   }
 
-  const handleRemoveProcedure = (patientId: string, procId: string) => {
+  const handleRemoveProcedure = async (patientId: string, procId: string) => {
     const patient = patients.find(p => p.id === patientId)
     if (!patient) return
-    if (!confirm('Remover este procedimento do planejamento?')) return
+    if (!(await confirm({ title: 'Confirmação', message: 'Remover este procedimento do planejamento?' }))) return
 
     const updated = (patient.plannedProcedures || []).filter(p => p.id !== procId)
     update(patient.id, { plannedProcedures: updated })
   }
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
@@ -491,5 +495,9 @@ export default function PatientsList() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

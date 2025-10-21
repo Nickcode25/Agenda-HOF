@@ -3,6 +3,7 @@ import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function SalesList() {
   const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale } = useSales()
@@ -13,6 +14,8 @@ export default function SalesList() {
     fetchProfessionals()
     fetchSales()
   }, [])
+
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const filtered = useMemo(() => {
     let result = sales
@@ -113,6 +116,7 @@ export default function SalesList() {
   ]
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
@@ -322,5 +326,9 @@ export default function SalesList() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

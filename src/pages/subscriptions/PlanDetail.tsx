@@ -6,6 +6,7 @@ import { usePatients } from '../../store/patients'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function PlanDetail() {
   const { id } = useParams()
@@ -24,6 +25,7 @@ export default function PlanDetail() {
   const [paidAmount, setPaidAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('PIX')
   const [confirmPaymentMethod, setConfirmPaymentMethod] = useState('PIX')
+  const { confirm, ConfirmDialog } = useConfirm()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null)
 
   // Carregar pacientes ao montar o componente
@@ -209,6 +211,7 @@ export default function PlanDetail() {
   ]
 
   return (
+    <>
     <div className="p-8">
       <button
         onClick={() => navigate('/app/mensalidades')}
@@ -629,5 +632,9 @@ export default function PlanDetail() {
         />
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

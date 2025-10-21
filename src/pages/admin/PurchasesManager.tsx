@@ -14,6 +14,7 @@ import {
   Filter
 } from 'lucide-react'
 import type { Purchase, PaymentStatus } from '@/types/admin'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function PurchasesManager() {
   const navigate = useNavigate()
@@ -36,6 +37,8 @@ export default function PurchasesManager() {
     notes: ''
   })
 
+  const { confirm, ConfirmDialog } = useConfirm()
+
   useEffect(() => {
     fetchPurchases()
     fetchCustomers()
@@ -52,7 +55,7 @@ export default function PurchasesManager() {
     return matchesSearch && matchesStatus
   })
 
-  const handleOpenModal = (purchase?: Purchase) => {
+  const handleOpenModal = async (purchase?: Purchase) => {
     if (purchase) {
       setEditingPurchase(purchase)
       setFormData({
@@ -83,12 +86,12 @@ export default function PurchasesManager() {
     setShowModal(true)
   }
 
-  const handleCloseModal = () => {
+  const handleCloseModal = async () => {
     setShowModal(false)
     setEditingPurchase(null)
   }
 
-  const handleCustomerSelect = (customerId: string) => {
+  const handleCustomerSelect = async (customerId: string) => {
     const customer = customers.find(c => c.id === customerId)
     if (customer) {
       setFormData({
@@ -120,7 +123,7 @@ export default function PurchasesManager() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja deletar esta compra?')) {
+    if (await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja deletar esta compra?' })) {
       await deletePurchase(id)
     }
   }
@@ -159,7 +162,7 @@ export default function PurchasesManager() {
     }
   }
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = async (status: string) => {
     switch (status) {
       case 'paid': return 'Pago'
       case 'pending': return 'Pendente'
@@ -170,6 +173,7 @@ export default function PurchasesManager() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gray-900">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700">
@@ -490,5 +494,9 @@ export default function PurchasesManager() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

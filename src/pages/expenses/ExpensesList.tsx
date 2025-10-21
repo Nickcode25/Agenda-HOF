@@ -7,6 +7,7 @@ import {
   CheckCircle, Clock, AlertCircle, Edit, Trash2, Tag, Filter
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function ExpensesList() {
   const {
@@ -30,6 +31,8 @@ export default function ExpensesList() {
     fetchCategories()
     fetchExpenses()
   }, [])
+
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const filtered = useMemo(() => {
     let result = expenses
@@ -139,6 +142,7 @@ export default function ExpensesList() {
   ]
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
@@ -368,5 +372,9 @@ export default function ExpensesList() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

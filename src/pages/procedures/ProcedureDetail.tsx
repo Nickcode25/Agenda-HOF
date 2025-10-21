@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { Scissors, DollarSign, Clock, ArrowLeft, Trash2, FileText, Package } from 'lucide-react'
 import { useEffect } from 'react'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function ProcedureDetail() {
   const { id } = useParams()
@@ -12,6 +13,7 @@ export default function ProcedureDetail() {
     update: s.update,
     fetchAll: s.fetchAll
   }))
+  const { confirm, ConfirmDialog } = useConfirm()
   const procedure = procedures.find(p => p.id === id)
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function ProcedureDetail() {
   )
 
   const handleDelete = async () => {
-    if (confirm(`Tem certeza que deseja remover ${procedure.name}?`)) {
+    if (await confirm({ title: 'Confirmação', message: `Tem certeza que deseja remover ${procedure.name}?` })) {
       await remove(procedure.id)
       navigate('/app/procedimentos')
     }
@@ -44,6 +46,7 @@ export default function ProcedureDetail() {
   }
 
   return (
+    <>
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
@@ -144,5 +147,9 @@ export default function ProcedureDetail() {
         </div>
       </div>
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

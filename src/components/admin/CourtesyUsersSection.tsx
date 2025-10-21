@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { UserPlus, Users, Key, Calendar, Trash2, Power, X, Copy, Check } from 'lucide-react'
 import { useAdmin } from '@/store/admin'
 import { useAuth } from '@/store/auth'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function CourtesyUsersSection() {
   const { courtesyUsers, createCourtesyUser, toggleCourtesyUserStatus, deleteCourtesyUser, loading } = useAdmin()
@@ -19,6 +20,7 @@ export default function CourtesyUsersSection() {
     notes: '',
     expiresAt: ''
   })
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%'
@@ -59,6 +61,7 @@ export default function CourtesyUsersSection() {
   }
 
   return (
+    <>
     <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -135,8 +138,8 @@ export default function CourtesyUsersSection() {
                         <Power className={`w-4 h-4 ${user.isActive ? 'text-yellow-400' : 'text-green-400'}`} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm('Tem certeza que deseja deletar este usuário cortesia?')) {
+                        onClick={async () => {
+                          if (await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja deletar este usuário cortesia?' })) {
                             deleteCourtesyUser(user.id)
                           }
                         }}
@@ -340,5 +343,9 @@ export default function CourtesyUsersSection() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

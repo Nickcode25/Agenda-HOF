@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
 import { Stethoscope, Award, Phone, Mail, ArrowLeft, Trash2, FileText, MapPin, Edit } from 'lucide-react'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function ProfessionalDetail() {
   const { id } = useParams()
@@ -10,6 +11,7 @@ export default function ProfessionalDetail() {
     remove: s.remove,
     toggleActive: s.toggleActive
   }))
+  const { confirm, ConfirmDialog } = useConfirm()
   const professional = professionals.find(p => p.id === id)
 
   if (!professional) return (
@@ -20,13 +22,14 @@ export default function ProfessionalDetail() {
   )
 
   const handleDelete = async () => {
-    if (confirm(`Tem certeza que deseja remover ${professional.name}?`)) {
+    if (await confirm({ title: 'Confirmação', message: `Tem certeza que deseja remover ${professional.name}?` })) {
       await remove(professional.id)
       navigate('/app/profissionais')
     }
   }
 
   return (
+    <>
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
@@ -151,5 +154,9 @@ export default function ProfessionalDetail() {
         </div>
       </div>
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

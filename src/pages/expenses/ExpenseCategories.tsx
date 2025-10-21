@@ -3,6 +3,7 @@ import { useExpenses } from '@/store/expenses'
 import { ExpenseCategory, DEFAULT_EXPENSE_CATEGORIES } from '@/types/cash'
 import { Plus, Edit2, Trash2, Tag, Palette, CheckCircle, XCircle } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function ExpenseCategories() {
   const { categories, fetchCategories, addCategory, updateCategory, deleteCategory, initializeDefaultCategories, loading } = useExpenses()
@@ -16,6 +17,7 @@ export default function ExpenseCategories() {
     icon: 'DollarSign',
     isActive: true
   })
+  const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
     initializeDefaultCategories()
@@ -83,6 +85,7 @@ export default function ExpenseCategories() {
   ]
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
@@ -284,5 +287,9 @@ export default function ExpenseCategories() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

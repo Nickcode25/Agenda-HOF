@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { MedicalPhoto } from '@/types/medicalRecords'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function MedicalRecordPage() {
   const { id } = useParams<{ id: string }>()
@@ -39,6 +40,7 @@ export default function MedicalRecordPage() {
     deleteMedicalPhoto,
   } = useMedicalRecords()
   const { show } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const [activeTab, setActiveTab] = useState<'anamnesis' | 'photos' | 'consents'>('anamnesis')
   const [selectedPhoto, setSelectedPhoto] = useState<MedicalPhoto | null>(null)
@@ -49,7 +51,7 @@ export default function MedicalRecordPage() {
   const handleDeletePhoto = async (photoId: string, photoUrl: string, e: React.MouseEvent) => {
     e.stopPropagation()
 
-    if (!confirm('Tem certeza que deseja excluir esta foto?')) return
+    if (!(await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja excluir esta foto?' }))) return
 
     setDeletingPhotoId(photoId)
     try {
@@ -91,6 +93,7 @@ export default function MedicalRecordPage() {
   const hasAnamnesis = Boolean(currentAnamnesis)
 
   return (
+    <>
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
@@ -551,5 +554,9 @@ export default function MedicalRecordPage() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

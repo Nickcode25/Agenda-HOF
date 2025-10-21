@@ -3,11 +3,13 @@ import { Bell, Check, CheckCheck, Trash2, Settings, Calendar, Package, AlertCirc
 import { useNotifications } from '@/store/notifications'
 import { useNavigate } from 'react-router-dom'
 import type { Notification, NotificationType } from '@/types/notification'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
   const [filterType, setFilterType] = useState<NotificationType | 'all'>('all')
   const [showOnlyUnread, setShowOnlyUnread] = useState(false)
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const {
     notifications,
@@ -89,6 +91,7 @@ export default function NotificationsPage() {
   }
 
   return (
+    <>
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-end">
@@ -197,9 +200,9 @@ export default function NotificationsPage() {
                         </button>
                       )}
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation()
-                          if (confirm('Deseja realmente excluir esta notificação?')) {
+                          if (await confirm({ title: 'Confirmação', message: 'Deseja realmente excluir esta notificação?' })) {
                             deleteNotification(notification.id)
                           }
                         }}
@@ -225,5 +228,9 @@ export default function NotificationsPage() {
         )}
       </div>
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

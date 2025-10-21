@@ -7,6 +7,7 @@ import {
   Plus, Minus, AlertCircle, CheckCircle, Calendar, Receipt
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function CashSessionPage() {
   const { registerId } = useParams<{ registerId: string }>()
@@ -37,6 +38,7 @@ export default function CashSessionPage() {
     category: 'other' as 'procedure' | 'sale' | 'subscription' | 'expense' | 'other',
     paymentMethod: 'cash' as 'cash' | 'card' | 'pix' | 'transfer' | 'check'
   })
+  const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
     if (registerId) {
@@ -158,6 +160,7 @@ export default function CashSessionPage() {
   }
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
@@ -444,5 +447,9 @@ export default function CashSessionPage() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

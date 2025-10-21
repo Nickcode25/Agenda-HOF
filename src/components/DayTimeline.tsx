@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities'
 import type { Appointment } from '@/types/schedule'
 import { getProcedureColor } from '@/utils/procedureColors'
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface DayTimelineProps {
   date: Date
@@ -39,6 +40,8 @@ function SortableAppointment({
   onUpdateStatus: (id: string, status: Appointment['status']) => void
   onDelete: (id: string) => void
 }) {
+  const { confirm } = useConfirm()
+
   const {
     attributes,
     listeners,
@@ -96,9 +99,9 @@ function SortableAppointment({
             <Edit2 size={14} className="text-gray-400" />
           </button>
           <button
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation()
-              if (confirm('Deseja realmente excluir este agendamento?')) {
+              if (await confirm({ title: 'Confirmação', message: 'Deseja realmente excluir este agendamento?' })) {
                 onDelete(appointment.id)
               }
             }}
@@ -182,6 +185,8 @@ export default function DayTimeline({
     })
   )
 
+  const { confirm, ConfirmDialog } = useConfirm()
+
   // Ordenar agendamentos por horário
   const sortedAppointments = useMemo(() => {
     return [...appointments].sort((a, b) =>
@@ -210,6 +215,7 @@ export default function DayTimeline({
   })
 
   return (
+    <>
     <div className="space-y-4">
       {/* Header */}
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
@@ -274,5 +280,9 @@ export default function DayTimeline({
         </SortableContext>
       </DndContext>
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

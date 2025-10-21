@@ -3,6 +3,7 @@ import { useStock } from '@/store/stock'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Package, AlertTriangle, Calendar, TrendingDown, TrendingUp, Edit, Trash2 } from 'lucide-react'
+import { useConfirm } from '@/hooks/useConfirm'
 
 
 export default function StockList() {
@@ -39,6 +40,8 @@ export default function StockList() {
     return result
   }, [items, searchQuery, categoryFilter])
 
+  const { confirm, ConfirmDialog } = useConfirm()
+
   const categories = useMemo(() => {
     return Array.from(new Set(items.map(item => item.category)))
   }, [items])
@@ -49,13 +52,14 @@ export default function StockList() {
     return { status: 'ok', color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/30' }
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja remover este item do estoque?')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja remover este item do estoque?' })) {
       removeItem(id)
     }
   }
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
@@ -222,5 +226,9 @@ export default function StockList() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

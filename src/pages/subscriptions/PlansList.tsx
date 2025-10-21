@@ -1,9 +1,11 @@
 import { Plus, Edit, Trash2, Check, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useSubscriptionStore } from '../../store/subscriptions'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function PlansList() {
   const { plans, deletePlan, updatePlan } = useSubscriptionStore()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const handleToggleActive = (planId: string, currentStatus: boolean) => {
     updatePlan(planId, { active: !currentStatus })
@@ -16,6 +18,7 @@ export default function PlansList() {
   }
 
   return (
+    <>
     <div className="p-8">
       <div className="flex items-center justify-end mb-8">
         <Link
@@ -121,5 +124,9 @@ export default function PlansList() {
         </div>
       )}
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }

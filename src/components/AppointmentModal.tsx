@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { X, Calendar, Clock, User, MapPin, FileText, Trash2 } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
+import { useConfirm } from '@/hooks/useConfirm'
 
 type AppointmentModalProps = {
   appointment: Appointment | null
@@ -10,6 +11,8 @@ type AppointmentModalProps = {
 }
 
 export default function AppointmentModal({ appointment, onClose, onDelete }: AppointmentModalProps) {
+  const { confirm, ConfirmDialog } = useConfirm()
+
   if (!appointment) return null
 
   const statusColors = {
@@ -26,14 +29,15 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
     cancelled: 'Cancelado',
   }
 
-  const handleDelete = () => {
-    if (confirm('Tem certeza que deseja remover este agendamento?')) {
+  const handleDelete = async () => {
+    if (await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja remover este agendamento?' })) {
       onDelete(appointment.id)
       onClose()
     }
   }
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div 
         className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
@@ -146,5 +150,9 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
         </div>
       </div>
     </div>
+
+    {/* Modal de Confirmação */}
+    <ConfirmDialog />
+    </>
   )
 }
