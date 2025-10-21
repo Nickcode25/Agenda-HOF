@@ -57,17 +57,30 @@ export default function FinancialReport() {
 
   // Receitas de procedimentos (do caixa fechado)
   const procedureRevenue = useMemo(() => {
-    const closedSessions = sessions.filter(s =>
-      s.status === 'closed' &&
-      s.closedAt &&
-      filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
-    )
+    console.log('[FINANCIAL] Total de sessões:', sessions.length)
+    console.log('[FINANCIAL] Sessões fechadas:', sessions.filter(s => s.status === 'closed').length)
+    console.log('[FINANCIAL] Data selecionada:', selectedDate)
+    console.log('[FINANCIAL] Período:', periodFilter)
+
+    const closedSessions = sessions.filter(s => {
+      const isClosed = s.status === 'closed'
+      const hasClosedAt = !!s.closedAt
+      const matchesPeriod = s.closedAt && filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
+
+      console.log('[FINANCIAL] Sessão:', s.id, 'Status:', s.status, 'ClosedAt:', s.closedAt, 'Matches:', isClosed && hasClosedAt && matchesPeriod)
+
+      return isClosed && hasClosedAt && matchesPeriod
+    })
+
+    console.log('[FINANCIAL] Sessões fechadas no período:', closedSessions.length)
 
     const procedureMovements = movements.filter(m =>
       m.category === 'procedure' &&
       m.type === 'income' &&
       closedSessions.some(s => s.id === m.cashSessionId)
     )
+
+    console.log('[FINANCIAL] Movimentos de procedimentos:', procedureMovements.length)
 
     const total = procedureMovements.reduce((sum, m) => sum + m.amount, 0)
     const count = procedureMovements.length
