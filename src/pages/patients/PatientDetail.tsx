@@ -1,5 +1,5 @@
 import { FormEvent, useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
@@ -13,6 +13,7 @@ import BeforeAfterGallery from '@/components/BeforeAfterGallery'
 
 export default function PatientDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const patient = usePatients(s => s.patients.find(p => p.id === id))
   const update = usePatients(s => s.update)
   const remove = usePatients(s => s.remove)
@@ -68,9 +69,10 @@ export default function PatientDetail() {
       cancelText: 'Cancelar'
     })
 
-    if (confirmed) {
-      remove(id!)
-      window.location.href = '/app/pacientes'
+    if (confirmed && id) {
+      await remove(id)
+      showToast('Paciente removido com sucesso!', 'success')
+      navigate('/app/pacientes')
     }
   }
 
