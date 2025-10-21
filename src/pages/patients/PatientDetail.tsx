@@ -352,10 +352,9 @@ export default function PatientDetail() {
       )
 
       if (relatedMovement) {
-        // Atualizar valor da movimentação
+        // Atualizar apenas o valor da movimentação, mantendo a descrição original
         await updateMovement(relatedMovement.id, {
-          amount: parsedValue,
-          description: editedDescription || relatedMovement.description
+          amount: parsedValue
         })
 
         // Recarregar movimentações para refletir mudanças
@@ -1200,7 +1199,7 @@ export default function PatientDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Descrição / Observação
+                  Observações do Procedimento (opcional)
                 </label>
                 <textarea
                   value={editedDescription}
@@ -1210,7 +1209,7 @@ export default function PatientDetail() {
                   placeholder="Ex: Pagamento antecipado de R$ 100,00 para reserva da consulta"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Use este campo para registrar detalhes do pagamento
+                  💡 Esta observação é salva apenas no procedimento. A descrição no caixa não será alterada.
                 </p>
               </div>
             </div>
