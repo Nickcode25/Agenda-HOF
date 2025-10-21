@@ -241,72 +241,72 @@ export default function FinancialReport() {
       {/* Resumo Total */}
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-green-500/20 rounded-lg">
-              <TrendingUp size={24} className="text-green-400" />
+              <TrendingUp size={20} className="text-green-400" />
             </div>
-            <h3 className="font-medium text-gray-300">Receita Total</h3>
+            <h3 className="text-sm font-medium text-gray-300">Receita Total</h3>
           </div>
-          <p className="text-3xl font-bold text-green-400">{formatCurrency(totalRevenue)}</p>
+          <p className="text-2xl font-bold text-green-400">{formatCurrency(totalRevenue)}</p>
           <p className="text-xs text-gray-400 mt-1">{totalTransactions} transações</p>
         </div>
 
         <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Activity size={24} className="text-blue-400" />
+              <Activity size={20} className="text-blue-400" />
             </div>
-            <h3 className="font-medium text-gray-300">Procedimentos</h3>
+            <h3 className="text-sm font-medium text-gray-300">Procedimentos</h3>
           </div>
-          <p className="text-3xl font-bold text-blue-400">{formatCurrency(procedureRevenue.total)}</p>
+          <p className="text-2xl font-bold text-blue-400">{formatCurrency(procedureRevenue.total)}</p>
           <p className="text-xs text-gray-400 mt-1">{procedureRevenue.count} realizados</p>
         </div>
 
         <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/30 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-orange-500/20 rounded-lg">
-              <ShoppingCart size={24} className="text-orange-400" />
+              <ShoppingCart size={20} className="text-orange-400" />
             </div>
-            <h3 className="font-medium text-gray-300">Vendas de Produtos</h3>
+            <h3 className="text-sm font-medium text-gray-300">Vendas</h3>
           </div>
-          <p className="text-3xl font-bold text-orange-400">{formatCurrency(salesRevenue.total)}</p>
-          <p className="text-xs text-gray-400 mt-1">{salesRevenue.count} vendas • Lucro: {formatCurrency(salesRevenue.profit)}</p>
+          <p className="text-2xl font-bold text-orange-400">{formatCurrency(salesRevenue.total)}</p>
+          <p className="text-xs text-gray-400 mt-1">{salesRevenue.count} vendas</p>
         </div>
 
         <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/30 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-purple-500/20 rounded-lg">
-              <CreditCard size={24} className="text-purple-400" />
+              <CreditCard size={20} className="text-purple-400" />
             </div>
-            <h3 className="font-medium text-gray-300">Mensalidades</h3>
+            <h3 className="text-sm font-medium text-gray-300">Mensalidades</h3>
           </div>
-          <p className="text-3xl font-bold text-purple-400">{formatCurrency(subscriptionRevenue.total)}</p>
+          <p className="text-2xl font-bold text-purple-400">{formatCurrency(subscriptionRevenue.total)}</p>
           <p className="text-xs text-gray-400 mt-1">{subscriptionRevenue.count} pagamentos</p>
         </div>
 
         <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-red-500/20 rounded-lg">
-              <TrendingDown size={24} className="text-red-400" />
+              <TrendingDown size={20} className="text-red-400" />
             </div>
-            <h3 className="font-medium text-gray-300">Despesas</h3>
+            <h3 className="text-sm font-medium text-gray-300">Despesas</h3>
           </div>
-          <p className="text-3xl font-bold text-red-400">{formatCurrency(expensesTotal)}</p>
-          <p className="text-xs text-gray-400 mt-1">Custos operacionais</p>
+          <p className="text-2xl font-bold text-red-400">{formatCurrency(expensesTotal)}</p>
+          <p className="text-xs text-gray-400 mt-1">Custos</p>
         </div>
 
         <div className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500/10 to-emerald-600/5 border-emerald-500/30' : 'from-red-500/10 to-red-600/5 border-red-500/30'} border rounded-xl p-6`}>
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <div className={`p-2 ${netProfit >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
-              <DollarSign size={24} className={netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+              <DollarSign size={20} className={netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
             </div>
-            <h3 className="font-medium text-gray-300">Lucro Líquido</h3>
+            <h3 className="text-sm font-medium text-gray-300">Lucro Líquido</h3>
           </div>
-          <p className={`text-3xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {formatCurrency(netProfit)}
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            {netProfit >= 0 ? 'Resultado positivo' : 'Resultado negativo'}
+            {netProfit >= 0 ? 'Positivo' : 'Negativo'}
           </p>
         </div>
       </div>
