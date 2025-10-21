@@ -476,9 +476,17 @@ export const useCash = create<CashStore>()(
           const movement = get().getMovement(id)
           if (!movement) throw new Error('Movimento não encontrado')
 
+          // Mapear campos TypeScript para campos do banco
+          const updateData: any = {}
+          if (updates.amount !== undefined) updateData.amount = updates.amount
+          if (updates.description !== undefined) updateData.description = updates.description
+          if (updates.type !== undefined) updateData.type = updates.type
+          if (updates.category !== undefined) updateData.category = updates.category
+          if (updates.paymentMethod !== undefined) updateData.payment_method = updates.paymentMethod
+
           const { error } = await supabase
             .from('cash_movements')
-            .update(updates)
+            .update(updateData)
             .eq('id', id)
             .eq('user_id', user.id)
 
