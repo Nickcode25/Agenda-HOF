@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import plugin from 'tailwindcss/plugin'
 
 export default {
   darkMode: 'class', // Habilita dark mode baseado em classe
@@ -38,5 +39,10 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Plugin para adicionar variante 'light'
+    plugin(function({ addVariant }) {
+      addVariant('light', '.light &')
+    })
+  ],
 } satisfies Config
