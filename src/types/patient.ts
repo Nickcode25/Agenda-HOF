@@ -9,6 +9,8 @@ export type PlannedProcedure = {
   notes?: string
   createdAt: string
   completedAt?: string
+  usedProductId?: string // ID do produto usado do estoque
+  usedProductName?: string // Nome do produto usado
 }
 
 export type Patient = {

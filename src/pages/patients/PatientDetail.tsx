@@ -208,17 +208,44 @@ export default function PatientDetail() {
   const handleRemoveProcedure = async (procId: string) => {
     if (!patient) return
 
+    const procedure = patient.plannedProcedures?.find(p => p.id === procId)
+    if (!procedure) return
+
     const confirmed = await confirm({
       title: 'Remover Procedimento',
-      message: 'Remover este procedimento do planejamento?',
+      message: procedure.status === 'completed'
+        ? 'Remover este procedimento realizado? O produto usado será devolvido ao estoque.'
+        : 'Remover este procedimento do planejamento?',
       confirmText: 'Remover',
       cancelText: 'Cancelar'
     })
 
     if (!confirmed) return
 
+    // Se o procedimento foi concluído, devolver o produto ao estoque
+    if (procedure.status === 'completed' && procedure.usedProductId) {
+      const { addStock, fetchItems } = useStock.getState()
+
+      await addStock(
+        procedure.usedProductId,
+        procedure.quantity,
+        `Devolução - Procedimento excluído: ${procedure.procedureName} - Paciente: ${patient.name}`
+      )
+
+      console.log('✅ Produto devolvido ao estoque:', {
+        productId: procedure.usedProductId,
+        productName: procedure.usedProductName,
+        quantity: procedure.quantity
+      })
+
+      // Atualizar lista de estoque
+      await fetchItems(true)
+    }
+
     const updated = (patient.plannedProcedures || []).filter(p => p.id !== procId)
     update(patient.id, { plannedProcedures: updated })
+
+    showToast(procedure.status === 'completed' ? 'Procedimento removido e produto devolvido ao estoque!' : 'Procedimento removido!', 'success')
   }
 
   const handleOpenEditValue = (proc: PlannedProcedure) => {
@@ -483,17 +510,27 @@ export default function PatientDetail() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleRemoveProcedure(proc.id)}
-                      className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/30 transition-colors"
-                      title="Excluir procedimento realizado"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handleOpenEditValue(proc)}
+                        className="px-3 py-2 text-sm bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30 transition-colors inline-flex items-center justify-center gap-1"
+                      >
+                        <Edit size={14} />
+                        Editar
+                      </button>
+
+                      <button
+                        onClick={() => handleRemoveProcedure(proc.id)}
+                        className="px-3 py-2 text-sm bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/30 transition-colors"
+                        title="Excluir procedimento realizado"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
-              
+
               {/* Total dos Procedimentos Realizados */}
               <div className="mt-4 p-4 bg-green-500/10 rounded-lg border border-green-500/30">
                 <div className="flex justify-between items-center">
