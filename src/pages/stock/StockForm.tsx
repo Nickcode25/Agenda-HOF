@@ -131,6 +131,13 @@ export default function StockForm() {
     }
   }, [category, brand, availableProducts, isEditMode])
 
+  // Limpar marca quando selecionar Insumos
+  useEffect(() => {
+    if (category === 'Insumos' && !isEditMode) {
+      setBrand('')
+    }
+  }, [category, isEditMode])
+
   // Carregar item ao editar
   useEffect(() => {
     if (isEditMode) {
@@ -175,7 +182,7 @@ export default function StockForm() {
 
     const itemData = {
       category,
-      supplier: brand,
+      supplier: category === 'Insumos' ? '' : brand,
       name,
       quantity: Number(quantity),
       minQuantity: Number(minQuantity),
@@ -222,31 +229,42 @@ export default function StockForm() {
               <option value="Bioestimuladores de Colágeno">Bioestimuladores de Colágeno</option>
               <option value="Preenchedores de Ácido Hialurônico">Preenchedores de Ácido Hialurônico</option>
               <option value="Toxina Botulínica">Toxina Botulínica</option>
+              <option value="Insumos">Insumos</option>
             </select>
           </div>
 
           {/* Marca */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Marca *</label>
-            <select
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              required
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            >
-              <option value="">Selecione uma marca</option>
-              <option value="Allergan Aesthetics">Allergan Aesthetics</option>
-              <option value="Galderma">Galderma</option>
-              <option value="Merz Aesthetics">Merz Aesthetics</option>
-              <option value="Pharmaesthetics">Pharmaesthetics</option>
-              <option value="Rennova">Rennova</option>
-            </select>
-          </div>
+          {category !== 'Insumos' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Marca *</label>
+              <select
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                required
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              >
+                <option value="">Selecione uma marca</option>
+                <option value="Allergan Aesthetics">Allergan Aesthetics</option>
+                <option value="Galderma">Galderma</option>
+                <option value="Merz Aesthetics">Merz Aesthetics</option>
+                <option value="Pharmaesthetics">Pharmaesthetics</option>
+                <option value="Rennova">Rennova</option>
+              </select>
+            </div>
+          )}
 
           {/* Produto */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Produto *</label>
-            {availableProducts.length > 0 ? (
+            {category === 'Insumos' ? (
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="Ex: Cânula, Agulha, Seringa..."
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            ) : availableProducts.length > 0 ? (
               <select
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -269,7 +287,7 @@ export default function StockForm() {
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             )}
-            {category && brand && availableProducts.length === 0 && (
+            {category && brand && availableProducts.length === 0 && category !== 'Insumos' && (
               <p className="text-xs text-gray-400 mt-1">
                 Nenhum produto pré-cadastrado para esta combinação. Digite manualmente.
               </p>
