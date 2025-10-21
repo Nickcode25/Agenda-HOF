@@ -5,6 +5,7 @@ export interface StockItem {
   quantity: number
   minQuantity: number // Quantidade mínima para alerta
   unit: string // ml, g, unidade, etc.
+  dosesPerUnit?: number // Quantas doses/aplicações cada unidade rende (ex: 4 para toxinas)
   supplier?: string // Fornecedor
   costPrice: number // Preço de custo
   salePrice?: number // Preço de venda

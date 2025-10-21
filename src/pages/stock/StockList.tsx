@@ -199,6 +199,14 @@ export default function StockList() {
                       {item.quantity} {item.unit}
                     </span>
                   </div>
+                  {item.dosesPerUnit && item.dosesPerUnit > 1 && (
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-blue-400">Aplicações disponíveis:</span>
+                      <span className="text-xs text-blue-400 font-bold">
+                        {Math.floor(item.quantity * item.dosesPerUnit)} doses
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-gray-400">Mínimo: {item.minQuantity} {item.unit}</span>
                     {item.quantity === 0 && <span className="text-xs text-red-400">Esgotado</span>}

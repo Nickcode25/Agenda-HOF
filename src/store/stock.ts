@@ -80,6 +80,7 @@ export const useStock = create<StockStore>()(
             quantity: row.quantity || 0,
             minQuantity: row.min_quantity || 0,
             unit: row.unit || 'un',
+            dosesPerUnit: row.doses_per_unit || undefined,
             supplier: row.supplier || undefined,
             costPrice: row.cost_price || 0,
             salePrice: row.sale_price || undefined,
@@ -112,6 +113,7 @@ export const useStock = create<StockStore>()(
               quantity: itemData.quantity || 0,
               min_quantity: itemData.minQuantity || 0,
               unit: itemData.unit || 'un',
+              doses_per_unit: itemData.dosesPerUnit || null,
               supplier: itemData.supplier || null,
               cost_price: itemData.costPrice || 0,
               sale_price: itemData.salePrice || null,
@@ -144,6 +146,7 @@ export const useStock = create<StockStore>()(
           if (updates.quantity !== undefined) updateData.quantity = updates.quantity
           if (updates.minQuantity !== undefined) updateData.min_quantity = updates.minQuantity
           if (updates.unit !== undefined) updateData.unit = updates.unit
+          if (updates.dosesPerUnit !== undefined) updateData.doses_per_unit = updates.dosesPerUnit || null
           if (updates.supplier !== undefined) updateData.supplier = updates.supplier || null
           if (updates.costPrice !== undefined) updateData.cost_price = updates.costPrice
           if (updates.salePrice !== undefined) updateData.sale_price = updates.salePrice || null
@@ -245,21 +248,28 @@ export const useStock = create<StockStore>()(
           return false
         }
 
-        if (item.quantity < quantity) {
-          console.error('❌ [STOCK] Estoque insuficiente:', item.name, 'Disponível:', item.quantity, 'Solicitado:', quantity)
+        // Calcular quantidade real a descontar baseado em dosesPerUnit
+        // Se dosesPerUnit = 4, então cada aplicação desconta 1/4 = 0.25 unidades
+        const actualQuantityToRemove = item.dosesPerUnit && item.dosesPerUnit > 1
+          ? quantity / item.dosesPerUnit
+          : quantity
+
+        if (item.quantity < actualQuantityToRemove) {
+          console.error('❌ [STOCK] Estoque insuficiente:', item.name, 'Disponível:', item.quantity, 'Solicitado:', actualQuantityToRemove)
           return false
         }
 
-        console.log('📦 [STOCK] Removendo', quantity, 'de', item.name, '- Estoque atual:', item.quantity)
+        console.log('📦 [STOCK] Removendo', actualQuantityToRemove, 'de', item.name, '- Estoque atual:', item.quantity,
+          item.dosesPerUnit ? `(${quantity} aplicações de ${item.dosesPerUnit} doses)` : '')
 
         await get().updateItem(itemId, {
-          quantity: item.quantity - quantity
+          quantity: item.quantity - actualQuantityToRemove
         })
 
         get().addMovement({
           stockItemId: itemId,
           type: 'out',
-          quantity,
+          quantity: actualQuantityToRemove,
           reason,
           procedureId,
           patientId

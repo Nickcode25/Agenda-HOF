@@ -117,6 +117,7 @@ export default function StockForm() {
   const [quantity, setQuantity] = useState('')
   const [minQuantity, setMinQuantity] = useState('')
   const [unit, setUnit] = useState('')
+  const [dosesPerUnit, setDosesPerUnit] = useState('')
 
   // Obter produtos disponíveis baseado na categoria e marca selecionadas
   const availableProducts = category && brand && PREDEFINED_PRODUCTS[category]?.[brand]
@@ -146,6 +147,7 @@ export default function StockForm() {
       setQuantity(item.quantity.toString())
       setMinQuantity(item.minQuantity.toString())
       setUnit(item.unit)
+      setDosesPerUnit(item.dosesPerUnit ? item.dosesPerUnit.toString() : '')
       setCost(new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL'
@@ -178,6 +180,7 @@ export default function StockForm() {
       quantity: Number(quantity),
       minQuantity: Number(minQuantity),
       unit,
+      dosesPerUnit: dosesPerUnit ? Number(dosesPerUnit) : undefined,
       costPrice: parseCurrency(cost),
     }
 
@@ -322,7 +325,26 @@ export default function StockForm() {
               <option value="seringa">seringa</option>
             </select>
           </div>
-          
+
+          {/* Doses por Unidade */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Doses/Aplicações por Unidade</label>
+            <input
+              value={dosesPerUnit}
+              onChange={(e) => setDosesPerUnit(e.target.value)}
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ex: 4 (para toxinas botulínicas)"
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Quantas aplicações rendem cada unidade? Ex: 1 frasco de Nabota = 4 aplicações.
+              <br />
+              <span className="text-orange-400">Se deixar em branco, 1 aplicação = 1 unidade de estoque.</span>
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Custo Unitário</label>
             <input
