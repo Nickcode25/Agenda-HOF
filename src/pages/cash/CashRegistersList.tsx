@@ -137,9 +137,9 @@ export default function CashRegistersList() {
                 </div>
                 <div className="flex items-center gap-2">
                   {register.isActive ? (
-                    <CheckCircle size={16} className="text-green-400" title="Ativo" />
+                    <CheckCircle size={16} className="text-green-400" />
                   ) : (
-                    <XCircle size={16} className="text-red-400" title="Inativo" />
+                    <XCircle size={16} className="text-red-400" />
                   )}
                 </div>
               </div>

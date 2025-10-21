@@ -161,9 +161,9 @@ export default function ExpenseCategories() {
                 </div>
                 <div className="flex items-center gap-2">
                   {category.isActive ? (
-                    <CheckCircle size={16} className="text-green-400" title="Ativa" />
+                    <CheckCircle size={16} className="text-green-400" />
                   ) : (
-                    <XCircle size={16} className="text-red-400" title="Inativa" />
+                    <XCircle size={16} className="text-red-400" />
                   )}
                 </div>
               </div>
