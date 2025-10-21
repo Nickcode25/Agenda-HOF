@@ -26,7 +26,6 @@ import SalesProfessionalForm from './pages/sales/ProfessionalForm'
 import SalesProfessionalEdit from './pages/sales/ProfessionalEdit'
 import SalesHistory from './pages/sales/SalesHistory'
 import SalesProfessionalsList from './pages/sales/SalesProfessionalsList'
-import Dashboard from './pages/dashboard/Dashboard'
 import FinancialReport from './pages/financial/FinancialReport'
 import LandingPage from './pages/landing/NewLandingPage'
 import Checkout from './pages/Checkout'
@@ -78,19 +77,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: (
-          <RoleGuard requireOwner>
-            <Dashboard />
-          </RoleGuard>
-        )
-      },
-      {
-        path: 'dashboard',
-        element: (
-          <RoleGuard requireOwner>
-            <Dashboard />
-          </RoleGuard>
-        )
+        element: <ScheduleCalendar />
       },
       { path: 'agenda', element: <ScheduleCalendar /> },
       { path: 'agenda/nova', element: <AppointmentForm /> },

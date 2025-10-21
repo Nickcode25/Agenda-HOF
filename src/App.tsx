@@ -87,7 +87,6 @@ export default function App() {
 
     const breadcrumbMap: Record<string, string> = {
       'app': 'Início',
-      'dashboard': 'Dashboard',
       'agenda': 'Agenda',
       'pacientes': 'Pacientes',
       'profissionais': 'Profissionais',
@@ -198,14 +197,6 @@ export default function App() {
 
           {/* Navigation */}
           <nav className="flex-1 py-6 px-3 space-y-1">
-            {/* Dashboard - só para owner */}
-            {currentProfile?.role === 'owner' && (
-              <NavLink to="/app/dashboard" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Dashboard">
-                <BarChart3 size={22} className="flex-shrink-0"/>
-                <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Dashboard</span>
-              </NavLink>
-            )}
-
             {/* Seção de Agendamento */}
             {isExpanded && <div className="pt-4 pb-2 px-4 transition-all duration-300"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Agendamento</p></div>}
             <NavLink to="/app/agenda" end className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Agenda">
