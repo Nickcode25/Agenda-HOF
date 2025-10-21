@@ -173,7 +173,7 @@ export default function ProfessionalEdit() {
         notes: formData.notes || undefined,
       })
 
-      navigate('/app/vendas/profissionais-lista')
+      navigate('/app/vendas/profissionais')
     } catch (error) {
       console.error('❌ Erro ao atualizar profissional:', error)
       alert('Erro ao atualizar profissional. Verifique o console.')
@@ -192,7 +192,7 @@ export default function ProfessionalEdit() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/app/vendas/profissionais-lista" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+        <Link to="/app/vendas/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-400" />
         </Link>
         <h1 className="text-2xl font-bold text-white">Editar Profissional</h1>
@@ -409,7 +409,7 @@ export default function ProfessionalEdit() {
             Salvar Alterações
           </button>
           <Link
-            to="/app/vendas/profissionais-lista"
+            to="/app/vendas/profissionais"
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
           >
             Cancelar

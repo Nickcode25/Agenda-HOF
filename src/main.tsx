@@ -45,6 +45,7 @@ import ClinicalEvolutionForm from './pages/medical/ClinicalEvolutionForm'
 import PhotoUploadPage from './pages/medical/PhotoUploadPage'
 import PhotoEditPage from './pages/medical/PhotoEditPage'
 import ConsentForm from './pages/medical/ConsentForm'
+import EvolutionSettings from './pages/settings/EvolutionSettings'
 import RoleGuard from './components/RoleGuard'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminLayout from './components/admin/AdminLayout'
@@ -56,6 +57,11 @@ import CourtesyUsersPage from './pages/admin/CourtesyUsersPage'
 import CustomersManager from './pages/admin/CustomersManager'
 import PurchasesManager from './pages/admin/PurchasesManager'
 import ProtectedRoute from './components/admin/ProtectedRoute'
+import ExpensesList from './pages/expenses/ExpensesList'
+import ExpenseForm from './pages/expenses/ExpenseForm'
+import ExpenseCategories from './pages/expenses/ExpenseCategories'
+import CashRegistersList from './pages/cash/CashRegistersList'
+import CashSessionPage from './pages/cash/CashSessionPage'
 
 const router = createBrowserRouter([
   {
@@ -116,8 +122,10 @@ const router = createBrowserRouter([
 
       { path: 'vendas', element: <SalesList /> },
       { path: 'vendas/nova', element: <SaleForm /> },
+      { path: 'vendas/editar/:id', element: <SaleForm /> },
       { path: 'vendas/historico', element: <SalesHistory /> },
-      { path: 'vendas/profissionais-lista', element: <SalesProfessionalsList /> },
+      { path: 'vendas/profissionais', element: <SalesProfessionalsList /> },
+      { path: 'vendas/profissionais-lista', element: <SalesProfessionalsList /> }, // Mantido por compatibilidade
       { path: 'vendas/profissionais/novo', element: <SalesProfessionalForm /> },
       { path: 'vendas/profissionais/editar/:id', element: <SalesProfessionalEdit /> },
 
@@ -129,6 +137,14 @@ const router = createBrowserRouter([
           </RoleGuard>
         )
       },
+
+      { path: 'despesas', element: <ExpensesList /> },
+      { path: 'despesas/nova', element: <ExpenseForm /> },
+      { path: 'despesas/editar/:id', element: <ExpenseForm /> },
+      { path: 'despesas/categorias', element: <ExpenseCategories /> },
+
+      { path: 'caixa', element: <CashRegistersList /> },
+      { path: 'caixa/sessao/:registerId', element: <CashSessionPage /> },
 
       { path: 'mensalidades', element: <SubscriptionsMain /> },
       { path: 'mensalidades/planos', element: <PlansList /> },
@@ -149,6 +165,15 @@ const router = createBrowserRouter([
       },
 
       { path: 'notificacoes', element: <NotificationsPage /> },
+
+      {
+        path: 'configuracoes/whatsapp',
+        element: (
+          <RoleGuard requireOwner>
+            <EvolutionSettings />
+          </RoleGuard>
+        )
+      },
     ],
   },
   {

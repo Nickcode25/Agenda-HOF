@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { usePatients } from '@/store/patients'
 import { useSales } from '@/store/sales'
 import { useSubscriptionStore } from '@/store/subscriptions'
-import { formatCurrency } from '@/utils/currency'
+import { useExpenses } from '@/store/expenses'
+import { formatCurrency, parseCurrency } from '@/utils/currency'
 import {
   DollarSign,
   TrendingUp,
@@ -10,20 +11,30 @@ import {
   ShoppingCart,
   Activity,
   CreditCard,
-  Filter
+  Filter,
+  Edit,
+  X,
+  Save,
+  TrendingDown,
+  Receipt
 } from 'lucide-react'
+import { PlannedProcedure } from '@/types/patient'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
 export default function FinancialReport() {
-  const { patients } = usePatients()
+  const { patients, updatePatient } = usePatients()
   const { sales, fetchSales } = useSales()
   const { subscriptions } = useSubscriptionStore()
+  const { expenses, fetchExpenses, getTotalExpenses } = useExpenses()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('month')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [editingProcedure, setEditingProcedure] = useState<{ patientId: string; procedure: PlannedProcedure } | null>(null)
+  const [editForm, setEditForm] = useState({ quantity: 1, unitValue: '', totalValue: '' })
 
   useEffect(() => {
     fetchSales()
+    fetchExpenses()
   }, [])
 
   // Função para filtrar por período
@@ -51,6 +62,71 @@ export default function FinancialReport() {
       default:
         return true
     }
+  }
+
+  // Abrir modal de edição
+  const handleEditProcedure = (patientId: string, procedure: PlannedProcedure) => {
+    setEditingProcedure({ patientId, procedure })
+    setEditForm({
+      quantity: procedure.quantity,
+      unitValue: formatCurrency(procedure.unitValue),
+      totalValue: formatCurrency(procedure.totalValue)
+    })
+  }
+
+  // Atualizar valores do formulário
+  const handleEditFormChange = (field: 'quantity' | 'unitValue' | 'totalValue', value: string | number) => {
+    if (field === 'quantity') {
+      const qty = Number(value)
+      const unitVal = parseCurrency(editForm.unitValue)
+      setEditForm({
+        quantity: qty,
+        unitValue: editForm.unitValue,
+        totalValue: formatCurrency(qty * unitVal)
+      })
+    } else if (field === 'unitValue') {
+      const formatted = formatCurrency(value as string)
+      const unitVal = parseCurrency(formatted)
+      const total = editForm.quantity * unitVal
+      setEditForm({
+        ...editForm,
+        unitValue: formatted,
+        totalValue: formatCurrency(total)
+      })
+    } else if (field === 'totalValue') {
+      const formatted = formatCurrency(value as string)
+      setEditForm({
+        ...editForm,
+        totalValue: formatted
+      })
+    }
+  }
+
+  // Salvar alterações
+  const handleSaveProcedure = async () => {
+    if (!editingProcedure) return
+
+    const patient = patients.find(p => p.id === editingProcedure.patientId)
+    if (!patient) return
+
+    const updatedProcedures = patient.plannedProcedures?.map(proc => {
+      if (proc.id === editingProcedure.procedure.id) {
+        return {
+          ...proc,
+          quantity: editForm.quantity,
+          unitValue: parseCurrency(editForm.unitValue),
+          totalValue: parseCurrency(editForm.totalValue)
+        }
+      }
+      return proc
+    })
+
+    await updatePatient(patient.id, {
+      plannedProcedures: updatedProcedures
+    })
+
+    setEditingProcedure(null)
+    alert('Procedimento atualizado com sucesso!')
   }
 
   // Receitas de procedimentos
@@ -99,6 +175,18 @@ export default function FinancialReport() {
 
   const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total
   const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count
+
+  // Despesas do período
+  const expensesTotal = useMemo(() => {
+    const filteredExpenses = expenses.filter(expense => {
+      if (expense.paymentStatus !== 'paid' || !expense.paidAt) return false
+      return filterByPeriod(new Date(selectedDate), new Date(expense.paidAt))
+    })
+    return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+  }, [expenses, periodFilter, selectedDate])
+
+  // Lucro líquido
+  const netProfit = totalRevenue - expensesTotal
 
   // Calcular percentuais
   const procedurePercentage = totalRevenue > 0 ? (procedureRevenue.total / totalRevenue) * 100 : 0
@@ -209,11 +297,11 @@ export default function FinancialReport() {
       </div>
 
       {/* Resumo Total */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-green-500/20 rounded-lg">
-              <DollarSign size={24} className="text-green-400" />
+              <TrendingUp size={24} className="text-green-400" />
             </div>
             <h3 className="font-medium text-gray-300">Receita Total</h3>
           </div>
@@ -252,6 +340,32 @@ export default function FinancialReport() {
           </div>
           <p className="text-3xl font-bold text-purple-400">{formatCurrency(subscriptionRevenue.total)}</p>
           <p className="text-xs text-gray-400 mt-1">{subscriptionRevenue.count} pagamentos</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-red-500/20 rounded-lg">
+              <TrendingDown size={24} className="text-red-400" />
+            </div>
+            <h3 className="font-medium text-gray-300">Despesas</h3>
+          </div>
+          <p className="text-3xl font-bold text-red-400">{formatCurrency(expensesTotal)}</p>
+          <p className="text-xs text-gray-400 mt-1">Custos operacionais</p>
+        </div>
+
+        <div className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500/10 to-emerald-600/5 border-emerald-500/30' : 'from-red-500/10 to-red-600/5 border-red-500/30'} border rounded-xl p-6`}>
+          <div className="flex items-center gap-3 mb-2">
+            <div className={`p-2 ${netProfit >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
+              <DollarSign size={24} className={netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+            </div>
+            <h3 className="font-medium text-gray-300">Lucro Líquido</h3>
+          </div>
+          <p className={`text-3xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {formatCurrency(netProfit)}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {netProfit >= 0 ? 'Resultado positivo' : 'Resultado negativo'}
+          </p>
         </div>
       </div>
 
@@ -388,6 +502,144 @@ export default function FinancialReport() {
           </div>
         </div>
       </div>
+
+      {/* Lista Completa de Procedimentos Realizados */}
+      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Activity size={24} className="text-blue-400" />
+          <h3 className="text-xl font-semibold text-white">Todos os Procedimentos Realizados</h3>
+        </div>
+
+        {procedureRevenue.items.length > 0 ? (
+          <div className="space-y-3">
+            {procedureRevenue.items.map((proc) => {
+              const patient = patients.find(p => p.plannedProcedures?.some(pp => pp.id === proc.id))
+
+              return (
+                <div key={proc.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="text-white font-medium">{proc.procedureName}</h4>
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
+                          Concluído
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        {patient && <span>Paciente: {patient.name}</span>}
+                        <span>Quantidade: {proc.quantity}</span>
+                        <span>Valor unitário: {formatCurrency(proc.unitValue)}</span>
+                        {proc.completedAt && (
+                          <span className="flex items-center gap-1">
+                            <Calendar size={14} />
+                            {new Date(proc.completedAt).toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400 mb-1">Total</p>
+                        <p className="text-xl font-bold text-blue-400">{formatCurrency(proc.totalValue)}</p>
+                      </div>
+                      {patient && (
+                        <button
+                          onClick={() => handleEditProcedure(patient.id, proc)}
+                          className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all border border-transparent hover:border-blue-500/30"
+                          title="Editar procedimento"
+                        >
+                          <Edit size={18} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {proc.notes && (
+                    <p className="mt-2 text-sm text-gray-400 italic">Obs: {proc.notes}</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-gray-400 text-center py-8">Nenhum procedimento realizado no período</p>
+        )}
+      </div>
+
+      {/* Modal de Edição */}
+      {editingProcedure && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">Editar Procedimento</h3>
+              <button
+                onClick={() => setEditingProcedure(null)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento</label>
+                <p className="text-white font-medium">{editingProcedure.procedure.procedureName}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editForm.quantity}
+                  onChange={(e) => handleEditFormChange('quantity', e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Valor Unitário</label>
+                <input
+                  type="text"
+                  value={editForm.unitValue}
+                  onChange={(e) => handleEditFormChange('unitValue', e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="R$ 0,00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
+                <input
+                  type="text"
+                  value={editForm.totalValue}
+                  onChange={(e) => handleEditFormChange('totalValue', e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="R$ 0,00"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  💡 Você pode editar o valor total diretamente para aplicar descontos ou ajustes
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSaveProcedure}
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-all"
+              >
+                <Save size={18} />
+                Salvar Alterações
+              </button>
+              <button
+                onClick={() => setEditingProcedure(null)}
+                className="px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

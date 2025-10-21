@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code - Agenda HOF WhatsApp</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        #status {
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .status-connecting {
+            background: #FFF3CD;
+            color: #856404;
+            border: 1px solid #FFE69C;
+        }
+
+        .status-connected {
+            background: #D4EDDA;
+            color: #155724;
+            border: 1px solid #C3E6CB;
+        }
+
+        .status-error {
+            background: #F8D7DA;
+            color: #721C24;
+            border: 1px solid #F5C6CB;
+        }
+
+        #qrcode-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qrcode-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            background: #E7F3FF;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+            border-radius: 5px;
+        }
+
+        .instructions h3 {
+            color: #1976D2;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            color: #555;
+            font-size: 13px;
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📱</div>
+        <h1>Conectar WhatsApp</h1>
+        <p class="subtitle">Agenda HOF - Evolution API</p>
+
+        <div id="status" class="status-connecting">
+            🔄 Aguardando QR Code...
+        </div>
+
+        <div id="qrcode-container">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="instructions">
+            <h3>📌 Como conectar:</h3>
+            <ol>
+                <li>Abra o <strong>WhatsApp</strong> no celular</li>
+                <li>Toque em <strong>Mais opções</strong> (⋮) ou <strong>Configurações</strong></li>
+                <li>Selecione <strong>Aparelhos conectados</strong></li>
+                <li>Toque em <strong>Conectar um aparelho</strong></li>
+                <li>Aponte a câmera para o <strong>QR Code acima</strong></li>
+            </ol>
+        </div>
+
+        <button onclick="refreshQRCode()">🔄 Atualizar QR Code</button>
+
+        <div class="footer">
+            Instância: <strong>agendahof</strong><br>
+            API URL: http://localhost:8080
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080';
+        const API_KEY = 'PkhtfB2FWvwb2hq8l1JrzWJv2oNG2YJiMZ95FCy7CQg=';
+        const INSTANCE_NAME = 'agendahof';
+
+        let checkInterval;
+
+        async function fetchQRCode() {
+            try {
+                const response = await fetch(`${API_URL}/instance/connect/${INSTANCE_NAME}`, {
+                    headers: {
+                        'apikey': API_KEY
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.code || data.base64) {
+                    const qrContainer = document.getElementById('qrcode-container');
+                    const statusDiv = document.getElementById('status');
+
+                    const base64Image = data.base64 || data.code;
+                    qrContainer.innerHTML = `<img id="qrcode-image" src="${base64Image}" alt="QR Code">`;
+
+                    statusDiv.className = 'status-connecting';
+                    statusDiv.innerHTML = '📱 Escaneie o QR Code com seu WhatsApp';
+
+                    // Começar a verificar status
+                    startStatusCheck();
+                } else if (data.count === 0) {
+                    setTimeout(fetchQRCode, 2000);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar QR Code:', error);
+                const statusDiv = document.getElementById('status');
+                statusDiv.className = 'status-error';
+                statusDiv.innerHTML = '❌ Erro ao carregar QR Code. Clique em Atualizar.';
+            }
+        }
+
+        async function checkInstanceStatus() {
+            try {
+                const response = await fetch(`${API_URL}/instance/connectionState/${INSTANCE_NAME}`, {
+                    headers: {
+                        'apikey': API_KEY
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.state === 'open') {
+                    const statusDiv = document.getElementById('status');
+                    const qrContainer = document.getElementById('qrcode-container');
+
+                    statusDiv.className = 'status-connected';
+                    statusDiv.innerHTML = '✅ WhatsApp Conectado com Sucesso!';
+
+                    qrContainer.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 60px; margin-bottom: 15px;">✅</div>
+                            <h2 style="color: #155724; margin: 0;">Conectado!</h2>
+                            <p style="color: #666; margin-top: 10px;">Seu WhatsApp está pronto para enviar mensagens.</p>
+                        </div>
+                    `;
+
+                    clearInterval(checkInterval);
+
+                    // Redirecionar para configurações após 3 segundos
+                    setTimeout(() => {
+                        alert('WhatsApp conectado! Agora configure no painel do Agenda HOF em:\nhttps://www.agendahof.com/app/configuracoes/whatsapp');
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status:', error);
+            }
+        }
+
+        function startStatusCheck() {
+            checkInterval = setInterval(checkInstanceStatus, 3000);
+        }
+
+        function refreshQRCode() {
+            clearInterval(checkInterval);
+            const qrContainer = document.getElementById('qrcode-container');
+            qrContainer.innerHTML = '<div class="spinner"></div>';
+
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status-connecting';
+            statusDiv.innerHTML = '🔄 Aguardando QR Code...';
+
+            fetchQRCode();
+        }
+
+        // Iniciar quando a página carregar
+        window.onload = () => {
+            setTimeout(fetchQRCode, 1000);
+        };
+    </script>
+</body>
+</html>

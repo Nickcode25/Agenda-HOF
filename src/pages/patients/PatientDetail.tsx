@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
+import { autoRegisterCashMovement } from '@/store/cash'
 import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, ArrowLeft, AlertTriangle, Package, FileText, X } from 'lucide-react'
@@ -164,6 +165,23 @@ export default function PatientDetail() {
     )
 
     update(patient.id, { plannedProcedures: updated })
+
+    // Registrar movimentação de caixa automaticamente
+    // Mapear paymentType para paymentMethod
+    const paymentMethodMap: Record<string, 'cash' | 'card' | 'pix' | 'transfer' | 'check'> = {
+      'default': 'pix',
+      'cash': 'cash',
+      'card': 'card'
+    }
+
+    await autoRegisterCashMovement({
+      type: 'income',
+      category: 'procedure',
+      amount: completingProcedure.totalValue,
+      paymentMethod: paymentMethodMap[completingProcedure.paymentType] || 'pix',
+      referenceId: completingProcedure.id,
+      description: `Procedimento: ${completingProcedure.procedureName} - Paciente: ${patient.name}`
+    })
 
     // Fechar modal e limpar
     setShowCompleteModal(false)

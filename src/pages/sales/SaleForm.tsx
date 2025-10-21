@@ -1,20 +1,26 @@
 import { FormEvent, useState, useMemo, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useParams } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { useStock } from '@/store/stock'
+import { autoRegisterCashMovement } from '@/store/cash'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import { SaleItem } from '@/types/sales'
 import { Save, Plus, Trash2, User } from 'lucide-react'
 
 export default function SaleForm() {
-  const { professionals, createSale, fetchProfessionals } = useSales()
+  const { id } = useParams<{ id: string }>()
+  const { professionals, createSale, updateSale, getSale, fetchSales, fetchProfessionals } = useSales()
   const { items: stockItems, removeStock, fetchItems } = useStock()
   const navigate = useNavigate()
+  const isEditing = !!id
 
   useEffect(() => {
     fetchProfessionals()
     fetchItems()
-  }, [])
+    if (id) {
+      fetchSales()
+    }
+  }, [id])
 
   const [selectedProfessional, setSelectedProfessional] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'pix' | 'transfer' | 'check'>('cash')
@@ -26,6 +32,27 @@ export default function SaleForm() {
     quantity: number
     salePrice: string
   }>>([{ stockItemId: '', quantity: 1, salePrice: '' }])
+
+  // Carregar dados da venda se estiver editando
+  useEffect(() => {
+    if (id) {
+      const sale = getSale(id)
+      if (sale) {
+        setSelectedProfessional(sale.professionalId)
+        setPaymentMethod(sale.paymentMethod)
+        setPaymentStatus(sale.paymentStatus)
+        setNotes(sale.notes || '')
+
+        // Converter items da venda para o formato do formulário
+        const formattedItems = sale.items.map(item => ({
+          stockItemId: item.stockItemId,
+          quantity: item.quantity,
+          salePrice: formatCurrency(item.salePrice)
+        }))
+        setSaleItems(formattedItems)
+      }
+    }
+  }, [id, getSale])
 
   // Função para formatar moeda durante a digitação
   function formatCurrencyInput(value: string): string {
@@ -107,38 +134,58 @@ export default function SaleForm() {
     }))
 
     try {
-      // Criar a venda no Supabase
-      const saleId = await createSale({
-        professionalId: selectedProfessional,
-        professionalName: professional.name,
-        items: saleItemsData,
-        subtotal: totalAmount,
-        discount: 0,
-        totalAmount,
-        totalProfit,
-        paymentMethod,
-        paymentStatus,
-        dueDate: dueDate || undefined,
-        paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
-        notes: notes || undefined
-      })
+      if (isEditing && id) {
+        // Atualizar venda existente
+        await updateSale(id, {
+          professionalId: selectedProfessional,
+          professionalName: professional.name,
+          items: saleItemsData,
+          subtotal: totalAmount,
+          discount: 0,
+          totalAmount,
+          totalProfit,
+          paymentMethod,
+          paymentStatus,
+          dueDate: dueDate || undefined,
+          paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
+          notes: notes || undefined
+        })
 
-      if (!saleId) {
-        alert('Erro ao registrar venda')
-        return
-      }
+        alert('Venda atualizada com sucesso!')
+      } else {
+        // Criar nova venda no Supabase
+        const saleId = await createSale({
+          professionalId: selectedProfessional,
+          professionalName: professional.name,
+          items: saleItemsData,
+          subtotal: totalAmount,
+          discount: 0,
+          totalAmount,
+          totalProfit,
+          paymentMethod,
+          paymentStatus,
+          dueDate: dueDate || undefined,
+          paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
+          notes: notes || undefined
+        })
 
-      // Subtrair do estoque
-      for (const item of calculatedItems) {
-        const success = await removeStock(
-          item.stockItemId,
-          item.quantity,
-          `Venda para ${professional.name}`,
-          undefined, // procedureId
-          undefined  // patientId
-        )
-        if (!success) {
-          console.error('❌ Erro ao remover do estoque:', item.stockItem?.name)
+        if (!saleId) {
+          alert('Erro ao registrar venda')
+          return
+        }
+
+        // Subtrair do estoque apenas em novas vendas
+        for (const item of calculatedItems) {
+          const success = await removeStock(
+            item.stockItemId,
+            item.quantity,
+            `Venda para ${professional.name}`,
+            undefined, // procedureId
+            undefined  // patientId
+          )
+          if (!success) {
+            console.error('❌ Erro ao remover do estoque:', item.stockItem?.name)
+          }
         }
       }
 
@@ -147,8 +194,8 @@ export default function SaleForm() {
 
       navigate('/app/vendas')
     } catch (error) {
-      console.error('❌ Erro ao registrar venda:', error)
-      alert('Erro ao registrar venda')
+      console.error('❌ Erro ao processar venda:', error)
+      alert(`Erro ao ${isEditing ? 'atualizar' : 'registrar'} venda`)
     }
   }
 
@@ -358,7 +405,7 @@ export default function SaleForm() {
             className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
           >
             <Save size={18} />
-            Registrar Venda
+            {isEditing ? 'Atualizar Venda' : 'Registrar Venda'}
           </button>
           <Link
             to=".."

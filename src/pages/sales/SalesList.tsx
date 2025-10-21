@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2 } from 'lucide-react'
+import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react'
 
 export default function SalesList() {
   const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale } = useSales()
@@ -108,7 +108,7 @@ export default function SalesList() {
       border: 'border-orange-500/30',
       iconBg: 'bg-orange-500/20',
       subtitle: 'Cadastrados',
-      link: 'profissionais-lista'
+      link: 'profissionais'
     }
   ]
 
@@ -289,6 +289,13 @@ export default function SalesList() {
                       <div className="text-sm text-gray-400">
                         {sale.items.length} {sale.items.length === 1 ? 'item' : 'itens'}
                       </div>
+                      <Link
+                        to={`/app/vendas/editar/${sale.id}`}
+                        className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all border border-transparent hover:border-blue-500/30"
+                        title="Editar venda"
+                      >
+                        <Edit size={16} />
+                      </Link>
                       <button
                         onClick={() => handleDeleteSale(sale.id, sale.professionalName)}
                         className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/30"

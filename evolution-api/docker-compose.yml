@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  evolution-api:
+    container_name: evolution_api
+    image: atendai/evolution-api:latest
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # Servidor
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8080
+
+      # Modo de autenticação
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=PkhtfB2FWvwb2hq8l1JrzWJv2oNG2YJiMZ95FCy7CQg=
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+
+      # Banco de dados PostgreSQL (recomendado para produção)
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@postgres:5432/evolution
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_UPDATE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+
+      # Redis (opcional, mas recomendado)
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=true
+
+      # Webhook Events
+      - WEBHOOK_GLOBAL_ENABLED=false
+      - WEBHOOK_GLOBAL_URL=
+      - WEBHOOK_EVENTS_APPLICATION_STARTUP=false
+      - WEBHOOK_EVENTS_QRCODE_UPDATED=true
+      - WEBHOOK_EVENTS_MESSAGES_SET=true
+      - WEBHOOK_EVENTS_MESSAGES_UPSERT=true
+      - WEBHOOK_EVENTS_MESSAGES_UPDATE=true
+      - WEBHOOK_EVENTS_SEND_MESSAGE=true
+      - WEBHOOK_EVENTS_CONNECTION_UPDATE=true
+
+      # QR Code
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#198754
+
+      # Logs
+      - LOG_LEVEL=WARN
+      - LOG_COLOR=true
+      - LOG_BAILEYS=warn
+
+      # Baileys Settings (melhorar estabilidade)
+      - STORE_MESSAGES=true
+      - STORE_CONTACTS=true
+      - STORE_CHATS=true
+
+      # Instance Settings
+      - DEL_INSTANCE=false
+      - DEL_TEMP_INSTANCES=true
+
+      # Chatwoot (opcional - integração com Chatwoot)
+      - CHATWOOT_ENABLED=false
+
+      # Typebot (opcional - integração com Typebot)
+      - TYPEBOT_ENABLED=false
+
+      # Configurações do WhatsApp
+      - CONFIG_SESSION_PHONE_CLIENT=Agenda HOF
+      - CONFIG_SESSION_PHONE_NAME=Chrome
+      - MOBILE_NUMBER_ENABLED=false
+
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
+
+    depends_on:
+      - postgres
+      - redis
+
+    networks:
+      - evolution
+
+  postgres:
+    container_name: evolution_postgres
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=evolution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - evolution
+
+  redis:
+    container_name: evolution_redis
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6380:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --port 6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - evolution
+
+  # pgAdmin (opcional - interface gráfica para PostgreSQL)
+  pgadmin:
+    container_name: evolution_pgadmin
+    image: dpage/pgadmin4:latest
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@agendahof.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - evolution
+    profiles:
+      - tools
+
+volumes:
+  evolution_instances:
+    driver: local
+  evolution_store:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  evolution:
+    driver: bridge

@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp } from 'lucide-react'
+import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, MessageSquare, Receipt, Wallet } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -9,10 +9,12 @@ import NotificationBell from '@/components/NotificationBell'
 import { startNotificationPolling } from '@/services/notificationService'
 import Toast from '@/components/Toast'
 import { useToast } from '@/hooks/useToast'
+import { supabase } from '@/lib/supabase'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile sidebar
   const [sidebarHovered, setSidebarHovered] = useState(false) // Desktop hover
+  const [patientName, setPatientName] = useState<string | null>(null)
   const { professionals } = useProfessionals()
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
@@ -35,6 +37,44 @@ export default function App() {
     }
   }, [user])
 
+  // Buscar nome do paciente quando estiver na página do paciente
+  useEffect(() => {
+    const fetchPatientName = async () => {
+      const paths = location.pathname.split('/').filter(Boolean)
+      const patientIndex = paths.indexOf('pacientes')
+
+      if (patientIndex !== -1 && paths[patientIndex + 1]) {
+        const patientId = paths[patientIndex + 1]
+
+        // Verificar se é um UUID (não é "novo", "nova", etc)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        if (uuidRegex.test(patientId)) {
+          try {
+            const { data, error } = await supabase
+              .from('patients')
+              .select('name')
+              .eq('id', patientId)
+              .single()
+
+            if (data && !error) {
+              setPatientName(data.name)
+            } else {
+              setPatientName(null)
+            }
+          } catch (err) {
+            setPatientName(null)
+          }
+        } else {
+          setPatientName(null)
+        }
+      } else {
+        setPatientName(null)
+      }
+    }
+
+    fetchPatientName()
+  }, [location.pathname])
+
   const handleLogout = async () => {
     await signOut()
     navigate('/')
@@ -54,10 +94,15 @@ export default function App() {
       'procedimentos': 'Procedimentos',
       'estoque': 'Estoque',
       'vendas': 'Vendas',
+      'despesas': 'Despesas',
+      'caixa': 'Controle de Caixa',
+      'sessao': 'Sessão de Caixa',
       'financeiro': 'Relatório Financeiro',
       'mensalidades': 'Mensalidades',
       'funcionarios': 'Funcionários',
       'notificacoes': 'Notificações',
+      'configuracoes': 'Configurações',
+      'whatsapp': 'WhatsApp',
       'prontuario': 'Prontuário',
       'anamnese': 'Anamnese',
       'evolucao': 'Evolução',
@@ -66,13 +111,31 @@ export default function App() {
       'nova': 'Novo',
       'novo': 'Novo',
       'editar': 'Editar',
+      'consentimento': 'Consentimento',
+      'historico': 'Histórico',
+      'planos': 'Planos',
+      'assinantes': 'Assinantes',
+      'relatorios': 'Relatórios',
+      'profissionais-lista': 'Profissionais',
     }
 
-    return paths.map((path, index) => ({
-      name: breadcrumbMap[path] || path,
-      path: '/' + paths.slice(0, index + 1).join('/'),
-      isLast: index === paths.length - 1
-    }))
+    return paths.map((path, index) => {
+      // Verificar se é um UUID (ID do paciente)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+      let displayName = breadcrumbMap[path] || path
+
+      // Se for um UUID e tivermos o nome do paciente, usar o nome
+      if (uuidRegex.test(path) && patientName) {
+        displayName = patientName
+      }
+
+      return {
+        name: displayName,
+        path: '/' + paths.slice(0, index + 1).join('/'),
+        isLast: index === paths.length - 1
+      }
+    })
   }
 
   const breadcrumbs = getBreadcrumb()
@@ -179,6 +242,14 @@ export default function App() {
               <ShoppingCart size={22} className="flex-shrink-0"/>
               <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Venda de Produtos</span>
             </NavLink>
+            <NavLink to="/app/despesas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Despesas">
+              <Receipt size={22} className="flex-shrink-0"/>
+              <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
+            </NavLink>
+            <NavLink to="/app/caixa" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Controle de Caixa">
+              <Wallet size={22} className="flex-shrink-0"/>
+              <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Controle de Caixa</span>
+            </NavLink>
 
             {/* Seção Financeiro e Gestão - só para owner */}
             {currentProfile?.role === 'owner' && (
@@ -195,6 +266,10 @@ export default function App() {
                 <NavLink to="/app/funcionarios" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Funcionários">
                   <UserCog size={22} className="flex-shrink-0"/>
                   <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Funcionários</span>
+                </NavLink>
+                <NavLink to="/app/configuracoes/whatsapp" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="WhatsApp">
+                  <MessageSquare size={22} className="flex-shrink-0"/>
+                  <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>WhatsApp</span>
                 </NavLink>
               </>
             )}
