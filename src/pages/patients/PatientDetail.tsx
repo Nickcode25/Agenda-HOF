@@ -35,6 +35,12 @@ export default function PatientDetail() {
   const [completingProcedure, setCompletingProcedure] = useState<PlannedProcedure | null>(null)
   const [selectedProductId, setSelectedProductId] = useState('')
 
+  // Modal de edição de valor
+  const [showEditValueModal, setShowEditValueModal] = useState(false)
+  const [editingProcedure, setEditingProcedure] = useState<PlannedProcedure | null>(null)
+  const [editedValue, setEditedValue] = useState('')
+  const [editedDescription, setEditedDescription] = useState('')
+
   // Obter categoria e produtos disponíveis do procedimento selecionado
   const selectedProcedureData = procedures.find(p => p.name === selectedProcedure)
   const availableProducts = selectedProcedureData?.category
@@ -198,6 +204,43 @@ export default function PatientDetail() {
     update(patient.id, { plannedProcedures: updated })
   }
 
+  const handleOpenEditValue = (proc: PlannedProcedure) => {
+    setEditingProcedure(proc)
+    setEditedValue(formatCurrency(proc.totalValue))
+    setEditedDescription(proc.notes || '')
+    setShowEditValueModal(true)
+  }
+
+  const handleSaveEditedValue = () => {
+    if (!patient || !editingProcedure) return
+
+    // Parse do valor editado
+    const parsedValue = parseFloat(editedValue.replace(/[^\d,]/g, '').replace(',', '.'))
+
+    if (isNaN(parsedValue) || parsedValue < 0) {
+      alert('Por favor, insira um valor válido')
+      return
+    }
+
+    const updated = (patient.plannedProcedures || []).map(p =>
+      p.id === editingProcedure.id ? {
+        ...p,
+        totalValue: parsedValue,
+        unitValue: parsedValue / p.quantity, // Recalcular valor unitário
+        notes: editedDescription
+      } : p
+    )
+
+    update(patient.id, { plannedProcedures: updated })
+
+    setShowEditValueModal(false)
+    setEditingProcedure(null)
+    setEditedValue('')
+    setEditedDescription('')
+
+    showToast('Valor atualizado com sucesso!', 'success')
+  }
+
   if (!patient) return (
     <div>
       <p className="text-gray-400">Paciente não encontrado.</p>
@@ -337,7 +380,15 @@ export default function PatientDetail() {
                         <option value="in_progress">Em Andamento</option>
                         <option value="completed">Concluído</option>
                       </select>
-                      
+
+                      <button
+                        onClick={() => handleOpenEditValue(proc)}
+                        className="px-3 py-1 text-sm bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded border border-blue-500/30 transition-colors inline-flex items-center justify-center gap-1"
+                      >
+                        <Edit size={14} />
+                        Editar
+                      </button>
+
                       <button
                         onClick={() => handleRemoveProcedure(proc.id)}
                         className="px-3 py-1 text-sm bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded border border-red-500/30 transition-colors"
@@ -817,6 +868,98 @@ export default function PatientDetail() {
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/40"
               >
                 Concluir Procedimento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição de Valor */}
+      {showEditValueModal && editingProcedure && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <h3 className="text-xl font-semibold text-white">Editar Valor do Procedimento</h3>
+              <button
+                onClick={() => {
+                  setShowEditValueModal(false)
+                  setEditingProcedure(null)
+                  setEditedValue('')
+                  setEditedDescription('')
+                }}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div>
+                <p className="text-sm text-gray-400 mb-2">Procedimento</p>
+                <p className="text-white font-medium">{editingProcedure.procedureName}</p>
+                <p className="text-sm text-gray-400 mt-1">Quantidade: {editingProcedure.quantity}x</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Valor Total (R$) <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editedValue}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '')
+                    const formatted = (parseInt(value || '0') / 100).toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })
+                    setEditedValue(formatted)
+                  }}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  placeholder="0,00"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  💡 Digite apenas números. Ex: digite "10000" para R$ 100,00
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Descrição / Observação
+                </label>
+                <textarea
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  rows={4}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+                  placeholder="Ex: Pagamento antecipado de R$ 100,00 para reserva da consulta"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Use este campo para registrar detalhes do pagamento
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-700">
+              <button
+                onClick={() => {
+                  setShowEditValueModal(false)
+                  setEditingProcedure(null)
+                  setEditedValue('')
+                  setEditedDescription('')
+                }}
+                className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEditedValue}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-500/30"
+              >
+                Salvar Alterações
               </button>
             </div>
           </div>
