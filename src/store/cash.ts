@@ -195,8 +195,7 @@ export const useCash = create<CashStore>()(
             expectedBalance: row.expected_balance ? parseFloat(row.expected_balance) : undefined,
             difference: row.difference ? parseFloat(row.difference) : undefined,
             status: row.status,
-            createdAt: row.created_at,
-            updatedAt: row.updated_at
+            createdAt: row.created_at
           }))
 
           set({ sessions, loading: false })
@@ -338,8 +337,7 @@ export const useCash = create<CashStore>()(
             closing_balance: closingBalance,
             expected_balance: expectedBalance,
             difference: difference,
-            status: 'closed',
-            updated_at: new Date().toISOString()
+            status: 'closed'
           }
 
           console.log('[CASH] Dados para atualizar:', updateData)
