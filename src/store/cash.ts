@@ -579,6 +579,7 @@ export const autoRegisterCashMovement = async (params: {
         .insert({
           user_id: user.id,
           cash_session_id: session.id,
+          cash_register_id: session.cash_register_id,
           type: params.type,
           category: params.category,
           amount: params.amount,
