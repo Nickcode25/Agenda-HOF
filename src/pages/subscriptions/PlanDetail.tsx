@@ -45,17 +45,31 @@ export default function PlanDetail() {
   const subscribedPatientIds = planSubscriptions.map(s => s.patientId)
   const allAvailablePatients = patients.filter(p => !subscribedPatientIds.includes(p.id))
 
-  // Só mostrar pacientes quando houver busca (mínimo 2 caracteres)
-  const availablePatients = searchPatient && searchPatient.length >= 2
+  // Filtrar pacientes conforme a busca
+  const availablePatients = searchPatient.trim().length > 0
     ? allAvailablePatients.filter(p => {
-        const search = removeAccents(searchPatient.toLowerCase())
-        return (
-          removeAccents(p.name.toLowerCase()).includes(search) ||
-          p.cpf.replace(/\D/g, '').includes(search.replace(/\D/g, '')) ||
-          (p.phone?.replace(/\D/g, '') || '').includes(search.replace(/\D/g, ''))
-        )
-      })
-    : []
+        const search = removeAccents(searchPatient.toLowerCase().trim())
+        const normalizedName = removeAccents(p.name.toLowerCase())
+
+        // Dividir o nome em palavras para buscar no início de cada palavra
+        const nameWords = normalizedName.split(' ')
+        const matchesNameWord = nameWords.some(word => word.startsWith(search))
+        const matchName = matchesNameWord || normalizedName.startsWith(search)
+
+        // Buscar em CPF e telefone se houver números
+        const normalizedSearchCpf = search.replace(/\D/g, '')
+        let matchCpf = false
+        let matchPhone = false
+
+        if (normalizedSearchCpf.length > 0) {
+          const normalizedCpf = p.cpf.replace(/\D/g, '')
+          matchCpf = normalizedCpf.includes(normalizedSearchCpf)
+          matchPhone = p.phone ? p.phone.replace(/\D/g, '').includes(normalizedSearchCpf) : false
+        }
+
+        return matchName || matchCpf || matchPhone
+      }).slice(0, 10) // Limitar a 10 resultados
+    : allAvailablePatients.slice(0, 10) // Mostrar primeiros 10 quando não há busca
 
   if (!plan) {
     return (
