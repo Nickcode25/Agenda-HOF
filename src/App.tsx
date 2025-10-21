@@ -340,7 +340,17 @@ export default function App() {
               <h1 className="font-bold text-white">Agenda+ HOF</h1>
             </div>
           </div>
-          <NotificationBell />
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle Mobile */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
+              title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <NotificationBell />
+          </div>
         </header>
 
         {/* Desktop Header */}
