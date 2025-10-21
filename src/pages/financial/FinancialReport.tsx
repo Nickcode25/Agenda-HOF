@@ -1,9 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
-import { usePatients } from '@/store/patients'
-import { useSales } from '@/store/sales'
-import { useSubscriptionStore } from '@/store/subscriptions'
 import { useExpenses } from '@/store/expenses'
-import { formatCurrency, parseCurrency } from '@/utils/currency'
+import { useCash } from '@/store/cash'
+import { formatCurrency } from '@/utils/currency'
 import {
   DollarSign,
   TrendingUp,
@@ -12,29 +10,22 @@ import {
   Activity,
   CreditCard,
   Filter,
-  Edit,
-  X,
-  Save,
   TrendingDown,
   Receipt
 } from 'lucide-react'
-import { PlannedProcedure } from '@/types/patient'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
 export default function FinancialReport() {
-  const { patients, updatePatient } = usePatients()
-  const { sales, fetchSales } = useSales()
-  const { subscriptions } = useSubscriptionStore()
-  const { expenses, fetchExpenses, getTotalExpenses } = useExpenses()
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('month')
+  const { sessions, movements, fetchSessions, fetchMovements } = useCash()
+  const { expenses, fetchExpenses } = useExpenses()
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [editingProcedure, setEditingProcedure] = useState<{ patientId: string; procedure: PlannedProcedure } | null>(null)
-  const [editForm, setEditForm] = useState({ quantity: 1, unitValue: '', totalValue: '' })
 
   useEffect(() => {
-    fetchSales()
     fetchExpenses()
+    fetchSessions()
+    fetchMovements()
   }, [])
 
   // Função para filtrar por período
@@ -64,114 +55,65 @@ export default function FinancialReport() {
     }
   }
 
-  // Abrir modal de edição
-  const handleEditProcedure = (patientId: string, procedure: PlannedProcedure) => {
-    setEditingProcedure({ patientId, procedure })
-    setEditForm({
-      quantity: procedure.quantity,
-      unitValue: formatCurrency(procedure.unitValue),
-      totalValue: formatCurrency(procedure.totalValue)
-    })
-  }
-
-  // Atualizar valores do formulário
-  const handleEditFormChange = (field: 'quantity' | 'unitValue' | 'totalValue', value: string | number) => {
-    if (field === 'quantity') {
-      const qty = Number(value)
-      const unitVal = parseCurrency(editForm.unitValue)
-      setEditForm({
-        quantity: qty,
-        unitValue: editForm.unitValue,
-        totalValue: formatCurrency(qty * unitVal)
-      })
-    } else if (field === 'unitValue') {
-      const formatted = formatCurrency(value as string)
-      const unitVal = parseCurrency(formatted)
-      const total = editForm.quantity * unitVal
-      setEditForm({
-        ...editForm,
-        unitValue: formatted,
-        totalValue: formatCurrency(total)
-      })
-    } else if (field === 'totalValue') {
-      const formatted = formatCurrency(value as string)
-      setEditForm({
-        ...editForm,
-        totalValue: formatted
-      })
-    }
-  }
-
-  // Salvar alterações
-  const handleSaveProcedure = async () => {
-    if (!editingProcedure) return
-
-    const patient = patients.find(p => p.id === editingProcedure.patientId)
-    if (!patient) return
-
-    const updatedProcedures = patient.plannedProcedures?.map(proc => {
-      if (proc.id === editingProcedure.procedure.id) {
-        return {
-          ...proc,
-          quantity: editForm.quantity,
-          unitValue: parseCurrency(editForm.unitValue),
-          totalValue: parseCurrency(editForm.totalValue)
-        }
-      }
-      return proc
-    })
-
-    await updatePatient(patient.id, {
-      plannedProcedures: updatedProcedures
-    })
-
-    setEditingProcedure(null)
-    alert('Procedimento atualizado com sucesso!')
-  }
-
-  // Receitas de procedimentos
+  // Receitas de procedimentos (do caixa fechado)
   const procedureRevenue = useMemo(() => {
-    const completedProcedures = patients.flatMap(patient =>
-      patient.plannedProcedures?.filter(proc => {
-        if (proc.status !== 'completed' || !proc.completedAt) return false
-        return filterByPeriod(new Date(selectedDate), new Date(proc.completedAt))
-      }) || []
+    const closedSessions = sessions.filter(s =>
+      s.status === 'closed' &&
+      s.closedAt &&
+      filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
     )
 
-    const total = completedProcedures.reduce((sum, proc) => sum + (proc.totalValue || 0), 0)
-    const count = completedProcedures.length
+    const procedureMovements = movements.filter(m =>
+      m.category === 'procedure' &&
+      m.type === 'income' &&
+      closedSessions.some(s => s.id === m.cashSessionId)
+    )
 
-    return { total, count, items: completedProcedures }
-  }, [patients, periodFilter, selectedDate])
+    const total = procedureMovements.reduce((sum, m) => sum + m.amount, 0)
+    const count = procedureMovements.length
 
-  // Receitas de vendas
+    return { total, count, items: procedureMovements }
+  }, [sessions, movements, periodFilter, selectedDate])
+
+  // Receitas de vendas (do caixa fechado)
   const salesRevenue = useMemo(() => {
-    const filteredSales = sales.filter(sale =>
-      sale.paymentStatus === 'paid' && filterByPeriod(new Date(selectedDate), new Date(sale.createdAt))
+    const closedSessions = sessions.filter(s =>
+      s.status === 'closed' &&
+      s.closedAt &&
+      filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
     )
 
-    const total = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
-    const profit = filteredSales.reduce((sum, sale) => sum + sale.totalProfit, 0)
-    const count = filteredSales.length
+    const saleMovements = movements.filter(m =>
+      m.category === 'sale' &&
+      m.type === 'income' &&
+      closedSessions.some(s => s.id === m.cashSessionId)
+    )
 
-    return { total, profit, count, items: filteredSales }
-  }, [sales, periodFilter, selectedDate])
+    const total = saleMovements.reduce((sum, m) => sum + m.amount, 0)
+    const count = saleMovements.length
 
-  // Receitas de mensalidades
+    return { total, profit: 0, count, items: saleMovements }
+  }, [sessions, movements, periodFilter, selectedDate])
+
+  // Receitas de mensalidades (do caixa fechado)
   const subscriptionRevenue = useMemo(() => {
-    const paidPayments = subscriptions.flatMap(sub =>
-      sub.payments?.filter(payment =>
-        payment.status === 'paid' &&
-        payment.paidAt &&
-        filterByPeriod(new Date(selectedDate), new Date(payment.paidAt))
-      ) || []
+    const closedSessions = sessions.filter(s =>
+      s.status === 'closed' &&
+      s.closedAt &&
+      filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
     )
 
-    const total = paidPayments.reduce((sum, payment) => sum + payment.amount, 0)
-    const count = paidPayments.length
+    const subscriptionMovements = movements.filter(m =>
+      m.category === 'subscription' &&
+      m.type === 'income' &&
+      closedSessions.some(s => s.id === m.cashSessionId)
+    )
 
-    return { total, count, items: paidPayments }
-  }, [subscriptions, periodFilter, selectedDate])
+    const total = subscriptionMovements.reduce((sum, m) => sum + m.amount, 0)
+    const count = subscriptionMovements.length
+
+    return { total, count, items: subscriptionMovements }
+  }, [sessions, movements, periodFilter, selectedDate])
 
   const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total
   const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count
@@ -449,17 +391,17 @@ export default function FinancialReport() {
           <div className="space-y-2">
             {procedureRevenue.items.length > 0 ? (
               procedureRevenue.items
-                .sort((a, b) => (b.totalValue || 0) - (a.totalValue || 0))
+                .sort((a, b) => b.amount - a.amount)
                 .slice(0, 5)
-                .map((proc, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                .map((movement, index) => (
+                  <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                     <div className="flex items-center gap-3">
                       <span className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xs font-bold">
                         {index + 1}
                       </span>
-                      <span className="text-white font-medium">{proc.procedureName}</span>
+                      <span className="text-white font-medium">{movement.description}</span>
                     </div>
-                    <span className="text-blue-400 font-bold">{formatCurrency(proc.totalValue || 0)}</span>
+                    <span className="text-blue-400 font-bold">{formatCurrency(movement.amount)}</span>
                   </div>
                 ))
             ) : (
@@ -477,22 +419,21 @@ export default function FinancialReport() {
           <div className="space-y-2">
             {salesRevenue.items.length > 0 ? (
               salesRevenue.items
-                .sort((a, b) => b.totalAmount - a.totalAmount)
+                .sort((a, b) => b.amount - a.amount)
                 .slice(0, 5)
-                .map((sale, index) => (
-                  <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                .map((movement, index) => (
+                  <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                     <div className="flex items-center gap-3">
                       <span className="w-6 h-6 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center text-xs font-bold">
                         {index + 1}
                       </span>
                       <div>
-                        <span className="text-white font-medium block">{sale.professionalName}</span>
-                        <span className="text-xs text-gray-400">{sale.items.length} {sale.items.length === 1 ? 'item' : 'itens'}</span>
+                        <span className="text-white font-medium block">{movement.description}</span>
+                        <span className="text-xs text-gray-400">{movement.paymentMethod}</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="text-orange-400 font-bold block">{formatCurrency(sale.totalAmount)}</span>
-                      <span className="text-xs text-green-400">+{formatCurrency(sale.totalProfit)}</span>
+                      <span className="text-orange-400 font-bold block">{formatCurrency(movement.amount)}</span>
                     </div>
                   </div>
                 ))
@@ -503,143 +444,59 @@ export default function FinancialReport() {
         </div>
       </div>
 
-      {/* Lista Completa de Procedimentos Realizados */}
+      {/* Lista Completa de Movimentações */}
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-6">
-          <Activity size={24} className="text-blue-400" />
-          <h3 className="text-xl font-semibold text-white">Todos os Procedimentos Realizados</h3>
+          <Receipt size={24} className="text-green-400" />
+          <h3 className="text-xl font-semibold text-white">Todas as Transações do Período</h3>
         </div>
 
-        {procedureRevenue.items.length > 0 ? (
+        {totalTransactions > 0 ? (
           <div className="space-y-3">
-            {procedureRevenue.items.map((proc) => {
-              const patient = patients.find(p => p.plannedProcedures?.some(pp => pp.id === proc.id))
+            {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items]
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .map((movement) => {
+                const categoryColors = {
+                  procedure: 'blue',
+                  sale: 'orange',
+                  subscription: 'purple',
+                  expense: 'red',
+                  other: 'gray'
+                }
+                const color = categoryColors[movement.category as keyof typeof categoryColors] || 'gray'
 
-              return (
-                <div key={proc.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="text-white font-medium">{proc.procedureName}</h4>
-                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
-                          Concluído
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        {patient && <span>Paciente: {patient.name}</span>}
-                        <span>Quantidade: {proc.quantity}</span>
-                        <span>Valor unitário: {formatCurrency(proc.unitValue)}</span>
-                        {proc.completedAt && (
+                return (
+                  <div key={movement.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="text-white font-medium">{movement.description}</h4>
+                          <span className={`px-2 py-1 bg-${color}-500/20 text-${color}-400 text-xs rounded-full border border-${color}-500/30`}>
+                            {movement.category}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                          <span>Pagamento: {movement.paymentMethod}</span>
                           <span className="flex items-center gap-1">
                             <Calendar size={14} />
-                            {new Date(proc.completedAt).toLocaleDateString('pt-BR')}
+                            {new Date(movement.createdAt).toLocaleDateString('pt-BR')}
                           </span>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-xs text-gray-400 mb-1">Total</p>
-                        <p className="text-xl font-bold text-blue-400">{formatCurrency(proc.totalValue)}</p>
+                        <p className="text-xs text-gray-400 mb-1">Valor</p>
+                        <p className={`text-xl font-bold text-${color}-400`}>{formatCurrency(movement.amount)}</p>
                       </div>
-                      {patient && (
-                        <button
-                          onClick={() => handleEditProcedure(patient.id, proc)}
-                          className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all border border-transparent hover:border-blue-500/30"
-                          title="Editar procedimento"
-                        >
-                          <Edit size={18} />
-                        </button>
-                      )}
                     </div>
                   </div>
-                  {proc.notes && (
-                    <p className="mt-2 text-sm text-gray-400 italic">Obs: {proc.notes}</p>
-                  )}
-                </div>
-              )
-            })}
+                )
+              })}
           </div>
         ) : (
-          <p className="text-gray-400 text-center py-8">Nenhum procedimento realizado no período</p>
+          <p className="text-gray-400 text-center py-8">Nenhuma transação no período</p>
         )}
       </div>
 
-      {/* Modal de Edição */}
-      {editingProcedure && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-md w-full">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Editar Procedimento</h3>
-              <button
-                onClick={() => setEditingProcedure(null)}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento</label>
-                <p className="text-white font-medium">{editingProcedure.procedure.procedureName}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={editForm.quantity}
-                  onChange={(e) => handleEditFormChange('quantity', e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Valor Unitário</label>
-                <input
-                  type="text"
-                  value={editForm.unitValue}
-                  onChange={(e) => handleEditFormChange('unitValue', e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                  placeholder="R$ 0,00"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
-                <input
-                  type="text"
-                  value={editForm.totalValue}
-                  onChange={(e) => handleEditFormChange('totalValue', e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                  placeholder="R$ 0,00"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  💡 Você pode editar o valor total diretamente para aplicar descontos ou ajustes
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleSaveProcedure}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-all"
-              >
-                <Save size={18} />
-                Salvar Alterações
-              </button>
-              <button
-                onClick={() => setEditingProcedure(null)}
-                className="px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
