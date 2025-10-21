@@ -326,8 +326,12 @@ export const useCash = create<CashStore>()(
           const session = get().getSession(sessionId)
           if (!session) throw new Error('Sessão não encontrada')
 
+          console.log('[CASH] Fechando sessão:', sessionId)
+
           const expectedBalance = get().getExpectedBalance(sessionId)
           const difference = closingBalance - expectedBalance
+
+          console.log('[CASH] Saldo esperado:', expectedBalance, 'Saldo final:', closingBalance, 'Diferença:', difference)
 
           const { error } = await supabase
             .from('cash_sessions')
@@ -343,11 +347,22 @@ export const useCash = create<CashStore>()(
             .eq('id', sessionId)
             .eq('user_id', user.id)
 
-          if (error) throw error
+          if (error) {
+            console.error('[CASH] Erro ao fechar sessão no banco:', error)
+            throw error
+          }
 
-          await get().fetchSessions(session.cashRegisterId)
+          console.log('[CASH] Sessão fechada no banco, atualizando store...')
+
+          // Recarregar todas as sessões
+          await get().fetchSessions()
+
+          console.log('[CASH] Sessões após fechar:', get().sessions.length)
+          console.log('[CASH] Sessão fechada:', get().sessions.find(s => s.id === sessionId))
+
           set({ currentSession: null, loading: false })
         } catch (error: any) {
+          console.error('[CASH] Erro ao fechar sessão:', error)
           set({ error: error.message, loading: false })
         }
       },
