@@ -73,8 +73,6 @@ export const useStock = create<StockStore>()(
             throw error
           }
 
-          console.log(`✅ [STOCK] ${data?.length || 0} itens encontrados`)
-
           const items: StockItem[] = (data || []).map(row => ({
             id: row.id,
             name: row.name,
@@ -266,8 +264,6 @@ export const useStock = create<StockStore>()(
           procedureId,
           patientId
         })
-
-        console.log('✅ [STOCK] Removido com sucesso. Novo estoque:', item.quantity - quantity)
 
         return true
       },

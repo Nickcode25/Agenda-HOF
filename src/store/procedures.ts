@@ -65,8 +65,6 @@ export const useProcedures = create<ProceduresState>()((set, get) => ({
         throw error
       }
 
-      console.log(`✅ [PROCEDURES] ${data?.length || 0} procedimentos encontrados`)
-
       const procedures = (data || []).map(p => ({
         id: p.id,
         name: p.name,

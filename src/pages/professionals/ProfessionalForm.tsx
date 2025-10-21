@@ -101,8 +101,6 @@ export default function ProfessionalForm() {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
 
-    console.log('🔄 Tentando salvar profissional...')
-
     const id = await add({
       name: String(data.get('name')||''),
       specialty: String(data.get('specialty')||''),
@@ -125,7 +123,6 @@ export default function ProfessionalForm() {
     })
 
     if (id) {
-      console.log('✅ Profissional salvo com sucesso!', id)
       navigate(`/app/profissionais/${id}`)
     } else {
       console.error('❌ Erro ao salvar profissional')

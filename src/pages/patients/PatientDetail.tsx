@@ -166,7 +166,6 @@ export default function PatientDetail() {
     }
 
     // Forçar atualização do estoque
-    console.log('✅ Estoque consumido com sucesso, atualizando...')
     await fetchItems(true)
 
     // Atualizar procedimento como concluído
@@ -233,12 +232,6 @@ export default function PatientDetail() {
         `Devolução - Procedimento excluído: ${procedure.procedureName} - Paciente: ${patient.name}`
       )
 
-      console.log('✅ Produto devolvido ao estoque:', {
-        productId: procedure.usedProductId,
-        productName: procedure.usedProductName,
-        quantity: procedure.quantity
-      })
-
       // Atualizar lista de estoque
       await fetchItems(true)
     }
@@ -287,12 +280,6 @@ export default function PatientDetail() {
       )
 
       if (relatedMovement) {
-        console.log('📝 Atualizando movimentação de caixa:', {
-          movementId: relatedMovement.id,
-          oldAmount: relatedMovement.amount,
-          newAmount: parsedValue
-        })
-
         // Atualizar valor da movimentação
         await updateMovement(relatedMovement.id, {
           amount: parsedValue,
@@ -301,10 +288,6 @@ export default function PatientDetail() {
 
         // Recarregar movimentações para refletir mudanças
         await fetchMovements()
-
-        console.log('✅ Movimentação de caixa atualizada!')
-      } else {
-        console.log('⚠️ Nenhuma movimentação de caixa encontrada para este procedimento')
       }
     }
 

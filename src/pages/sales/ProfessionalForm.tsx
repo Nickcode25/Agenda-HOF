@@ -125,12 +125,9 @@ export default function ProfessionalForm() {
         notes: String(data.get('notes') || '') || undefined,
       }
 
-      console.log('📝 Salvando profissional:', professionalData)
-
       const id = await addProfessional(professionalData)
 
       if (id) {
-        console.log('✅ Profissional salvo com ID:', id)
         navigate('/app/vendas')
       } else {
         console.error('❌ Erro ao salvar profissional')

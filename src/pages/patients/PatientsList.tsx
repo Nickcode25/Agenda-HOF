@@ -36,17 +36,11 @@ export default function PatientsList() {
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
 
-    console.log('🔍 [BUSCA] Estado q:', q)
-    console.log('🔍 [BUSCA] Query processada:', query)
-    console.log('🔍 [BUSCA] Total pacientes:', patients.length)
-
     if (!query) {
-      console.log('✅ [BUSCA] Query vazia, retornando todos')
       return patients
     }
 
     const normalizedQuery = removeAccents(query)
-    console.log('🔍 [BUSCA] Query normalizada:', normalizedQuery)
 
     const result = patients.filter(p => {
       const normalizedName = removeAccents(p.name.toLowerCase())
