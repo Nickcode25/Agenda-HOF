@@ -107,14 +107,15 @@ export default function PlansList() {
               <div className="flex gap-2 pt-4 border-t border-gray-700">
                 <Link
                   to={`/app/mensalidades/planos/${plan.id}/editar`}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   <Edit size={16} />
                   Editar
                 </Link>
                 <button
                   onClick={() => handleDelete(plan.id, plan.name)}
-                  className="flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg transition-colors"
+                  title="Excluir plano"
                 >
                   <Trash2 size={16} />
                 </button>
