@@ -48,13 +48,9 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
       return
     }
 
-    // Formatar mensagem com informações do agendamento
-    const appointmentDate = format(parseISO(appointment.start), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-    const message = `Olá ${appointment.patientName}! Tudo bem?\n\nLembrando do seu agendamento:\n📅 ${appointmentDate}\n💉 ${appointment.procedure}\n👨‍⚕️ Profissional: ${appointment.professional}\n\nQualquer dúvida, estamos à disposição!`
-
     // Limpar telefone e criar link do WhatsApp
     const cleanPhone = patientPhone.replace(/\D/g, '')
-    const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/55${cleanPhone}`
 
     window.open(whatsappUrl, '_blank')
   }

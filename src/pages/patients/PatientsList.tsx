@@ -153,10 +153,8 @@ export default function PatientsList() {
       return
     }
 
-    const message = `Olá ${patientName}! Tudo bem?\n\nEstamos entrando em contato para saber como você está. Qualquer dúvida, estamos à disposição!`
-
     const cleanPhone = patientPhone.replace(/\D/g, '')
-    const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/55${cleanPhone}`
 
     window.open(whatsappUrl, '_blank')
   }
