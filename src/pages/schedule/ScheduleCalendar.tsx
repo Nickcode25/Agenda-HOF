@@ -26,7 +26,7 @@ export default function ScheduleCalendar() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
   const [dayAppointments, setDayAppointments] = useState<Appointment[]>([])
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
+  const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [currentDayView, setCurrentDayView] = useState<Date>(new Date())
 
   // Filtrar agendamentos por profissional selecionado
