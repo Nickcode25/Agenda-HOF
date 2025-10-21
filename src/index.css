@@ -30,46 +30,114 @@
   }
 
   body {
-    @apply bg-gray-900 dark:bg-gray-900 light:bg-white text-gray-100 dark:text-gray-100 light:text-gray-900 transition-colors duration-300;
+    @apply bg-gray-900 dark:bg-gray-900 light:bg-gray-50 text-gray-100 dark:text-gray-100 light:text-gray-900 transition-colors duration-300;
+  }
+
+  /* Classes utilitárias para tema */
+  .bg-app-primary {
+    @apply bg-gray-900 light:bg-gray-50;
+  }
+
+  .bg-app-secondary {
+    @apply bg-gray-800 light:bg-white;
+  }
+
+  .bg-app-tertiary {
+    @apply bg-gray-700 light:bg-gray-100;
+  }
+
+  .text-app-primary {
+    @apply text-white light:text-gray-900;
+  }
+
+  .text-app-secondary {
+    @apply text-gray-300 light:text-gray-700;
+  }
+
+  .text-app-tertiary {
+    @apply text-gray-400 light:text-gray-600;
+  }
+
+  .border-app {
+    @apply border-gray-700 light:border-gray-200;
+  }
+
+  .hover-app-bg {
+    @apply hover:bg-gray-700 light:hover:bg-gray-100;
   }
 }
 
 /* Custom Scrollbar - Modern Design */
-* {
+.dark * {
   scrollbar-width: thin;
   scrollbar-color: #4b5563 #1f2937; /* thumb: gray-600, track: gray-800 */
 }
 
-/* Webkit Browsers (Chrome, Safari, Edge) */
-*::-webkit-scrollbar {
+.light * {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6; /* thumb: gray-300, track: gray-100 */
+}
+
+/* Webkit Browsers (Chrome, Safari, Edge) - Dark Mode */
+.dark *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-*::-webkit-scrollbar-track {
+.dark *::-webkit-scrollbar-track {
   background: #1f2937; /* gray-800 */
   border-radius: 10px;
 }
 
-*::-webkit-scrollbar-thumb {
+.dark *::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #4b5563 0%, #374151 100%); /* gray-600 to gray-700 */
   border-radius: 10px;
   border: 2px solid #1f2937; /* gray-800 - creates padding effect */
   transition: all 0.3s ease;
 }
 
-*::-webkit-scrollbar-thumb:hover {
+.dark *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #f97316 0%, #ea580c 100%); /* orange-500 to orange-600 */
   border-color: #1f2937;
 }
 
-*::-webkit-scrollbar-thumb:active {
+.dark *::-webkit-scrollbar-thumb:active {
   background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%); /* orange-600 to orange-700 */
 }
 
-/* Scrollbar corner */
-*::-webkit-scrollbar-corner {
+.dark *::-webkit-scrollbar-corner {
   background: #1f2937; /* gray-800 */
+}
+
+/* Webkit Browsers (Chrome, Safari, Edge) - Light Mode */
+.light *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.light *::-webkit-scrollbar-track {
+  background: #f3f4f6; /* gray-100 */
+  border-radius: 10px;
+}
+
+.light *::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 100%); /* gray-300 to gray-400 */
+  border-radius: 10px;
+  border: 2px solid #f3f4f6; /* gray-100 - creates padding effect */
+  transition: all 0.3s ease;
+}
+
+.light *::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%); /* orange-500 to orange-600 */
+  border-color: #f3f4f6;
+}
+
+.light *::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%); /* orange-600 to orange-700 */
+}
+
+.light *::-webkit-scrollbar-corner {
+  background: #f3f4f6; /* gray-100 */
 }
 
 /* Sidebar Scrollbar - Hidden by default, visible on hover (VS Code style) */
