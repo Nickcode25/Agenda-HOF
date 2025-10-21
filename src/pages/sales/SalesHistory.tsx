@@ -4,14 +4,56 @@ import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, Edit, ArrowLeft, ShoppingCart } from 'lucide-react'
 
+type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
+
 export default function SalesHistory() {
   const { sales, fetchSales } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('month')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   useEffect(() => {
     fetchSales()
   }, [])
+
+  // Calcular datas baseado no período selecionado
+  useEffect(() => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = today.getMonth()
+    const day = today.getDate()
+
+    switch (periodFilter) {
+      case 'day':
+        const todayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        setStartDate(todayStr)
+        setEndDate(todayStr)
+        break
+      case 'week':
+        const weekStart = new Date(today)
+        weekStart.setDate(day - today.getDay())
+        const weekEnd = new Date(today)
+        weekEnd.setDate(day + (6 - today.getDay()))
+        setStartDate(`${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`)
+        setEndDate(`${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`)
+        break
+      case 'month':
+        const monthStart = new Date(year, month, 1)
+        const monthEnd = new Date(year, month + 1, 0)
+        setStartDate(`${year}-${String(month + 1).padStart(2, '0')}-01`)
+        setEndDate(`${year}-${String(month + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`)
+        break
+      case 'year':
+        setStartDate(`${year}-01-01`)
+        setEndDate(`${year}-12-31`)
+        break
+      case 'custom':
+        // Não fazer nada, usuário vai definir as datas manualmente
+        break
+    }
+  }, [periodFilter])
 
   const filtered = useMemo(() => {
     let result = sales
@@ -29,8 +71,29 @@ export default function SalesHistory() {
       result = result.filter(sale => sale.paymentStatus === statusFilter)
     }
 
+    // Filtrar por data
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+
+      result = result.filter(sale => {
+        const saleDate = new Date(sale.createdAt)
+        return saleDate >= start && saleDate <= end
+      })
+    }
+
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }, [sales, searchQuery, statusFilter])
+  }, [sales, searchQuery, statusFilter, startDate, endDate])
+
+  // Calcular totais do período
+  const periodTotals = useMemo(() => {
+    const total = filtered.reduce((sum, sale) => sum + sale.totalAmount, 0)
+    const profit = filtered.reduce((sum, sale) => sum + sale.totalProfit, 0)
+    const count = filtered.length
+    return { total, profit, count }
+  }, [filtered])
 
   const getPaymentStatusConfig = (status: string) => {
     switch (status) {
@@ -79,6 +142,89 @@ export default function SalesHistory() {
               </div>
             </div>
           </div>
+          {/* Filtros de Período */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={() => setPeriodFilter('day')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                periodFilter === 'day'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              Hoje
+            </button>
+            <button
+              onClick={() => setPeriodFilter('week')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                periodFilter === 'week'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => setPeriodFilter('month')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                periodFilter === 'month'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              Mês
+            </button>
+            <button
+              onClick={() => setPeriodFilter('year')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                periodFilter === 'year'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              Ano
+            </button>
+            <button
+              onClick={() => setPeriodFilter('custom')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                periodFilter === 'custom'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              Personalizado
+            </button>
+          </div>
+
+          {/* Campos de Data */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">Data Inicial</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value)
+                  if (periodFilter !== 'custom') setPeriodFilter('custom')
+                }}
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">Data Final</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value)
+                  if (periodFilter !== 'custom') setPeriodFilter('custom')
+                }}
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Busca e Filtros */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -101,6 +247,33 @@ export default function SalesHistory() {
               <option value="overdue">Vencido</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* Totais do Período */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign size={24} className="text-green-400" />
+            <span className="text-sm text-gray-400">Faturamento Total</span>
+          </div>
+          <div className="text-3xl font-bold text-green-400">{formatCurrency(periodTotals.total)}</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign size={24} className="text-blue-400" />
+            <span className="text-sm text-gray-400">Lucro Total</span>
+          </div>
+          <div className="text-3xl font-bold text-blue-400">{formatCurrency(periodTotals.profit)}</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/30 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <ShoppingCart size={24} className="text-purple-400" />
+            <span className="text-sm text-gray-400">Total de Vendas</span>
+          </div>
+          <div className="text-3xl font-bold text-purple-400">{periodTotals.count}</div>
         </div>
       </div>
 
