@@ -2,12 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --brand: #f97316; /* orange-500 */
-}
+@layer base {
+  :root {
+    --brand: #f97316; /* orange-500 */
+  }
 
-body {
-  @apply bg-gray-900 text-gray-100;
+  /* Dark Mode (Padrão) */
+  .dark {
+    --bg-primary: theme('colors.gray.900');
+    --bg-secondary: theme('colors.gray.800');
+    --bg-tertiary: theme('colors.gray.700');
+    --text-primary: theme('colors.white');
+    --text-secondary: theme('colors.gray.300');
+    --text-tertiary: theme('colors.gray.400');
+    --border-color: theme('colors.gray.700');
+  }
+
+  /* Light Mode */
+  .light {
+    --bg-primary: theme('colors.white');
+    --bg-secondary: theme('colors.gray.50');
+    --bg-tertiary: theme('colors.gray.100');
+    --text-primary: theme('colors.gray.900');
+    --text-secondary: theme('colors.gray.700');
+    --text-tertiary: theme('colors.gray.500');
+    --border-color: theme('colors.gray.200');
+  }
+
+  body {
+    @apply bg-gray-900 dark:bg-gray-900 light:bg-white text-gray-100 dark:text-gray-100 light:text-gray-900 transition-colors duration-300;
+  }
 }
 
 /* Custom Scrollbar - Modern Design */

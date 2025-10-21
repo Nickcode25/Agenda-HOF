@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import PatientsList from './pages/patients/PatientsList'
 import PatientForm from './pages/patients/PatientForm'
 import PatientDetail from './pages/patients/PatientDetail'
@@ -190,8 +191,10 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ProfessionalProvider>
-      <RouterProvider router={router} />
-    </ProfessionalProvider>
+    <ThemeProvider>
+      <ProfessionalProvider>
+        <RouterProvider router={router} />
+      </ProfessionalProvider>
+    </ThemeProvider>
   </React.StrictMode>
 )

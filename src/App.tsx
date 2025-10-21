@@ -1,10 +1,11 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, MessageSquare, Receipt, Wallet } from 'lucide-react'
+import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, MessageSquare, Receipt, Wallet, Sun, Moon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
+import { useTheme } from '@/contexts/ThemeContext'
 import NotificationBell from '@/components/NotificationBell'
 import { startNotificationPolling } from '@/services/notificationService'
 import Toast from '@/components/Toast'
@@ -19,6 +20,7 @@ export default function App() {
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
   const { currentProfile, fetchCurrentProfile } = useUserProfile()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const { message, type, isVisible, hide } = useToast()
@@ -368,14 +370,23 @@ export default function App() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-4">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
+              title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             {/* Notifications */}
             <NotificationBell />
 
             {/* User Menu */}
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
+            <div className="flex items-center gap-3 pl-4 border-l border-gray-700 dark:border-gray-700">
               <div className="text-right">
-                <p className="text-sm text-white font-medium">{currentProfile?.displayName || user?.email}</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm text-white dark:text-white font-medium">{currentProfile?.displayName || user?.email}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-400">
                   {currentProfile?.role === 'owner' ? 'Administrador' : 'Funcionário'}
                 </p>
               </div>
