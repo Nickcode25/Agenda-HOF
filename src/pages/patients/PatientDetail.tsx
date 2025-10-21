@@ -4,11 +4,12 @@ import { usePatients } from '@/store/patients'
 import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { autoRegisterCashMovement, useCash } from '@/store/cash'
-import { PlannedProcedure } from '@/types/patient'
+import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
-import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, ArrowLeft, AlertTriangle, Package, FileText, X } from 'lucide-react'
+import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, ArrowLeft, AlertTriangle, Package, FileText, X, Camera, Upload, Image as ImageIcon } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
+import BeforeAfterGallery from '@/components/BeforeAfterGallery'
 
 export default function PatientDetail() {
   const { id } = useParams()
@@ -37,6 +38,15 @@ export default function PatientDetail() {
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [completingProcedure, setCompletingProcedure] = useState<PlannedProcedure | null>(null)
   const [selectedProductId, setSelectedProductId] = useState('')
+
+  // Upload de fotos antes/depois
+  const [beforePhotos, setBeforePhotos] = useState<string[]>([])
+  const [afterPhotos, setAfterPhotos] = useState<string[]>([])
+  const [photoNotes, setPhotoNotes] = useState('')
+
+  // Modal de galeria de fotos
+  const [showPhotoGallery, setShowPhotoGallery] = useState(false)
+  const [selectedProcedurePhotos, setSelectedProcedurePhotos] = useState<PlannedProcedure | null>(null)
 
   // Modal de edição de valor
   const [showEditValueModal, setShowEditValueModal] = useState(false)
@@ -126,6 +136,32 @@ export default function PatientDetail() {
     update(patient.id, { plannedProcedures: updated })
   }
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const photoUrl = String(reader.result)
+        if (type === 'before') {
+          setBeforePhotos(prev => [...prev, photoUrl])
+        } else {
+          setAfterPhotos(prev => [...prev, photoUrl])
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleRemovePhoto = (index: number, type: 'before' | 'after') => {
+    if (type === 'before') {
+      setBeforePhotos(prev => prev.filter((_, i) => i !== index))
+    } else {
+      setAfterPhotos(prev => prev.filter((_, i) => i !== index))
+    }
+  }
+
   const handleCompleteProcedure = async () => {
     if (!patient || !completingProcedure || !selectedProductId) return
 
@@ -168,6 +204,30 @@ export default function PatientDetail() {
     // Forçar atualização do estoque
     await fetchItems(true)
 
+    // Preparar fotos
+    const photos: ProcedurePhoto[] = []
+    const uploadedAt = new Date().toISOString()
+
+    beforePhotos.forEach(url => {
+      photos.push({
+        id: crypto.randomUUID(),
+        url,
+        type: 'before',
+        uploadedAt,
+        notes: photoNotes
+      })
+    })
+
+    afterPhotos.forEach(url => {
+      photos.push({
+        id: crypto.randomUUID(),
+        url,
+        type: 'after',
+        uploadedAt,
+        notes: photoNotes
+      })
+    })
+
     // Atualizar procedimento como concluído
     const updated = (patient.plannedProcedures || []).map(p =>
       p.id === completingProcedure.id ? {
@@ -175,7 +235,8 @@ export default function PatientDetail() {
         status: 'completed' as PlannedProcedure['status'],
         completedAt: new Date().toISOString(),
         usedProductId: selectedProductId,
-        usedProductName: product.name
+        usedProductName: product.name,
+        photos: photos.length > 0 ? photos : undefined
       } : p
     )
 
@@ -202,8 +263,11 @@ export default function PatientDetail() {
     setShowCompleteModal(false)
     setCompletingProcedure(null)
     setSelectedProductId('')
+    setBeforePhotos([])
+    setAfterPhotos([])
+    setPhotoNotes('')
 
-    showToast('Procedimento concluído e estoque atualizado!', 'success')
+    showToast('Procedimento concluído com sucesso!', 'success')
   }
   const handleRemoveProcedure = async (procId: string) => {
     if (!patient) return
@@ -522,9 +586,39 @@ export default function PatientDetail() {
                           <span className="text-green-400">• Realizado em {new Date(proc.completedAt).toLocaleDateString('pt-BR')}</span>
                         )}
                       </div>
+
+                      {/* Mostrar fotos se existirem */}
+                      {proc.photos && proc.photos.length > 0 && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <ImageIcon size={16} className="text-blue-400" />
+                          <span className="text-sm text-blue-400">{proc.photos.length} foto(s)</span>
+                          <button
+                            onClick={() => {
+                              setSelectedProcedurePhotos(proc)
+                              setShowPhotoGallery(true)
+                            }}
+                            className="text-xs text-blue-400 hover:text-blue-300 underline"
+                          >
+                            Ver galeria
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-2">
+                      {proc.photos && proc.photos.length > 0 && (
+                        <button
+                          onClick={() => {
+                            setSelectedProcedurePhotos(proc)
+                            setShowPhotoGallery(true)
+                          }}
+                          className="px-3 py-2 text-sm bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30 transition-colors inline-flex items-center justify-center gap-1"
+                        >
+                          <ImageIcon size={14} />
+                          Fotos
+                        </button>
+                      )}
+
                       <button
                         onClick={() => handleOpenEditValue(proc)}
                         className="px-3 py-2 text-sm bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30 transition-colors inline-flex items-center justify-center gap-1"
@@ -912,6 +1006,109 @@ export default function PatientDetail() {
                   }
                   return null
                 })()}
+
+                {/* Upload de Fotos Antes/Depois */}
+                <div className="mt-6 pt-6 border-t border-gray-700">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <Camera size={20} className="text-blue-400" />
+                    Fotos Antes/Depois (Opcional)
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Fotos Antes */}
+                    <div>
+                      <label className="block text-sm font-medium text-blue-400 mb-2">
+                        📷 Fotos ANTES
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handlePhotoUpload(e, 'before')}
+                        className="hidden"
+                        id="before-photos"
+                      />
+                      <label
+                        htmlFor="before-photos"
+                        className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 rounded-xl cursor-pointer transition-colors"
+                      >
+                        <Upload size={20} className="text-blue-400" />
+                        <span className="text-sm text-blue-400">Adicionar fotos</span>
+                      </label>
+
+                      {beforePhotos.length > 0 && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          {beforePhotos.map((photo, index) => (
+                            <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-blue-500/30">
+                              <img src={photo} alt={`Antes ${index + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(index, 'before')}
+                                className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 rounded-full transition-colors"
+                              >
+                                <X size={14} className="text-white" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fotos Depois */}
+                    <div>
+                      <label className="block text-sm font-medium text-green-400 mb-2">
+                        📷 Fotos DEPOIS
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handlePhotoUpload(e, 'after')}
+                        className="hidden"
+                        id="after-photos"
+                      />
+                      <label
+                        htmlFor="after-photos"
+                        className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-green-500/30 bg-green-500/5 hover:bg-green-500/10 rounded-xl cursor-pointer transition-colors"
+                      >
+                        <Upload size={20} className="text-green-400" />
+                        <span className="text-sm text-green-400">Adicionar fotos</span>
+                      </label>
+
+                      {afterPhotos.length > 0 && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          {afterPhotos.map((photo, index) => (
+                            <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-green-500/30">
+                              <img src={photo} alt={`Depois ${index + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(index, 'after')}
+                                className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 rounded-full transition-colors"
+                              >
+                                <X size={14} className="text-white" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {(beforePhotos.length > 0 || afterPhotos.length > 0) && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Observações sobre as fotos
+                      </label>
+                      <textarea
+                        value={photoNotes}
+                        onChange={(e) => setPhotoNotes(e.target.value)}
+                        placeholder="Ex: Primeira sessão, aplicação em testa e glabela..."
+                        className="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                        rows={2}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1029,6 +1226,52 @@ export default function PatientDetail() {
               >
                 Salvar Alterações
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Galeria de Fotos */}
+      {showPhotoGallery && selectedProcedurePhotos && selectedProcedurePhotos.photos && (
+        <div
+          className="fixed inset-0 bg-black/95 z-50 p-4 overflow-y-auto"
+          onClick={() => {
+            setShowPhotoGallery(false)
+            setSelectedProcedurePhotos(null)
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{selectedProcedurePhotos.procedureName}</h2>
+                  <p className="text-gray-400">
+                    {selectedProcedurePhotos.completedAt &&
+                      `Realizado em ${new Date(selectedProcedurePhotos.completedAt).toLocaleDateString('pt-BR')}`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowPhotoGallery(false)
+                    setSelectedProcedurePhotos(null)
+                  }}
+                  className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-white" />
+                </button>
+              </div>
+
+              <BeforeAfterGallery
+                photos={selectedProcedurePhotos.photos}
+                procedureName={selectedProcedurePhotos.procedureName}
+                procedureDate={selectedProcedurePhotos.completedAt}
+                onShare={(photo) => {
+                  // Compartilhar via WhatsApp
+                  const message = `Olá! Veja o resultado do procedimento ${selectedProcedurePhotos.procedureName} realizado em ${patient?.name}.`
+                  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`
+                  window.open(whatsappUrl, '_blank')
+                }}
+              />
             </div>
           </div>
         </div>

@@ -1,3 +1,11 @@
+export type ProcedurePhoto = {
+  id: string
+  url: string
+  type: 'before' | 'after'
+  uploadedAt: string
+  notes?: string
+}
+
 export type PlannedProcedure = {
   id: string
   procedureName: string
@@ -11,6 +19,7 @@ export type PlannedProcedure = {
   completedAt?: string
   usedProductId?: string // ID do produto usado do estoque
   usedProductName?: string // Nome do produto usado
+  photos?: ProcedurePhoto[] // Fotos antes/depois do procedimento
 }
 
 export type Patient = {
