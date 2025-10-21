@@ -10,6 +10,7 @@ import type { PlannedProcedure } from '@/types/patient'
 import { Save, Package, AlertTriangle, Search, Calendar, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/currency'
+import { useToast } from '@/hooks/useToast'
 
 export default function AppointmentForm() {
   const patients = usePatients(s => s.patients)
@@ -23,6 +24,7 @@ export default function AppointmentForm() {
   const add = useSchedule(s => s.addAppointment)
   const fetchAppointments = useSchedule(s => s.fetchAppointments)
   const navigate = useNavigate()
+  const showToast = useToast(s => s.show)
 
   // Carregar todos os dados necessários ao montar o componente
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function AppointmentForm() {
     e.preventDefault()
 
     if (!selectedPatient) {
-      alert('Por favor, selecione um paciente')
+      showToast('Por favor, selecione um paciente', 'error')
       return
     }
 
@@ -164,7 +166,7 @@ export default function AppointmentForm() {
     })
 
     if (!appointmentId) {
-      alert('Erro ao criar agendamento. Tente novamente.')
+      showToast('Erro ao criar agendamento. Tente novamente.', 'error')
       return
     }
 
@@ -192,7 +194,7 @@ export default function AppointmentForm() {
     await fetchAppointments()
 
     // Mostrar mensagem de sucesso
-    alert('✅ Agendamento criado com sucesso!')
+    showToast('Agendamento criado com sucesso!', 'success')
     navigate('/app/agenda')
   }
 
