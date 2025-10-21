@@ -22,7 +22,7 @@ interface CashStore {
   fetchSessions: (registerId?: string) => Promise<void>
   getCurrentSession: (registerId: string) => Promise<CashSession | null>
   openSession: (registerId: string, openingBalance: number) => Promise<string | null>
-  closeSession: (sessionId: string, closingBalance: number, notes?: string) => Promise<void>
+  closeSession: (sessionId: string, closingBalance: number) => Promise<void>
   getSession: (id: string) => CashSession | undefined
 
   // Movements
@@ -195,7 +195,6 @@ export const useCash = create<CashStore>()(
             expectedBalance: row.expected_balance ? parseFloat(row.expected_balance) : undefined,
             difference: row.difference ? parseFloat(row.difference) : undefined,
             status: row.status,
-            notes: row.notes,
             createdAt: row.created_at,
             updatedAt: row.updated_at
           }))
@@ -317,7 +316,7 @@ export const useCash = create<CashStore>()(
         }
       },
 
-      closeSession: async (sessionId, closingBalance, notes) => {
+      closeSession: async (sessionId, closingBalance) => {
         set({ loading: true, error: null })
         try {
           const { data: { user } } = await supabase.auth.getUser()
@@ -341,7 +340,6 @@ export const useCash = create<CashStore>()(
               expected_balance: expectedBalance,
               difference: difference,
               status: 'closed',
-              notes: notes || null,
               updated_at: new Date().toISOString()
             })
             .eq('id', sessionId)
