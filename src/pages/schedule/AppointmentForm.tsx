@@ -104,24 +104,8 @@ export default function AppointmentForm() {
     ? stockItems.filter(item => item.category === selectedProcedure.category)
     : []
 
-  // Calcular horário de término automaticamente baseado na duração do procedimento
   const handleStartTimeChange = (time: string) => {
     setStartTime(time)
-    if (time && selectedProcedure?.durationMinutes) {
-      const [hours, minutes] = time.split(':').map(Number)
-      const startDate = new Date()
-      startDate.setHours(hours, minutes, 0, 0)
-      startDate.setMinutes(startDate.getMinutes() + selectedProcedure.durationMinutes)
-
-      const endHours = String(startDate.getHours()).padStart(2, '0')
-      const endMinutes = String(startDate.getMinutes()).padStart(2, '0')
-      setEndTime(`${endHours}:${endMinutes}`)
-    }
-  }
-
-  // Quando o procedimento mudar
-  const handleProcedureChange = (procId: string) => {
-    setSelectedProcedureId(procId)
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -151,12 +135,15 @@ export default function AppointmentForm() {
     const start = startDateTime.toISOString()
     const end = endDateTime.toISOString()
 
+    // Pegar o nome do procedimento do input
+    const procedureName = String(data.get('procedure') || '')
+
     // Adicionar agendamento
     const appointmentId = await add({
       patientId,
       patientName: patient?.name || '',
-      procedure: selectedProcedure?.name || '',
-      procedureId: selectedProcedureId || undefined,
+      procedure: procedureName,
+      procedureId: undefined, // Não usar ID já que é campo livre
       professional: professional?.name || '',
       room: String(data.get('room')||''),
       start,
@@ -168,26 +155,6 @@ export default function AppointmentForm() {
     if (!appointmentId) {
       showToast('Erro ao criar agendamento. Tente novamente.', 'error')
       return
-    }
-
-    // Adicionar procedimento ao planejamento do paciente
-    if (patient && selectedProcedure) {
-      const newPlannedProcedure: PlannedProcedure = {
-        id: crypto.randomUUID(),
-        procedureName: selectedProcedure.name,
-        quantity: 1,
-        unitValue: selectedProcedure.cashValue || selectedProcedure.price,
-        totalValue: selectedProcedure.cashValue || selectedProcedure.price,
-        paymentType: 'default',
-        status: 'pending',
-        notes: String(data.get('notes')||''),
-        createdAt: new Date().toISOString()
-      }
-
-      const currentPlanned = patient.plannedProcedures || []
-      await updatePatient(patient.id, {
-        plannedProcedures: [...currentPlanned, newPlannedProcedure]
-      })
     }
 
     // Recarregar lista de agendamentos
@@ -297,109 +264,16 @@ export default function AppointmentForm() {
           
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento *</label>
-            <select
+            <input
               name="procedure"
+              type="text"
               required
               value={selectedProcedureId}
-              onChange={(e) => handleProcedureChange(e.target.value)}
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer hover:bg-gray-700"
-            >
-              <option value="">Selecione um procedimento</option>
-              {registeredProcedures.filter(p => p.isActive).map(proc => (
-                <option key={proc.id} value={proc.id}>
-                  {proc.name} - {formatCurrency(proc.cashValue || proc.price)}
-                </option>
-              ))}
-            </select>
-            {registeredProcedures.length === 0 && (
-              <p className="text-xs text-yellow-400 mt-1">
-                Nenhum procedimento cadastrado. <Link to="/app/procedimentos/novo" className="underline hover:text-yellow-300">Cadastre aqui</Link>
-              </p>
-            )}
+              onChange={(e) => setSelectedProcedureId(e.target.value)}
+              placeholder="Digite o procedimento (Ex: Botox, Preenchimento, Limpeza de pele...)"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
           </div>
-
-          {/* Mostrar categoria e produtos disponíveis (apenas visualização) */}
-          {selectedProcedure && (
-            <div className="md:col-span-2">
-              <div className="p-6 bg-gradient-to-br from-gray-800/50 to-gray-900/30 rounded-2xl border border-gray-700/50">
-                <div className="flex items-center gap-2 mb-3">
-                  <Package size={18} className="text-orange-500" />
-                  <h4 className="font-medium text-white">
-                    Categoria: {selectedProcedure.category || 'Não definida'}
-                  </h4>
-                </div>
-
-                {selectedProcedure.category ? (
-                  availableProducts.length > 0 ? (
-                    <div>
-                      <p className="text-sm text-gray-400 mb-3">
-                        Produtos disponíveis nesta categoria:
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {availableProducts.map(product => (
-                          <div
-                            key={product.id}
-                            className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg border border-gray-600"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-white truncate">
-                                {product.name}
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                Estoque: {product.quantity} {product.unit}
-                              </p>
-                            </div>
-                            <div
-                              className={`ml-2 w-2 h-2 rounded-full ${
-                                product.quantity > product.minQuantity
-                                  ? 'bg-green-500'
-                                  : product.quantity > 0
-                                  ? 'bg-yellow-500'
-                                  : 'bg-red-500'
-                              }`}
-                              title={
-                                product.quantity > product.minQuantity
-                                  ? 'Em estoque'
-                                  : product.quantity > 0
-                                  ? 'Estoque baixo'
-                                  : 'Sem estoque'
-                              }
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-3">
-                        💡 O produto específico será escolhido durante a realização do procedimento
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                      <AlertTriangle size={16} className="text-yellow-500" />
-                      <p className="text-sm text-yellow-500">
-                        Nenhum produto cadastrado na categoria "{selectedProcedure.category}".{' '}
-                        <Link to="/app/estoque/novo" className="underline hover:text-yellow-400">
-                          Cadastrar produto
-                        </Link>
-                      </p>
-                    </div>
-                  )
-                ) : (
-                  <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <AlertTriangle size={16} className="text-blue-400" />
-                    <p className="text-sm text-blue-400">
-                      Este procedimento não possui categoria definida.{' '}
-                      <Link
-                        to={`/app/procedimentos/${selectedProcedure.id}/editar`}
-                        className="underline hover:text-blue-300"
-                      >
-                        Editar procedimento
-                      </Link>
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Profissional *</label>
