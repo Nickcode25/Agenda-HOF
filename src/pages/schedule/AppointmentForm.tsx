@@ -7,7 +7,7 @@ import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import type { PlannedProcedure } from '@/types/patient'
-import { Save, Package, AlertTriangle, Search, Calendar, X } from 'lucide-react'
+import { Save, Package, AlertTriangle, Search, Calendar, X, User, Phone, Clock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/currency'
 import { useToast } from '@/hooks/useToast'
@@ -59,13 +59,18 @@ export default function AppointmentForm() {
   const filteredPatients = useMemo(() => {
     const query = patientSearch.trim().toLowerCase()
 
+    // Ordenar todos os pacientes alfabeticamente
+    const sortedPatients = [...patients].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+    )
+
     if (!query) {
-      return patients.slice(0, 10) // Show first 10 when empty
+      return sortedPatients.slice(0, 10) // Show first 10 when empty
     }
 
     const normalizedQuery = removeAccents(query)
 
-    const result = patients.filter(p => {
+    const result = sortedPatients.filter(p => {
       const normalizedName = removeAccents(p.name.toLowerCase())
       const nameWords = normalizedName.split(' ')
       const matchesNameWord = nameWords.some(word => word.startsWith(normalizedQuery))
@@ -226,31 +231,48 @@ export default function AppointmentForm() {
                   />
                 </div>
                 {showPatientDropdown && (
-                  <div className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl max-h-64 overflow-auto">
+                  <div className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl max-h-80 overflow-auto">
                     {filteredPatients.length > 0 ? (
-                      filteredPatients.map(patient => (
-                        <button
-                          key={patient.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedPatient(patient)
-                            setPatientSearch(patient.name)
-                            setShowPatientDropdown(false)
-                          }}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors border-b border-gray-700/50 last:border-0"
-                        >
-                          <div className="text-white font-medium">{patient.name}</div>
-                          {patient.phone && (
-                            <div className="text-sm text-gray-400">{patient.phone}</div>
-                          )}
-                        </button>
-                      ))
+                      <div className="p-2">
+                        {filteredPatients.map(patient => (
+                          <button
+                            key={patient.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedPatient(patient)
+                              setPatientSearch(patient.name)
+                              setShowPatientDropdown(false)
+                            }}
+                            className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-orange-500/10 hover:to-orange-600/10 transition-all rounded-lg mb-2 last:mb-0 border border-transparent hover:border-orange-500/30 group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-500/30 group-hover:border-orange-500/50 transition-colors">
+                                <User size={18} className="text-blue-400 group-hover:text-orange-400 transition-colors" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-white font-medium group-hover:text-orange-400 transition-colors truncate">
+                                  {patient.name}
+                                </div>
+                                {patient.phone && (
+                                  <div className="flex items-center gap-1.5 text-sm text-gray-400 mt-0.5">
+                                    <Phone size={12} />
+                                    <span>{patient.phone}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     ) : (
                       <div className="px-4 py-8 text-center text-gray-400">
-                        <p className="mb-2">Nenhum paciente encontrado</p>
+                        <div className="w-16 h-16 rounded-full bg-gray-700/50 flex items-center justify-center mx-auto mb-3">
+                          <User size={32} className="text-gray-500" />
+                        </div>
+                        <p className="mb-3 text-white font-medium">Nenhum paciente encontrado</p>
                         <Link
                           to="/app/pacientes/novo"
-                          className="text-orange-400 hover:text-orange-300 text-sm underline"
+                          className="inline-flex items-center gap-2 text-orange-400 hover:text-orange-300 text-sm font-medium underline"
                         >
                           Cadastrar novo paciente
                         </Link>
@@ -301,27 +323,43 @@ export default function AppointmentForm() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Data do Agendamento *</label>
-            <input
-              type="date"
-              name="appointmentDate"
-              required
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="text-orange-500" />
+                <span>Data do Agendamento *</span>
+              </div>
+            </label>
+            <div className="relative">
+              <Calendar size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="date"
+                name="appointmentDate"
+                required
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Horário de Início *</label>
-            <input
-              type="time"
-              name="startTime"
-              value={startTime}
-              onChange={(e) => handleStartTimeChange(e.target.value)}
-              required
-              step="300"
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-            <p className="text-xs text-gray-400 mt-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-blue-500" />
+                <span>Horário de Início *</span>
+              </div>
+            </label>
+            <div className="relative">
+              <Clock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="time"
+                name="startTime"
+                value={startTime}
+                onChange={(e) => handleStartTimeChange(e.target.value)}
+                required
+                step="300"
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5 ml-1">
               {selectedProcedure?.durationMinutes
                 ? `⏱️ Duração: ${selectedProcedure.durationMinutes} min (término calculado automaticamente)`
                 : 'Selecione um procedimento para calcular a duração'}
@@ -329,17 +367,25 @@ export default function AppointmentForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Horário de Término *</label>
-            <input
-              type="time"
-              name="endTime"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-              step="300"
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-            <p className="text-xs text-gray-400 mt-1">Ajuste manualmente se necessário</p>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-green-500" />
+                <span>Horário de Término *</span>
+              </div>
+            </label>
+            <div className="relative">
+              <Clock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="time"
+                name="endTime"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+                step="300"
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5 ml-1">Ajuste manualmente se necessário</p>
           </div>
         </div>
 
