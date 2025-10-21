@@ -29,7 +29,7 @@ export type AdminUser = {
   id: string
   email: string
   fullName?: string
-  role: 'admin' | 'super_admin'
+  role: 'admin' | 'super_admin' | 'employee'
   createdAt: string
   updatedAt: string
 }

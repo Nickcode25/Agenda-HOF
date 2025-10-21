@@ -29,13 +29,19 @@ export default function FinancialReport() {
   }, [])
 
   // Função para filtrar por período
-  const filterByPeriod = (date: Date, itemDate: Date): boolean => {
-    const selected = new Date(date)
+  const filterByPeriod = (dateString: string, itemDate: Date): boolean => {
+    // Criar data local a partir da string (sem conversão de timezone)
+    const [year, month, day] = dateString.split('-').map(Number)
+    const selected = new Date(year, month - 1, day)
+
     const item = new Date(itemDate)
 
     switch (periodFilter) {
       case 'day':
-        return selected.toDateString() === item.toDateString()
+        const selectedDay = selected.toDateString()
+        const itemDay = item.toDateString()
+        console.log('[FINANCIAL] Comparando datas - Selecionada:', selectedDay, 'Item:', itemDay, 'Match:', selectedDay === itemDay)
+        return selectedDay === itemDay
 
       case 'week':
         const weekStart = new Date(selected)
@@ -65,7 +71,7 @@ export default function FinancialReport() {
     const closedSessions = sessions.filter(s => {
       const isClosed = s.status === 'closed'
       const hasClosedAt = !!s.closedAt
-      const matchesPeriod = s.closedAt && filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
+      const matchesPeriod = s.closedAt && filterByPeriod(selectedDate, new Date(s.closedAt))
 
       console.log('[FINANCIAL] Sessão:', s.id, 'Status:', s.status, 'ClosedAt:', s.closedAt, 'Matches:', isClosed && hasClosedAt && matchesPeriod)
 
@@ -93,7 +99,7 @@ export default function FinancialReport() {
     const closedSessions = sessions.filter(s =>
       s.status === 'closed' &&
       s.closedAt &&
-      filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
+      filterByPeriod(selectedDate, new Date(s.closedAt))
     )
 
     const saleMovements = movements.filter(m =>
@@ -113,7 +119,7 @@ export default function FinancialReport() {
     const closedSessions = sessions.filter(s =>
       s.status === 'closed' &&
       s.closedAt &&
-      filterByPeriod(new Date(selectedDate), new Date(s.closedAt))
+      filterByPeriod(selectedDate, new Date(s.closedAt))
     )
 
     const subscriptionMovements = movements.filter(m =>
@@ -135,7 +141,7 @@ export default function FinancialReport() {
   const expensesTotal = useMemo(() => {
     const filteredExpenses = expenses.filter(expense => {
       if (expense.paymentStatus !== 'paid' || !expense.paidAt) return false
-      return filterByPeriod(new Date(selectedDate), new Date(expense.paidAt))
+      return filterByPeriod(selectedDate, new Date(expense.paidAt))
     })
     return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
   }, [expenses, periodFilter, selectedDate])
@@ -442,7 +448,12 @@ export default function FinancialReport() {
                       </span>
                       <div>
                         <span className="text-white font-medium block">{movement.description}</span>
-                        <span className="text-xs text-gray-400">{movement.paymentMethod}</span>
+                        <span className="text-xs text-gray-400">
+                          {movement.paymentMethod === 'card' ? 'cartão' :
+                           movement.paymentMethod === 'pix' ? 'pix' :
+                           movement.paymentMethod === 'cash' ? 'dinheiro' :
+                           movement.paymentMethod}
+                        </span>
                       </div>
                     </div>
                     <div className="text-right">
@@ -478,6 +489,14 @@ export default function FinancialReport() {
                 }
                 const color = categoryColors[movement.category as keyof typeof categoryColors] || 'gray'
 
+                const categoryLabels = {
+                  procedure: 'procedimento',
+                  sale: 'venda',
+                  subscription: 'mensalidade',
+                  expense: 'despesa',
+                  other: 'outro'
+                }
+
                 return (
                   <div key={movement.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
                     <div className="flex items-center justify-between">
@@ -485,11 +504,16 @@ export default function FinancialReport() {
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className="text-white font-medium">{movement.description}</h4>
                           <span className={`px-2 py-1 bg-${color}-500/20 text-${color}-400 text-xs rounded-full border border-${color}-500/30`}>
-                            {movement.category}
+                            {categoryLabels[movement.category as keyof typeof categoryLabels] || movement.category}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-400">
-                          <span>Pagamento: {movement.paymentMethod}</span>
+                          <span>Pagamento: {
+                            movement.paymentMethod === 'card' ? 'cartão' :
+                            movement.paymentMethod === 'pix' ? 'pix' :
+                            movement.paymentMethod === 'cash' ? 'dinheiro' :
+                            movement.paymentMethod
+                          }</span>
                           <span className="flex items-center gap-1">
                             <Calendar size={14} />
                             {new Date(movement.createdAt).toLocaleDateString('pt-BR')}

@@ -1,11 +1,10 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, MessageSquare, Receipt, Wallet, Sun, Moon } from 'lucide-react'
+import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, MessageSquare, Receipt, Wallet } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
-import { useTheme } from '@/contexts/ThemeContext'
 import NotificationBell from '@/components/NotificationBell'
 import { startNotificationPolling } from '@/services/notificationService'
 import Toast from '@/components/Toast'
@@ -20,7 +19,6 @@ export default function App() {
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
   const { currentProfile, fetchCurrentProfile } = useUserProfile()
-  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const { message, type, isVisible, hide } = useToast()
@@ -273,28 +271,27 @@ export default function App() {
               <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Procedimentos</span>
             </NavLink>
 
-            {/* Seção de Estoque e Vendas */}
-            {isExpanded && <div className="pt-4 pb-2 px-4 transition-all duration-300"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Estoque & Vendas</p></div>}
-            <NavLink to="/app/estoque" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Estoque">
-              <Package size={22} className="flex-shrink-0"/>
-              <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Estoque</span>
-            </NavLink>
-            <NavLink to="/app/vendas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Venda de Produtos">
-              <ShoppingCart size={22} className="flex-shrink-0"/>
-              <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Venda de Produtos</span>
-            </NavLink>
-            <NavLink to="/app/despesas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Despesas">
-              <Receipt size={22} className="flex-shrink-0"/>
-              <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
-            </NavLink>
-            <NavLink to="/app/caixa" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Controle de Caixa">
-              <Wallet size={22} className="flex-shrink-0"/>
-              <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Controle de Caixa</span>
-            </NavLink>
-
-            {/* Seção Financeiro e Gestão - só para owner */}
+            {/* Seção Estoque & Vendas - só para owner */}
             {currentProfile?.role === 'owner' && (
               <>
+                {isExpanded && <div className="pt-4 pb-2 px-4 transition-all duration-300"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Estoque & Vendas</p></div>}
+                <NavLink to="/app/estoque" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Estoque">
+                  <Package size={22} className="flex-shrink-0"/>
+                  <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Estoque</span>
+                </NavLink>
+                <NavLink to="/app/vendas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Venda de Produtos">
+                  <ShoppingCart size={22} className="flex-shrink-0"/>
+                  <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Venda de Produtos</span>
+                </NavLink>
+                <NavLink to="/app/despesas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Despesas">
+                  <Receipt size={22} className="flex-shrink-0"/>
+                  <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
+                </NavLink>
+                <NavLink to="/app/caixa" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Controle de Caixa">
+                  <Wallet size={22} className="flex-shrink-0"/>
+                  <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Controle de Caixa</span>
+                </NavLink>
+
                 {isExpanded && <div className="pt-4 pb-2 px-4 transition-all duration-300"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Financeiro & Gestão</p></div>}
                 <NavLink to="/app/financeiro" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Relatório Financeiro">
                   <TrendingUp size={22} className="flex-shrink-0"/>
@@ -341,14 +338,6 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* Theme Toggle Mobile */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
-              title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             <NotificationBell />
           </div>
         </header>
@@ -380,15 +369,6 @@ export default function App() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-4">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
-              title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-
             {/* Notifications */}
             <NotificationBell />
 

@@ -4,7 +4,6 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
-import { ThemeProvider } from './contexts/ThemeContext'
 import PatientsList from './pages/patients/PatientsList'
 import PatientForm from './pages/patients/PatientForm'
 import PatientDetail from './pages/patients/PatientDetail'
@@ -104,18 +103,95 @@ const router = createBrowserRouter([
       { path: 'pacientes/:id/prontuario/fotos/:photoId/editar', element: <PhotoEditPage /> },
       { path: 'pacientes/:id/prontuario/consentimento/novo', element: <ConsentForm /> },
 
-      { path: 'estoque', element: <StockList /> },
-      { path: 'estoque/novo', element: <StockForm /> },
-      { path: 'estoque/:id/editar', element: <StockForm /> },
+      {
+        path: 'estoque',
+        element: (
+          <RoleGuard requireOwner>
+            <StockList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'estoque/novo',
+        element: (
+          <RoleGuard requireOwner>
+            <StockForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'estoque/:id/editar',
+        element: (
+          <RoleGuard requireOwner>
+            <StockForm />
+          </RoleGuard>
+        )
+      },
 
-      { path: 'vendas', element: <SalesList /> },
-      { path: 'vendas/nova', element: <SaleForm /> },
-      { path: 'vendas/editar/:id', element: <SaleForm /> },
-      { path: 'vendas/historico', element: <SalesHistory /> },
-      { path: 'vendas/profissionais', element: <SalesProfessionalsList /> },
-      { path: 'vendas/profissionais-lista', element: <SalesProfessionalsList /> }, // Mantido por compatibilidade
-      { path: 'vendas/profissionais/novo', element: <SalesProfessionalForm /> },
-      { path: 'vendas/profissionais/editar/:id', element: <SalesProfessionalEdit /> },
+      {
+        path: 'vendas',
+        element: (
+          <RoleGuard requireOwner>
+            <SalesList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'vendas/nova',
+        element: (
+          <RoleGuard requireOwner>
+            <SaleForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'vendas/editar/:id',
+        element: (
+          <RoleGuard requireOwner>
+            <SaleForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'vendas/historico',
+        element: (
+          <RoleGuard requireOwner>
+            <SalesHistory />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'vendas/profissionais',
+        element: (
+          <RoleGuard requireOwner>
+            <SalesProfessionalsList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'vendas/profissionais-lista',
+        element: (
+          <RoleGuard requireOwner>
+            <SalesProfessionalsList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'vendas/profissionais/novo',
+        element: (
+          <RoleGuard requireOwner>
+            <SalesProfessionalForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'vendas/profissionais/editar/:id',
+        element: (
+          <RoleGuard requireOwner>
+            <SalesProfessionalEdit />
+          </RoleGuard>
+        )
+      },
 
       {
         path: 'financeiro',
@@ -126,23 +202,128 @@ const router = createBrowserRouter([
         )
       },
 
-      { path: 'despesas', element: <ExpensesList /> },
-      { path: 'despesas/nova', element: <ExpenseForm /> },
-      { path: 'despesas/editar/:id', element: <ExpenseForm /> },
-      { path: 'despesas/categorias', element: <ExpenseCategories /> },
+      {
+        path: 'despesas',
+        element: (
+          <RoleGuard requireOwner>
+            <ExpensesList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'despesas/nova',
+        element: (
+          <RoleGuard requireOwner>
+            <ExpenseForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'despesas/editar/:id',
+        element: (
+          <RoleGuard requireOwner>
+            <ExpenseForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'despesas/categorias',
+        element: (
+          <RoleGuard requireOwner>
+            <ExpenseCategories />
+          </RoleGuard>
+        )
+      },
 
-      { path: 'caixa', element: <CashRegistersList /> },
-      { path: 'caixa/sessao', element: <Navigate to="/app/caixa" replace /> },
-      { path: 'caixa/sessao/:registerId', element: <CashSessionPage /> },
+      {
+        path: 'caixa',
+        element: (
+          <RoleGuard requireOwner>
+            <CashRegistersList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'caixa/sessao',
+        element: (
+          <RoleGuard requireOwner>
+            <Navigate to="/app/caixa" replace />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'caixa/sessao/:registerId',
+        element: (
+          <RoleGuard requireOwner>
+            <CashSessionPage />
+          </RoleGuard>
+        )
+      },
 
-      { path: 'mensalidades', element: <SubscriptionsMain /> },
-      { path: 'mensalidades/planos', element: <PlansList /> },
-      { path: 'mensalidades/planos/novo', element: <PlanForm /> },
-      { path: 'mensalidades/planos/:id', element: <PlanDetail /> },
-      { path: 'mensalidades/planos/:id/editar', element: <PlanForm /> },
-      { path: 'mensalidades/assinantes', element: <SubscribersList /> },
-      { path: 'mensalidades/assinantes/novo', element: <SubscriptionForm /> },
-      { path: 'mensalidades/relatorios', element: <SubscriptionReports /> },
+      {
+        path: 'mensalidades',
+        element: (
+          <RoleGuard requireOwner>
+            <SubscriptionsMain />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'mensalidades/planos',
+        element: (
+          <RoleGuard requireOwner>
+            <PlansList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'mensalidades/planos/novo',
+        element: (
+          <RoleGuard requireOwner>
+            <PlanForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'mensalidades/planos/:id',
+        element: (
+          <RoleGuard requireOwner>
+            <PlanDetail />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'mensalidades/planos/:id/editar',
+        element: (
+          <RoleGuard requireOwner>
+            <PlanForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'mensalidades/assinantes',
+        element: (
+          <RoleGuard requireOwner>
+            <SubscribersList />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'mensalidades/assinantes/novo',
+        element: (
+          <RoleGuard requireOwner>
+            <SubscriptionForm />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'mensalidades/relatorios',
+        element: (
+          <RoleGuard requireOwner>
+            <SubscriptionReports />
+          </RoleGuard>
+        )
+      },
 
       {
         path: 'funcionarios',
@@ -191,10 +372,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <ProfessionalProvider>
-        <RouterProvider router={router} />
-      </ProfessionalProvider>
-    </ThemeProvider>
+    <ProfessionalProvider>
+      <RouterProvider router={router} />
+    </ProfessionalProvider>
   </React.StrictMode>
 )

@@ -23,17 +23,28 @@ export default function PatientDetail() {
   const { show: showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirm()
 
+  const [showProcedureModal, setShowProcedureModal] = useState(false)
+  const [selectedProcedure, setSelectedProcedure] = useState('')
+  const [procedureNotes, setProcedureNotes] = useState('')
+  const [procedureQuantity, setProcedureQuantity] = useState(1)
+  const [quantityInput, setQuantityInput] = useState('1')
+  const [paymentType, setPaymentType] = useState<'default' | 'cash' | 'card'>('default')
+  const [customValue, setCustomValue] = useState('')
+  const [isEditingValue, setIsEditingValue] = useState(false)
+
   // Carregar procedimentos e estoque ao montar o componente
   useEffect(() => {
     fetchProcedures()
     fetchItems()
   }, [])
 
-  const [showProcedureModal, setShowProcedureModal] = useState(false)
-  const [selectedProcedure, setSelectedProcedure] = useState('')
-  const [procedureNotes, setProcedureNotes] = useState('')
-  const [procedureQuantity, setProcedureQuantity] = useState(1)
-  const [paymentType, setPaymentType] = useState<'default' | 'cash' | 'card'>('default')
+  // Resetar valor customizado quando quantidade, procedimento ou forma de pagamento mudar
+  useEffect(() => {
+    if (isEditingValue) {
+      setIsEditingValue(false)
+      setCustomValue('')
+    }
+  }, [procedureQuantity, selectedProcedure, paymentType])
 
   // Modal de conclusão de procedimento
   const [showCompleteModal, setShowCompleteModal] = useState(false)
@@ -96,7 +107,15 @@ export default function PatientDetail() {
       unitValue = selectedProc.cardValue
     }
 
-    const totalValue = procedureQuantity * unitValue
+    // Usar valor customizado se fornecido, senão calcular automaticamente
+    let totalValue: number
+    if (customValue) {
+      // Remover "R$", espaços, e converter vírgula em ponto
+      const cleanValue = customValue.replace(/[R$\s.]/g, '').replace(',', '.')
+      totalValue = parseFloat(cleanValue) || (procedureQuantity * unitValue)
+    } else {
+      totalValue = procedureQuantity * unitValue
+    }
 
     const newPlannedProcedure: PlannedProcedure = {
       id: crypto.randomUUID(),
@@ -119,7 +138,10 @@ export default function PatientDetail() {
     setSelectedProcedure('')
     setProcedureNotes('')
     setProcedureQuantity(1)
+    setQuantityInput('1')
     setPaymentType('default')
+    setCustomValue('')
+    setIsEditingValue(false)
     setShowProcedureModal(false)
   }
 
@@ -312,6 +334,28 @@ export default function PatientDetail() {
     update(patient.id, { plannedProcedures: updated })
 
     showToast(procedure.status === 'completed' ? 'Procedimento removido e produto devolvido ao estoque!' : 'Procedimento removido!', 'success')
+  }
+
+  const handleCustomValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setIsEditingValue(true)
+
+    // Remover tudo que não é número
+    const numbers = value.replace(/\D/g, '')
+
+    if (!numbers) {
+      setCustomValue('R$ 0,00')
+      return
+    }
+
+    // Converter para centavos e formatar
+    const cents = Number(numbers) / 100
+    const formatted = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(cents)
+
+    setCustomValue(formatted)
   }
 
   const handleOpenEditValue = (proc: PlannedProcedure) => {
@@ -734,10 +778,26 @@ export default function PatientDetail() {
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
                     <input
-                      type="number"
-                      min="1"
-                      value={procedureQuantity}
-                      onChange={(e) => setProcedureQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      type="text"
+                      inputMode="numeric"
+                      value={quantityInput}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        // Permitir apenas números
+                        if (val === '' || /^\d+$/.test(val)) {
+                          setQuantityInput(val)
+                          const num = parseInt(val)
+                          if (!isNaN(num) && num >= 1) {
+                            setProcedureQuantity(num)
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        if (quantityInput === '' || parseInt(quantityInput) < 1) {
+                          setQuantityInput('1')
+                          setProcedureQuantity(1)
+                        }
+                      }}
                       className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                   </div>
@@ -757,8 +817,9 @@ export default function PatientDetail() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
-                    <div className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-green-400 font-bold text-lg">
-                      {(() => {
+                    <input
+                      type="text"
+                      value={isEditingValue ? customValue : (() => {
                         const selectedProc = procedures.find(p => p.name === selectedProcedure)
                         let unitValue = selectedProc?.price || 0
 
@@ -770,7 +831,26 @@ export default function PatientDetail() {
 
                         return formatCurrency(procedureQuantity * unitValue)
                       })()}
-                    </div>
+                      onFocus={() => {
+                        if (!isEditingValue) {
+                          const selectedProc = procedures.find(p => p.name === selectedProcedure)
+                          let unitValue = selectedProc?.price || 0
+
+                          if (paymentType === 'cash' && selectedProc?.cashValue) {
+                            unitValue = selectedProc.cashValue
+                          } else if (paymentType === 'card' && selectedProc?.cardValue) {
+                            unitValue = selectedProc.cardValue
+                          }
+
+                          setCustomValue(formatCurrency(procedureQuantity * unitValue))
+                          setIsEditingValue(true)
+                        }
+                      }}
+                      onChange={handleCustomValueChange}
+                      placeholder="R$ 0,00"
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-green-400 font-bold text-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Edite para aplicar desconto ou ajuste manual</p>
                   </div>
                 </div>
 

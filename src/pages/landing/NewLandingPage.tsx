@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Check,
   Calendar,
@@ -22,13 +22,33 @@ import { useAuth } from '@/store/auth'
 export default function NewLandingPage() {
   const [showLogin, setShowLogin] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const navigate = useNavigate()
   const { signIn } = useAuth()
+
+  // Carregar credenciais salvas ao abrir o modal de login
+  useEffect(() => {
+    if (showLogin) {
+      const savedEmail = localStorage.getItem('savedEmail')
+      const savedPassword = localStorage.getItem('savedPassword')
+      const savedRememberMe = localStorage.getItem('rememberMe') === 'true'
+
+      if (savedRememberMe && savedEmail && savedPassword) {
+        setEmail(savedEmail)
+        setPassword(savedPassword)
+        setRememberMe(true)
+      }
+    }
+  }, [showLogin])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +58,18 @@ export default function NewLandingPage() {
     const success = await signIn(email, password)
 
     if (success) {
+      // Salvar credenciais se "Lembrar de mim" estiver marcado
+      if (rememberMe) {
+        localStorage.setItem('savedEmail', email)
+        localStorage.setItem('savedPassword', password)
+        localStorage.setItem('rememberMe', 'true')
+      } else {
+        // Remover credenciais salvas se não marcar "Lembrar de mim"
+        localStorage.removeItem('savedEmail')
+        localStorage.removeItem('savedPassword')
+        localStorage.removeItem('rememberMe')
+      }
+
       navigate('/app/agenda')
     } else {
       setError('Email ou senha incorretos')
@@ -45,15 +77,56 @@ export default function NewLandingPage() {
     }
   }
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setSuccessMessage('')
+
+    // TODO: Implementar envio de email de recuperação via Supabase
+    // Por enquanto, apenas simular sucesso
+    setTimeout(() => {
+      setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.')
+      setLoading(false)
+      setTimeout(() => {
+        setShowForgotPassword(false)
+        setShowLogin(true)
+        setSuccessMessage('')
+      }, 3000)
+    }, 1500)
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
+    // Validar se as senhas coincidem
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem')
+      setLoading(false)
+      return
+    }
+
+    // Validar senha mínima
+    if (password.length < 6) {
+      setError('A senha deve ter no mínimo 6 caracteres')
+      setLoading(false)
+      return
+    }
+
+    // Validar telefone
+    if (!phone || phone.length < 10) {
+      setError('Por favor, informe um telefone válido')
+      setLoading(false)
+      return
+    }
+
     navigate('/checkout', {
       state: {
         name: fullName,
         email: email,
+        phone: phone,
         password: password,
       }
     })
@@ -557,6 +630,30 @@ export default function NewLandingPage() {
                   />
                 </div>
 
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      disabled={loading}
+                      className="w-4 h-4 rounded border-gray-600 bg-gray-700/50 text-orange-500 focus:ring-2 focus:ring-orange-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <span className="text-sm text-gray-400">Lembrar de mim</span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLogin(false)
+                      setShowForgotPassword(true)
+                    }}
+                    className="text-sm text-orange-500 hover:text-orange-400 transition-colors"
+                  >
+                    Esqueceu a senha?
+                  </button>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -635,6 +732,25 @@ export default function NewLandingPage() {
                 </div>
 
                 <div>
+                  <label htmlFor="register-phone" className="block text-sm font-medium text-gray-300 mb-2">Telefone *</label>
+                  <input
+                    id="register-phone"
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '')
+                      if (value.length <= 11) {
+                        setPhone(value)
+                      }
+                    }}
+                    disabled={loading}
+                    className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="register-password" className="block text-sm font-medium text-gray-300 mb-2">Senha *</label>
                   <input
                     id="register-password"
@@ -647,6 +763,28 @@ export default function NewLandingPage() {
                     className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Mínimo 6 caracteres"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-300 mb-2">Confirme a Senha *</label>
+                  <input
+                    id="register-confirm-password"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading}
+                    className={`w-full bg-gray-700/50 border ${
+                      confirmPassword && password !== confirmPassword
+                        ? 'border-red-500'
+                        : 'border-gray-600'
+                    } text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+                    placeholder="Digite a senha novamente"
+                  />
+                  {confirmPassword && password !== confirmPassword && (
+                    <p className="text-red-400 text-xs mt-1">As senhas não coincidem</p>
+                  )}
                 </div>
 
                 <button
@@ -669,6 +807,81 @@ export default function NewLandingPage() {
                   className="text-orange-500 hover:text-orange-400 font-medium transition-colors text-sm"
                 >
                   Faça login
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="forgot-password-title">
+          <div className="w-full max-w-md">
+            <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
+              <button
+                onClick={() => {
+                  setShowForgotPassword(false)
+                  setShowLogin(true)
+                }}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                aria-label="Fechar modal"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="text-center mb-8">
+                <h2 id="forgot-password-title" className="text-3xl font-bold text-white mb-2">Recuperar senha</h2>
+                <p className="text-gray-400">Digite seu e-mail para receber instruções de recuperação</p>
+              </div>
+
+              <form onSubmit={handleForgotPassword} className="space-y-5">
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm" role="alert">
+                    {error}
+                  </div>
+                )}
+
+                {successMessage && (
+                  <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-xl text-sm" role="alert">
+                    {successMessage}
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-300 mb-2">E-mail</label>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="seu@email.com"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Enviando...' : 'Enviar instruções'}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => {
+                    setShowForgotPassword(false)
+                    setShowLogin(true)
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors text-sm"
+                >
+                  Voltar para o login
                 </button>
               </div>
             </div>

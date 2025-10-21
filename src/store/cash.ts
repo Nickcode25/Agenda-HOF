@@ -321,15 +321,53 @@ export const useCash = create<CashStore>()(
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) throw new Error('Usuário não autenticado')
 
-          const session = get().getSession(sessionId)
-          if (!session) throw new Error('Sessão não encontrada')
-
           console.log('[CASH] Fechando sessão:', sessionId)
-          console.log('[CASH] Sessão antes de fechar:', session)
 
-          const expectedBalance = get().getExpectedBalance(sessionId)
+          // Buscar sessão do banco
+          const { data: sessionData, error: sessionError } = await supabase
+            .from('cash_sessions')
+            .select('*')
+            .eq('id', sessionId)
+            .eq('user_id', user.id)
+            .single()
+
+          if (sessionError || !sessionData) {
+            console.error('[CASH] Erro ao buscar sessão:', sessionError)
+            throw new Error('Sessão não encontrada')
+          }
+
+          console.log('[CASH] Sessão encontrada:', sessionData)
+
+          // Buscar movimentos da sessão para calcular saldo esperado
+          const { data: movementsData, error: movementsError } = await supabase
+            .from('cash_movements')
+            .select('*')
+            .eq('cash_session_id', sessionId)
+
+          if (movementsError) {
+            console.error('[CASH] Erro ao buscar movimentos:', movementsError)
+            throw movementsError
+          }
+
+          console.log('[CASH] Movimentos encontrados:', movementsData?.length || 0)
+
+          // Calcular saldo esperado
+          const openingBalance = parseFloat(sessionData.opening_balance)
+          let expectedBalance = openingBalance
+
+          if (movementsData) {
+            for (const mov of movementsData) {
+              if (mov.type === 'income' || mov.type === 'deposit') {
+                expectedBalance += parseFloat(mov.amount)
+              } else if (mov.type === 'expense' || mov.type === 'withdrawal') {
+                expectedBalance -= parseFloat(mov.amount)
+              }
+            }
+          }
+
           const difference = closingBalance - expectedBalance
 
+          console.log('[CASH] Saldo abertura:', openingBalance)
           console.log('[CASH] Saldo esperado:', expectedBalance, 'Saldo final:', closingBalance, 'Diferença:', difference)
 
           const updateData = {

@@ -62,3 +62,16 @@ Thumbs.db
 *.backup
 *.bak
 *.old
+
+# Build info
+tsconfig.tsbuildinfo
+
+# Debug files
+check-*.html
+debug-*.html
+clear-*.html
+executar-*.html
+
+# Migration scripts (já executados)
+run-migration.js
+INSTRUCOES_MIGRACAO_*.md

@@ -137,6 +137,13 @@ export default function SalesList() {
             </div>
             <div className="flex gap-3">
               <Link
+                to="historico"
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                <Calendar size={16} />
+                Ver Histórico
+              </Link>
+              <Link
                 to="profissionais/novo"
                 className="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >

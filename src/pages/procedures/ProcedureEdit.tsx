@@ -90,7 +90,7 @@ export default function ProcedureEdit() {
 
     await update(procedure.id, {
       name,
-      price: parseCurrency(value),
+      price: value ? parseCurrency(value) : 0,
       cashValue: cashValue ? parseCurrency(cashValue) : undefined,
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: description || undefined,
@@ -159,15 +159,14 @@ export default function ProcedureEdit() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Valor à Vista *</label>
-            <input 
+            <label className="block text-sm font-medium text-gray-300 mb-2">Valor à Vista</label>
+            <input
               value={value}
               onChange={handleValueChange}
-              required 
               placeholder="R$ 0,00"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
-            <p className="text-xs text-gray-400 mt-1">Valor principal do procedimento (à vista)</p>
+            <p className="text-xs text-gray-400 mt-1">Valor principal do procedimento (à vista) - opcional</p>
           </div>
           
           <div>
