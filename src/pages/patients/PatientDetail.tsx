@@ -70,9 +70,15 @@ export default function PatientDetail() {
     })
 
     if (confirmed && id) {
-      await remove(id)
-      showToast('Paciente removido com sucesso!', 'success')
-      navigate('/app/pacientes')
+      try {
+        await remove(id)
+        showToast('Paciente removido com sucesso!', 'success')
+        // Usar replace para evitar voltar para página deletada
+        navigate('/app/pacientes', { replace: true })
+      } catch (error) {
+        console.error('Erro ao remover paciente:', error)
+        showToast('Erro ao remover paciente. Tente novamente.', 'error')
+      }
     }
   }
 
