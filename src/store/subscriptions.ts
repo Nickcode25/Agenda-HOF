@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { SubscriptionPlan, Subscription, SubscriptionPayment } from '../types/subscription'
-import { autoRegisterCashMovement } from './cash'
+import { autoRegisterCashMovement, removeCashMovementByReference } from './cash'
 
 type SubscriptionStore = {
   plans: SubscriptionPlan[]
@@ -17,7 +17,7 @@ type SubscriptionStore = {
   addSubscription: (subscription: Omit<Subscription, 'id'>) => void
   updateSubscription: (id: string, subscription: Partial<Subscription>) => void
   cancelSubscription: (id: string) => void
-  removeSubscription: (id: string) => void
+  removeSubscription: (id: string) => Promise<void>
 
   // Payments
   addPayment: (subscriptionId: string, payment: Omit<SubscriptionPayment, 'id' | 'subscriptionId'>) => void
@@ -93,7 +93,17 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         }))
       },
 
-      removeSubscription: (id) => {
+      removeSubscription: async (id) => {
+        // Buscar a assinatura antes de remover para pegar os paymentIds
+        const subscription = get().subscriptions.find(sub => sub.id === id)
+
+        if (subscription) {
+          // Remover movimentações de caixa de todos os pagamentos desta assinatura
+          for (const payment of subscription.payments) {
+            await removeCashMovementByReference(payment.id)
+          }
+        }
+
         set((state) => ({
           subscriptions: state.subscriptions.filter((sub) => sub.id !== id),
         }))

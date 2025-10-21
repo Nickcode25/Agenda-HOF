@@ -625,3 +625,42 @@ export const autoRegisterCashMovement = async (params: {
     // Não lançar erro para não quebrar o fluxo principal
   }
 }
+
+// ============================================
+// HELPER FUNCTION - Remove Movement by Reference
+// ============================================
+export const removeCashMovementByReference = async (referenceId: string) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Buscar movimentações com este referenceId
+    const { data: movements } = await supabase
+      .from('cash_movements')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('reference_id', referenceId)
+
+    if (!movements || movements.length === 0) {
+      console.log('[CASH] Nenhuma movimentação encontrada com referenceId:', referenceId)
+      return
+    }
+
+    // Remover todas as movimentações encontradas
+    const { error } = await supabase
+      .from('cash_movements')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('reference_id', referenceId)
+
+    if (error) throw error
+
+    console.log('[CASH] Movimentações removidas:', {
+      referenceId,
+      count: movements.length
+    })
+  } catch (error) {
+    console.error('[CASH] Erro ao remover movimentações:', error)
+    // Não lançar erro para não quebrar o fluxo principal
+  }
+}

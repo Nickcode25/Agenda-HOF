@@ -164,9 +164,16 @@ export default function PlanDetail() {
     setToast({ message: 'Pagamento confirmado com sucesso!', type: 'success' })
   }
 
-  const handleRemoveSubscriber = (subscriptionId: string, patientName: string) => {
-    if (window.confirm(`Tem certeza que deseja remover ${patientName} deste plano?`)) {
-      removeSubscription(subscriptionId)
+  const handleRemoveSubscriber = async (subscriptionId: string, patientName: string) => {
+    const confirmed = await confirm({
+      title: 'Remover Assinante',
+      message: `Tem certeza que deseja remover ${patientName} deste plano? Esta ação também removerá todas as movimentações de caixa associadas.`,
+      confirmText: 'Remover',
+      cancelText: 'Cancelar'
+    })
+
+    if (confirmed) {
+      await removeSubscription(subscriptionId)
       setToast({ message: `${patientName} removido do plano com sucesso!`, type: 'success' })
     }
   }

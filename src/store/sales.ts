@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Professional, Sale, SaleItem, SalesReport } from '@/types/sales'
 import { supabase } from '@/lib/supabase'
+import { removeCashMovementByReference } from './cash'
 
 interface SalesStore {
   professionals: Professional[]
@@ -310,6 +311,9 @@ export const useSales = create<SalesStore>()(
         try {
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) throw new Error('Usuário não autenticado')
+
+          // Remover movimentações de caixa associadas a esta venda
+          await removeCashMovementByReference(id)
 
           const { error } = await supabase
             .from('sales')
