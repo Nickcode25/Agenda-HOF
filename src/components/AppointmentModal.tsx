@@ -1,8 +1,9 @@
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
-import { X, Calendar, Clock, User, MapPin, FileText, Trash2 } from 'lucide-react'
+import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
 import { useConfirm } from '@/hooks/useConfirm'
+import { usePatients } from '@/store/patients'
 
 type AppointmentModalProps = {
   appointment: Appointment | null
@@ -12,8 +13,13 @@ type AppointmentModalProps = {
 
 export default function AppointmentModal({ appointment, onClose, onDelete }: AppointmentModalProps) {
   const { confirm, ConfirmDialog } = useConfirm()
+  const patients = usePatients(s => s.patients)
 
   if (!appointment) return null
+
+  // Buscar telefone do paciente
+  const patient = patients.find(p => p.id === appointment.patientId)
+  const patientPhone = patient?.phone
 
   const statusColors = {
     scheduled: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -34,6 +40,23 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
       onDelete(appointment.id)
       onClose()
     }
+  }
+
+  const handleWhatsApp = () => {
+    if (!patientPhone) {
+      alert('Paciente não possui telefone cadastrado')
+      return
+    }
+
+    // Formatar mensagem com informações do agendamento
+    const appointmentDate = format(parseISO(appointment.start), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+    const message = `Olá ${appointment.patientName}! Tudo bem?\n\nLembrando do seu agendamento:\n📅 ${appointmentDate}\n💉 ${appointment.procedure}\n👨‍⚕️ Profissional: ${appointment.professional}\n\nQualquer dúvida, estamos à disposição!`
+
+    // Limpar telefone e criar link do WhatsApp
+    const cleanPhone = patientPhone.replace(/\D/g, '')
+    const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
+
+    window.open(whatsappUrl, '_blank')
   }
 
   return (
@@ -134,13 +157,25 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
 
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-gray-700">
-          <button
-            onClick={handleDelete}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg font-medium transition-colors border border-red-500/30"
-          >
-            <Trash2 size={18} />
-            Remover
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg font-medium transition-colors border border-red-500/30"
+            >
+              <Trash2 size={18} />
+              Remover
+            </button>
+            {patientPhone && (
+              <button
+                onClick={handleWhatsApp}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg font-medium transition-colors border border-green-500/30"
+                title="Enviar mensagem no WhatsApp"
+              >
+                <MessageCircle size={18} />
+                WhatsApp
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"

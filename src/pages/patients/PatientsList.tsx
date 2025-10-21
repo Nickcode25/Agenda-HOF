@@ -4,7 +4,7 @@ import { useProcedures } from '@/store/procedures'
 import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Plus, User, Phone, MapPin, Calendar, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText } from 'lucide-react'
+import { Search, Plus, User, Phone, MapPin, Calendar, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText, MessageCircle } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
 
 export default function PatientsList() {
@@ -147,6 +147,20 @@ export default function PatientsList() {
     update(patient.id, { plannedProcedures: updated })
   }
 
+  const handleWhatsApp = (patientName: string, patientPhone?: string) => {
+    if (!patientPhone) {
+      alert('Paciente não possui telefone cadastrado')
+      return
+    }
+
+    const message = `Olá ${patientName}! Tudo bem?\n\nEstamos entrando em contato para saber como você está. Qualquer dúvida, estamos à disposição!`
+
+    const cleanPhone = patientPhone.replace(/\D/g, '')
+    const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
+
+    window.open(whatsappUrl, '_blank')
+  }
+
   return (
     <>
     <div className="space-y-6">
@@ -276,6 +290,16 @@ export default function PatientsList() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
+                      {p.phone && (
+                        <button
+                          onClick={() => handleWhatsApp(p.name, p.phone)}
+                          className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors border border-green-500/30"
+                          title="Enviar mensagem no WhatsApp"
+                        >
+                          <MessageCircle size={18} />
+                        </button>
+                      )}
+
                       <button
                         onClick={() => setShowAddProcedure(showAddProcedure === p.id ? null : p.id)}
                         className="p-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg transition-colors border border-orange-500/30"
@@ -283,7 +307,7 @@ export default function PatientsList() {
                       >
                         <Plus size={18} />
                       </button>
-                      
+
                       <button
                         onClick={() => toggleExpanded(p.id)}
                         className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
