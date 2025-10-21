@@ -36,13 +36,18 @@ export default function PatientsList() {
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
 
+    // Primeiro, ordenar todos os pacientes alfabeticamente
+    const sortedPatients = [...patients].sort((a, b) => {
+      return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+    })
+
     if (!query) {
-      return patients
+      return sortedPatients
     }
 
     const normalizedQuery = removeAccents(query)
 
-    const result = patients.filter(p => {
+    const result = sortedPatients.filter(p => {
       const normalizedName = removeAccents(p.name.toLowerCase())
 
       // Dividir o nome em palavras para buscar no início de cada palavra
@@ -64,7 +69,6 @@ export default function PatientsList() {
       return matchName || matchCpf || matchPhone
     })
 
-    console.log('📊 [BUSCA] Total resultados:', result.length)
     return result
   }, [q, patients])
 
