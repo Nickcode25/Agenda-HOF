@@ -8,9 +8,10 @@ export default function LandingPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [cpf, setCpf] = useState('')
   const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => localStorage.getItem('rememberedEmail') || '')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('rememberedEmail') !== null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -24,6 +25,12 @@ export default function LandingPage() {
     const success = await signIn(email, password)
 
     if (success) {
+      // Salvar email se "Lembrar-me" estiver marcado
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email)
+      } else {
+        localStorage.removeItem('rememberedEmail')
+      }
       navigate('/app/agenda')
     } else {
       setError('Email ou senha incorretos')
@@ -391,6 +398,19 @@ export default function LandingPage() {
                       className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-500 disabled:opacity-50"
                       placeholder="••••••••"
                     />
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-orange-500 focus:ring-orange-500 focus:ring-2 focus:ring-offset-0"
+                    />
+                    <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-300 cursor-pointer select-none">
+                      Lembrar-me
+                    </label>
                   </div>
 
                   <button
