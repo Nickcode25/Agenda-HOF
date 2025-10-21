@@ -1,4 +1,4 @@
-import { FormEvent, useState, useEffect } from 'react'
+import { FormEvent, useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useSchedule } from '@/store/schedule'
@@ -7,7 +7,7 @@ import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import type { PlannedProcedure } from '@/types/patient'
-import { Save, Package, AlertTriangle } from 'lucide-react'
+import { Save, Package, AlertTriangle, Search, Calendar, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/currency'
 
@@ -36,12 +36,66 @@ export default function AppointmentForm() {
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
 
+  // Autocomplete patient search
+  const [patientSearch, setPatientSearch] = useState('')
+  const [selectedPatient, setSelectedPatient] = useState<typeof patients[0] | null>(null)
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false)
+  const patientSearchRef = useRef<HTMLDivElement>(null)
+
   // Obter nome do profissional selecionado
   const selectedProfessionalName = selectedProfessional
     ? professionals.find(p => p.id === selectedProfessional)?.name || ''
     : ''
 
   const selectedProcedure = registeredProcedures.find(p => p.id === selectedProcedureId)
+
+  // Patient search filter
+  const removeAccents = (str: string) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  }
+
+  const filteredPatients = useMemo(() => {
+    const query = patientSearch.trim().toLowerCase()
+
+    if (!query) {
+      return patients.slice(0, 10) // Show first 10 when empty
+    }
+
+    const normalizedQuery = removeAccents(query)
+
+    const result = patients.filter(p => {
+      const normalizedName = removeAccents(p.name.toLowerCase())
+      const nameWords = normalizedName.split(' ')
+      const matchesNameWord = nameWords.some(word => word.startsWith(normalizedQuery))
+      const matchName = matchesNameWord || normalizedName.startsWith(normalizedQuery)
+
+      const normalizedQueryCpf = query.replace(/\D/g, '')
+      let matchCpf = false
+      let matchPhone = false
+
+      if (normalizedQueryCpf.length > 0) {
+        const normalizedCpf = p.cpf.replace(/\D/g, '')
+        matchCpf = normalizedCpf.includes(normalizedQueryCpf)
+        matchPhone = p.phone ? p.phone.replace(/\D/g, '').includes(normalizedQueryCpf) : false
+      }
+
+      return matchName || matchCpf || matchPhone
+    })
+
+    return result.slice(0, 10) // Limit to 10 results
+  }, [patientSearch, patients])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (patientSearchRef.current && !patientSearchRef.current.contains(event.target as Node)) {
+        setShowPatientDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Obter produtos disponíveis da categoria do procedimento selecionado
   const availableProducts = selectedProcedure?.category
@@ -70,10 +124,16 @@ export default function AppointmentForm() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    if (!selectedPatient) {
+      alert('Por favor, selecione um paciente')
+      return
+    }
+
     const data = new FormData(e.currentTarget)
 
-    const patientId = String(data.get('patientId')||'')
-    const patient = patients.find(p => p.id === patientId)
+    const patientId = selectedPatient.id
+    const patient = selectedPatient
     const professionalId = String(data.get('professional')||'')
     const professional = professionals.find(p => p.id === professionalId)
 
@@ -137,27 +197,100 @@ export default function AppointmentForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        {selectedProfessionalName && (
-          <div className="flex items-center gap-2 bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm border border-orange-500/30">
-            <span>Agenda: {selectedProfessionalName}</span>
+    <div className="space-y-6">
+      {/* Header Premium */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-500/20 rounded-xl">
+              <Calendar size={32} className="text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Novo Agendamento</h1>
+              <p className="text-gray-400">
+                {selectedProfessionalName ? `Agenda: ${selectedProfessionalName}` : 'Agende um novo procedimento'}
+              </p>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8 shadow-xl">
+      <form onSubmit={onSubmit} className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-8 shadow-xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+          {/* Patient Autocomplete Search */}
+          <div ref={patientSearchRef} className="relative">
             <label className="block text-sm font-medium text-gray-300 mb-2">Paciente *</label>
-            <select name="patientId" required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all">
-              <option value="">Selecione um paciente</option>
-              {patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            {selectedPatient ? (
+              <div className="flex items-center gap-2 bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3">
+                <span className="flex-1">{selectedPatient.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPatient(null)
+                    setPatientSearch('')
+                    setShowPatientDropdown(false)
+                  }}
+                  className="p-1 hover:bg-red-500/20 rounded-lg transition-colors"
+                >
+                  <X size={16} className="text-gray-400 hover:text-red-400" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={patientSearch}
+                    onChange={(e) => {
+                      setPatientSearch(e.target.value)
+                      setShowPatientDropdown(true)
+                    }}
+                    onFocus={() => setShowPatientDropdown(true)}
+                    placeholder="Buscar por nome, CPF ou telefone..."
+                    className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  />
+                </div>
+                {showPatientDropdown && (
+                  <div className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl max-h-64 overflow-auto">
+                    {filteredPatients.length > 0 ? (
+                      filteredPatients.map(patient => (
+                        <button
+                          key={patient.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPatient(patient)
+                            setPatientSearch(patient.name)
+                            setShowPatientDropdown(false)
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors border-b border-gray-700/50 last:border-0"
+                        >
+                          <div className="text-white font-medium">{patient.name}</div>
+                          {patient.phone && (
+                            <div className="text-sm text-gray-400">{patient.phone}</div>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-8 text-center text-gray-400">
+                        <p className="mb-2">Nenhum paciente encontrado</p>
+                        <Link
+                          to="/app/pacientes/novo"
+                          className="text-orange-400 hover:text-orange-300 text-sm underline"
+                        >
+                          Cadastrar novo paciente
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           </div>
           
           <div className="md:col-span-2">
@@ -167,7 +300,7 @@ export default function AppointmentForm() {
               required
               value={selectedProcedureId}
               onChange={(e) => handleProcedureChange(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer hover:bg-gray-700"
             >
               <option value="">Selecione um procedimento</option>
               {registeredProcedures.filter(p => p.isActive).map(proc => (
@@ -178,7 +311,7 @@ export default function AppointmentForm() {
             </select>
             {registeredProcedures.length === 0 && (
               <p className="text-xs text-yellow-400 mt-1">
-                Nenhum procedimento cadastrado. <Link to="/app/procedimentos/novo" className="underline">Cadastre aqui</Link>
+                Nenhum procedimento cadastrado. <Link to="/app/procedimentos/novo" className="underline hover:text-yellow-300">Cadastre aqui</Link>
               </p>
             )}
           </div>
@@ -186,7 +319,7 @@ export default function AppointmentForm() {
           {/* Mostrar categoria e produtos disponíveis (apenas visualização) */}
           {selectedProcedure && (
             <div className="md:col-span-2">
-              <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+              <div className="p-6 bg-gradient-to-br from-gray-800/50 to-gray-900/30 rounded-2xl border border-gray-700/50">
                 <div className="flex items-center gap-2 mb-3">
                   <Package size={18} className="text-orange-500" />
                   <h4 className="font-medium text-white">
@@ -272,7 +405,7 @@ export default function AppointmentForm() {
               name="professional"
               required
               defaultValue={selectedProfessional}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer hover:bg-gray-700"
             >
               <option value="">Selecione um profissional</option>
               {professionals.map(prof => (
@@ -281,23 +414,23 @@ export default function AppointmentForm() {
             </select>
             {professionals.length === 0 && (
               <p className="text-xs text-yellow-400 mt-1">
-                Nenhum profissional cadastrado. <Link to="/app/profissionais/novo" className="underline">Cadastre aqui</Link>
+                Nenhum profissional cadastrado. <Link to="/app/profissionais/novo" className="underline hover:text-yellow-300">Cadastre aqui</Link>
               </p>
             )}
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Sala</label>
-            <input name="room" placeholder="Número da sala" className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" />
+            <input name="room" placeholder="Número da sala" className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" />
           </div>
-          
+
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Data do Agendamento *</label>
             <input
               type="date"
               name="appointmentDate"
               required
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
 
@@ -310,12 +443,12 @@ export default function AppointmentForm() {
               onChange={(e) => handleStartTimeChange(e.target.value)}
               required
               step="300"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">
               {selectedProcedure?.durationMinutes
-                ? `O horário de término será calculado automaticamente (duração: ${selectedProcedure.durationMinutes} min)`
-                : 'Selecione um procedimento para calcular a duração automaticamente'}
+                ? `⏱️ Duração: ${selectedProcedure.durationMinutes} min (término calculado automaticamente)`
+                : 'Selecione um procedimento para calcular a duração'}
             </p>
           </div>
 
@@ -328,15 +461,15 @@ export default function AppointmentForm() {
               onChange={(e) => setEndTime(e.target.value)}
               required
               step="300"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">Ajuste manualmente se necessário</p>
           </div>
         </div>
-        
+
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-300 mb-2">Observações</label>
-          <textarea name="notes" placeholder="Adicione observações sobre o agendamento..." className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" rows={4}></textarea>
+          <textarea name="notes" placeholder="Adicione observações sobre o agendamento..." className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" rows={4}></textarea>
         </div>
         
         <div className="flex gap-3 mt-8">
