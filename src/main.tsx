@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
@@ -131,6 +131,7 @@ const router = createBrowserRouter([
       { path: 'despesas/categorias', element: <ExpenseCategories /> },
 
       { path: 'caixa', element: <CashRegistersList /> },
+      { path: 'caixa/sessao', element: <Navigate to="/app/caixa" replace /> },
       { path: 'caixa/sessao/:registerId', element: <CashSessionPage /> },
 
       { path: 'mensalidades', element: <SubscriptionsMain /> },
