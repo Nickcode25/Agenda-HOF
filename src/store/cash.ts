@@ -382,6 +382,7 @@ export const useCash = create<CashStore>()(
             id: row.id,
             userId: row.user_id,
             cashSessionId: row.cash_session_id,
+            cashRegisterId: row.cash_register_id,
             type: row.type,
             category: row.category,
             amount: parseFloat(row.amount),
@@ -403,11 +404,47 @@ export const useCash = create<CashStore>()(
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) throw new Error('Usuário não autenticado')
 
+          // Buscar a sessão para obter o cash_register_id
+          const session = get().sessions.find(s => s.id === movementData.cashSessionId)
+          if (!session) {
+            // Se não estiver no cache, buscar do banco
+            const { data: sessionData } = await supabase
+              .from('cash_sessions')
+              .select('cash_register_id')
+              .eq('id', movementData.cashSessionId)
+              .single()
+
+            if (!sessionData) throw new Error('Sessão de caixa não encontrada')
+
+            const { data, error } = await supabase
+              .from('cash_movements')
+              .insert({
+                user_id: user.id,
+                cash_session_id: movementData.cashSessionId,
+                cash_register_id: sessionData.cash_register_id,
+                type: movementData.type,
+                category: movementData.category,
+                amount: movementData.amount,
+                payment_method: movementData.paymentMethod,
+                reference_id: movementData.referenceId || null,
+                description: movementData.description
+              })
+              .select()
+              .single()
+
+            if (error) throw error
+
+            await get().fetchMovements(movementData.cashSessionId)
+            set({ loading: false })
+            return data.id
+          }
+
           const { data, error } = await supabase
             .from('cash_movements')
             .insert({
               user_id: user.id,
               cash_session_id: movementData.cashSessionId,
+              cash_register_id: session.cashRegisterId,
               type: movementData.type,
               category: movementData.category,
               amount: movementData.amount,
