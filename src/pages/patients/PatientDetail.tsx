@@ -8,6 +8,7 @@ import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, ArrowLeft, AlertTriangle, Package, FileText, X } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function PatientDetail() {
   const { id } = useParams()
@@ -17,6 +18,7 @@ export default function PatientDetail() {
   const { procedures, fetchAll: fetchProcedures } = useProcedures()
   const { items: stockItems, fetchItems } = useStock()
   const { show: showToast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   // Carregar procedimentos e estoque ao montar o componente
   useEffect(() => {
@@ -47,8 +49,15 @@ export default function PatientDetail() {
     ? stockItems.filter(item => item.category === selectedProcedureData.category)
     : []
 
-  const handleDelete = () => {
-    if (confirm(`Tem certeza que deseja remover ${patient?.name}?`)) {
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: 'Remover Paciente',
+      message: `Tem certeza que deseja remover ${patient?.name}? Esta ação não pode ser desfeita.`,
+      confirmText: 'Remover',
+      cancelText: 'Cancelar'
+    })
+
+    if (confirmed) {
       remove(id!)
       window.location.href = '/app/pacientes'
     }
@@ -196,9 +205,17 @@ export default function PatientDetail() {
 
     showToast('Procedimento concluído e estoque atualizado!', 'success')
   }
-  const handleRemoveProcedure = (procId: string) => {
+  const handleRemoveProcedure = async (procId: string) => {
     if (!patient) return
-    if (!confirm('Remover este procedimento do planejamento?')) return
+
+    const confirmed = await confirm({
+      title: 'Remover Procedimento',
+      message: 'Remover este procedimento do planejamento?',
+      confirmText: 'Remover',
+      cancelText: 'Cancelar'
+    })
+
+    if (!confirmed) return
 
     const updated = (patient.plannedProcedures || []).filter(p => p.id !== procId)
     update(patient.id, { plannedProcedures: updated })
@@ -965,6 +982,9 @@ export default function PatientDetail() {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }
