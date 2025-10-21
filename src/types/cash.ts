@@ -74,10 +74,11 @@ export type CashSession = {
   id: string
   userId: string
   cashRegisterId: string
+  cashRegisterName?: string
 
   // Abertura
-  openedByUserId: string
-  openedByName: string
+  openedByUserId?: string
+  openedByName?: string
   openedAt: string
   openingBalance: number
   openingNotes?: string
@@ -90,9 +91,11 @@ export type CashSession = {
   expectedBalance?: number
   difference?: number
   closingNotes?: string
+  notes?: string
 
   status: CashSessionStatus
   createdAt: string
+  updatedAt?: string
 }
 
 // ============================================
@@ -105,7 +108,7 @@ export type CashMovement = {
   id: string
   userId: string
   cashSessionId: string
-  cashRegisterId: string
+  cashRegisterId?: string
 
   // Tipo
   type: CashMovementType

@@ -24,7 +24,7 @@ export default function SaleForm() {
 
   const [selectedProfessional, setSelectedProfessional] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'pix' | 'transfer' | 'check'>('cash')
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending')
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'overdue'>('pending')
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [saleItems, setSaleItems] = useState<Array<{
@@ -186,6 +186,18 @@ export default function SaleForm() {
           if (!success) {
             console.error('❌ Erro ao remover do estoque:', item.stockItem?.name)
           }
+        }
+
+        // Registrar movimentação no caixa se o pagamento for à vista
+        if (paymentStatus === 'paid') {
+          await autoRegisterCashMovement({
+            type: 'income',
+            category: 'sale',
+            amount: totalAmount,
+            paymentMethod,
+            referenceId: saleId,
+            description: `Venda para ${professional.name} - ${calculatedItems.length} produto(s)`
+          })
         }
       }
 

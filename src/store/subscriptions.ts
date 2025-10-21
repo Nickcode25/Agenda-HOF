@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { SubscriptionPlan, Subscription, SubscriptionPayment } from '../types/subscription'
+import { autoRegisterCashMovement } from './cash'
 
 type SubscriptionStore = {
   plans: SubscriptionPlan[]
@@ -119,8 +120,10 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         }))
       },
 
-      confirmPayment: (subscriptionId, paymentId, paymentMethod) => {
+      confirmPayment: async (subscriptionId, paymentId, paymentMethod) => {
         const now = new Date().toISOString()
+        const subscription = get().subscriptions.find(s => s.id === subscriptionId)
+        const payment = subscription?.payments.find(p => p.id === paymentId)
 
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) => {
@@ -139,6 +142,18 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
             return sub
           }),
         }))
+
+        // Registrar movimentação no caixa
+        if (subscription && payment) {
+          await autoRegisterCashMovement({
+            type: 'income',
+            category: 'subscription',
+            amount: payment.amount,
+            paymentMethod: paymentMethod.toLowerCase() as 'cash' | 'card' | 'pix' | 'transfer' | 'check',
+            referenceId: paymentId,
+            description: `Mensalidade - ${subscription.patientName} - ${subscription.planName}`
+          })
+        }
       },
 
       generateNextPayment: (subscriptionId) => {
