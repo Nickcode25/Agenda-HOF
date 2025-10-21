@@ -326,28 +326,40 @@ export const useCash = create<CashStore>()(
           if (!session) throw new Error('Sessão não encontrada')
 
           console.log('[CASH] Fechando sessão:', sessionId)
+          console.log('[CASH] Sessão antes de fechar:', session)
 
           const expectedBalance = get().getExpectedBalance(sessionId)
           const difference = closingBalance - expectedBalance
 
           console.log('[CASH] Saldo esperado:', expectedBalance, 'Saldo final:', closingBalance, 'Diferença:', difference)
 
-          const { error } = await supabase
+          const updateData = {
+            closed_at: new Date().toISOString(),
+            closing_balance: closingBalance,
+            expected_balance: expectedBalance,
+            difference: difference,
+            status: 'closed',
+            updated_at: new Date().toISOString()
+          }
+
+          console.log('[CASH] Dados para atualizar:', updateData)
+
+          const { data, error } = await supabase
             .from('cash_sessions')
-            .update({
-              closed_at: new Date().toISOString(),
-              closing_balance: closingBalance,
-              expected_balance: expectedBalance,
-              difference: difference,
-              status: 'closed',
-              updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('id', sessionId)
             .eq('user_id', user.id)
+            .select()
 
           if (error) {
             console.error('[CASH] Erro ao fechar sessão no banco:', error)
             throw error
+          }
+
+          console.log('[CASH] Resposta do update:', data)
+
+          if (!data || data.length === 0) {
+            throw new Error('Nenhuma sessão foi atualizada. Verifique se a sessão pertence ao usuário.')
           }
 
           console.log('[CASH] Sessão fechada no banco, atualizando store...')
@@ -356,12 +368,14 @@ export const useCash = create<CashStore>()(
           await get().fetchSessions()
 
           console.log('[CASH] Sessões após fechar:', get().sessions.length)
-          console.log('[CASH] Sessão fechada:', get().sessions.find(s => s.id === sessionId))
+          const updatedSession = get().sessions.find(s => s.id === sessionId)
+          console.log('[CASH] Sessão atualizada:', updatedSession)
 
           set({ currentSession: null, loading: false })
         } catch (error: any) {
           console.error('[CASH] Erro ao fechar sessão:', error)
           set({ error: error.message, loading: false })
+          throw error
         }
       },
 
