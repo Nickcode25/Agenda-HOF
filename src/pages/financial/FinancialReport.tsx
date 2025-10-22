@@ -18,12 +18,14 @@ import {
   Trash2
 } from 'lucide-react'
 import { CashMovement, PaymentMethod } from '@/types/cash'
+import { useConfirm } from '@/hooks/useConfirm'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
 export default function FinancialReport() {
   const { sessions, movements, fetchSessions, fetchMovements, updateMovement, deleteMovement } = useCash()
   const { expenses, fetchExpenses } = useExpenses()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [editingMovement, setEditingMovement] = useState<CashMovement | null>(null)
@@ -225,7 +227,15 @@ export default function FinancialReport() {
   const handleDeleteMovement = async () => {
     if (!editingMovement) return
 
-    if (!window.confirm('Tem certeza que deseja excluir esta transação?')) return
+    const confirmed = await confirm({
+      title: 'Excluir Transação',
+      message: 'Tem certeza que deseja excluir esta transação?',
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+      confirmButtonClass: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/30'
+    })
+
+    if (!confirmed) return
 
     try {
       await deleteMovement(editingMovement.id)
@@ -694,6 +704,8 @@ export default function FinancialReport() {
         </div>
       )}
 
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }
