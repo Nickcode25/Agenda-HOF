@@ -46,12 +46,13 @@ export default function Checkout() {
   const [couponSuccess, setCouponSuccess] = useState(false)
   const [validatedCouponId, setValidatedCouponId] = useState<string | null>(null)
 
-  // Dados do usuário vindos do formulário de cadastro
+  // Dados do usuário vindos do formulário de cadastro ou pricing page
   const userData = location.state as {
     name: string
     email: string
     phone: string
     password: string
+    existingUser?: boolean // Flag para indicar que usuário já existe
   } | null
 
   useEffect(() => {
@@ -241,10 +242,12 @@ export default function Checkout() {
         cardHolderCpf: cardCpf,
       })
 
-      // ✅ PAGAMENTO CONFIRMADO - Criar conta do usuário
-      const success = await signUp(userData!.email, userData!.password, userData!.name)
-      if (!success) {
-        throw new Error('Pagamento aprovado mas erro ao criar conta. Entre em contato com suporte.')
+      // ✅ PAGAMENTO CONFIRMADO - Criar conta do usuário (apenas se não existir)
+      if (!userData!.existingUser) {
+        const success = await signUp(userData!.email, userData!.password, userData!.name)
+        if (!success) {
+          throw new Error('Pagamento aprovado mas erro ao criar conta. Entre em contato com suporte.')
+        }
       }
 
       // Registrar uso de cupom se houver

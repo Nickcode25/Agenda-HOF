@@ -63,6 +63,9 @@ import ExpenseForm from './pages/expenses/ExpenseForm'
 import ExpenseCategories from './pages/expenses/ExpenseCategories'
 import CashRegistersList from './pages/cash/CashRegistersList'
 import CashSessionPage from './pages/cash/CashSessionPage'
+import PricingPage from './pages/PricingPage'
+import SignupPage from './pages/SignupPage'
+import LoginPage from './pages/LoginPage'
 
 const router = createBrowserRouter([
   {
@@ -70,8 +73,20 @@ const router = createBrowserRouter([
     element: <LandingPage />,
   },
   {
+    path: '/signup',
+    element: <SignupPage />,
+  },
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
     path: '/checkout',
     element: <Checkout />,
+  },
+  {
+    path: '/pricing',
+    element: <PricingPage />,
   },
   {
     path: '/app',

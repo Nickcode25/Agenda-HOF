@@ -98,41 +98,8 @@ export default function NewLandingPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    // Validar se as senhas coincidem
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
-      setLoading(false)
-      return
-    }
-
-    // Validar senha mínima
-    if (password.length < 6) {
-      setError('A senha deve ter no mínimo 6 caracteres')
-      setLoading(false)
-      return
-    }
-
-    // Validar telefone
-    if (!phone || phone.length < 10) {
-      setError('Por favor, informe um telefone válido')
-      setLoading(false)
-      return
-    }
-
-    // NÃO criar conta aqui - apenas enviar dados para checkout
-    // Conta será criada SOMENTE após pagamento confirmado
-    navigate('/checkout', {
-      state: {
-        name: fullName,
-        email: email,
-        phone: phone,
-        password: password, // Enviar senha para criar conta depois do pagamento
-      }
-    })
-    setLoading(false)
+    // Redirecionar para página de cadastro
+    navigate('/signup')
   }
 
   const openRegisterModal = () => {
