@@ -82,7 +82,15 @@ export default function CashSessionPage() {
   const handleCloseSession = async () => {
     if (!currentSession) return
 
-    if (!window.confirm('Tem certeza que deseja fechar o caixa?')) return
+    const confirmed = await confirm({
+      title: 'Fechar Caixa',
+      message: 'Tem certeza que deseja fechar o caixa?',
+      confirmText: 'OK',
+      cancelText: 'Cancelar',
+      confirmButtonClass: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/30'
+    })
+
+    if (!confirmed) return
 
     setLoading(true)
     try {
