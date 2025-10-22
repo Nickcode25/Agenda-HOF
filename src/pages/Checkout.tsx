@@ -104,6 +104,7 @@ export default function Checkout() {
         .single()
 
       if (error || !coupon) {
+        console.error('Erro ao buscar cupom:', error)
         setCouponError('Cupom inválido')
         return
       }
@@ -339,12 +340,24 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12 px-4">
+    <div className="min-h-screen bg-gray-900 py-6 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => navigate('/')} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-            <ArrowLeft className="w-6 h-6 text-gray-400" />
+        {/* Header Compacto */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+          >
+            <div className="p-2 group-hover:bg-gray-800 rounded-lg transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </div>
+            <span className="text-sm font-medium hidden sm:inline">Voltar</span>
           </button>
+
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-green-400" />
+            <span className="text-sm text-gray-400">Pagamento Seguro</span>
+          </div>
         </div>
 
         {error && (
@@ -359,7 +372,7 @@ export default function Checkout() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-6">
           {/* Resumo do Pedido */}
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-6">Resumo do Pedido</h2>
