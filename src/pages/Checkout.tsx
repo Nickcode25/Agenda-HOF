@@ -96,8 +96,20 @@ export default function Checkout() {
       setCouponError('')
       setCouponSuccess(false)
 
-      // Buscar cupom no banco (usuário já está autenticado)
-      const { data: coupon, error } = await supabase
+      // Criar cliente anônimo para buscar cupons (usuário ainda não tem conta)
+      const { createClient } = await import('@supabase/supabase-js')
+      const anonClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }
+      )
+
+      const { data: coupon, error } = await anonClient
         .from('discount_coupons')
         .select('*')
         .eq('code', couponCode.toUpperCase())
@@ -186,9 +198,9 @@ export default function Checkout() {
       setPixData(pixResponse)
       setShowPixModal(true)
 
-      // Conta já foi criada na tela anterior
-      // TODO: Polling para verificar se o pagamento foi confirmado
-      // Por enquanto, aguardar confirmação manual
+      // ⚠️ PIX: Conta será criada APENAS quando o pagamento for confirmado via webhook
+      // Por enquanto, usuário NÃO tem acesso ao sistema até pagar
+      // TODO: Implementar webhook do PagBank para criar conta automaticamente após pagamento
 
     } catch (err: any) {
       setError(err.message || 'Erro ao gerar PIX')
@@ -227,7 +239,11 @@ export default function Checkout() {
         cardHolderCpf: cardCpf,
       })
 
-      // Conta já foi criada na tela anterior
+      // ✅ PAGAMENTO CONFIRMADO - Criar conta do usuário
+      const success = await signUp(userData!.email, userData!.password, userData!.name)
+      if (!success) {
+        throw new Error('Pagamento aprovado mas erro ao criar conta. Entre em contato com suporte.')
+      }
 
       // Registrar uso de cupom se houver
       if (validatedCouponId) {
@@ -297,7 +313,9 @@ export default function Checkout() {
       setBoletoUrl(boletoResponse.boletoUrl)
       setShowBoletoModal(true)
 
-      // Conta já foi criada na tela anterior
+      // ⚠️ BOLETO: Conta será criada APENAS quando o pagamento for confirmado via webhook
+      // Por enquanto, usuário NÃO tem acesso ao sistema até pagar
+      // TODO: Implementar webhook do PagBank para criar conta automaticamente após pagamento
 
     } catch (err: any) {
       setError(err.message || 'Erro ao gerar boleto')

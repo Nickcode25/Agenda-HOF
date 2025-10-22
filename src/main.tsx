@@ -57,6 +57,7 @@ import CustomersManager from './pages/admin/CustomersManager'
 import PurchasesManager from './pages/admin/PurchasesManager'
 import CouponsManagement from './pages/admin/CouponsManagement'
 import ProtectedRoute from './components/admin/ProtectedRoute'
+import SubscriptionProtectedRoute from './components/SubscriptionProtectedRoute'
 import ExpensesList from './pages/expenses/ExpensesList'
 import ExpenseForm from './pages/expenses/ExpenseForm'
 import ExpenseCategories from './pages/expenses/ExpenseCategories'
@@ -74,7 +75,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/app',
-    element: <App />,
+    element: (
+      <SubscriptionProtectedRoute>
+        <App />
+      </SubscriptionProtectedRoute>
+    ),
     children: [
       {
         index: true,
