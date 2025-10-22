@@ -96,21 +96,8 @@ export default function Checkout() {
       setCouponError('')
       setCouponSuccess(false)
 
-      // Criar um cliente temporário sem autenticação para buscar cupons públicos
-      const { createClient } = await import('@supabase/supabase-js')
-      const anonClient = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY,
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          }
-        }
-      )
-
-      // Buscar cupom no banco usando cliente anônimo
-      const { data: coupon, error } = await anonClient
+      // Buscar cupom no banco (usuário já está autenticado)
+      const { data: coupon, error } = await supabase
         .from('discount_coupons')
         .select('*')
         .eq('code', couponCode.toUpperCase())
@@ -199,12 +186,7 @@ export default function Checkout() {
       setPixData(pixResponse)
       setShowPixModal(true)
 
-      // Criar conta do usuário
-      const success = await signUp(userData!.email, userData!.password, userData!.name)
-      if (!success) {
-        throw new Error('Erro ao criar conta')
-      }
-
+      // Conta já foi criada na tela anterior
       // TODO: Polling para verificar se o pagamento foi confirmado
       // Por enquanto, aguardar confirmação manual
 
@@ -245,11 +227,7 @@ export default function Checkout() {
         cardHolderCpf: cardCpf,
       })
 
-      // Criar conta do usuário
-      const success = await signUp(userData!.email, userData!.password, userData!.name)
-      if (!success) {
-        throw new Error('Erro ao criar conta')
-      }
+      // Conta já foi criada na tela anterior
 
       // Registrar uso de cupom se houver
       if (validatedCouponId) {
@@ -319,11 +297,7 @@ export default function Checkout() {
       setBoletoUrl(boletoResponse.boletoUrl)
       setShowBoletoModal(true)
 
-      // Criar conta do usuário
-      const success = await signUp(userData!.email, userData!.password, userData!.name)
-      if (!success) {
-        throw new Error('Erro ao criar conta')
-      }
+      // Conta já foi criada na tela anterior
 
     } catch (err: any) {
       setError(err.message || 'Erro ao gerar boleto')

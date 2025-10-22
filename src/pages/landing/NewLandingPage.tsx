@@ -122,14 +122,37 @@ export default function NewLandingPage() {
       return
     }
 
-    navigate('/checkout', {
-      state: {
-        name: fullName,
-        email: email,
-        phone: phone,
-        password: password,
+    try {
+      // Criar conta imediatamente antes de ir para checkout
+      const { signUp } = await import('@/store/auth')
+      const authStore = useAuth.getState()
+
+      const success = await authStore.signUp(
+        email,
+        password,
+        fullName,
+        phone
+      )
+
+      if (!success) {
+        setError('Erro ao criar conta. Tente novamente.')
+        setLoading(false)
+        return
       }
-    })
+
+      // Conta criada com sucesso, redirecionar para checkout já autenticado
+      navigate('/checkout', {
+        state: {
+          name: fullName,
+          email: email,
+          phone: phone,
+        }
+      })
+    } catch (err: any) {
+      console.error('Erro ao criar conta:', err)
+      setError(err.message || 'Erro ao criar conta. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   const openRegisterModal = () => {
