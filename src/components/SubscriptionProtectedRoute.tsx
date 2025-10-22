@@ -21,7 +21,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
       }
 
       try {
-        // Verificar se usuário tem assinatura ativa
+        // 1. Verificar se usuário tem assinatura ativa
         const { data: subscription } = await supabase
           .from('user_subscriptions')
           .select('*')
@@ -29,7 +29,40 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           .eq('status', 'active')
           .maybeSingle()
 
-        setHasActiveSubscription(!!subscription)
+        if (subscription) {
+          setHasActiveSubscription(true)
+          setLoading(false)
+          return
+        }
+
+        // 2. Se não tem subscription, verificar se é usuário cortesia ativo
+        const { data: courtesyUser } = await supabase
+          .from('courtesy_users')
+          .select('*')
+          .eq('auth_user_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle()
+
+        if (courtesyUser) {
+          // Verificar se tem data de expiração
+          if (courtesyUser.expires_at) {
+            const expirationDate = new Date(courtesyUser.expires_at)
+            const now = new Date()
+
+            if (now <= expirationDate) {
+              // Cortesia ativa e não expirada
+              setHasActiveSubscription(true)
+            } else {
+              // Cortesia expirada
+              setHasActiveSubscription(false)
+            }
+          } else {
+            // Cortesia sem expiração
+            setHasActiveSubscription(true)
+          }
+        } else {
+          setHasActiveSubscription(false)
+        }
       } catch (error) {
         console.error('Erro ao verificar assinatura:', error)
         setHasActiveSubscription(false)
