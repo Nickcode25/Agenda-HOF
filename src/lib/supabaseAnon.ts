@@ -11,6 +11,14 @@ export const supabaseAnon = createClient(
       autoRefreshToken: false,
       detectSessionInUrl: false,
       storage: undefined, // Não usar localStorage
+    },
+    global: {
+      headers: {
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        // Garantir que não envia Authorization header
+      }
     }
   }
 )
+
+console.log('✅ Cliente Supabase Anônimo criado')

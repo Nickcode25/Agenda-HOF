@@ -97,6 +97,9 @@ export default function Checkout() {
       setCouponError('')
       setCouponSuccess(false)
 
+      console.log('🔍 Validando cupom:', couponCode.toUpperCase())
+      console.log('📡 Usando cliente anônimo do Supabase')
+
       // Usar cliente anônimo dedicado para buscar cupons (usuário ainda não tem conta)
       const { data: coupon, error } = await supabaseAnon
         .from('discount_coupons')
@@ -105,11 +108,21 @@ export default function Checkout() {
         .eq('is_active', true)
         .single()
 
-      if (error || !coupon) {
-        console.error('Erro ao buscar cupom:', error)
+      console.log('📊 Resposta do Supabase:', { coupon, error })
+
+      if (error) {
+        console.error('❌ Erro ao buscar cupom:', error)
+        setCouponError(`Erro: ${error.message || 'Cupom inválido'}`)
+        return
+      }
+
+      if (!coupon) {
+        console.error('❌ Cupom não encontrado')
         setCouponError('Cupom inválido')
         return
       }
+
+      console.log('✅ Cupom encontrado:', coupon)
 
       // Validar se está ativo
       if (!coupon.is_active) {
