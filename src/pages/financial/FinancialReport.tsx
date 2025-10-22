@@ -11,16 +11,26 @@ import {
   CreditCard,
   Filter,
   TrendingDown,
-  Receipt
+  Receipt,
+  Edit,
+  X,
+  Save
 } from 'lucide-react'
+import { CashMovement, PaymentMethod } from '@/types/cash'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
 export default function FinancialReport() {
-  const { sessions, movements, fetchSessions, fetchMovements } = useCash()
+  const { sessions, movements, fetchSessions, fetchMovements, updateMovement } = useCash()
   const { expenses, fetchExpenses } = useExpenses()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [editingMovement, setEditingMovement] = useState<CashMovement | null>(null)
+  const [editForm, setEditForm] = useState({
+    description: '',
+    amount: 0,
+    paymentMethod: 'pix' as PaymentMethod
+  })
 
   useEffect(() => {
     fetchExpenses()
@@ -169,6 +179,45 @@ export default function FinancialReport() {
         return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
       case 'year':
         return date.getFullYear().toString()
+    }
+  }
+
+  const handleEditClick = (movement: CashMovement) => {
+    setEditingMovement(movement)
+    setEditForm({
+      description: movement.description,
+      amount: movement.amount,
+      paymentMethod: movement.paymentMethod
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingMovement(null)
+    setEditForm({
+      description: '',
+      amount: 0,
+      paymentMethod: 'pix'
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingMovement) return
+
+    try {
+      await updateMovement(editingMovement.id, {
+        description: editForm.description,
+        amount: editForm.amount,
+        paymentMethod: editForm.paymentMethod
+      })
+
+      // Recarregar dados
+      await fetchMovements()
+      await fetchSessions()
+
+      handleCancelEdit()
+    } catch (error) {
+      console.error('Erro ao atualizar transação:', error)
+      alert('Erro ao atualizar transação')
     }
   }
 
@@ -499,7 +548,7 @@ export default function FinancialReport() {
 
                 return (
                   <div key={movement.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className="text-white font-medium">{movement.description}</h4>
@@ -524,6 +573,13 @@ export default function FinancialReport() {
                         <p className="text-xs text-gray-400 mb-1">Valor</p>
                         <p className={`text-xl font-bold text-${color}-400`}>{formatCurrency(movement.amount)}</p>
                       </div>
+                      <button
+                        onClick={() => handleEditClick(movement)}
+                        className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
+                        title="Editar transação"
+                      >
+                        <Edit size={20} />
+                      </button>
                     </div>
                   </div>
                 )
@@ -533,6 +589,81 @@ export default function FinancialReport() {
           <p className="text-gray-400 text-center py-8">Nenhuma transação no período</p>
         )}
       </div>
+
+      {/* Modal de Edição */}
+      {editingMovement && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Editar Transação</h3>
+              <button
+                onClick={handleCancelEdit}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Descrição */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
+                <input
+                  type="text"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              {/* Valor */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Valor (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editForm.amount}
+                  onChange={(e) => setEditForm({ ...editForm, amount: parseFloat(e.target.value) || 0 })}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              {/* Método de Pagamento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
+                <select
+                  value={editForm.paymentMethod}
+                  onChange={(e) => setEditForm({ ...editForm, paymentMethod: e.target.value as PaymentMethod })}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="pix">PIX</option>
+                  <option value="cash">Dinheiro</option>
+                  <option value="card">Cartão</option>
+                  <option value="transfer">Transferência</option>
+                  <option value="check">Cheque</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCancelEdit}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <Save size={18} />
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
