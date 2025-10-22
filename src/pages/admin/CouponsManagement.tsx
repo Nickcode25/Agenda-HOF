@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/store/auth'
 import { Tag, Plus, Edit2, Trash2, Check, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -17,7 +16,7 @@ interface Coupon {
 }
 
 export default function CouponsManagement() {
-  const { user } = useAuth()
+  const { user, adminUser } = useAuth()
   const navigate = useNavigate()
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,18 +34,13 @@ export default function CouponsManagement() {
     // Verificar se é admin
     const checkAdmin = async () => {
       if (!user) {
-        navigate('/login')
+        navigate('/admin/login')
         return
       }
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (userData?.role !== 'admin') {
-        navigate('/app/agenda')
+      // Verificar se tem permissões de admin
+      if (!adminUser) {
+        navigate('/admin/login')
         return
       }
 
@@ -54,7 +48,7 @@ export default function CouponsManagement() {
     }
 
     checkAdmin()
-  }, [user, navigate])
+  }, [user, adminUser, navigate])
 
   const loadCoupons = async () => {
     try {
