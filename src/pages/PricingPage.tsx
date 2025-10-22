@@ -1,24 +1,43 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Check, Star, Zap, Shield, TrendingUp, Clock, Users, Calendar, Package, DollarSign, ChevronRight, Lock } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 
 export default function PricingPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
 
+  // Dados vindos do modal de registro da landing page
+  const registrationData = location.state as {
+    name?: string
+    email?: string
+    phone?: string
+    password?: string
+  } | null
+
   const handleSubscribe = () => {
     setLoading(true)
-    // Redirecionar para checkout com dados do usuário
+
+    // Se tem dados do registro, usar eles. Senão, usar dados do usuário logado
+    const checkoutData = registrationData ? {
+      name: registrationData.name || '',
+      email: registrationData.email || '',
+      phone: registrationData.phone || '',
+      password: registrationData.password || '',
+      existingUser: false // Novo usuário vindo do registro
+    } : {
+      name: user?.user_metadata?.name || '',
+      email: user?.email || '',
+      phone: user?.user_metadata?.phone || '',
+      password: '', // Usuário já tem conta
+      existingUser: true // Flag para não criar conta novamente
+    }
+
+    // Redirecionar para checkout com dados
     navigate('/checkout', {
-      state: {
-        name: user?.user_metadata?.name || '',
-        email: user?.email || '',
-        phone: user?.user_metadata?.phone || '',
-        password: '', // Usuário já tem conta
-        existingUser: true // Flag para não criar conta novamente
-      }
+      state: checkoutData
     })
   }
 

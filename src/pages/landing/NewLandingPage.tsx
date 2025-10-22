@@ -98,8 +98,28 @@ export default function NewLandingPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Redirecionar para página de cadastro
-    navigate('/signup')
+
+    // Validar senhas
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem')
+      return
+    }
+
+    // Validar campos obrigatórios
+    if (!fullName || !email || !phone || !password) {
+      setError('Preencha todos os campos obrigatórios')
+      return
+    }
+
+    // Redirecionar para página de pricing com os dados do usuário
+    navigate('/pricing', {
+      state: {
+        name: fullName,
+        email,
+        phone,
+        password
+      }
+    })
   }
 
   const openRegisterModal = () => {
