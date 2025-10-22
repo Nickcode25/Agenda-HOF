@@ -409,10 +409,83 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="border-t border-gray-700 pt-4">
-              <div className="flex justify-between items-center text-lg font-bold">
+            {/* Campo de Cupom de Desconto */}
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 border border-green-500/20 rounded-xl p-4 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="w-5 h-5 text-green-400" />
+                <h3 className="text-sm font-semibold text-green-400">Cupom de Desconto</h3>
+              </div>
+
+              {!couponSuccess ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase())
+                      setCouponError('')
+                    }}
+                    placeholder="Digite seu cupom"
+                    className="flex-1 bg-gray-700/50 border border-gray-600 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all placeholder:text-gray-500 uppercase"
+                    disabled={couponLoading}
+                  />
+                  <button
+                    onClick={validateCoupon}
+                    disabled={!couponCode || couponLoading}
+                    className="px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all"
+                  >
+                    {couponLoading ? 'Validando...' : 'Aplicar'}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-400" />
+                    <span className="text-green-400 font-medium">{couponCode} aplicado!</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCouponCode('')
+                      setCouponDiscount(0)
+                      setCouponSuccess(false)
+                      setValidatedCouponId(null)
+                    }}
+                    className="text-green-400 hover:text-green-300 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              {couponError && (
+                <p className="text-red-400 text-sm mt-2">{couponError}</p>
+              )}
+              {couponSuccess && (
+                <p className="text-green-400 text-sm mt-2">
+                  Desconto de {couponDiscount}% aplicado!
+                </p>
+              )}
+            </div>
+
+            {/* Cálculo do Total */}
+            <div className="border-t border-gray-700 pt-4 space-y-2">
+              {couponDiscount > 0 && (
+                <>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400">Subtotal:</span>
+                    <span className="text-gray-300">R$ {PLAN_PRICE.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-green-400">Desconto ({couponDiscount}%):</span>
+                    <span className="text-green-400">- R$ {((PLAN_PRICE * couponDiscount) / 100).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-gray-700/50">
                 <span className="text-white">Total:</span>
-                <span className="text-orange-400">R$ {PLAN_PRICE.toFixed(2).replace('.', ',')}/mês</span>
+                <span className="text-orange-400">
+                  R$ {(PLAN_PRICE - (PLAN_PRICE * couponDiscount / 100)).toFixed(2).replace('.', ',')}/mês
+                </span>
               </div>
             </div>
           </div>
