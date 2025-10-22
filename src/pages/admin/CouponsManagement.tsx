@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
-import { FiTag, FiPlus, FiEdit2, FiTrash2, FiCheck, FiX } from 'react-icons/fi'
+import { Tag, Plus, Edit2, Trash2, Check, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 interface Coupon {
@@ -185,7 +185,7 @@ export default function CouponsManagement() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-lg shadow-orange-500/50">
-                <FiTag className="text-3xl text-white" />
+                <Tag className="text-3xl text-white" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent mb-1">
@@ -200,7 +200,7 @@ export default function CouponsManagement() {
               onClick={() => openModal()}
               className="group bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 rounded-2xl font-bold transition-all flex items-center gap-3 shadow-2xl hover:shadow-orange-500/50 hover:scale-105"
             >
-              <FiPlus className="text-xl group-hover:rotate-90 transition-transform" />
+              <Plus className="text-xl group-hover:rotate-90 transition-transform" />
               Novo Cupom
             </button>
           </div>
@@ -211,7 +211,7 @@ export default function CouponsManagement() {
           {coupons.length === 0 ? (
             <div className="backdrop-blur-xl bg-gradient-to-br from-white/5 to-white/[0.02] rounded-3xl p-16 text-center border border-white/10">
               <div className="p-6 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-3xl w-fit mx-auto mb-6">
-                <FiTag className="text-7xl text-orange-400" />
+                <Tag className="text-7xl text-orange-400" />
               </div>
               <p className="text-gray-300 text-lg font-medium mb-2">Nenhum cupom cadastrado</p>
               <p className="text-gray-500 text-sm">Crie seu primeiro cupom de desconto para começar</p>
@@ -227,7 +227,7 @@ export default function CouponsManagement() {
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
                       <div className="relative bg-gradient-to-br from-orange-500 to-red-600 text-white p-5 rounded-2xl group-hover:scale-110 transition-transform">
-                        <FiTag className="text-3xl" />
+                        <Tag className="text-3xl" />
                       </div>
                     </div>
                     <div>
@@ -242,7 +242,7 @@ export default function CouponsManagement() {
                           </span>
                         ) : (
                           <span className="bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 border border-red-500/30">
-                            <FiX className="text-lg" />
+                            <X className="text-lg" />
                             INATIVO
                           </span>
                         )}
@@ -282,21 +282,21 @@ export default function CouponsManagement() {
                       } hover:scale-110`}
                       title={coupon.is_active ? 'Desativar' : 'Ativar'}
                     >
-                      {coupon.is_active ? <FiX className="text-xl" /> : <FiCheck className="text-xl" />}
+                      {coupon.is_active ? <X className="text-xl" /> : <Check className="text-xl" />}
                     </button>
                     <button
                       onClick={() => openModal(coupon)}
                       className="bg-blue-500/20 text-blue-400 p-3 rounded-xl hover:bg-blue-500/30 transition-all border border-blue-500/30 hover:scale-110"
                       title="Editar"
                     >
-                      <FiEdit2 className="text-xl" />
+                      <Edit2 className="text-xl" />
                     </button>
                     <button
                       onClick={() => handleDelete(coupon.id)}
                       className="bg-red-500/20 text-red-400 p-3 rounded-xl hover:bg-red-500/30 transition-all border border-red-500/30 hover:scale-110"
                       title="Excluir"
                     >
-                      <FiTrash2 className="text-xl" />
+                      <Trash2 className="text-xl" />
                     </button>
                   </div>
                 </div>
@@ -312,7 +312,7 @@ export default function CouponsManagement() {
           <div className="backdrop-blur-2xl bg-gradient-to-br from-gray-900/95 to-gray-800/95 rounded-3xl p-10 max-w-lg w-full border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex items-center gap-4 mb-8">
               <div className="p-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-lg shadow-orange-500/50">
-                <FiTag className="text-2xl text-white" />
+                <Tag className="text-2xl text-white" />
               </div>
               <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                 {editingCoupon ? 'Editar Cupom' : 'Novo Cupom'}
