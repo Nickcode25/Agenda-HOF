@@ -37,9 +37,11 @@ app.use(express.json())
 
 // Configuração do PagBank
 const PAGBANK_TOKEN = process.env.PAGBANK_TOKEN
-const PAGBANK_API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://api.pagseguro.com'
-  : 'https://sandbox.api.pagseguro.com'
+// Permitir override via variável de ambiente PAGBANK_SANDBOX
+const useSandbox = process.env.PAGBANK_SANDBOX === 'true' || process.env.NODE_ENV !== 'production'
+const PAGBANK_API_URL = useSandbox
+  ? 'https://sandbox.api.pagseguro.com'
+  : 'https://api.pagseguro.com'
 
 // Debug de variáveis
 console.log('🔍 Debug de variáveis:')
@@ -59,8 +61,10 @@ if (!PAGBANK_TOKEN || PAGBANK_TOKEN.trim() === '') {
 
 console.log('🔧 Configuração do PagBank:')
 console.log('  - Ambiente:', process.env.NODE_ENV || 'development')
+console.log('  - Modo:', useSandbox ? '🧪 SANDBOX (Testes)' : '🚀 PRODUÇÃO (Real)')
 console.log('  - API URL:', PAGBANK_API_URL)
 console.log('  - Token configurado:', PAGBANK_TOKEN ? '✅ Sim' : '❌ Não')
+console.log('  - PAGBANK_SANDBOX override:', process.env.PAGBANK_SANDBOX || 'não definido')
 
 // Health check
 app.get('/health', (req, res) => {
