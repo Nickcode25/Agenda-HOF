@@ -14,14 +14,15 @@ import {
   Receipt,
   Edit,
   X,
-  Save
+  Save,
+  Trash2
 } from 'lucide-react'
 import { CashMovement, PaymentMethod } from '@/types/cash'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
 export default function FinancialReport() {
-  const { sessions, movements, fetchSessions, fetchMovements, updateMovement } = useCash()
+  const { sessions, movements, fetchSessions, fetchMovements, updateMovement, deleteMovement } = useCash()
   const { expenses, fetchExpenses } = useExpenses()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
@@ -218,6 +219,25 @@ export default function FinancialReport() {
     } catch (error) {
       console.error('Erro ao atualizar transação:', error)
       alert('Erro ao atualizar transação')
+    }
+  }
+
+  const handleDeleteMovement = async () => {
+    if (!editingMovement) return
+
+    if (!window.confirm('Tem certeza que deseja excluir esta transação?')) return
+
+    try {
+      await deleteMovement(editingMovement.id)
+
+      // Recarregar dados
+      await fetchMovements()
+      await fetchSessions()
+
+      handleCancelEdit()
+    } catch (error) {
+      console.error('Erro ao excluir transação:', error)
+      alert('Erro ao excluir transação')
     }
   }
 
@@ -646,19 +666,28 @@ export default function FinancialReport() {
             </div>
 
             {/* Botões */}
-            <div className="flex gap-3 mt-6">
+            <div className="flex flex-col gap-3 mt-6">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelEdit}
+                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <Save size={18} />
+                  Salvar
+                </button>
+              </div>
               <button
-                onClick={handleCancelEdit}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                onClick={handleDeleteMovement}
+                className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <Save size={18} />
-                Salvar
+                <Trash2 size={18} />
+                Excluir Transação
               </button>
             </div>
           </div>
