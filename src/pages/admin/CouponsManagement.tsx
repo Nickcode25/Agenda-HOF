@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/store/authStore'
+import { useAuth } from '@/store/auth'
 import { Tag, Plus, Edit2, Trash2, Check, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -17,7 +17,7 @@ interface Coupon {
 }
 
 export default function CouponsManagement() {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
