@@ -321,6 +321,8 @@ export default function Checkout() {
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('handlePayment called - Payment Method:', paymentMethod)
+    console.log('Final Price with discount:', finalPrice)
 
     switch (paymentMethod) {
       case 'PIX':
@@ -673,9 +675,9 @@ export default function Checkout() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Processando...' : `Pagar R$ ${PLAN_PRICE.toFixed(2).replace('.', ',')}`}
+                {loading ? 'Processando...' : `Pagar R$ ${finalPrice.toFixed(2).replace('.', ',')}`}
               </button>
 
               <p className="text-xs text-center text-gray-500 italic">
