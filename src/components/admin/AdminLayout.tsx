@@ -12,8 +12,7 @@ import {
   Menu,
   X,
   TrendingUp,
-  Tag,
-  UserCheck
+  Tag
 } from 'lucide-react'
 
 export default function AdminLayout() {
@@ -57,12 +56,6 @@ export default function AdminLayout() {
       icon: Tag,
       path: '/admin/coupons',
       description: 'Cupons de desconto'
-    },
-    {
-      label: 'Gerenciar Acessos',
-      icon: UserCheck,
-      path: '/admin/access',
-      description: 'Liberar/Revogar acessos'
     },
     {
       label: 'Atividades',
