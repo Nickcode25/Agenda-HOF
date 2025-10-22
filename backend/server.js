@@ -10,9 +10,27 @@ if (process.env.NODE_ENV !== 'production') {
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Middleware
+// Middleware - Aceitar tanto com www quanto sem www
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5175',
+  'https://agendahof.com',
+  'https://www.agendahof.com',
+  'http://localhost:5175',
+  'http://localhost:5173'
+]
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5175',
+  origin: function(origin, callback) {
+    // Permitir requisições sem origin (mobile apps, postman, etc)
+    if (!origin) return callback(null, true)
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      console.log('❌ Origem bloqueada por CORS:', origin)
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true
 }))
 app.use(express.json())
