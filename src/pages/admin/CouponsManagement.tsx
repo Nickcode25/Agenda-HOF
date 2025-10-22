@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/store/auth'
 import { Tag, Plus, Edit2, Trash2, Check, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
