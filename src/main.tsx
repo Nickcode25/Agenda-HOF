@@ -56,6 +56,7 @@ import CourtesyUsersPage from './pages/admin/CourtesyUsersPage'
 import CustomersManager from './pages/admin/CustomersManager'
 import PurchasesManager from './pages/admin/PurchasesManager'
 import CouponsManagement from './pages/admin/CouponsManagement'
+import AccessManager from './pages/admin/AccessManager'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import SubscriptionProtectedRoute from './components/SubscriptionProtectedRoute'
 import ExpensesList from './pages/expenses/ExpensesList'
@@ -385,6 +386,7 @@ const router = createBrowserRouter([
       { path: 'customers', element: <CustomersManager /> },
       { path: 'purchases', element: <PurchasesManager /> },
       { path: 'coupons', element: <CouponsManagement /> },
+      { path: 'access', element: <AccessManager /> },
       { path: 'activities', element: <ActivitiesPage /> },
       { path: 'alerts', element: <AlertsPage /> },
       { path: 'courtesy-users', element: <CourtesyUsersPage /> },
