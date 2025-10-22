@@ -38,6 +38,16 @@ export interface CardResponse {
   amount: number
 }
 
+export interface SubscriptionResponse {
+  id: string
+  planId: string
+  status: string
+  amount: number
+  nextBillingDate: string
+  cardLastDigits: string
+  cardBrand: string
+}
+
 export interface BoletoResponse {
   id: string
   boletoUrl: string
@@ -66,13 +76,19 @@ export async function createPixOrder(data: CreatePixOrderData): Promise<PixRespo
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.error || 'Erro ao criar pedido PIX')
+
+      // Mensagens amigáveis para erros específicos
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Token do PagBank inválido ou expirado. Entre em contato com o suporte.')
+      }
+
+      throw new Error(errorData.error || 'Erro ao criar pedido PIX. Tente novamente.')
     }
 
     return await response.json()
   } catch (error: any) {
     console.error('Erro ao criar PIX:', error)
-    throw new Error(error.message || 'Erro ao criar pedido PIX')
+    throw new Error(error.message || 'Erro ao criar pedido PIX. Tente novamente.')
   }
 }
 
@@ -100,13 +116,19 @@ export async function createCardOrder(data: CreateCardOrderData): Promise<CardRe
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.error || 'Erro ao processar cartão')
+
+      // Mensagens amigáveis para erros específicos
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Token do PagBank inválido ou expirado. Entre em contato com o suporte.')
+      }
+
+      throw new Error(errorData.error || 'Erro ao processar cartão. Verifique os dados e tente novamente.')
     }
 
     return await response.json()
   } catch (error: any) {
     console.error('Erro ao processar cartão:', error)
-    throw new Error(error.message || 'Erro ao processar cartão')
+    throw new Error(error.message || 'Erro ao processar cartão. Tente novamente.')
   }
 }
 
@@ -129,13 +151,19 @@ export async function createBoletoOrder(data: CreateBoletoOrderData): Promise<Bo
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.error || 'Erro ao gerar boleto')
+
+      // Mensagens amigáveis para erros específicos
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Token do PagBank inválido ou expirado. Entre em contato com o suporte.')
+      }
+
+      throw new Error(errorData.error || 'Erro ao gerar boleto. Tente novamente.')
     }
 
     return await response.json()
   } catch (error: any) {
     console.error('Erro ao gerar boleto:', error)
-    throw new Error(error.message || 'Erro ao gerar boleto')
+    throw new Error(error.message || 'Erro ao gerar boleto. Tente novamente.')
   }
 }
 
@@ -155,5 +183,68 @@ export async function checkPaymentStatus(orderId: string): Promise<string> {
   } catch (error: any) {
     console.error('Erro ao verificar status:', error)
     throw new Error(error.message || 'Erro ao verificar status')
+  }
+}
+
+/**
+ * Cria assinatura recorrente (cobrança automática mensal)
+ */
+export async function createSubscription(data: CreateCardOrderData): Promise<SubscriptionResponse> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/pagbank/create-subscription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerEmail: data.customerEmail,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        cardNumber: data.cardNumber,
+        cardHolderName: data.cardHolderName,
+        cardExpiryMonth: data.cardExpiryMonth,
+        cardExpiryYear: data.cardExpiryYear,
+        cardCvv: data.cardCvv,
+        cardHolderCpf: data.cardHolderCpf,
+        amount: PLAN_PRICE,
+        planName: PLAN_NAME,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+
+      // Mensagens amigáveis para erros específicos
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Token do PagBank inválido ou expirado. Entre em contato com o suporte.')
+      }
+
+      throw new Error(errorData.error || 'Erro ao criar assinatura. Verifique os dados e tente novamente.')
+    }
+
+    return await response.json()
+  } catch (error: any) {
+    console.error('Erro ao criar assinatura:', error)
+    throw new Error(error.message || 'Erro ao criar assinatura. Tente novamente.')
+  }
+}
+
+/**
+ * Cancela assinatura recorrente
+ */
+export async function cancelSubscription(subscriptionId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/pagbank/cancel-subscription/${subscriptionId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Erro ao cancelar assinatura')
+    }
+
+    return true
+  } catch (error: any) {
+    console.error('Erro ao cancelar assinatura:', error)
+    throw new Error(error.message || 'Erro ao cancelar assinatura')
   }
 }

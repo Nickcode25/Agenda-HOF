@@ -55,6 +55,7 @@ import AlertsPage from './pages/admin/AlertsPage'
 import CourtesyUsersPage from './pages/admin/CourtesyUsersPage'
 import CustomersManager from './pages/admin/CustomersManager'
 import PurchasesManager from './pages/admin/PurchasesManager'
+import CouponsManagement from './pages/admin/CouponsManagement'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import ExpensesList from './pages/expenses/ExpensesList'
 import ExpenseForm from './pages/expenses/ExpenseForm'
@@ -363,6 +364,7 @@ const router = createBrowserRouter([
       { path: 'metrics', element: <MetricsPage /> },
       { path: 'customers', element: <CustomersManager /> },
       { path: 'purchases', element: <PurchasesManager /> },
+      { path: 'coupons', element: <CouponsManagement /> },
       { path: 'activities', element: <ActivitiesPage /> },
       { path: 'alerts', element: <AlertsPage /> },
       { path: 'courtesy-users', element: <CourtesyUsersPage /> },

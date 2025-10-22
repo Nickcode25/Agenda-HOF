@@ -739,10 +739,22 @@ export default function NewLandingPage() {
                     required
                     value={phone}
                     onChange={(e) => {
+                      // Remove tudo que não é número
                       const value = e.target.value.replace(/\D/g, '')
-                      if (value.length <= 11) {
-                        setPhone(value)
+                      // Limita a 11 dígitos
+                      const limited = value.slice(0, 11)
+                      // Formata: (00) 00000-0000
+                      let formatted = limited
+                      if (limited.length > 0) {
+                        formatted = '(' + limited.slice(0, 2)
+                        if (limited.length >= 3) {
+                          formatted += ') ' + limited.slice(2, 7)
+                        }
+                        if (limited.length >= 8) {
+                          formatted += '-' + limited.slice(7, 11)
+                        }
                       }
+                      setPhone(formatted)
                     }}
                     disabled={loading}
                     className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"

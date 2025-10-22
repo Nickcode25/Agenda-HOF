@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Check, CreditCard, Lock, ArrowLeft, AlertCircle, QrCode, Download, X } from 'lucide-react'
+import { Check, CreditCard, Lock, ArrowLeft, AlertCircle, QrCode, Download, X, Tag } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import { PLAN_PRICE } from '@/lib/pagbank'
+import { supabase } from '@/lib/supabase'
 import {
   createPixOrder,
   createCardOrder,
   createBoletoOrder,
+  createSubscription,
   type PixResponse
 } from '@/services/pagbankService'
 
@@ -34,6 +36,14 @@ export default function Checkout() {
   // Dados Boleto
   const [boletoUrl, setBoletoUrl] = useState('')
   const [showBoletoModal, setShowBoletoModal] = useState(false)
+
+  // Cupom de desconto
+  const [couponCode, setCouponCode] = useState('')
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
+  const [couponSuccess, setCouponSuccess] = useState(false)
+  const [validatedCouponId, setValidatedCouponId] = useState<string | null>(null)
 
   // Dados do usuário vindos do formulário de cadastro
   const userData = location.state as {
@@ -69,6 +79,94 @@ export default function Checkout() {
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d{1,2})/, '$1-$2')
       .replace(/(-\d{2})\d+?$/, '$1')
+  }
+
+  // Calcular preço final com desconto
+  const finalPrice = PLAN_PRICE * (1 - couponDiscount / 100)
+
+  // Validar cupom
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Digite um código de cupom')
+      return
+    }
+
+    try {
+      setCouponLoading(true)
+      setCouponError('')
+      setCouponSuccess(false)
+
+      // Buscar cupom no banco
+      const { data: coupon, error } = await supabase
+        .from('discount_coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase())
+        .single()
+
+      if (error || !coupon) {
+        setCouponError('Cupom inválido')
+        return
+      }
+
+      // Validar se está ativo
+      if (!coupon.is_active) {
+        setCouponError('Este cupom não está mais ativo')
+        return
+      }
+
+      // Validar data de validade
+      if (coupon.valid_until) {
+        const expiryDate = new Date(coupon.valid_until)
+        if (expiryDate < new Date()) {
+          setCouponError('Este cupom expirou')
+          return
+        }
+      }
+
+      // Validar número de usos
+      if (coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses) {
+        setCouponError('Este cupom atingiu o limite de usos')
+        return
+      }
+
+      // Cupom válido!
+      setCouponDiscount(coupon.discount_percentage)
+      setCouponSuccess(true)
+      setValidatedCouponId(coupon.id)
+      setCouponError('')
+    } catch (error: any) {
+      console.error('Erro ao validar cupom:', error)
+      setCouponError('Erro ao validar cupom. Tente novamente.')
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  // Remover cupom
+  const removeCoupon = () => {
+    setCouponCode('')
+    setCouponDiscount(0)
+    setCouponSuccess(false)
+    setValidatedCouponId(null)
+    setCouponError('')
+  }
+
+  // Registrar uso do cupom
+  const registerCouponUsage = async (couponId: string, orderAmount: number) => {
+    try {
+      // Incrementar contador de usos
+      await supabase.rpc('increment_coupon_usage', { coupon_id: couponId })
+
+      // Registrar uso na tabela coupon_usage
+      await supabase.from('coupon_usage').insert({
+        coupon_id: couponId,
+        user_email: userData!.email,
+        order_amount: orderAmount,
+        discount_amount: orderAmount * (couponDiscount / 100)
+      })
+    } catch (error) {
+      console.error('Erro ao registrar uso do cupom:', error)
+    }
   }
 
   const handlePixPayment = async () => {
@@ -119,8 +217,8 @@ export default function Checkout() {
         throw new Error('Data de validade inválida')
       }
 
-      // Processar pagamento com cartão
-      const cardResponse = await createCardOrder({
+      // 🔄 CRIAR ASSINATURA RECORRENTE (Cobrança automática mensal)
+      const subscriptionResponse = await createSubscription({
         customerEmail: userData!.email,
         customerName: userData!.name,
         customerPhone: userData!.phone,
@@ -138,14 +236,39 @@ export default function Checkout() {
         throw new Error('Erro ao criar conta')
       }
 
+      // Registrar uso de cupom se houver
+      if (validatedCouponId) {
+        await registerCouponUsage(validatedCouponId, finalPrice)
+      }
+
+      // Salvar assinatura no banco de dados
+      const { data: userData2 } = await supabase.auth.getUser()
+      if (userData2.user) {
+        await supabase.from('user_subscriptions').insert({
+          user_id: userData2.user.id,
+          pagbank_subscription_id: subscriptionResponse.id,
+          status: 'active',
+          plan_amount: finalPrice,
+          billing_cycle: 'MONTHLY',
+          next_billing_date: subscriptionResponse.nextBillingDate,
+          payment_method: 'CREDIT_CARD',
+          card_last_digits: subscriptionResponse.cardLastDigits,
+          card_brand: subscriptionResponse.cardBrand,
+          coupon_id: validatedCouponId,
+          discount_percentage: couponDiscount,
+        })
+      }
+
       // Sucesso!
       alert(`
-🎉 Pagamento aprovado!
+🎉 Assinatura criada com sucesso!
 
-💳 ID da transação: ${cardResponse.id}
-💰 Valor: R$ ${cardResponse.amount.toFixed(2)}
+💳 Cartão: **** **** **** ${subscriptionResponse.cardLastDigits}
+💰 Valor mensal: R$ ${finalPrice.toFixed(2)}
+📅 Próxima cobrança: ${new Date(subscriptionResponse.nextBillingDate).toLocaleDateString('pt-BR')}
 
 ✅ Sua conta foi criada e o acesso está liberado!
+🔄 Você será cobrado automaticamente todo mês no mesmo cartão.
       `)
 
       setTimeout(() => {
