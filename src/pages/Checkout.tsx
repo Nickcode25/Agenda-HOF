@@ -4,6 +4,7 @@ import { Check, CreditCard, Lock, ArrowLeft, AlertCircle, QrCode, Download, X, T
 import { useAuth } from '@/store/auth'
 import { PLAN_PRICE } from '@/lib/pagbank'
 import { supabase } from '@/lib/supabase'
+import { supabaseAnon } from '@/lib/supabaseAnon'
 import {
   createPixOrder,
   createCardOrder,
@@ -96,20 +97,8 @@ export default function Checkout() {
       setCouponError('')
       setCouponSuccess(false)
 
-      // Criar cliente anônimo para buscar cupons (usuário ainda não tem conta)
-      const { createClient } = await import('@supabase/supabase-js')
-      const anonClient = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY,
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          }
-        }
-      )
-
-      const { data: coupon, error } = await anonClient
+      // Usar cliente anônimo dedicado para buscar cupons (usuário ainda não tem conta)
+      const { data: coupon, error } = await supabaseAnon
         .from('discount_coupons')
         .select('*')
         .eq('code', couponCode.toUpperCase())
