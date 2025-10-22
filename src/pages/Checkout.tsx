@@ -96,11 +96,25 @@ export default function Checkout() {
       setCouponError('')
       setCouponSuccess(false)
 
-      // Buscar cupom no banco
-      const { data: coupon, error } = await supabase
+      // Criar um cliente temporário sem autenticação para buscar cupons públicos
+      const { createClient } = await import('@supabase/supabase-js')
+      const anonClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }
+      )
+
+      // Buscar cupom no banco usando cliente anônimo
+      const { data: coupon, error } = await anonClient
         .from('discount_coupons')
         .select('*')
         .eq('code', couponCode.toUpperCase())
+        .eq('is_active', true)
         .single()
 
       if (error || !coupon) {
