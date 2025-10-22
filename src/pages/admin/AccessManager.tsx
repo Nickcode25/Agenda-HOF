@@ -40,27 +40,25 @@ export default function AccessManager() {
     try {
       setLoading(true)
 
-      // Buscar todos os usuários
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (usersError) throw usersError
-
-      // Buscar todas as subscriptions
+      // Buscar todas as subscriptions com dados do usuário
       const { data: subscriptionsData, error: subsError } = await supabase
         .from('user_subscriptions')
         .select('*')
 
       if (subsError) throw subsError
 
-      // Combinar dados
-      const usersWithSubs: UserWithSubscription[] = (usersData || []).map(user => {
-        const subscription = subscriptionsData?.find(sub => sub.user_id === user.id)
+      // Para cada subscription, precisamos buscar o email do usuário via API admin
+      // Como não temos acesso direto à tabela auth.users, vamos usar apenas subscriptions
+      // e criar uma estrutura de usuário baseada no user_id
+
+      // Por enquanto, vamos mostrar apenas usuários com subscriptions
+      const usersWithSubs: UserWithSubscription[] = (subscriptionsData || []).map(sub => {
         return {
-          ...user,
-          subscription
+          id: sub.user_id,
+          email: 'Usuário com subscription', // Placeholder - vamos melhorar isso
+          created_at: sub.created_at,
+          user_metadata: {},
+          subscription: sub
         }
       })
 
