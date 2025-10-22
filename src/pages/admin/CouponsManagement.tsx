@@ -303,8 +303,8 @@ export default function CouponsManagement() {
 
       {/* Modal Premium */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="backdrop-blur-2xl bg-gradient-to-br from-gray-900/95 to-gray-800/95 rounded-3xl p-10 max-w-lg w-full border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+          <div className="backdrop-blur-2xl bg-gradient-to-br from-gray-900/95 to-gray-800/95 rounded-3xl p-10 max-w-lg w-full border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300 my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="flex items-center gap-4 mb-8">
               <div className="p-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-lg shadow-orange-500/50">
                 <Tag className="text-2xl text-white" />
