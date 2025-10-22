@@ -1,7 +1,11 @@
 const express = require('express')
 const cors = require('cors')
 const fetch = require('node-fetch')
-require('dotenv').config()
+
+// Carregar .env apenas se não estiver em produção
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -21,7 +25,9 @@ const PAGBANK_API_URL = process.env.NODE_ENV === 'production'
 
 // Validar token
 if (!PAGBANK_TOKEN) {
-  console.error('❌ PAGBANK_TOKEN não configurado no .env')
+  console.error('❌ PAGBANK_TOKEN não configurado')
+  console.error('NODE_ENV:', process.env.NODE_ENV)
+  console.error('Variáveis que começam com PAG:', Object.keys(process.env).filter(k => k.includes('PAG')))
   process.exit(1)
 }
 
@@ -297,6 +303,236 @@ app.get('/api/pagbank/check-status/:orderId', async (req, res) => {
   }
 })
 
+// ===============================================
+// ASSINATURAS RECORRENTES
+// ===============================================
+
+// Criar assinatura (cobrança automática mensal)
+app.post('/api/pagbank/create-subscription', async (req, res) => {
+  try {
+    const {
+      customerEmail,
+      customerName,
+      customerPhone,
+      cardNumber,
+      cardHolderName,
+      cardExpiryMonth,
+      cardExpiryYear,
+      cardCvv,
+      cardHolderCpf,
+      amount,
+      planName
+    } = req.body
+
+    console.log('🔄 Criando assinatura recorrente:', { customerEmail, cardNumber: '****' + cardNumber.slice(-4) })
+
+    // Criar plano de assinatura (ou usar um existente)
+    const planResponse = await fetch(`${PAGBANK_API_URL}/plans`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
+      },
+      body: JSON.stringify({
+        reference_id: `PLAN_HOF_${Date.now()}`,
+        name: planName || 'Agenda+ HOF - Plano Mensal',
+        description: 'Plano mensal com cobrança automática',
+        amount: {
+          value: Math.round(amount * 100),
+          currency: 'BRL'
+        },
+        interval: {
+          unit: 'MONTH',
+          length: 1
+        }
+      })
+    })
+
+    const planData = await planResponse.json()
+
+    if (!planResponse.ok) {
+      console.error('❌ Erro ao criar plano:', planData)
+      return res.status(planResponse.status).json({
+        error: planData.error_messages?.[0]?.description || 'Erro ao criar plano',
+        details: planData
+      })
+    }
+
+    console.log('✅ Plano criado:', planData.id)
+
+    // Criar assinatura vinculada ao plano
+    const subscriptionResponse = await fetch(`${PAGBANK_API_URL}/subscriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
+      },
+      body: JSON.stringify({
+        reference_id: `SUB_HOF_${Date.now()}`,
+        plan_id: planData.id,
+        customer: {
+          name: customerName,
+          email: customerEmail,
+          tax_id: cardHolderCpf.replace(/\D/g, ''),
+          phones: customerPhone ? [{
+            country: '55',
+            area: customerPhone.replace(/\D/g, '').substring(0, 2),
+            number: customerPhone.replace(/\D/g, '').substring(2),
+            type: 'MOBILE'
+          }] : undefined
+        },
+        payment_method: [{
+          type: 'CREDIT_CARD',
+          card: {
+            number: cardNumber.replace(/\s/g, ''),
+            exp_month: cardExpiryMonth,
+            exp_year: cardExpiryYear,
+            security_code: cardCvv,
+            holder: {
+              name: cardHolderName,
+              tax_id: cardHolderCpf.replace(/\D/g, '')
+            }
+          }
+        }]
+      })
+    })
+
+    const subscriptionData = await subscriptionResponse.json()
+
+    if (!subscriptionResponse.ok) {
+      console.error('❌ Erro ao criar assinatura:', subscriptionData)
+      return res.status(subscriptionResponse.status).json({
+        error: subscriptionData.error_messages?.[0]?.description || 'Erro ao criar assinatura',
+        details: subscriptionData
+      })
+    }
+
+    console.log('✅ Assinatura criada:', subscriptionData.id, 'Status:', subscriptionData.status)
+
+    res.json({
+      id: subscriptionData.id,
+      planId: planData.id,
+      status: subscriptionData.status,
+      amount: amount,
+      nextBillingDate: subscriptionData.next_invoice_at,
+      cardLastDigits: cardNumber.slice(-4),
+      cardBrand: subscriptionData.payment_method?.[0]?.card?.brand || 'UNKNOWN'
+    })
+  } catch (error) {
+    console.error('❌ Erro ao criar assinatura:', error)
+    res.status(500).json({
+      error: 'Erro interno ao criar assinatura',
+      message: error.message
+    })
+  }
+})
+
+// Cancelar assinatura
+app.post('/api/pagbank/cancel-subscription/:subscriptionId', async (req, res) => {
+  try {
+    const { subscriptionId } = req.params
+
+    console.log('🚫 Cancelando assinatura:', subscriptionId)
+
+    const response = await fetch(`${PAGBANK_API_URL}/subscriptions/${subscriptionId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
+      }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('❌ Erro ao cancelar:', data)
+      return res.status(response.status).json({
+        error: data.error_messages?.[0]?.description || 'Erro ao cancelar assinatura',
+        details: data
+      })
+    }
+
+    console.log('✅ Assinatura cancelada:', subscriptionId)
+
+    res.json({
+      success: true,
+      status: data.status
+    })
+  } catch (error) {
+    console.error('❌ Erro ao cancelar assinatura:', error)
+    res.status(500).json({
+      error: 'Erro interno ao cancelar assinatura',
+      message: error.message
+    })
+  }
+})
+
+// Webhook - Receber notificações do PagBank
+app.post('/api/pagbank/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const event = req.body
+
+    console.log('📬 Webhook recebido:', {
+      type: event.type,
+      id: event.id,
+      created_at: event.created_at
+    })
+
+    // Aqui você deve validar a assinatura do webhook
+    // O PagBank envia um header x-pagseguro-signature que deve ser validado
+
+    // Processar diferentes tipos de eventos
+    switch (event.type) {
+      case 'SUBSCRIPTION.CREATED':
+        console.log('🆕 Nova assinatura criada:', event.data.id)
+        // TODO: Salvar no banco de dados
+        break
+
+      case 'SUBSCRIPTION.ACTIVATED':
+        console.log('✅ Assinatura ativada:', event.data.id)
+        // TODO: Ativar acesso do usuário
+        break
+
+      case 'SUBSCRIPTION.SUSPENDED':
+        console.log('⚠️ Assinatura suspensa:', event.data.id)
+        // TODO: Suspender acesso do usuário
+        break
+
+      case 'SUBSCRIPTION.CANCELLED':
+        console.log('🚫 Assinatura cancelada:', event.data.id)
+        // TODO: Desativar acesso do usuário
+        break
+
+      case 'CHARGE.PAID':
+        console.log('💰 Pagamento confirmado:', event.data.id)
+        // TODO: Registrar pagamento no banco
+        break
+
+      case 'CHARGE.FAILED':
+        console.log('❌ Pagamento falhou:', event.data.id)
+        // TODO: Notificar usuário e tentar novamente
+        break
+
+      default:
+        console.log('❓ Evento não tratado:', event.type)
+    }
+
+    // TODO: Salvar webhook no banco para processamento posterior
+    // await supabase.from('pagbank_webhooks').insert({
+    //   event_type: event.type,
+    //   subscription_id: event.data?.id,
+    //   payload: event,
+    //   processed: false
+    // })
+
+    // Sempre retornar 200 OK para o PagBank saber que recebemos
+    res.status(200).json({ received: true })
+  } catch (error) {
+    console.error('❌ Erro ao processar webhook:', error)
+    res.status(500).json({ error: 'Erro ao processar webhook' })
+  }
+})
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log('\n🚀 Backend Agenda HOF iniciado!')
@@ -306,6 +542,9 @@ app.listen(PORT, () => {
   console.log('  - GET  /health')
   console.log('  - POST /api/pagbank/create-pix')
   console.log('  - POST /api/pagbank/create-card-charge')
+  console.log('  - POST /api/pagbank/create-subscription ⭐ NOVO')
+  console.log('  - POST /api/pagbank/cancel-subscription/:id ⭐ NOVO')
+  console.log('  - POST /api/pagbank/webhook ⭐ NOVO')
   console.log('  - POST /api/pagbank/create-boleto')
   console.log('  - GET  /api/pagbank/check-status/:orderId')
   console.log('\n💡 Use Ctrl+C para parar o servidor\n')
