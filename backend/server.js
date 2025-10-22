@@ -78,6 +78,9 @@ app.post('/api/pagbank/create-pix', async (req, res) => {
 
     console.log('📱 Criando pedido PIX:', { customerEmail, customerName, amount })
 
+    console.log('🔑 Token sendo usado:', PAGBANK_TOKEN.substring(0, 20) + '...')
+    console.log('🌐 API URL:', PAGBANK_API_URL)
+
     const response = await fetch(`${PAGBANK_API_URL}/orders`, {
       method: 'POST',
       headers: {
@@ -110,7 +113,26 @@ app.post('/api/pagbank/create-pix', async (req, res) => {
       }),
     })
 
-    const data = await response.json()
+    console.log('📡 Status da resposta:', response.status, response.statusText)
+    console.log('📋 Headers da resposta:', Object.fromEntries(response.headers.entries()))
+
+    // Tentar ler como texto primeiro para ver se é HTML ou JSON
+    const responseText = await response.text()
+    console.log('📄 Resposta bruta (primeiros 500 chars):', responseText.substring(0, 500))
+
+    let data
+    try {
+      data = JSON.parse(responseText)
+    } catch (e) {
+      console.error('❌ Resposta não é JSON válido!')
+      console.error('Tipo de conteúdo:', response.headers.get('content-type'))
+      return res.status(500).json({
+        error: 'PagBank retornou resposta inválida (não-JSON)',
+        hint: 'Provavelmente problema de whitelist ou token inválido',
+        statusCode: response.status,
+        responsePreview: responseText.substring(0, 200)
+      })
+    }
 
     if (!response.ok) {
       console.error('❌ Erro do PagBank:', data)
