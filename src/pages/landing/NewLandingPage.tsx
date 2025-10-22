@@ -124,14 +124,12 @@ export default function NewLandingPage() {
 
     try {
       // Criar conta imediatamente antes de ir para checkout
-      const { signUp } = await import('@/store/auth')
       const authStore = useAuth.getState()
 
       const success = await authStore.signUp(
         email,
         password,
-        fullName,
-        phone
+        fullName
       )
 
       if (!success) {
