@@ -23,11 +23,19 @@ const PAGBANK_API_URL = process.env.NODE_ENV === 'production'
   ? 'https://api.pagseguro.com'
   : 'https://sandbox.api.pagseguro.com'
 
+// Debug de variáveis
+console.log('🔍 Debug de variáveis:')
+console.log('NODE_ENV:', process.env.NODE_ENV)
+console.log('PAGBANK_TOKEN existe?', !!process.env.PAGBANK_TOKEN)
+console.log('PAGBANK_TOKEN length:', process.env.PAGBANK_TOKEN?.length)
+console.log('PAGBANK_TOKEN primeiros 20 chars:', process.env.PAGBANK_TOKEN?.substring(0, 20))
+console.log('Tipo do token:', typeof process.env.PAGBANK_TOKEN)
+console.log('PORT:', process.env.PORT)
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL)
+
 // Validar token
-if (!PAGBANK_TOKEN) {
-  console.error('❌ PAGBANK_TOKEN não configurado')
-  console.error('NODE_ENV:', process.env.NODE_ENV)
-  console.error('Variáveis que começam com PAG:', Object.keys(process.env).filter(k => k.includes('PAG')))
+if (!PAGBANK_TOKEN || PAGBANK_TOKEN.trim() === '') {
+  console.error('❌ PAGBANK_TOKEN não configurado ou vazio')
   process.exit(1)
 }
 
