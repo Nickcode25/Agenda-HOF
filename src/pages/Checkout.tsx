@@ -227,11 +227,26 @@ export default function Checkout() {
       // Criar conta do usuário ANTES de fazer o pagamento (apenas se não existir)
       if (!userData!.existingUser) {
         console.log('👤 Criando conta do usuário...')
-        const success = await signUp(userData!.email, userData!.password, userData!.name)
-        if (!success) {
-          throw new Error('Erro ao criar conta. Tente novamente.')
+
+        // Criar conta diretamente com Supabase Auth
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: userData!.email,
+          password: userData!.password,
+          options: {
+            data: {
+              full_name: userData!.name
+            }
+          }
+        })
+
+        if (signUpError || !signUpData.user) {
+          throw new Error(signUpError?.message || 'Erro ao criar conta. Tente novamente.')
         }
-        console.log('✅ Conta criada com sucesso!')
+
+        console.log('✅ Conta criada com sucesso! User ID:', signUpData.user.id)
+
+        // Aguardar um momento para garantir que a sessão foi persistida
+        await new Promise(resolve => setTimeout(resolve, 500))
       }
 
       console.log('💳 Criando token do cartão...')
