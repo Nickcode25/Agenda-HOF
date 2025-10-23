@@ -224,6 +224,16 @@ export default function Checkout() {
         throw new Error('CPF inválido')
       }
 
+      // Criar conta do usuário ANTES de fazer o pagamento (apenas se não existir)
+      if (!userData!.existingUser) {
+        console.log('👤 Criando conta do usuário...')
+        const success = await signUp(userData!.email, userData!.password, userData!.name)
+        if (!success) {
+          throw new Error('Erro ao criar conta. Tente novamente.')
+        }
+        console.log('✅ Conta criada com sucesso!')
+      }
+
       console.log('💳 Criando token do cartão...')
 
       // Criar token do cartão
@@ -242,14 +252,6 @@ export default function Checkout() {
       })
 
       console.log('✅ Assinatura criada:', subscriptionResponse)
-
-      // Criar conta do usuário (apenas se não existir)
-      if (!userData!.existingUser) {
-        const success = await signUp(userData!.email, userData!.password, userData!.name)
-        if (!success) {
-          throw new Error('Pagamento aprovado mas erro ao criar conta. Entre em contato com suporte.')
-        }
-      }
 
       // Registrar uso de cupom se houver
       if (validatedCouponId) {
