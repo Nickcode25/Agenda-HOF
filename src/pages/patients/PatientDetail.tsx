@@ -193,46 +193,61 @@ export default function PatientDetail() {
   }
 
   const handleCompleteProcedure = async () => {
-    if (!patient || !completingProcedure || !selectedProductId) return
+    if (!patient || !completingProcedure) return
 
-    // Buscar o produto selecionado
-    const product = stockItems.find(item => item.id === selectedProductId)
-    if (!product) {
-      showToast('Produto não encontrado', 'error')
+    // Verificar se o procedimento tem categoria vinculada
+    const procedureData = procedures.find(p => p.name === completingProcedure.procedureName)
+    const hasCategory = !!procedureData?.category
+
+    // Se tem categoria, produto é obrigatório
+    if (hasCategory && !selectedProductId) {
+      showToast('Selecione o produto utilizado', 'error')
       return
     }
 
-    // Verificar se há estoque suficiente
-    if (product.quantity < completingProcedure.quantity) {
-      showToast(`Estoque insuficiente de ${product.name}. Disponível: ${product.quantity} ${product.unit}`, 'error')
-      return
+    let product = null
+
+    // Se tem produto selecionado, processar o estoque
+    if (selectedProductId) {
+      // Buscar o produto selecionado
+      product = stockItems.find(item => item.id === selectedProductId)
+      if (!product) {
+        showToast('Produto não encontrado', 'error')
+        return
+      }
+
+      // Verificar se há estoque suficiente
+      if (product.quantity < completingProcedure.quantity) {
+        showToast(`Estoque insuficiente de ${product.name}. Disponível: ${product.quantity} ${product.unit}`, 'error')
+        return
+      }
+
+      // Consumir do estoque usando a função removeStock do store
+      const { removeStock, fetchItems } = useStock.getState()
+
+      console.log('🔄 Consumindo estoque:', {
+        productId: selectedProductId,
+        productName: product.name,
+        quantity: completingProcedure.quantity,
+        currentStock: product.quantity
+      })
+
+      const success = await removeStock(
+        selectedProductId,
+        completingProcedure.quantity,
+        `Procedimento: ${completingProcedure.procedureName} - Paciente: ${patient.name}`,
+        completingProcedure.id,
+        patient.id
+      )
+
+      if (!success) {
+        showToast('Erro ao atualizar estoque. Tente novamente.', 'error')
+        return
+      }
+
+      // Forçar atualização do estoque
+      await fetchItems(true)
     }
-
-    // Consumir do estoque usando a função removeStock do store
-    const { removeStock, fetchItems } = useStock.getState()
-
-    console.log('🔄 Consumindo estoque:', {
-      productId: selectedProductId,
-      productName: product.name,
-      quantity: completingProcedure.quantity,
-      currentStock: product.quantity
-    })
-
-    const success = await removeStock(
-      selectedProductId,
-      completingProcedure.quantity,
-      `Procedimento: ${completingProcedure.procedureName} - Paciente: ${patient.name}`,
-      completingProcedure.id,
-      patient.id
-    )
-
-    if (!success) {
-      showToast('Erro ao atualizar estoque. Tente novamente.', 'error')
-      return
-    }
-
-    // Forçar atualização do estoque
-    await fetchItems(true)
 
     // Preparar fotos
     const photos: ProcedurePhoto[] = []
@@ -264,8 +279,8 @@ export default function PatientDetail() {
         ...p,
         status: 'completed' as PlannedProcedure['status'],
         completedAt: new Date().toISOString(),
-        usedProductId: selectedProductId,
-        usedProductName: product.name,
+        usedProductId: product ? selectedProductId : undefined,
+        usedProductName: product ? product.name : undefined,
         photos: photos.length > 0 ? photos : undefined
       } : p
     )
@@ -1006,30 +1021,50 @@ export default function PatientDetail() {
             <div className="p-6 overflow-y-auto flex-1">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Selecione o produto utilizado *
-                  </label>
-
                   {(() => {
                     // Obter categoria do procedimento
                     const procedureData = procedures.find(p => p.name === completingProcedure.procedureName)
+                    const hasCategory = !!procedureData?.category
                     const categoryProducts = procedureData?.category
                       ? stockItems.filter(item => item.category === procedureData.category)
                       : []
 
-                    if (categoryProducts.length === 0) {
+                    // Se não tem categoria, mostrar aviso e pular seleção de produto
+                    if (!hasCategory) {
                       return (
-                        <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                          <AlertTriangle size={20} className="text-yellow-500" />
-                          <p className="text-sm text-yellow-500">
-                            Nenhum produto encontrado na categoria "{procedureData?.category}".
+                        <div className="flex items-center gap-2 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <AlertTriangle size={20} className="text-blue-400" />
+                          <p className="text-sm text-blue-400">
+                            Este procedimento não está vinculado a nenhuma categoria de produto. Você pode concluir sem selecionar produto.
                           </p>
                         </div>
                       )
                     }
 
+                    // Se tem categoria mas não tem produtos
+                    if (categoryProducts.length === 0) {
+                      return (
+                        <>
+                          <label className="block text-sm font-medium text-gray-300 mb-3">
+                            Selecione o produto utilizado *
+                          </label>
+                          <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                            <AlertTriangle size={20} className="text-yellow-500" />
+                            <p className="text-sm text-yellow-500">
+                              Nenhum produto encontrado na categoria "{procedureData?.category}".
+                            </p>
+                          </div>
+                        </>
+                      )
+                    }
+
+                    // Se tem categoria e produtos, mostrar seleção
                     return (
-                      <div className="grid grid-cols-1 gap-3">
+                      <>
+                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                          Selecione o produto utilizado *
+                        </label>
+                        <div className="grid grid-cols-1 gap-3">
                         {categoryProducts.map(product => (
                           <label
                             key={product.id}
@@ -1074,7 +1109,8 @@ export default function PatientDetail() {
                             </div>
                           </label>
                         ))}
-                      </div>
+                        </div>
+                      </>
                     )
                   })()}
                 </div>
@@ -1213,7 +1249,18 @@ export default function PatientDetail() {
               </button>
               <button
                 onClick={handleCompleteProcedure}
-                disabled={!selectedProductId || (() => {
+                disabled={(() => {
+                  // Verificar se procedimento tem categoria
+                  const procedureData = procedures.find(p => p.name === completingProcedure.procedureName)
+                  const hasCategory = !!procedureData?.category
+
+                  // Se não tem categoria, pode concluir sem produto
+                  if (!hasCategory) return false
+
+                  // Se tem categoria mas não selecionou produto, desabilitar
+                  if (!selectedProductId) return true
+
+                  // Se selecionou produto, verificar estoque
                   const product = stockItems.find(item => item.id === selectedProductId)
                   return product ? product.quantity < completingProcedure.quantity : true
                 })()}

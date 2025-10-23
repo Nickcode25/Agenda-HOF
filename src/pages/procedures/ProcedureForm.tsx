@@ -15,6 +15,7 @@ export default function ProcedureForm() {
   const [cashValue, setCashValue] = useState('')
   const [cardValue, setCardValue] = useState('')
   const [category, setCategory] = useState('')
+  const [customCategory, setCustomCategory] = useState('')
 
   // Carregar itens do estoque ao montar o componente
   useEffect(() => {
@@ -24,8 +25,12 @@ export default function ProcedureForm() {
   // Categorias fixas de procedimentos em ordem alfabética
   const procedureCategories = [
     'Bioestimuladores de Colágeno',
+    'Fios de Sustentação (PDO)',
     'Preenchedores de Ácido Hialurônico',
-    'Toxina Botulínica'
+    'Tecnologia / Equipamentos',
+    'Toxina Botulínica',
+    'Tratamentos Vasculares',
+    'Outros'
   ]
 
 
@@ -64,6 +69,7 @@ export default function ProcedureForm() {
     const data = new FormData(e.currentTarget)
 
     const durationValue = data.get('duration')
+    const finalCategory = category === 'Outros' ? customCategory : category
     const procedureData = {
       name: String(data.get('name')||''),
       price: value ? parseCurrency(value) : 0,
@@ -71,9 +77,9 @@ export default function ProcedureForm() {
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: String(data.get('description')||''),
       durationMinutes: durationValue ? Number(durationValue) : 0,
-      category: category || undefined,
+      category: finalCategory || undefined,
       isActive: true,
-      stockCategories: category ? [{ category, quantityUsed: 1 }] : []
+      stockCategories: finalCategory ? [{ category: finalCategory, quantityUsed: 1 }] : []
     }
 
     const id = await add(procedureData)
@@ -133,6 +139,22 @@ export default function ProcedureForm() {
               Selecione a categoria de produto deste procedimento
             </p>
           </div>
+
+          {category === 'Outros' && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">Digite a Categoria Personalizada *</label>
+              <input
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Ex: Peeling, Microagulhamento, etc..."
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                required
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Digite o nome da categoria personalizada
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Valor à Vista</label>
