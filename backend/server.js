@@ -73,7 +73,9 @@ app.get('/health', (req, res) => {
     status: 'OK',
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
-    paymentProvider: 'Mercado Pago'
+    paymentProvider: 'Mercado Pago',
+    credentialType: MERCADOPAGO_ACCESS_TOKEN?.startsWith('TEST-') ? 'TEST' : 'PRODUCTION',
+    credentialPrefix: MERCADOPAGO_ACCESS_TOKEN?.substring(0, 20)
   })
 })
 
