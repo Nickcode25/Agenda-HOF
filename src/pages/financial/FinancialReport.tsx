@@ -147,8 +147,28 @@ export default function FinancialReport() {
     return { total, count, items: subscriptionMovements }
   }, [sessions, movements, periodFilter, selectedDate])
 
-  const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total
-  const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count
+  // Outras receitas (do caixa fechado) - parcelas, consultas, etc
+  const otherRevenue = useMemo(() => {
+    const closedSessions = sessions.filter(s =>
+      s.status === 'closed' &&
+      s.closedAt &&
+      filterByPeriod(selectedDate, new Date(s.closedAt))
+    )
+
+    const otherMovements = movements.filter(m =>
+      m.category === 'other' &&
+      m.type === 'income' &&
+      closedSessions.some(s => s.id === m.cashSessionId)
+    )
+
+    const total = otherMovements.reduce((sum, m) => sum + m.amount, 0)
+    const count = otherMovements.length
+
+    return { total, count, items: otherMovements }
+  }, [sessions, movements, periodFilter, selectedDate])
+
+  const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total + otherRevenue.total
+  const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count + otherRevenue.count
 
   // Despesas do período
   const expensesTotal = useMemo(() => {
@@ -166,6 +186,7 @@ export default function FinancialReport() {
   const procedurePercentage = totalRevenue > 0 ? (procedureRevenue.total / totalRevenue) * 100 : 0
   const salesPercentage = totalRevenue > 0 ? (salesRevenue.total / totalRevenue) * 100 : 0
   const subscriptionPercentage = totalRevenue > 0 ? (subscriptionRevenue.total / totalRevenue) * 100 : 0
+  const otherPercentage = totalRevenue > 0 ? (otherRevenue.total / totalRevenue) * 100 : 0
 
   const getPeriodLabel = () => {
     const date = new Date(selectedDate)
@@ -382,6 +403,17 @@ export default function FinancialReport() {
           <p className="text-xs text-gray-400 mt-1">{subscriptionRevenue.count} pagamentos</p>
         </div>
 
+        <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/30 rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 bg-cyan-500/20 rounded-lg">
+              <Receipt size={20} className="text-cyan-400" />
+            </div>
+            <h3 className="text-sm font-medium text-gray-300">Outras Receitas</h3>
+          </div>
+          <p className="text-2xl font-bold text-cyan-400">{formatCurrency(otherRevenue.total)}</p>
+          <p className="text-xs text-gray-400 mt-1">{otherRevenue.count} lançamentos</p>
+        </div>
+
         <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-red-500/20 rounded-lg">
@@ -475,6 +507,26 @@ export default function FinancialReport() {
               ></div>
             </div>
           </div>
+
+          {/* Outras Receitas */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Receipt size={16} className="text-cyan-400" />
+                <span className="text-white font-medium">Outras Receitas</span>
+              </div>
+              <div className="text-right">
+                <span className="text-cyan-400 font-bold">{formatCurrency(otherRevenue.total)}</span>
+                <span className="text-gray-400 text-sm ml-2">({otherPercentage.toFixed(1)}%)</span>
+              </div>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-3">
+              <div
+                className="bg-gradient-to-r from-cyan-500 to-cyan-600 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${otherPercentage}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -556,7 +608,7 @@ export default function FinancialReport() {
 
         {totalTransactions > 0 ? (
           <div className="space-y-3">
-            {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items]
+            {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items]
               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
               .map((movement) => {
                 const categoryColors = {
@@ -564,7 +616,7 @@ export default function FinancialReport() {
                   sale: 'orange',
                   subscription: 'purple',
                   expense: 'red',
-                  other: 'gray'
+                  other: 'cyan'
                 }
                 const color = categoryColors[movement.category as keyof typeof categoryColors] || 'gray'
 
@@ -573,7 +625,7 @@ export default function FinancialReport() {
                   sale: 'venda',
                   subscription: 'mensalidade',
                   expense: 'despesa',
-                  other: 'outro'
+                  other: 'outra receita'
                 }
 
                 return (
