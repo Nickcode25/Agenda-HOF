@@ -108,46 +108,85 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
       })
     }
 
-    // Preparar dados da assinatura
-    const subscriptionData = {
-      reason: planName || 'Agenda+ HOF - Plano Profissional',
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: 'months',
+    // Detectar se está em modo TEST
+    const isTestMode = MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')
+
+    console.log('🧪 Modo:', isTestMode ? 'TESTE' : 'PRODUÇÃO')
+
+    if (isTestMode) {
+      // No modo TEST, usar Payment ao invés de PreApproval
+      console.log('💳 Usando Payment API (modo teste)')
+
+      const paymentData = {
         transaction_amount: amount,
-        currency_id: 'BRL',
-        free_trial: {
-          frequency: 0,
-          frequency_type: 'months'
+        token: cardToken,
+        description: planName || 'Agenda+ HOF - Plano Profissional',
+        installments: 1,
+        payment_method_id: 'master', // ou 'visa', dependendo do cartão
+        payer: {
+          email: customerEmail,
+          identification: {
+            type: 'CPF',
+            number: customerPhone || '00000000000'
+          }
         }
-      },
-      back_url: `${process.env.FRONTEND_URL}/app/agenda`,
-      payer_email: customerEmail,
-      status: 'authorized'
+      }
+
+      console.log('📦 Dados do pagamento:', JSON.stringify(paymentData, null, 2))
+
+      const payment = await paymentClient.create({
+        body: paymentData
+      })
+
+      console.log('✅ Pagamento criado:', payment.id, 'Status:', payment.status)
+
+      res.json({
+        id: payment.id,
+        status: payment.status === 'approved' ? 'authorized' : payment.status,
+        amount: amount,
+        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        cardLastDigits: payment.card?.last_four_digits || '****',
+        cardBrand: payment.payment_method_id || 'UNKNOWN'
+      })
+    } else {
+      // No modo PRODUÇÃO, usar PreApproval normalmente
+      console.log('🔄 Usando PreApproval API (modo produção)')
+
+      const subscriptionData = {
+        reason: planName || 'Agenda+ HOF - Plano Profissional',
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: amount,
+          currency_id: 'BRL',
+          free_trial: {
+            frequency: 0,
+            frequency_type: 'months'
+          }
+        },
+        back_url: `${process.env.FRONTEND_URL}/app/agenda`,
+        payer_email: customerEmail,
+        card_token_id: cardToken,
+        status: 'authorized'
+      }
+
+      console.log('📦 Dados da assinatura:', JSON.stringify(subscriptionData, null, 2))
+
+      const subscription = await preApprovalClient.create({
+        body: subscriptionData
+      })
+
+      console.log('✅ Assinatura criada:', subscription.id, 'Status:', subscription.status)
+
+      res.json({
+        id: subscription.id,
+        status: subscription.status,
+        amount: amount,
+        nextBillingDate: subscription.next_payment_date,
+        cardLastDigits: subscription.summarized?.last_four_digits || '****',
+        cardBrand: subscription.payment_method_id || 'UNKNOWN'
+      })
     }
-
-    // Adicionar card_token_id apenas se fornecido
-    if (cardToken) {
-      subscriptionData.card_token_id = cardToken
-    }
-
-    console.log('📦 Dados da assinatura:', JSON.stringify(subscriptionData, null, 2))
-
-    // Criar assinatura recorrente
-    const subscription = await preApprovalClient.create({
-      body: subscriptionData
-    })
-
-    console.log('✅ Assinatura criada:', subscription.id, 'Status:', subscription.status)
-
-    res.json({
-      id: subscription.id,
-      status: subscription.status,
-      amount: amount,
-      nextBillingDate: subscription.next_payment_date,
-      cardLastDigits: subscription.summarized?.last_four_digits || '****',
-      cardBrand: subscription.payment_method_id || 'UNKNOWN'
-    })
   } catch (error) {
     console.error('❌ Erro ao criar assinatura:')
     console.error('  - Message:', error.message)
