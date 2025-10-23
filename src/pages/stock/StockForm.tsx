@@ -233,9 +233,13 @@ export default function StockForm() {
             >
               <option value="">Selecione uma categoria</option>
               <option value="Bioestimuladores de Colágeno">Bioestimuladores de Colágeno</option>
+              <option value="Fios de Sustentação (PDO)">Fios de Sustentação (PDO)</option>
               <option value="Preenchedores de Ácido Hialurônico">Preenchedores de Ácido Hialurônico</option>
+              <option value="Tecnologia / Equipamentos">Tecnologia / Equipamentos</option>
               <option value="Toxina Botulínica">Toxina Botulínica</option>
+              <option value="Tratamentos Vasculares">Tratamentos Vasculares</option>
               <option value="Insumos">Insumos</option>
+              <option value="Outros">Outros</option>
             </select>
           </div>
 
