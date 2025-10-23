@@ -108,25 +108,34 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
       })
     }
 
+    // Preparar dados da assinatura
+    const subscriptionData = {
+      reason: planName || 'Agenda+ HOF - Plano Profissional',
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: amount,
+        currency_id: 'BRL',
+        free_trial: {
+          frequency: 0,
+          frequency_type: 'months'
+        }
+      },
+      back_url: `${process.env.FRONTEND_URL}/app/agenda`,
+      payer_email: customerEmail,
+      status: 'authorized'
+    }
+
+    // Adicionar card_token_id apenas se fornecido
+    if (cardToken) {
+      subscriptionData.card_token_id = cardToken
+    }
+
+    console.log('📦 Dados da assinatura:', JSON.stringify(subscriptionData, null, 2))
+
     // Criar assinatura recorrente
     const subscription = await preApprovalClient.create({
-      body: {
-        reason: planName || 'Agenda+ HOF - Plano Profissional',
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: 'months',
-          transaction_amount: amount,
-          currency_id: 'BRL',
-          free_trial: {
-            frequency: 0,
-            frequency_type: 'months'
-          }
-        },
-        back_url: `${process.env.FRONTEND_URL}/app/agenda`,
-        payer_email: customerEmail,
-        card_token_id: cardToken,
-        status: 'authorized'
-      }
+      body: subscriptionData
     })
 
     console.log('✅ Assinatura criada:', subscription.id, 'Status:', subscription.status)
@@ -140,7 +149,11 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
       cardBrand: subscription.payment_method_id || 'UNKNOWN'
     })
   } catch (error) {
-    console.error('❌ Erro ao criar assinatura:', error)
+    console.error('❌ Erro ao criar assinatura:')
+    console.error('  - Message:', error.message)
+    console.error('  - Status:', error.status)
+    console.error('  - Cause:', JSON.stringify(error.cause, null, 2))
+    console.error('  - Full error:', JSON.stringify(error, null, 2))
 
     // Extrair mensagem de erro mais específica
     const errorMessage = error.cause?.[0]?.description ||
@@ -149,7 +162,8 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
 
     res.status(error.status || 500).json({
       error: errorMessage,
-      details: error.cause || error.message
+      details: error.cause || error.message,
+      fullError: error.message
     })
   }
 })
