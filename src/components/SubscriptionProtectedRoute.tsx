@@ -21,19 +21,26 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
       }
 
       try {
+        console.log('🔍 Verificando assinatura para user:', user.id)
+
         // 1. Verificar se usuário tem assinatura ativa
-        const { data: subscription } = await supabase
+        const { data: subscription, error: subError } = await supabase
           .from('user_subscriptions')
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'active')
           .maybeSingle()
 
+        console.log('📊 Resultado da query:', { subscription, subError })
+
         if (subscription) {
+          console.log('✅ Assinatura ativa encontrada!')
           setHasActiveSubscription(true)
           setLoading(false)
           return
         }
+
+        console.log('⚠️ Nenhuma assinatura ativa encontrada')
 
         // 2. Se não tem subscription, verificar se é usuário cortesia ativo
         const { data: courtesyUser } = await supabase
