@@ -6,12 +6,6 @@ import { PLAN_PRICE, MERCADOPAGO_PUBLIC_KEY } from '@/lib/mercadopago'
 import { supabase } from '@/lib/supabase'
 import { supabaseAnon } from '@/lib/supabaseAnon'
 import { createSubscription, type SubscriptionResponse } from '@/services/mercadopagoService'
-import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
-
-// Inicializar SDK do Mercado Pago
-if (MERCADOPAGO_PUBLIC_KEY) {
-  initMercadoPago(MERCADOPAGO_PUBLIC_KEY)
-}
 
 export default function Checkout() {
   const navigate = useNavigate()
@@ -167,11 +161,15 @@ export default function Checkout() {
         throw new Error('Data de validade inválida')
       }
 
-      // Criar token usando o SDK
-      const mp = (window as any).MercadoPago
-      if (!mp) {
-        throw new Error('SDK do Mercado Pago não carregado')
+      // Garantir que o SDK está disponível
+      if (!(window as any).MercadoPago) {
+        throw new Error('SDK do Mercado Pago não carregado. Recarregue a página.')
       }
+
+      // Inicializar Mercado Pago com a Public Key
+      const mp = new (window as any).MercadoPago(MERCADOPAGO_PUBLIC_KEY, {
+        locale: 'pt-BR'
+      })
 
       const cardData = {
         cardNumber: cardNumber.replace(/\s/g, ''),
@@ -183,15 +181,25 @@ export default function Checkout() {
         identificationNumber: cardCpf.replace(/\D/g, '')
       }
 
+      console.log('📝 Dados do cartão (sem números sensíveis):', {
+        cardholderName: cardData.cardholderName,
+        cardExpirationMonth: cardData.cardExpirationMonth,
+        cardExpirationYear: cardData.cardExpirationYear,
+        identificationType: cardData.identificationType,
+        identificationNumber: cardData.identificationNumber.substring(0, 3) + '...'
+      })
+
       const response = await mp.createCardToken(cardData)
 
       if (response.error) {
+        console.error('❌ Erro do Mercado Pago:', response.error)
         throw new Error(response.error.message || 'Erro ao criar token do cartão')
       }
 
+      console.log('✅ Token criado com sucesso!')
       return response.id
     } catch (error: any) {
-      console.error('Erro ao criar token:', error)
+      console.error('❌ Erro ao criar token:', error)
       throw new Error(error.message || 'Erro ao processar dados do cartão')
     }
   }
