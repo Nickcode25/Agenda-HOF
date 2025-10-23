@@ -1,6 +1,6 @@
 const express = require('express')
 const cors = require('cors')
-const fetch = require('node-fetch')
+const { MercadoPagoConfig, PreApproval, Payment } = require('mercadopago')
 
 // Carregar .env apenas se não estiver em produção
 if (process.env.NODE_ENV !== 'production') {
@@ -35,553 +35,300 @@ app.use(cors({
 }))
 app.use(express.json())
 
-// Configuração do PagBank
-const PAGBANK_TOKEN = process.env.PAGBANK_TOKEN
-// Permitir override via variável de ambiente PAGBANK_SANDBOX
-const useSandbox = process.env.PAGBANK_SANDBOX === 'true' || process.env.NODE_ENV !== 'production'
-const PAGBANK_API_URL = useSandbox
-  ? 'https://sandbox.api.pagseguro.com'
-  : 'https://api.pagseguro.com'
+// Configuração do Mercado Pago
+const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN
 
 // Debug de variáveis
 console.log('🔍 Debug de variáveis:')
 console.log('NODE_ENV:', process.env.NODE_ENV)
-console.log('PAGBANK_TOKEN existe?', !!process.env.PAGBANK_TOKEN)
-console.log('PAGBANK_TOKEN length:', process.env.PAGBANK_TOKEN?.length)
-console.log('PAGBANK_TOKEN primeiros 20 chars:', process.env.PAGBANK_TOKEN?.substring(0, 20))
-console.log('Tipo do token:', typeof process.env.PAGBANK_TOKEN)
+console.log('MERCADOPAGO_ACCESS_TOKEN existe?', !!MERCADOPAGO_ACCESS_TOKEN)
+console.log('MERCADOPAGO_ACCESS_TOKEN length:', MERCADOPAGO_ACCESS_TOKEN?.length)
+console.log('MERCADOPAGO_ACCESS_TOKEN primeiros 20 chars:', MERCADOPAGO_ACCESS_TOKEN?.substring(0, 20))
 console.log('PORT:', process.env.PORT)
 console.log('FRONTEND_URL:', process.env.FRONTEND_URL)
 
 // Validar token
-if (!PAGBANK_TOKEN || PAGBANK_TOKEN.trim() === '') {
-  console.error('❌ PAGBANK_TOKEN não configurado ou vazio')
+if (!MERCADOPAGO_ACCESS_TOKEN || MERCADOPAGO_ACCESS_TOKEN.trim() === '') {
+  console.error('❌ MERCADOPAGO_ACCESS_TOKEN não configurado ou vazio')
+  console.error('💡 Configure a variável MERCADOPAGO_ACCESS_TOKEN no arquivo .env')
   process.exit(1)
 }
 
-console.log('🔧 Configuração do PagBank:')
+// Inicializar cliente Mercado Pago
+const client = new MercadoPagoConfig({
+  accessToken: MERCADOPAGO_ACCESS_TOKEN,
+  options: { timeout: 5000 }
+})
+
+const preApprovalClient = new PreApproval(client)
+const paymentClient = new Payment(client)
+
+console.log('🔧 Configuração do Mercado Pago:')
 console.log('  - Ambiente:', process.env.NODE_ENV || 'development')
-console.log('  - Modo:', useSandbox ? '🧪 SANDBOX (Testes)' : '🚀 PRODUÇÃO (Real)')
-console.log('  - API URL:', PAGBANK_API_URL)
-console.log('  - Token configurado:', PAGBANK_TOKEN ? '✅ Sim' : '❌ Não')
-console.log('  - PAGBANK_SANDBOX override:', process.env.PAGBANK_SANDBOX || 'não definido')
+console.log('  - Access Token configurado:', MERCADOPAGO_ACCESS_TOKEN ? '✅ Sim' : '❌ Não')
 
 // Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    paymentProvider: 'Mercado Pago'
   })
 })
 
-// Criar pedido PIX
-app.post('/api/pagbank/create-pix', async (req, res) => {
-  try {
-    const { customerEmail, customerName, amount, planName } = req.body
-
-    console.log('📱 Criando pedido PIX:', { customerEmail, customerName, amount })
-
-    console.log('🔑 Token sendo usado:', PAGBANK_TOKEN.substring(0, 20) + '...')
-    console.log('🌐 API URL:', PAGBANK_API_URL)
-
-    const response = await fetch(`${PAGBANK_API_URL}/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
-      },
-      body: JSON.stringify({
-        reference_id: `HOF_PIX_${Date.now()}`,
-        customer: {
-          name: customerName,
-          email: customerEmail,
-          tax_id: '12345678909', // CPF de teste
-        },
-        items: [
-          {
-            reference_id: 'PLANO_PROFISSIONAL',
-            name: planName || 'Agenda+ HOF - Plano Profissional',
-            quantity: 1,
-            unit_amount: Math.round(amount * 100), // Converter para centavos
-          },
-        ],
-        qr_codes: [
-          {
-            amount: {
-              value: Math.round(amount * 100),
-            },
-            expiration_date: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-          },
-        ],
-      }),
-    })
-
-    console.log('📡 Status da resposta:', response.status, response.statusText)
-    console.log('📋 Headers da resposta:', Object.fromEntries(response.headers.entries()))
-
-    // Tentar ler como texto primeiro para ver se é HTML ou JSON
-    const responseText = await response.text()
-    console.log('📄 Resposta bruta (primeiros 500 chars):', responseText.substring(0, 500))
-
-    let data
-    try {
-      data = JSON.parse(responseText)
-    } catch (e) {
-      console.error('❌ Resposta não é JSON válido!')
-      console.error('Tipo de conteúdo:', response.headers.get('content-type'))
-      return res.status(500).json({
-        error: 'PagBank retornou resposta inválida (não-JSON)',
-        hint: 'Provavelmente problema de whitelist ou token inválido',
-        statusCode: response.status,
-        responsePreview: responseText.substring(0, 200)
-      })
-    }
-
-    if (!response.ok) {
-      console.error('❌ Erro do PagBank:', data)
-      return res.status(response.status).json({
-        error: data.error_messages?.[0]?.description || 'Erro ao criar pedido PIX',
-        details: data
-      })
-    }
-
-    console.log('✅ PIX criado com sucesso:', data.id)
-
-    res.json({
-      id: data.id,
-      qrCodeText: data.qr_codes[0].text,
-      qrCodeImage: data.qr_codes[0].links.find(l => l.media === 'image/png')?.href || '',
-      expiresAt: data.qr_codes[0].expiration_date,
-    })
-  } catch (error) {
-    console.error('❌ Erro ao criar PIX:', error)
-    res.status(500).json({
-      error: 'Erro interno ao processar PIX',
-      message: error.message
-    })
-  }
-})
-
-// Processar pagamento com cartão
-app.post('/api/pagbank/create-card-charge', async (req, res) => {
-  try {
-    const {
-      customerEmail,
-      customerName,
-      cardNumber,
-      cardHolderName,
-      cardExpiryMonth,
-      cardExpiryYear,
-      cardCvv,
-      cardHolderCpf,
-      amount,
-      planName
-    } = req.body
-
-    console.log('💳 Processando cartão:', { customerEmail, cardNumber: '****' + cardNumber.slice(-4) })
-
-    const response = await fetch(`${PAGBANK_API_URL}/charges`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
-      },
-      body: JSON.stringify({
-        reference_id: `HOF_CARD_${Date.now()}`,
-        description: planName || 'Agenda+ HOF - Plano Profissional',
-        amount: {
-          value: Math.round(amount * 100),
-          currency: 'BRL',
-        },
-        payment_method: {
-          type: 'CREDIT_CARD',
-          installments: 1,
-          capture: true,
-          card: {
-            number: cardNumber.replace(/\s/g, ''),
-            exp_month: cardExpiryMonth,
-            exp_year: cardExpiryYear,
-            security_code: cardCvv,
-            holder: {
-              name: cardHolderName,
-              tax_id: cardHolderCpf.replace(/\D/g, ''),
-            },
-          },
-        },
-        customer: {
-          name: customerName,
-          email: customerEmail,
-          tax_id: cardHolderCpf.replace(/\D/g, ''),
-        },
-      }),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      console.error('❌ Erro do PagBank:', data)
-      return res.status(response.status).json({
-        error: data.error_messages?.[0]?.description || 'Erro ao processar cartão',
-        details: data
-      })
-    }
-
-    console.log('✅ Cartão processado:', data.id, 'Status:', data.status)
-
-    res.json({
-      id: data.id,
-      status: data.status,
-      amount: data.amount.value / 100,
-    })
-  } catch (error) {
-    console.error('❌ Erro ao processar cartão:', error)
-    res.status(500).json({
-      error: 'Erro interno ao processar cartão',
-      message: error.message
-    })
-  }
-})
-
-// Gerar boleto
-app.post('/api/pagbank/create-boleto', async (req, res) => {
-  try {
-    const { customerEmail, customerName, customerCpf, amount, planName } = req.body
-
-    console.log('📄 Gerando boleto:', { customerEmail, customerName })
-
-    const dueDate = new Date()
-    dueDate.setDate(dueDate.getDate() + 3) // Vencimento em 3 dias
-
-    const response = await fetch(`${PAGBANK_API_URL}/charges`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
-      },
-      body: JSON.stringify({
-        reference_id: `HOF_BOLETO_${Date.now()}`,
-        description: planName || 'Agenda+ HOF - Plano Profissional',
-        amount: {
-          value: Math.round(amount * 100),
-          currency: 'BRL',
-        },
-        payment_method: {
-          type: 'BOLETO',
-          boleto: {
-            due_date: dueDate.toISOString().split('T')[0],
-            instruction_lines: {
-              line_1: 'Pagamento referente à assinatura mensal',
-              line_2: 'Agenda+ HOF - Sistema de Gestão',
-            },
-            holder: {
-              name: customerName,
-              tax_id: customerCpf.replace(/\D/g, ''),
-              email: customerEmail,
-            },
-          },
-        },
-        customer: {
-          name: customerName,
-          email: customerEmail,
-          tax_id: customerCpf.replace(/\D/g, ''),
-        },
-      }),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      console.error('❌ Erro do PagBank:', data)
-      return res.status(response.status).json({
-        error: data.error_messages?.[0]?.description || 'Erro ao gerar boleto',
-        details: data
-      })
-    }
-
-    console.log('✅ Boleto gerado:', data.id)
-
-    res.json({
-      id: data.id,
-      boletoUrl: data.links.find(l => l.rel === 'SELF')?.href || '',
-      barcode: data.payment_method.boleto?.barcode || '',
-      dueDate: data.payment_method.boleto?.due_date || '',
-    })
-  } catch (error) {
-    console.error('❌ Erro ao gerar boleto:', error)
-    res.status(500).json({
-      error: 'Erro interno ao gerar boleto',
-      message: error.message
-    })
-  }
-})
-
-// Verificar status de pagamento
-app.get('/api/pagbank/check-status/:orderId', async (req, res) => {
-  try {
-    const { orderId } = req.params
-
-    console.log('🔍 Verificando status:', orderId)
-
-    const response = await fetch(`${PAGBANK_API_URL}/orders/${orderId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
-      },
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      console.error('❌ Erro do PagBank:', data)
-      return res.status(response.status).json({
-        error: 'Erro ao verificar status',
-        details: data
-      })
-    }
-
-    console.log('✅ Status verificado:', data.status)
-
-    res.json({
-      status: data.status,
-      charges: data.charges
-    })
-  } catch (error) {
-    console.error('❌ Erro ao verificar status:', error)
-    res.status(500).json({
-      error: 'Erro interno ao verificar status',
-      message: error.message
-    })
-  }
-})
-
 // ===============================================
-// ASSINATURAS RECORRENTES
+// ASSINATURAS RECORRENTES - MERCADO PAGO
 // ===============================================
 
-// Criar assinatura (cobrança automática mensal)
-app.post('/api/pagbank/create-subscription', async (req, res) => {
+/**
+ * Criar assinatura recorrente com cartão de crédito
+ * Usa a API de Pre-Approvals do Mercado Pago
+ */
+app.post('/api/mercadopago/create-subscription', async (req, res) => {
   try {
     const {
       customerEmail,
       customerName,
       customerPhone,
-      cardNumber,
-      cardHolderName,
-      cardExpiryMonth,
-      cardExpiryYear,
-      cardCvv,
-      cardHolderCpf,
+      cardToken,
       amount,
       planName
     } = req.body
 
-    console.log('🔄 Criando assinatura recorrente:', { customerEmail, cardNumber: '****' + cardNumber.slice(-4) })
+    console.log('🔄 Criando assinatura recorrente:', { customerEmail, planName })
 
-    // Criar plano de assinatura (ou usar um existente)
-    const planResponse = await fetch(`${PAGBANK_API_URL}/plans`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
-      },
-      body: JSON.stringify({
-        reference_id: `PLAN_HOF_${Date.now()}`,
-        name: planName || 'Agenda+ HOF - Plano Mensal',
-        description: 'Plano mensal com cobrança automática',
-        amount: {
-          value: Math.round(amount * 100),
-          currency: 'BRL'
-        },
-        interval: {
-          unit: 'MONTH',
-          length: 1
-        }
-      })
-    })
-
-    const planData = await planResponse.json()
-
-    if (!planResponse.ok) {
-      console.error('❌ Erro ao criar plano:', planData)
-      return res.status(planResponse.status).json({
-        error: planData.error_messages?.[0]?.description || 'Erro ao criar plano',
-        details: planData
+    // Validar dados obrigatórios
+    if (!customerEmail || !customerName || !cardToken || !amount) {
+      return res.status(400).json({
+        error: 'Dados obrigatórios faltando',
+        required: ['customerEmail', 'customerName', 'cardToken', 'amount']
       })
     }
 
-    console.log('✅ Plano criado:', planData.id)
-
-    // Criar assinatura vinculada ao plano
-    const subscriptionResponse = await fetch(`${PAGBANK_API_URL}/subscriptions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
-      },
-      body: JSON.stringify({
-        reference_id: `SUB_HOF_${Date.now()}`,
-        plan_id: planData.id,
-        customer: {
-          name: customerName,
-          email: customerEmail,
-          tax_id: cardHolderCpf.replace(/\D/g, ''),
-          phones: customerPhone ? [{
-            country: '55',
-            area: customerPhone.replace(/\D/g, '').substring(0, 2),
-            number: customerPhone.replace(/\D/g, '').substring(2),
-            type: 'MOBILE'
-          }] : undefined
-        },
-        payment_method: [{
-          type: 'CREDIT_CARD',
-          card: {
-            number: cardNumber.replace(/\s/g, ''),
-            exp_month: cardExpiryMonth,
-            exp_year: cardExpiryYear,
-            security_code: cardCvv,
-            holder: {
-              name: cardHolderName,
-              tax_id: cardHolderCpf.replace(/\D/g, '')
-            }
+    // Criar assinatura recorrente
+    const subscription = await preApprovalClient.create({
+      body: {
+        reason: planName || 'Agenda+ HOF - Plano Profissional',
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: amount,
+          currency_id: 'BRL',
+          free_trial: {
+            frequency: 0,
+            frequency_type: 'months'
           }
-        }]
-      })
+        },
+        back_url: `${process.env.FRONTEND_URL}/app/agenda`,
+        payer_email: customerEmail,
+        card_token_id: cardToken,
+        status: 'authorized'
+      }
     })
 
-    const subscriptionData = await subscriptionResponse.json()
-
-    if (!subscriptionResponse.ok) {
-      console.error('❌ Erro ao criar assinatura:', subscriptionData)
-      return res.status(subscriptionResponse.status).json({
-        error: subscriptionData.error_messages?.[0]?.description || 'Erro ao criar assinatura',
-        details: subscriptionData
-      })
-    }
-
-    console.log('✅ Assinatura criada:', subscriptionData.id, 'Status:', subscriptionData.status)
+    console.log('✅ Assinatura criada:', subscription.id, 'Status:', subscription.status)
 
     res.json({
-      id: subscriptionData.id,
-      planId: planData.id,
-      status: subscriptionData.status,
+      id: subscription.id,
+      status: subscription.status,
       amount: amount,
-      nextBillingDate: subscriptionData.next_invoice_at,
-      cardLastDigits: cardNumber.slice(-4),
-      cardBrand: subscriptionData.payment_method?.[0]?.card?.brand || 'UNKNOWN'
+      nextBillingDate: subscription.next_payment_date,
+      cardLastDigits: subscription.summarized?.last_four_digits || '****',
+      cardBrand: subscription.payment_method_id || 'UNKNOWN'
     })
   } catch (error) {
     console.error('❌ Erro ao criar assinatura:', error)
-    res.status(500).json({
-      error: 'Erro interno ao criar assinatura',
-      message: error.message
+
+    // Extrair mensagem de erro mais específica
+    const errorMessage = error.cause?.[0]?.description ||
+                        error.message ||
+                        'Erro ao criar assinatura'
+
+    res.status(error.status || 500).json({
+      error: errorMessage,
+      details: error.cause || error.message
     })
   }
 })
 
-// Cancelar assinatura
-app.post('/api/pagbank/cancel-subscription/:subscriptionId', async (req, res) => {
+/**
+ * Cancelar assinatura recorrente
+ */
+app.post('/api/mercadopago/cancel-subscription/:subscriptionId', async (req, res) => {
   try {
     const { subscriptionId } = req.params
 
     console.log('🚫 Cancelando assinatura:', subscriptionId)
 
-    const response = await fetch(`${PAGBANK_API_URL}/subscriptions/${subscriptionId}/cancel`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PAGBANK_TOKEN}`,
+    const result = await preApprovalClient.update({
+      id: subscriptionId,
+      body: {
+        status: 'cancelled'
       }
     })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      console.error('❌ Erro ao cancelar:', data)
-      return res.status(response.status).json({
-        error: data.error_messages?.[0]?.description || 'Erro ao cancelar assinatura',
-        details: data
-      })
-    }
 
     console.log('✅ Assinatura cancelada:', subscriptionId)
 
     res.json({
       success: true,
-      status: data.status
+      status: result.status
     })
   } catch (error) {
-    console.error('❌ Erro ao cancelar assinatura:', error)
-    res.status(500).json({
-      error: 'Erro interno ao cancelar assinatura',
-      message: error.message
+    console.error('❌ Erro ao cancelar:', error)
+
+    const errorMessage = error.cause?.[0]?.description ||
+                        error.message ||
+                        'Erro ao cancelar assinatura'
+
+    res.status(error.status || 500).json({
+      error: errorMessage,
+      details: error.cause || error.message
     })
   }
 })
 
-// Webhook - Receber notificações do PagBank
-app.post('/api/pagbank/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+/**
+ * Obter detalhes de uma assinatura
+ */
+app.get('/api/mercadopago/subscription/:subscriptionId', async (req, res) => {
   try {
-    const event = req.body
+    const { subscriptionId } = req.params
+
+    console.log('🔍 Buscando assinatura:', subscriptionId)
+
+    const subscription = await preApprovalClient.get({ id: subscriptionId })
+
+    res.json({
+      id: subscription.id,
+      status: subscription.status,
+      amount: subscription.auto_recurring.transaction_amount,
+      nextBillingDate: subscription.next_payment_date,
+      cardLastDigits: subscription.summarized?.last_four_digits || '****',
+      cardBrand: subscription.payment_method_id || 'UNKNOWN',
+      createdAt: subscription.date_created
+    })
+  } catch (error) {
+    console.error('❌ Erro ao buscar assinatura:', error)
+
+    const errorMessage = error.cause?.[0]?.description ||
+                        error.message ||
+                        'Erro ao buscar assinatura'
+
+    res.status(error.status || 500).json({
+      error: errorMessage
+    })
+  }
+})
+
+/**
+ * Webhook - Receber notificações do Mercado Pago
+ * Configurar em: https://www.mercadopago.com.br/developers/panel/notifications/webhooks
+ */
+app.post('/api/mercadopago/webhook', async (req, res) => {
+  try {
+    const { type, data, action } = req.body
 
     console.log('📬 Webhook recebido:', {
-      type: event.type,
-      id: event.id,
-      created_at: event.created_at
+      type,
+      action,
+      id: data?.id
     })
 
-    // Aqui você deve validar a assinatura do webhook
-    // O PagBank envia um header x-pagseguro-signature que deve ser validado
-
     // Processar diferentes tipos de eventos
-    switch (event.type) {
-      case 'SUBSCRIPTION.CREATED':
-        console.log('🆕 Nova assinatura criada:', event.data.id)
-        // TODO: Salvar no banco de dados
+    switch (type) {
+      case 'subscription_preapproval':
+        console.log('🔄 Evento de assinatura:', action, data.id)
+
+        switch (action) {
+          case 'created':
+            console.log('🆕 Nova assinatura criada:', data.id)
+            // TODO: Salvar no banco de dados
+            break
+
+          case 'updated':
+            console.log('🔄 Assinatura atualizada:', data.id)
+            // Buscar detalhes da assinatura
+            const subscription = await preApprovalClient.get({ id: data.id })
+            console.log('Status atual:', subscription.status)
+            // TODO: Atualizar no banco de dados
+            break
+
+          default:
+            console.log('❓ Ação de assinatura não tratada:', action)
+        }
         break
 
-      case 'SUBSCRIPTION.ACTIVATED':
-        console.log('✅ Assinatura ativada:', event.data.id)
-        // TODO: Ativar acesso do usuário
-        break
+      case 'payment':
+        console.log('💰 Evento de pagamento:', action, data.id)
 
-      case 'SUBSCRIPTION.SUSPENDED':
-        console.log('⚠️ Assinatura suspensa:', event.data.id)
-        // TODO: Suspender acesso do usuário
-        break
+        // Buscar detalhes do pagamento
+        const payment = await paymentClient.get({ id: data.id })
+        console.log('Status do pagamento:', payment.status)
+        console.log('Valor:', payment.transaction_amount)
 
-      case 'SUBSCRIPTION.CANCELLED':
-        console.log('🚫 Assinatura cancelada:', event.data.id)
-        // TODO: Desativar acesso do usuário
-        break
+        switch (payment.status) {
+          case 'approved':
+            console.log('✅ Pagamento aprovado:', data.id)
+            // TODO: Ativar acesso do usuário ou renovar assinatura
+            break
 
-      case 'CHARGE.PAID':
-        console.log('💰 Pagamento confirmado:', event.data.id)
-        // TODO: Registrar pagamento no banco
-        break
+          case 'rejected':
+            console.log('❌ Pagamento rejeitado:', data.id)
+            // TODO: Notificar usuário e tentar novamente
+            break
 
-      case 'CHARGE.FAILED':
-        console.log('❌ Pagamento falhou:', event.data.id)
-        // TODO: Notificar usuário e tentar novamente
+          case 'pending':
+            console.log('⏳ Pagamento pendente:', data.id)
+            break
+
+          default:
+            console.log('❓ Status de pagamento não tratado:', payment.status)
+        }
         break
 
       default:
-        console.log('❓ Evento não tratado:', event.type)
+        console.log('❓ Tipo de evento não tratado:', type)
     }
 
     // TODO: Salvar webhook no banco para processamento posterior
-    // await supabase.from('pagbank_webhooks').insert({
-    //   event_type: event.type,
-    //   subscription_id: event.data?.id,
-    //   payload: event,
+    // await supabase.from('mercadopago_webhooks').insert({
+    //   event_type: type,
+    //   event_action: action,
+    //   resource_id: data?.id,
+    //   payload: req.body,
     //   processed: false
     // })
 
-    // Sempre retornar 200 OK para o PagBank saber que recebemos
+    // Sempre retornar 200 OK para o Mercado Pago saber que recebemos
     res.status(200).json({ received: true })
   } catch (error) {
     console.error('❌ Erro ao processar webhook:', error)
     res.status(500).json({ error: 'Erro ao processar webhook' })
+  }
+})
+
+/**
+ * Criar token de cartão (para uso no frontend)
+ * NOTA: Em produção, usar SDK JavaScript do Mercado Pago no frontend
+ */
+app.post('/api/mercadopago/create-card-token', async (req, res) => {
+  try {
+    const { cardNumber, cardholderName, expirationMonth, expirationYear, securityCode, identificationType, identificationNumber } = req.body
+
+    console.log('💳 Criando token de cartão...')
+
+    // IMPORTANTE: Este endpoint é apenas para desenvolvimento
+    // Em produção, use o SDK JavaScript do Mercado Pago no frontend
+    // Documentação: https://www.mercadopago.com.br/developers/pt/docs/checkout-api/integration-configuration/card/integrate-via-cardform
+
+    res.status(501).json({
+      error: 'Use o SDK JavaScript do Mercado Pago no frontend para criar tokens de cartão',
+      documentation: 'https://www.mercadopago.com.br/developers/pt/docs/checkout-api/integration-configuration/card/integrate-via-cardform'
+    })
+  } catch (error) {
+    console.error('❌ Erro ao criar token:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 
@@ -590,14 +337,12 @@ app.listen(PORT, () => {
   console.log('\n🚀 Backend Agenda HOF iniciado!')
   console.log(`📡 Servidor rodando em http://localhost:${PORT}`)
   console.log(`🌐 Frontend esperado em ${process.env.FRONTEND_URL}`)
-  console.log('\n✅ Endpoints disponíveis:')
+  console.log('\n✅ Endpoints disponíveis (Mercado Pago):')
   console.log('  - GET  /health')
-  console.log('  - POST /api/pagbank/create-pix')
-  console.log('  - POST /api/pagbank/create-card-charge')
-  console.log('  - POST /api/pagbank/create-subscription ⭐ NOVO')
-  console.log('  - POST /api/pagbank/cancel-subscription/:id ⭐ NOVO')
-  console.log('  - POST /api/pagbank/webhook ⭐ NOVO')
-  console.log('  - POST /api/pagbank/create-boleto')
-  console.log('  - GET  /api/pagbank/check-status/:orderId')
+  console.log('  - POST /api/mercadopago/create-subscription ⭐ Assinatura recorrente')
+  console.log('  - POST /api/mercadopago/cancel-subscription/:id')
+  console.log('  - GET  /api/mercadopago/subscription/:id')
+  console.log('  - POST /api/mercadopago/webhook ⭐ Notificações')
+  console.log('  - POST /api/mercadopago/create-card-token (dev only)')
   console.log('\n💡 Use Ctrl+C para parar o servidor\n')
 })

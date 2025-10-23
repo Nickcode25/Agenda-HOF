@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Check, CreditCard, Lock, ArrowLeft, AlertCircle, QrCode, Download, X, Tag } from 'lucide-react'
+import { Check, CreditCard, Lock, ArrowLeft, AlertCircle, X, Tag } from 'lucide-react'
 import { useAuth } from '@/store/auth'
-import { PLAN_PRICE } from '@/lib/pagbank'
+import { PLAN_PRICE, MERCADOPAGO_PUBLIC_KEY } from '@/lib/mercadopago'
 import { supabase } from '@/lib/supabase'
 import { supabaseAnon } from '@/lib/supabaseAnon'
-import {
-  createPixOrder,
-  createCardOrder,
-  createBoletoOrder,
-  createSubscription,
-  type PixResponse
-} from '@/services/pagbankService'
+import { createSubscription, type SubscriptionResponse } from '@/services/mercadopagoService'
+import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
 
-type PaymentMethod = 'CREDIT_CARD' | 'PIX' | 'BOLETO'
+// Inicializar SDK do Mercado Pago
+if (MERCADOPAGO_PUBLIC_KEY) {
+  initMercadoPago(MERCADOPAGO_PUBLIC_KEY)
+}
 
 export default function Checkout() {
   const navigate = useNavigate()
@@ -21,7 +19,6 @@ export default function Checkout() {
   const { signUp } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX')
 
   // Dados do cartão
   const [cardNumber, setCardNumber] = useState('')
@@ -29,14 +26,6 @@ export default function Checkout() {
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvv, setCardCvv] = useState('')
   const [cardCpf, setCardCpf] = useState('')
-
-  // Dados PIX
-  const [pixData, setPixData] = useState<PixResponse | null>(null)
-  const [showPixModal, setShowPixModal] = useState(false)
-
-  // Dados Boleto
-  const [boletoUrl, setBoletoUrl] = useState('')
-  const [showBoletoModal, setShowBoletoModal] = useState(false)
 
   // Cupom de desconto
   const [couponCode, setCouponCode] = useState('')
@@ -99,7 +88,6 @@ export default function Checkout() {
       setCouponSuccess(false)
 
       console.log('🔍 Validando cupom:', couponCode.toUpperCase())
-      console.log('📡 Usando cliente anônimo do Supabase')
 
       // Usar cliente anônimo dedicado para buscar cupons (usuário ainda não tem conta)
       const { data: coupon, error } = await supabaseAnon
@@ -109,25 +97,9 @@ export default function Checkout() {
         .eq('is_active', true)
         .single()
 
-      console.log('📊 Resposta do Supabase:', { coupon, error })
-
-      if (error) {
-        console.error('❌ Erro ao buscar cupom:', error)
-        setCouponError(`Erro: ${error.message || 'Cupom inválido'}`)
-        return
-      }
-
-      if (!coupon) {
-        console.error('❌ Cupom não encontrado')
+      if (error || !coupon) {
+        console.error('❌ Cupom não encontrado:', error)
         setCouponError('Cupom inválido')
-        return
-      }
-
-      console.log('✅ Cupom encontrado:', coupon)
-
-      // Validar se está ativo
-      if (!coupon.is_active) {
-        setCouponError('Este cupom não está mais ativo')
         return
       }
 
@@ -186,34 +158,47 @@ export default function Checkout() {
     }
   }
 
-  const handlePixPayment = async () => {
+  // Criar token de cartão usando SDK do Mercado Pago
+  const createCardToken = async (): Promise<string> => {
     try {
-      setLoading(true)
-      setError('')
+      // Extrair mês e ano
+      const [month, year] = cardExpiry.split('/')
+      if (!month || !year || month.length !== 2 || year.length !== 2) {
+        throw new Error('Data de validade inválida')
+      }
 
-      // Criar pedido PIX
-      const pixResponse = await createPixOrder({
-        customerEmail: userData!.email,
-        customerName: userData!.name,
-        customerPhone: userData!.phone,
-      })
+      // Criar token usando o SDK
+      const mp = (window as any).MercadoPago
+      if (!mp) {
+        throw new Error('SDK do Mercado Pago não carregado')
+      }
 
-      setPixData(pixResponse)
-      setShowPixModal(true)
+      const cardData = {
+        cardNumber: cardNumber.replace(/\s/g, ''),
+        cardholderName: cardName,
+        cardExpirationMonth: month,
+        cardExpirationYear: `20${year}`,
+        securityCode: cardCvv,
+        identificationType: 'CPF',
+        identificationNumber: cardCpf.replace(/\D/g, '')
+      }
 
-      // ⚠️ PIX: Conta será criada APENAS quando o pagamento for confirmado via webhook
-      // Por enquanto, usuário NÃO tem acesso ao sistema até pagar
-      // TODO: Implementar webhook do PagBank para criar conta automaticamente após pagamento
+      const response = await mp.createCardToken(cardData)
 
-    } catch (err: any) {
-      setError(err.message || 'Erro ao gerar PIX')
-      console.error('Erro PIX:', err)
-    } finally {
-      setLoading(false)
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao criar token do cartão')
+      }
+
+      return response.id
+    } catch (error: any) {
+      console.error('Erro ao criar token:', error)
+      throw new Error(error.message || 'Erro ao processar dados do cartão')
     }
   }
 
-  const handleCardPayment = async () => {
+  const handleCardPayment = async (e: React.FormEvent) => {
+    e.preventDefault()
+
     try {
       setLoading(true)
       setError('')
@@ -223,26 +208,31 @@ export default function Checkout() {
         throw new Error('Preencha todos os campos do cartão')
       }
 
-      // Extrair mês e ano
-      const [month, year] = cardExpiry.split('/')
-      if (!month || !year || month.length !== 2 || year.length !== 2) {
-        throw new Error('Data de validade inválida')
+      // Validar CPF (11 dígitos)
+      const cpfNumbers = cardCpf.replace(/\D/g, '')
+      if (cpfNumbers.length !== 11) {
+        throw new Error('CPF inválido')
       }
 
-      // 🔄 CRIAR ASSINATURA RECORRENTE (Cobrança automática mensal)
+      console.log('💳 Criando token do cartão...')
+
+      // Criar token do cartão
+      const cardToken = await createCardToken()
+
+      console.log('✅ Token criado:', cardToken)
+      console.log('🔄 Criando assinatura recorrente...')
+
+      // Criar assinatura recorrente
       const subscriptionResponse = await createSubscription({
         customerEmail: userData!.email,
         customerName: userData!.name,
         customerPhone: userData!.phone,
-        cardNumber: cardNumber,
-        cardHolderName: cardName,
-        cardExpiryMonth: month,
-        cardExpiryYear: `20${year}`,
-        cardCvv: cardCvv,
-        cardHolderCpf: cardCpf,
+        cardToken: cardToken,
       })
 
-      // ✅ PAGAMENTO CONFIRMADO - Criar conta do usuário (apenas se não existir)
+      console.log('✅ Assinatura criada:', subscriptionResponse)
+
+      // Criar conta do usuário (apenas se não existir)
       if (!userData!.existingUser) {
         const success = await signUp(userData!.email, userData!.password, userData!.name)
         if (!success) {
@@ -260,7 +250,7 @@ export default function Checkout() {
       if (userData2.user) {
         await supabase.from('user_subscriptions').insert({
           user_id: userData2.user.id,
-          pagbank_subscription_id: subscriptionResponse.id,
+          mercadopago_subscription_id: subscriptionResponse.id,
           status: 'active',
           plan_amount: finalPrice,
           billing_cycle: 'MONTHLY',
@@ -294,57 +284,6 @@ export default function Checkout() {
       console.error('Erro Cartão:', err)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleBoletoPayment = async () => {
-    try {
-      setLoading(true)
-      setError('')
-
-      // Validar CPF
-      if (!cardCpf) {
-        throw new Error('Informe seu CPF')
-      }
-
-      // Gerar boleto
-      const boletoResponse = await createBoletoOrder({
-        customerEmail: userData!.email,
-        customerName: userData!.name,
-        customerPhone: userData!.phone,
-        customerCpf: cardCpf,
-      })
-
-      setBoletoUrl(boletoResponse.boletoUrl)
-      setShowBoletoModal(true)
-
-      // ⚠️ BOLETO: Conta será criada APENAS quando o pagamento for confirmado via webhook
-      // Por enquanto, usuário NÃO tem acesso ao sistema até pagar
-      // TODO: Implementar webhook do PagBank para criar conta automaticamente após pagamento
-
-    } catch (err: any) {
-      setError(err.message || 'Erro ao gerar boleto')
-      console.error('Erro Boleto:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handlePayment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('handlePayment called - Payment Method:', paymentMethod)
-    console.log('Final Price with discount:', finalPrice)
-
-    switch (paymentMethod) {
-      case 'PIX':
-        await handlePixPayment()
-        break
-      case 'CREDIT_CARD':
-        await handleCardPayment()
-        break
-      case 'BOLETO':
-        await handleBoletoPayment()
-        break
     }
   }
 
@@ -470,12 +409,7 @@ export default function Checkout() {
                     <span className="text-green-400 font-medium">{couponCode} aplicado!</span>
                   </div>
                   <button
-                    onClick={() => {
-                      setCouponCode('')
-                      setCouponDiscount(0)
-                      setCouponSuccess(false)
-                      setValidatedCouponId(null)
-                    }}
+                    onClick={removeCoupon}
                     className="text-green-400 hover:text-green-300 transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -510,7 +444,7 @@ export default function Checkout() {
               <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-gray-700/50">
                 <span className="text-white">Total:</span>
                 <span className="text-orange-400">
-                  R$ {(PLAN_PRICE - (PLAN_PRICE * couponDiscount / 100)).toFixed(2).replace('.', ',')}/mês
+                  R$ {finalPrice.toFixed(2).replace('.', ',')}/mês
                 </span>
               </div>
             </div>
@@ -523,162 +457,79 @@ export default function Checkout() {
                 <CreditCard className="w-6 h-6 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Pagamento via PagBank</h2>
+                <h2 className="text-xl font-bold text-white">Pagamento via Mercado Pago</h2>
                 <p className="text-sm text-gray-400">Pagamento seguro e criptografado</p>
               </div>
             </div>
 
-            <form onSubmit={handlePayment} className="space-y-4">
+            <form onSubmit={handleCardPayment} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Método de Pagamento
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('PIX')}
-                    className={`px-4 py-3 rounded-lg border transition-all ${
-                      paymentMethod === 'PIX'
-                        ? 'bg-blue-500 border-blue-500 text-white'
-                        : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-blue-500'
-                    }`}
-                  >
-                    PIX
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('CREDIT_CARD')}
-                    className={`px-4 py-3 rounded-lg border transition-all ${
-                      paymentMethod === 'CREDIT_CARD'
-                        ? 'bg-blue-500 border-blue-500 text-white'
-                        : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-blue-500'
-                    }`}
-                  >
-                    Cartão
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('BOLETO')}
-                    className={`px-4 py-3 rounded-lg border transition-all ${
-                      paymentMethod === 'BOLETO'
-                        ? 'bg-blue-500 border-blue-500 text-white'
-                        : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-blue-500'
-                    }`}
-                  >
-                    Boleto
-                  </button>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Número do Cartão</label>
+                <input
+                  type="text"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                  placeholder="0000 0000 0000 0000"
+                  maxLength={19}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Validade</label>
+                  <input
+                    type="text"
+                    value={cardExpiry}
+                    onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                    placeholder="MM/AA"
+                    maxLength={5}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">CVV</label>
+                  <input
+                    type="text"
+                    value={cardCvv}
+                    onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
+                    placeholder="000"
+                    maxLength={4}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                    required
+                  />
                 </div>
               </div>
-
-              {paymentMethod === 'CREDIT_CARD' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Número do Cartão</label>
-                    <input
-                      type="text"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                      placeholder="0000 0000 0000 0000"
-                      maxLength={19}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Validade</label>
-                      <input
-                        type="text"
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                        placeholder="MM/AA"
-                        maxLength={5}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">CVV</label>
-                      <input
-                        type="text"
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
-                        placeholder="000"
-                        maxLength={4}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Nome no Cartão</label>
-                    <input
-                      type="text"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">CPF do Titular</label>
-                    <input
-                      type="text"
-                      value={cardCpf}
-                      onChange={(e) => setCardCpf(formatCPF(e.target.value))}
-                      placeholder="000.000.000-00"
-                      maxLength={14}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                      required
-                    />
-                  </div>
-                </>
-              )}
-
-              {paymentMethod === 'PIX' && (
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <QrCode className="w-5 h-5 text-blue-400" />
-                    <h3 className="text-blue-400 font-semibold">Pagamento PIX</h3>
-                  </div>
-                  <p className="text-sm text-gray-300">
-                    Após confirmar, você receberá um QR Code para pagar instantaneamente pelo PIX.
-                  </p>
-                </div>
-              )}
-
-              {paymentMethod === 'BOLETO' && (
-                <>
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Download className="w-5 h-5 text-yellow-400" />
-                      <h3 className="text-yellow-400 font-semibold">Pagamento via Boleto</h3>
-                    </div>
-                    <p className="text-sm text-gray-300">
-                      O boleto será gerado e você poderá fazer o download ou pagar pela internet.
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">CPF</label>
-                    <input
-                      type="text"
-                      value={cardCpf}
-                      onChange={(e) => setCardCpf(formatCPF(e.target.value))}
-                      placeholder="000.000.000-00"
-                      maxLength={14}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                      required
-                    />
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Nome no Cartão</label>
+                <input
+                  type="text"
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">CPF do Titular</label>
+                <input
+                  type="text"
+                  value={cardCpf}
+                  onChange={(e) => setCardCpf(formatCPF(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                  required
+                />
+              </div>
 
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                 <div className="flex items-center gap-3">
                   <Lock className="w-5 h-5 text-green-400" />
                   <div>
                     <p className="text-sm font-medium text-green-400">Pagamento 100% Seguro</p>
-                    <p className="text-xs text-gray-400">Processado pelo PagBank com criptografia SSL</p>
+                    <p className="text-xs text-gray-400">Processado pelo Mercado Pago com criptografia SSL</p>
                   </div>
                 </div>
               </div>
@@ -688,7 +539,7 @@ export default function Checkout() {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Processando...' : `Pagar R$ ${finalPrice.toFixed(2).replace('.', ',')}`}
+                {loading ? 'Processando...' : `Assinar por R$ ${finalPrice.toFixed(2).replace('.', ',')}/mês`}
               </button>
 
               <p className="text-xs text-center text-gray-500 italic">
@@ -698,111 +549,6 @@ export default function Checkout() {
           </div>
         </div>
       </div>
-
-      {/* Modal PIX */}
-      {showPixModal && pixData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800 border-2 border-blue-500 rounded-2xl p-8 max-w-md w-full">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-white">Pagar com PIX</h3>
-              <button
-                onClick={() => {
-                  setShowPixModal(false)
-                  navigate('/app/agenda')
-                }}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl mb-4">
-              {pixData.qrCodeImage ? (
-                <img src={pixData.qrCodeImage} alt="QR Code PIX" className="w-full" />
-              ) : (
-                <div className="flex items-center justify-center h-64 text-gray-400">
-                  <QrCode size={64} />
-                </div>
-              )}
-            </div>
-
-            <div className="bg-gray-700/50 rounded-lg p-3 mb-4">
-              <p className="text-xs text-gray-400 mb-1">Código PIX Copia e Cola:</p>
-              <p className="text-xs text-white font-mono break-all">{pixData.qrCodeText}</p>
-            </div>
-
-            <div className="text-center">
-              <p className="text-sm text-gray-300 mb-2">
-                Escaneie o QR Code ou copie o código acima
-              </p>
-              <p className="text-xs text-gray-500">
-                Após o pagamento, o acesso será liberado automaticamente
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(pixData.qrCodeText)
-                alert('Código PIX copiado!')
-              }}
-              className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-xl transition-colors"
-            >
-              Copiar Código PIX
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Boleto */}
-      {showBoletoModal && boletoUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800 border-2 border-yellow-500 rounded-2xl p-8 max-w-md w-full">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-white">Boleto Gerado</h3>
-              <button
-                onClick={() => {
-                  setShowBoletoModal(false)
-                  navigate('/app/agenda')
-                }}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
-
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-500/20 rounded-full mb-4">
-                <Download className="w-8 h-8 text-yellow-400" />
-              </div>
-              <p className="text-gray-300 mb-2">Seu boleto foi gerado com sucesso!</p>
-              <p className="text-sm text-gray-500">Faça o download ou pague pela internet</p>
-            </div>
-
-            <a
-              href={boletoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-4 rounded-xl transition-colors text-center mb-3"
-            >
-              Abrir Boleto
-            </a>
-
-            <button
-              onClick={() => {
-                setShowBoletoModal(false)
-                navigate('/app/agenda')
-              }}
-              className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-xl transition-colors"
-            >
-              Fechar
-            </button>
-
-            <p className="text-xs text-center text-gray-500 mt-4">
-              Após o pagamento, seu acesso será liberado em até 2 dias úteis
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
