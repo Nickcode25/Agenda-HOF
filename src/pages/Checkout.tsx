@@ -258,7 +258,11 @@ export default function Checkout() {
       // Salvar assinatura no banco de dados
       const { data: userData2 } = await supabase.auth.getUser()
       if (userData2.user) {
-        await supabase.from('user_subscriptions').insert({
+        console.log('💾 Salvando assinatura no banco de dados...')
+        console.log('User ID:', userData2.user.id)
+        console.log('Subscription ID:', subscriptionResponse.id)
+
+        const { data: insertData, error: insertError } = await supabase.from('user_subscriptions').insert({
           user_id: userData2.user.id,
           mercadopago_subscription_id: subscriptionResponse.id,
           status: 'active',
@@ -271,6 +275,14 @@ export default function Checkout() {
           coupon_id: validatedCouponId,
           discount_percentage: couponDiscount,
         })
+
+        if (insertError) {
+          console.error('❌ Erro ao salvar assinatura:', insertError)
+        } else {
+          console.log('✅ Assinatura salva com sucesso!', insertData)
+        }
+      } else {
+        console.error('❌ Usuário não encontrado após criar conta!')
       }
 
       // Sucesso! Mostrar modal bonito
