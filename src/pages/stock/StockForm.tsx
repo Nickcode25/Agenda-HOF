@@ -113,6 +113,7 @@ export default function StockForm() {
   const [cost, setCost] = useState('')
   const [category, setCategory] = useState('')
   const [brand, setBrand] = useState('')
+  const [customBrand, setCustomBrand] = useState('')
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [minQuantity, setMinQuantity] = useState('')
@@ -186,9 +187,12 @@ export default function StockForm() {
       return
     }
 
+    // Usar marca customizada se "Outro" for selecionado
+    const finalBrand = brand === 'Outro' ? customBrand : brand
+
     const itemData = {
       category,
-      supplier: category === 'Insumos' ? '' : (brand || ''),
+      supplier: category === 'Insumos' ? '' : (finalBrand || ''),
       name: name || '',
       quantity: quantity ? Number(quantity) : 0,
       minQuantity: minQuantity ? Number(minQuantity) : 0,
@@ -245,21 +249,37 @@ export default function StockForm() {
 
           {/* Marca */}
           {category !== 'Insumos' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Marca</label>
-              <select
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="">Selecione uma marca</option>
-                <option value="Allergan Aesthetics">Allergan Aesthetics</option>
-                <option value="Galderma">Galderma</option>
-                <option value="Merz Aesthetics">Merz Aesthetics</option>
-                <option value="Pharmaesthetics">Pharmaesthetics</option>
-                <option value="Rennova">Rennova</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Marca</label>
+                <select
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                >
+                  <option value="">Selecione uma marca</option>
+                  <option value="Allergan Aesthetics">Allergan Aesthetics</option>
+                  <option value="Galderma">Galderma</option>
+                  <option value="Merz Aesthetics">Merz Aesthetics</option>
+                  <option value="Mesoestetic">Mesoestetic</option>
+                  <option value="Pharmaesthetics">Pharmaesthetics</option>
+                  <option value="Rennova">Rennova</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+
+              {brand === 'Outro' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Digite a Marca</label>
+                  <input
+                    value={customBrand}
+                    onChange={(e) => setCustomBrand(e.target.value)}
+                    placeholder="Ex: Azzalure, Bocouture, etc..."
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {/* Produto */}
