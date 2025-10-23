@@ -237,6 +237,7 @@ export default function Checkout() {
         customerEmail: userData!.email,
         customerName: userData!.name,
         customerPhone: userData!.phone,
+        customerCpf: cardCpf.replace(/\D/g, ''),
         cardToken: cardToken,
       })
 

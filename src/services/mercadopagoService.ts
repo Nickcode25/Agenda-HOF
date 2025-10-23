@@ -4,6 +4,7 @@ export interface CreateSubscriptionData {
   customerEmail: string
   customerName: string
   customerPhone?: string
+  customerCpf: string
   cardToken: string
 }
 
@@ -31,6 +32,7 @@ export async function createSubscription(data: CreateSubscriptionData): Promise<
         customerEmail: data.customerEmail,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
+        customerCpf: data.customerCpf,
         cardToken: data.cardToken,
         amount: PLAN_PRICE,
         planName: PLAN_NAME,

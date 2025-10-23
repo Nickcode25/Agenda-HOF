@@ -93,12 +93,13 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
       customerEmail,
       customerName,
       customerPhone,
+      customerCpf,
       cardToken,
       amount,
       planName
     } = req.body
 
-    console.log('🔄 Criando assinatura recorrente:', { customerEmail, planName })
+    console.log('🔄 Criando assinatura recorrente:', { customerEmail, customerCpf, planName })
 
     // Validar dados obrigatórios
     if (!customerEmail || !customerName || !cardToken || !amount) {
@@ -127,7 +128,7 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
           email: customerEmail,
           identification: {
             type: 'CPF',
-            number: customerPhone || '00000000000'
+            number: customerCpf || '12345678909'
           }
         }
       }
