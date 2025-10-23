@@ -180,15 +180,21 @@ export default function StockForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
+    // Validação: apenas categoria é obrigatória
+    if (!category) {
+      alert('Por favor, selecione uma categoria')
+      return
+    }
+
     const itemData = {
       category,
-      supplier: category === 'Insumos' ? '' : brand,
-      name,
-      quantity: Number(quantity),
-      minQuantity: Number(minQuantity),
-      unit,
+      supplier: category === 'Insumos' ? '' : (brand || ''),
+      name: name || '',
+      quantity: quantity ? Number(quantity) : 0,
+      minQuantity: minQuantity ? Number(minQuantity) : 0,
+      unit: unit || 'unidade',
       dosesPerUnit: dosesPerUnit ? Number(dosesPerUnit) : undefined,
-      costPrice: parseCurrency(cost),
+      costPrice: cost ? parseCurrency(cost) : 0,
     }
 
     if (isEditMode && id) {
@@ -236,11 +242,10 @@ export default function StockForm() {
           {/* Marca */}
           {category !== 'Insumos' && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Marca *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Marca</label>
               <select
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                required
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="">Selecione uma marca</option>
@@ -255,12 +260,11 @@ export default function StockForm() {
 
           {/* Produto */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Produto *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Produto</label>
             {category === 'Insumos' ? (
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required
                 placeholder="Ex: Cânula, Agulha, Seringa..."
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
@@ -268,7 +272,6 @@ export default function StockForm() {
               <select
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="">Selecione um produto</option>
@@ -282,7 +285,6 @@ export default function StockForm() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required
                 placeholder="Digite o nome do produto..."
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
@@ -296,28 +298,26 @@ export default function StockForm() {
 
           {/* Quantidade */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
             <input
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               type="number"
               min="0"
               step="1"
-              required
               placeholder="Ex: 100"
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade Mínima *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade Mínima</label>
             <input
               value={minQuantity}
               onChange={(e) => setMinQuantity(e.target.value)}
               type="number"
               min="0"
               step="1"
-              required
               placeholder="0"
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
@@ -325,11 +325,10 @@ export default function StockForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Unidade *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Unidade</label>
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              required
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
               <option value="">Selecione a unidade</option>
