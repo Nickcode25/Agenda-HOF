@@ -26,6 +26,7 @@ export default function ProcedureForm() {
   const procedureCategories = [
     'Bioestimuladores de Colágeno',
     'Fios de Sustentação (PDO)',
+    'Peeling e Microagulhamento',
     'Preenchedores de Ácido Hialurônico',
     'Tecnologia / Equipamentos',
     'Toxina Botulínica',
