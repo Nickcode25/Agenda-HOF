@@ -185,14 +185,14 @@ export default function MedicalRecordPage() {
 
                   {/* Motivação */}
                   {currentAnamnesis.chief_complaint && (
-                  <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold text-orange-400 mb-2 flex items-center gap-2">
-                      <Heart size={16} />
-                      Queixa Principal
-                    </h3>
-                    <p className="text-white whitespace-pre-wrap">{currentAnamnesis.chief_complaint}</p>
-                  </div>
-                )}
+                    <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-orange-400 mb-2 flex items-center gap-2">
+                        <Heart size={16} />
+                        Queixa Principal
+                      </h3>
+                      <p className="text-white whitespace-pre-wrap">{currentAnamnesis.chief_complaint}</p>
+                    </div>
+                  )}
 
                 {/* Procedimentos Estéticos Anteriores */}
                 {currentAnamnesis.previous_aesthetic_procedures && (
@@ -316,7 +316,6 @@ export default function MedicalRecordPage() {
                     </div>
                   </div>
                 )}
-              </div>
                 </>
               ) : (
                 <div className="text-center py-12">
