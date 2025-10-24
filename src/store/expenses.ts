@@ -278,24 +278,35 @@ export const useExpenses = create<ExpensesStore>()(
               console.log('Resultado busca caixa:', { openSession, sessionError })
 
               if (openSession) {
+                // Buscar cash_register_id da sessão
+                const { data: sessionData } = await supabase
+                  .from('cash_sessions')
+                  .select('cash_register_id')
+                  .eq('id', openSession.id)
+                  .single()
+
                 // Criar movimentação no caixa
                 const { data: movement, error: movementError } = await supabase
                   .from('cash_movements')
                   .insert({
                     user_id: user.id,
                     cash_session_id: openSession.id,
+                    cash_register_id: sessionData?.cash_register_id || null,
                     type: 'expense',
                     category: 'expense',
                     amount: expenseData.amount,
                     payment_method: expenseData.paymentMethod,
                     description: `${expenseData.categoryName} - ${expenseData.description}`,
-                    reference_type: 'expense',
                     reference_id: data.id
                   })
                   .select()
                   .single()
 
                 console.log('Movimentação criada:', { movement, movementError })
+
+                if (movementError) {
+                  console.error('Erro detalhado ao criar movimentação:', movementError)
+                }
               } else {
                 console.warn('Nenhum caixa aberto encontrado')
               }
