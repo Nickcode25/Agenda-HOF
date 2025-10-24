@@ -441,7 +441,7 @@ export default function PatientDetail() {
   )
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/app/pacientes" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
@@ -449,85 +449,116 @@ export default function PatientDetail() {
         </Link>
       </div>
 
-      {/* Profile Card */}
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row items-start gap-6">
-          {/* Photo */}
-          {patient.photoUrl ? (
-            <img src={patient.photoUrl} className="h-32 w-32 rounded-xl object-cover border-2 border-orange-500" alt={patient.name} />
-          ) : (
-            <div className="h-32 w-32 rounded-xl bg-gray-700 flex items-center justify-center border-2 border-gray-700">
-              <span className="text-gray-500 text-4xl">👤</span>
-            </div>
-          )}
-          
-          {/* Info */}
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white mb-2">{patient.name}</h2>
-            
-            <div className="space-y-2 text-sm">
-              <p className="text-gray-400"><span className="font-medium">CPF:</span> {patient.cpf}</p>
-              {patient.phone && <p className="text-gray-400"><span className="font-medium">Telefone:</span> {patient.phone}</p>}
-              {(patient.street || patient.cep) && (
-                <div className="text-gray-400">
-                  <span className="font-medium">Endereço:</span>
-                  <div className="ml-4 mt-1">
-                    {patient.street && patient.number && (
-                      <p>{patient.street}, {patient.number}{patient.complement ? `, ${patient.complement}` : ''}</p>
-                    )}
-                    {patient.neighborhood && <p>{patient.neighborhood}</p>}
-                    {patient.city && patient.state && <p>{patient.city} - {patient.state}</p>}
-                    {patient.cep && <p>CEP: {patient.cep}</p>}
-                  </div>
+      {/* Profile Card - Header Premium */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row items-start gap-6 mb-6">
+            {/* Photo */}
+            {patient.photoUrl ? (
+              <img src={patient.photoUrl} className="h-32 w-32 rounded-xl object-cover border-2 border-orange-500 shadow-lg" alt={patient.name} />
+            ) : (
+              <div className="h-32 w-32 rounded-xl bg-gray-700 flex items-center justify-center border-2 border-gray-700">
+                <span className="text-gray-500 text-4xl">👤</span>
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="flex-1">
+              <h2 className="text-3xl font-bold text-white mb-3">{patient.name}</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <FileText size={16} className="text-orange-400" />
+                  <span className="text-gray-300"><span className="font-medium">CPF:</span> {patient.cpf}</span>
                 </div>
-              )}
+                {patient.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone size={16} className="text-orange-400" />
+                    <span className="text-gray-300">{patient.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions - Aligned to right */}
+            <div className="flex flex-col gap-3">
+              <Link
+                to={`/app/pacientes/${id}/editar`}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl font-medium border border-blue-500/30 transition-all"
+              >
+                <Edit size={18} />
+                Editar
+              </Link>
+              <button
+                onClick={handleDelete}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-medium border border-red-500/30 transition-all"
+              >
+                <Trash2 size={18} />
+                Remover
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="mt-6 pt-6 border-t border-gray-700 flex flex-wrap gap-3">
-          <Link
-            to={`/app/pacientes/${id}/prontuario`}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all"
-          >
-            <FileText size={18} />
-            Prontuário Eletrônico
-          </Link>
-          <button
-            onClick={() => setShowProcedureModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all"
-          >
-            <Plus size={18} />
-            Adicionar Procedimento
-          </button>
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-3">
+            <Link
+              to={`/app/pacientes/${id}/prontuario`}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all"
+            >
+              <FileText size={18} />
+              Prontuário Eletrônico
+            </Link>
+            <button
+              onClick={() => setShowProcedureModal(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all"
+            >
+              <Plus size={18} />
+              Adicionar Procedimento
+            </button>
+          </div>
         </div>
+      </div>
 
-        {/* Clinical Data */}
-        <div className="mt-6 pt-6 border-t border-gray-700 space-y-4">
-          <div>
-            <h3 className="font-medium mb-2 text-orange-500">Informações Clínicas</h3>
+      {/* Layout em 2 Colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Coluna Esquerda: Informações e Planejamento */}
+        <div className="space-y-6">
+          {/* Clinical Data */}
+          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
+              <FileText size={20} />
+              Informações Clínicas
+            </h3>
             <p className="text-gray-300">{patient.clinicalInfo || 'Nenhuma informação clínica registrada'}</p>
           </div>
 
-          <div>
-            <h3 className="font-medium mb-2 text-orange-500">Observações</h3>
+          {/* Observations */}
+          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
+              <FileText size={20} />
+              Observações
+            </h3>
             <p className="text-gray-300">{patient.notes || 'Nenhuma observação'}</p>
           </div>
-        </div>
 
-        {/* Planned Procedures */}
-        <div className="mt-6 pt-6 border-t border-gray-700">
-          <div className="mb-4">
-            <h3 className="font-medium text-orange-500">Planejamento de Procedimentos</h3>
-          </div>
+          {/* Planned Procedures */}
+          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
+              <Calendar size={20} />
+              Planejamento de Procedimentos
+            </h3>
 
-          {/* Procedures List */}
-          {patient.plannedProcedures && patient.plannedProcedures.filter(proc => proc.status !== 'completed').length > 0 ? (
-            <div className="space-y-3">
-              {patient.plannedProcedures
-                .filter(proc => proc.status !== 'completed')
-                .map(proc => (
+            {/* Procedures List */}
+            {patient.plannedProcedures && patient.plannedProcedures.filter(proc => proc.status !== 'completed').length > 0 ? (
+              <div className="space-y-3">
+                {patient.plannedProcedures
+                  .filter(proc => proc.status !== 'completed')
+                  .map(proc => (
                 <div key={proc.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600 hover:border-gray-500 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -592,30 +623,33 @@ export default function PatientDetail() {
                 </div>
               ))}
               
-              {/* Total do Planejamento */}
-              <div className="mt-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-gray-300">Total do Planejamento:</span>
-                  <span className="text-2xl font-bold text-green-400">
-                    {formatCurrency(
-                      patient.plannedProcedures
-                        .filter(proc => proc.status !== 'completed')
-                        .reduce((sum, proc) => sum + proc.totalValue, 0)
-                    )}
-                  </span>
+                {/* Total do Planejamento */}
+                <div className="mt-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-300">Total do Planejamento:</span>
+                    <span className="text-xl font-bold text-green-400">
+                      {formatCurrency(
+                        patient.plannedProcedures
+                          .filter(proc => proc.status !== 'completed')
+                          .reduce((sum, proc) => sum + proc.totalValue, 0)
+                      )}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <p className="text-gray-400 text-center py-8">Nenhum procedimento planejado ainda</p>
-          )}
+            ) : (
+              <p className="text-gray-400 text-center py-8">Nenhum procedimento planejado ainda</p>
+            )}
+          </div>
         </div>
 
-        {/* Procedimentos Realizados */}
-        <div className="mt-8 pt-6 border-t border-gray-700">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-white">Procedimentos Realizados</h3>
-          </div>
+        {/* Coluna Direita: Procedimentos Realizados */}
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
+              <CheckCircle size={20} />
+              Procedimentos Realizados
+            </h3>
 
           {patient.plannedProcedures && patient.plannedProcedures.filter(proc => proc.status === 'completed').length > 0 ? (
             <div className="space-y-4">
@@ -712,8 +746,8 @@ export default function PatientDetail() {
               {/* Total dos Procedimentos Realizados */}
               <div className="mt-4 p-4 bg-green-500/10 rounded-lg border border-green-500/30">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-gray-300">Total dos Procedimentos Realizados:</span>
-                  <span className="text-2xl font-bold text-green-400">
+                  <span className="text-sm font-medium text-gray-300">Total dos Procedimentos Realizados:</span>
+                  <span className="text-xl font-bold text-green-400">
                     {formatCurrency(
                       patient.plannedProcedures
                         .filter(proc => proc.status === 'completed')
@@ -732,24 +766,7 @@ export default function PatientDetail() {
               <p className="text-gray-400">Os procedimentos concluídos aparecerão aqui automaticamente</p>
             </div>
           )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 mt-8 pt-6 border-t border-gray-700">
-          <Link
-            to={`/app/pacientes/${patient.id}/editar`}
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-          >
-            <Edit size={18} />
-            Editar Paciente
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-medium transition-colors border border-red-500/30"
-          >
-            <Trash2 size={18} />
-            Remover
-          </button>
+          </div>
         </div>
       </div>
 
