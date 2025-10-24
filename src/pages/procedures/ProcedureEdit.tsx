@@ -1,21 +1,22 @@
 import { FormEvent, useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
-import { useStock } from '@/store/stock'
+import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Plus } from 'lucide-react'
+import CreateCategoryModal from '@/components/CreateCategoryModal'
 
 export default function ProcedureEdit() {
   const { id } = useParams()
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
-  const { items: stockItems, fetchItems } = useStock()
+  const { getProcedureCategories, fetchCategories } = useCategories()
   const navigate = useNavigate()
 
   const procedure = procedures.find(p => p.id === id)
 
   useEffect(() => {
     fetchAll()
-    fetchItems()
+    fetchCategories()
   }, [])
 
   const [value, setValue] = useState('')
@@ -25,13 +26,10 @@ export default function ProcedureEdit() {
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
   const [category, setCategory] = useState('')
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
 
-  // Categorias fixas de procedimentos em ordem alfabética
-  const procedureCategories = [
-    'Bioestimuladores de Colágeno',
-    'Preenchedores de Ácido Hialurônico',
-    'Toxina Botulínica'
-  ]
+  // Obter categorias de procedimentos do banco
+  const procedureCategories = getProcedureCategories().map(cat => cat.name)
 
   useEffect(() => {
     if (procedure) {
@@ -101,6 +99,10 @@ export default function ProcedureEdit() {
     navigate(`/app/procedimentos/${procedure.id}`)
   }
 
+  const handleCategoryCreated = (newCategoryName: string) => {
+    setCategory(newCategoryName)
+  }
+
   if (!procedure) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
@@ -117,16 +119,26 @@ export default function ProcedureEdit() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/app/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      {/* Form com Header Integrado */}
+      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border-b border-gray-700 flex items-center gap-4">
+          <Link
+            to="/app/procedimentos"
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            title="Voltar"
+          >
+            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-white">Editar Procedimento</h1>
+            <p className="text-sm text-gray-400">Atualize os dados do procedimento</p>
+          </div>
+        </div>
 
-      {/* Form */}
-      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8 shadow-xl">
+        {/* Form Content */}
+        <div className="p-6 lg:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Procedimento *</label>
@@ -141,20 +153,30 @@ export default function ProcedureEdit() {
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Categoria do Procedimento</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            >
-              <option value="">Selecione uma categoria</option>
-              {procedureCategories.map(cat => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            <div className="flex gap-2">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              >
+                <option value="">Selecione uma categoria</option>
+                {procedureCategories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(true)}
+                className="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 flex items-center gap-2 whitespace-nowrap"
+              >
+                <Plus size={18} />
+                Nova
+              </button>
+            </div>
             <p className="text-xs text-gray-400 mt-1">
-              Selecione a categoria de produto deste procedimento
+              Selecione a categoria de produto deste procedimento ou crie uma nova
             </p>
           </div>
 
@@ -224,7 +246,16 @@ export default function ProcedureEdit() {
             Cancelar
           </Link>
         </div>
+        </div>
       </form>
+
+      {/* Modal de Criar Categoria */}
+      <CreateCategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        type="both"
+        onCategoryCreated={handleCategoryCreated}
+      />
     </div>
   )
 }

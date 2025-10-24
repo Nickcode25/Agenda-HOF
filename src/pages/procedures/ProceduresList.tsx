@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Diamond, Gem, Flower2, Palette, Triangle } from 'lucide-react'
+import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Diamond, Gem, Flower2, Palette, Triangle, Tag } from 'lucide-react'
 
 export default function ProceduresList() {
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
@@ -108,13 +108,22 @@ export default function ProceduresList() {
                 <p className="text-gray-400">Gerencie os procedimentos do consultório</p>
               </div>
             </div>
-            <Link
-              to="/app/procedimentos/novo"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
-            >
-              <Plus size={20} />
-              Novo Procedimento
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/app/procedimentos/categorias"
+                className="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-5 py-3 rounded-xl font-medium transition-all whitespace-nowrap border border-gray-600"
+              >
+                <Tag size={18} />
+                Categorias
+              </Link>
+              <Link
+                to="/app/procedimentos/novo"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
+              >
+                <Plus size={20} />
+                Novo Procedimento
+              </Link>
+            </div>
           </div>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />

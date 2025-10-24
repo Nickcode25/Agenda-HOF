@@ -195,15 +195,8 @@ export default function PatientDetail() {
   const handleCompleteProcedure = async () => {
     if (!patient || !completingProcedure) return
 
-    // Verificar se o procedimento tem categoria vinculada
-    const procedureData = procedures.find(p => p.name === completingProcedure.procedureName)
-    const hasCategory = !!procedureData?.category
-
-    // Se tem categoria, produto é obrigatório
-    if (hasCategory && !selectedProductId) {
-      showToast('Selecione o produto utilizado', 'error')
-      return
-    }
+    // Produto é sempre opcional - estoque é apenas um recurso adicional
+    // O usuário pode concluir o procedimento com ou sem vincular produto
 
     let product = null
 
@@ -1044,17 +1037,17 @@ export default function PatientDetail() {
                     // Se tem categoria mas não tem produtos
                     if (categoryProducts.length === 0) {
                       return (
-                        <>
-                          <label className="block text-sm font-medium text-gray-300 mb-3">
-                            Selecione o produto utilizado *
-                          </label>
-                          <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                            <AlertTriangle size={20} className="text-yellow-500" />
-                            <p className="text-sm text-yellow-500">
-                              Nenhum produto encontrado na categoria "{procedureData?.category}".
+                        <div className="flex items-center gap-2 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <AlertTriangle size={20} className="text-blue-400" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-blue-400 mb-1">
+                              Categoria: {procedureData?.category}
+                            </p>
+                            <p className="text-sm text-blue-300">
+                              Nenhum produto cadastrado na categoria "{procedureData?.category}". Você pode concluir o procedimento sem vincular produto ou <Link to="/app/estoque/novo" className="underline hover:text-blue-200">cadastrar um produto</Link>.
                             </p>
                           </div>
-                        </>
+                        </div>
                       )
                     }
 
@@ -1062,7 +1055,7 @@ export default function PatientDetail() {
                     return (
                       <>
                         <label className="block text-sm font-medium text-gray-300 mb-3">
-                          Selecione o produto utilizado *
+                          Selecione o produto utilizado (opcional)
                         </label>
                         <div className="grid grid-cols-1 gap-3">
                         {categoryProducts.map(product => (
@@ -1250,19 +1243,11 @@ export default function PatientDetail() {
               <button
                 onClick={handleCompleteProcedure}
                 disabled={(() => {
-                  // Verificar se procedimento tem categoria
-                  const procedureData = procedures.find(p => p.name === completingProcedure.procedureName)
-                  const hasCategory = !!procedureData?.category
+                  // Só desabilitar se selecionou produto mas estoque é insuficiente
+                  if (!selectedProductId) return false
 
-                  // Se não tem categoria, pode concluir sem produto
-                  if (!hasCategory) return false
-
-                  // Se tem categoria mas não selecionou produto, desabilitar
-                  if (!selectedProductId) return true
-
-                  // Se selecionou produto, verificar estoque
                   const product = stockItems.find(item => item.id === selectedProductId)
-                  return product ? product.quantity < completingProcedure.quantity : true
+                  return product ? product.quantity < completingProcedure.quantity : false
                 })()}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/40"
               >

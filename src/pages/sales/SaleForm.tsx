@@ -5,7 +5,7 @@ import { useStock } from '@/store/stock'
 import { autoRegisterCashMovement } from '@/store/cash'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import { SaleItem } from '@/types/sales'
-import { Save, Plus, Trash2, User } from 'lucide-react'
+import { Save, Plus, Trash2, User, ArrowLeft } from 'lucide-react'
 
 export default function SaleForm() {
   const { id } = useParams<{ id: string }>()
@@ -212,9 +212,24 @@ export default function SaleForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Form */}
+    <div className="max-w-4xl mx-auto">
+      {/* Form com Header Integrado */}
       <form onSubmit={onSubmit} className="space-y-6">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border border-gray-700 rounded-2xl shadow-xl flex items-center gap-4">
+          <Link
+            to="/app/vendas"
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            title="Voltar"
+          >
+            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-white">{isEditing ? 'Editar Venda' : 'Nova Venda'}</h1>
+            <p className="text-sm text-gray-400">Preencha os dados da venda</p>
+          </div>
+        </div>
+
         {/* Professional Selection */}
         <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Profissional</h3>

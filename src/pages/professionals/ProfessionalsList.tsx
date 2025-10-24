@@ -28,48 +28,70 @@ export default function ProfessionalsList() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Search and Button */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            value={q}
-            onChange={e=>setQ(e.target.value)}
-            placeholder="Buscar por nome, especialidade ou registro..."
-            className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-          />
+      {/* Header Premium */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
         </div>
-        <Link
-          to="/app/profissionais/novo"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:scale-105 whitespace-nowrap"
-        >
-          <UserPlus size={20} />
-          Novo Profissional
-        </Link>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-cyan-500/20 rounded-xl">
+                <Stethoscope size={32} className="text-cyan-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Profissionais</h1>
+                <p className="text-gray-400">Gerencie os profissionais do consultório</p>
+              </div>
+            </div>
+            <Link
+              to="/app/profissionais/novo"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
+            >
+              <UserPlus size={20} />
+              Novo Profissional
+            </Link>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              value={q}
+              onChange={e=>setQ(e.target.value)}
+              placeholder="Buscar por nome, especialidade ou registro..."
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Professionals Grid */}
       {filtered.length === 0 ? (
-        <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-12 text-center">
-          <div className="w-20 h-20 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Stethoscope size={40} className="text-gray-500" />
+        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">Nenhum profissional encontrado</h3>
-          <p className="text-gray-400 mb-6">Cadastre os profissionais que trabalham no consultório</p>
-          <Link
-            to="/app/profissionais/novo"
-            className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            <UserPlus size={18} />
-            Cadastrar Profissional
-          </Link>
+          <div className="relative z-10">
+            <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/20">
+              <Stethoscope size={40} className="text-cyan-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Nenhum profissional encontrado</h3>
+            <p className="text-gray-400 mb-6">Cadastre os profissionais que trabalham no consultório</p>
+            <Link
+              to="/app/profissionais/novo"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
+            >
+              <UserPlus size={18} />
+              Cadastrar Profissional
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4">
           {filtered.map(prof => (
-            <div 
-              key={prof.id} 
-              className="bg-gray-800 border border-gray-700 rounded-2xl p-6 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"
+            <div
+              key={prof.id}
+              className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-cyan-500/50 transition-all hover:shadow-xl hover:shadow-cyan-500/10"
             >
               <div className="flex items-center gap-4">
                 {/* Photo */}
@@ -126,7 +148,7 @@ export default function ProfessionalsList() {
                   </button>
                   <Link
                     to={`/app/profissionais/${prof.id}`}
-                    className="text-gray-400 hover:text-orange-500 transition-colors"
+                    className="text-gray-400 hover:text-cyan-400 transition-colors"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

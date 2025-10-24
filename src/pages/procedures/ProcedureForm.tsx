@@ -1,38 +1,28 @@
 import { FormEvent, useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
-import { useStock } from '@/store/stock'
+import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
 import { Save, ArrowLeft } from 'lucide-react'
 
 export default function ProcedureForm() {
   const add = useProcedures(s => s.add)
   const error = useProcedures(s => s.error)
-  const { items: stockItems, fetchItems } = useStock()
+  const { getProcedureCategories, fetchCategories } = useCategories()
   const navigate = useNavigate()
 
   const [value, setValue] = useState('')
   const [cashValue, setCashValue] = useState('')
   const [cardValue, setCardValue] = useState('')
   const [category, setCategory] = useState('')
-  const [customCategory, setCustomCategory] = useState('')
 
-  // Carregar itens do estoque ao montar o componente
+  // Carregar categorias ao montar o componente
   useEffect(() => {
-    fetchItems()
+    fetchCategories()
   }, [])
 
-  // Categorias fixas de procedimentos em ordem alfabética
-  const procedureCategories = [
-    'Bioestimuladores de Colágeno',
-    'Fios de Sustentação (PDO)',
-    'Peeling e Microagulhamento',
-    'Preenchedores de Ácido Hialurônico',
-    'Tecnologia / Equipamentos',
-    'Toxina Botulínica',
-    'Tratamentos Vasculares',
-    'Outros'
-  ]
+  // Obter categorias de procedimentos do banco
+  const procedureCategories = getProcedureCategories().map(cat => cat.name)
 
 
   function formatCurrency(val: string) {
@@ -70,7 +60,6 @@ export default function ProcedureForm() {
     const data = new FormData(e.currentTarget)
 
     const durationValue = data.get('duration')
-    const finalCategory = category === 'Outros' ? customCategory : category
     const procedureData = {
       name: String(data.get('name')||''),
       price: value ? parseCurrency(value) : 0,
@@ -78,9 +67,9 @@ export default function ProcedureForm() {
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: String(data.get('description')||''),
       durationMinutes: durationValue ? Number(durationValue) : 0,
-      category: finalCategory || undefined,
+      category: category || undefined,
       isActive: true,
-      stockCategories: finalCategory ? [{ category: finalCategory, quantityUsed: 1 }] : []
+      stockCategories: category ? [{ category: category, quantityUsed: 1 }] : []
     }
 
     const id = await add(procedureData)
@@ -94,23 +83,33 @@ export default function ProcedureForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/app/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-          <p className="text-red-400 text-sm">{error}</p>
+    <div className="max-w-4xl mx-auto">
+      {/* Form com Header Integrado */}
+      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border-b border-gray-700 flex items-center gap-4">
+          <Link
+            to="/app/procedimentos"
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            title="Voltar"
+          >
+            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-white">Novo Procedimento</h1>
+            <p className="text-sm text-gray-400">Preencha os dados do procedimento</p>
+          </div>
         </div>
-      )}
 
-      {/* Form */}
-      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8 shadow-xl">
+        {/* Error Message */}
+        {error && (
+          <div className="mx-6 mt-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Form Content */}
+        <div className="p-6 lg:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Procedimento *</label>
@@ -137,25 +136,9 @@ export default function ProcedureForm() {
               ))}
             </select>
             <p className="text-xs text-gray-400 mt-1">
-              Selecione a categoria de produto deste procedimento
+              Selecione a categoria do procedimento
             </p>
           </div>
-
-          {category === 'Outros' && (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Digite a Categoria Personalizada *</label>
-              <input
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                placeholder="Ex: Peeling, Microagulhamento, etc..."
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                required
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Digite o nome da categoria personalizada
-              </p>
-            </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Valor à Vista</label>
@@ -212,7 +195,7 @@ export default function ProcedureForm() {
             ></textarea>
           </div>
         </div>
-        
+
         <div className="flex gap-3 mt-8">
           <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40">
             <Save size={20} />
@@ -221,6 +204,7 @@ export default function ProcedureForm() {
           <Link to="/app/procedimentos" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
             Cancelar
           </Link>
+        </div>
         </div>
       </form>
     </div>

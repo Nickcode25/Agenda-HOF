@@ -1,8 +1,10 @@
 import { FormEvent, useState, useEffect } from 'react'
-import { useNavigate, Link, useParams } from 'react-router-dom'
+import { useNavigate, Link, useParams, useSearchParams } from 'react-router-dom'
 import { useStock } from '@/store/stock'
+import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Plus } from 'lucide-react'
+import CreateCategoryModal from '@/components/CreateCategoryModal'
 
 // Produtos pré-cadastrados por categoria e marca (em ordem alfabética)
 const PREDEFINED_PRODUCTS: Record<string, Record<string, string[]>> = {
@@ -104,9 +106,12 @@ const PREDEFINED_PRODUCTS: Record<string, Record<string, string[]>> = {
 
 export default function StockForm() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const { items, addItem, updateItem, fetchItems } = useStock()
+  const { getStockCategories, fetchCategories } = useCategories()
   const navigate = useNavigate()
   const isEditMode = !!id
+  const returnCategory = searchParams.get('categoria')
 
   const item = isEditMode ? items.find(i => i.id === id) : null
 
@@ -119,6 +124,15 @@ export default function StockForm() {
   const [minQuantity, setMinQuantity] = useState('')
   const [unit, setUnit] = useState('')
   const [dosesPerUnit, setDosesPerUnit] = useState('')
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+
+  // Carregar categorias ao montar o componente
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  // Obter categorias de estoque do banco
+  const stockCategories = getStockCategories().map(cat => cat.name)
 
   // Obter produtos disponíveis baseado na categoria e marca selecionadas
   const availableProducts = category && brand && PREDEFINED_PRODUCTS[category]?.[brand]
@@ -204,48 +218,68 @@ export default function StockForm() {
     if (isEditMode && id) {
       await updateItem(id, itemData)
       await fetchItems(true) // Força reload dos dados
-      navigate('/app/estoque')
+      navigate(returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque')
     } else {
       const newId = await addItem(itemData)
       if (newId) {
         await fetchItems(true) // Força reload dos dados
-        navigate('/app/estoque')
+        navigate(returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque')
       }
     }
   }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/app/estoque" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-      </div>
+  const handleCategoryCreated = (newCategoryName: string) => {
+    setCategory(newCategoryName)
+  }
 
-      {/* Form */}
-      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-8">
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Form com Header Integrado */}
+      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border-b border-gray-700 flex items-center gap-4">
+          <Link
+            to={returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque'}
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            title="Voltar"
+          >
+            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-white">{isEditMode ? 'Editar Produto' : 'Novo Produto'}</h1>
+            <p className="text-sm text-gray-400">Preencha os dados do produto no estoque</p>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <div className="p-6 lg:p-8">
         <div className="grid gap-6 md:grid-cols-2">
           {/* Categoria */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Categoria *</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              required
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            >
-              <option value="">Selecione uma categoria</option>
-              <option value="Bioestimuladores de Colágeno">Bioestimuladores de Colágeno</option>
-              <option value="Fios de Sustentação (PDO)">Fios de Sustentação (PDO)</option>
-              <option value="Peeling e Microagulhamento">Peeling e Microagulhamento</option>
-              <option value="Preenchedores de Ácido Hialurônico">Preenchedores de Ácido Hialurônico</option>
-              <option value="Tecnologia / Equipamentos">Tecnologia / Equipamentos</option>
-              <option value="Toxina Botulínica">Toxina Botulínica</option>
-              <option value="Tratamentos Vasculares">Tratamentos Vasculares</option>
-              <option value="Insumos">Insumos</option>
-              <option value="Outros">Outros</option>
-            </select>
+            <div className="flex gap-2">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+                className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              >
+                <option value="">Selecione uma categoria</option>
+                {stockCategories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(true)}
+                className="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 flex items-center gap-2 whitespace-nowrap"
+              >
+                <Plus size={18} />
+                Nova
+              </button>
+            </div>
           </div>
 
           {/* Marca */}
@@ -405,16 +439,25 @@ export default function StockForm() {
             className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
           >
             <Save size={18} />
-            Adicionar Produto
+            {isEditMode ? 'Salvar Alterações' : 'Adicionar Produto'}
           </button>
           <Link
-            to="/app/estoque"
-            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
+            to={returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque'}
+            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
           >
             Cancelar
           </Link>
         </div>
+        </div>
       </form>
+
+      {/* Modal de Criar Categoria */}
+      <CreateCategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        type="both"
+        onCategoryCreated={handleCategoryCreated}
+      />
     </div>
   )
 }

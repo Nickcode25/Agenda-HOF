@@ -189,17 +189,24 @@ export default function ProfessionalEdit() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/app/vendas/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-        <h1 className="text-2xl font-bold text-white">Editar Profissional</h1>
-      </div>
-
-      {/* Form */}
+    <div className="max-w-4xl mx-auto">
+      {/* Form com Header Integrado */}
       <form onSubmit={onSubmit} className="space-y-6">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border border-gray-700 rounded-2xl shadow-xl flex items-center gap-4">
+          <Link
+            to="/app/vendas/profissionais"
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            title="Voltar"
+          >
+            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-white">Editar Profissional</h1>
+            <p className="text-sm text-gray-400">Atualize os dados do profissional de vendas</p>
+          </div>
+        </div>
+
         {/* Basic Info */}
         <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Informações Básicas</h3>

@@ -139,6 +139,7 @@ export default function App() {
       'pacientes': 'Pacientes',
       'profissionais': 'Profissionais',
       'procedimentos': 'Procedimentos',
+      'categorias': 'Categorias',
       'estoque': 'Estoque',
       'vendas': 'Vendas',
       'despesas': 'Despesas',

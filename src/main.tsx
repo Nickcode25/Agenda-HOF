@@ -18,6 +18,7 @@ import ProceduresList from './pages/procedures/ProceduresList'
 import ProcedureForm from './pages/procedures/ProcedureForm'
 import ProcedureDetail from './pages/procedures/ProcedureDetail'
 import ProcedureEdit from './pages/procedures/ProcedureEdit'
+import ProcedureCategories from './pages/procedures/ProcedureCategories'
 import StockList from './pages/stock/StockList'
 import StockForm from './pages/stock/StockForm'
 import SalesList from './pages/sales/SalesList'
@@ -104,6 +105,7 @@ const router = createBrowserRouter([
       { path: 'agenda/nova', element: <AppointmentForm /> },
 
       { path: 'procedimentos', element: <ProceduresList /> },
+      { path: 'procedimentos/categorias', element: <ProcedureCategories /> },
       { path: 'procedimentos/novo', element: <ProcedureForm /> },
       { path: 'procedimentos/:id', element: <ProcedureDetail /> },
       { path: 'procedimentos/:id/editar', element: <ProcedureEdit /> },

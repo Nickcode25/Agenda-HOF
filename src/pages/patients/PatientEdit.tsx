@@ -163,16 +163,26 @@ export default function PatientEdit() {
   )
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to={`/pacientes/${id}`} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      {/* Form com Header Integrado */}
+      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border-b border-gray-700 flex items-center gap-4">
+          <Link
+            to={`/app/pacientes/${id}`}
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            title="Voltar"
+          >
+            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-white">Editar Paciente</h1>
+            <p className="text-sm text-gray-400">Atualize os dados do paciente</p>
+          </div>
+        </div>
 
-      {/* Form */}
-      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8 shadow-xl">
+        {/* Form Content */}
+        <div className="p-6 lg:p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
@@ -332,9 +342,10 @@ export default function PatientEdit() {
             <Save size={20} />
             Salvar Alterações
           </button>
-          <Link to={`/pacientes/${id}`} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
+          <Link to={`/app/pacientes/${id}`} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
             Cancelar
           </Link>
+        </div>
         </div>
       </form>
     </div>

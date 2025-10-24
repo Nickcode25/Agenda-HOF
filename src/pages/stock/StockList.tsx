@@ -1,19 +1,29 @@
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useStock } from '@/store/stock'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Plus, Package, AlertTriangle, Calendar, TrendingDown, TrendingUp, Edit, Trash2 } from 'lucide-react'
+import { Search, Plus, Package, AlertTriangle, Calendar, TrendingDown, TrendingUp, Edit, Trash2, Tag } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
 
 
 export default function StockList() {
   const { items, removeItem, generateAlerts, getUnreadAlerts, fetchItems } = useStock()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoria') || '')
 
   useEffect(() => {
     fetchItems(true) // Força reload ao montar o componente
   }, [])
+
+  // Atualizar URL quando o filtro mudar
+  useEffect(() => {
+    if (categoryFilter) {
+      setSearchParams({ categoria: categoryFilter })
+    } else {
+      setSearchParams({})
+    }
+  }, [categoryFilter, setSearchParams])
   // Gerar alertas ao carregar a página
   useMemo(() => {
     generateAlerts()
@@ -78,15 +88,24 @@ export default function StockList() {
                 <p className="text-gray-400">Gerencie seus produtos e suprimentos</p>
               </div>
             </div>
-            <Link
-              to="/app/estoque/novo"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
-            >
-              <Plus size={18} />
-              Adicionar Produto
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/app/procedimentos/categorias"
+                className="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-5 py-3 rounded-xl font-medium transition-all whitespace-nowrap border border-gray-600"
+              >
+                <Tag size={18} />
+                Categorias
+              </Link>
+              <Link
+                to="/app/estoque/novo"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
+              >
+                <Plus size={18} />
+                Adicionar Produto
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col gap-4">
             <div className="relative flex-1">
               <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -97,22 +116,33 @@ export default function StockList() {
                 className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer hover:bg-gray-700 min-w-[200px]"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.75rem center',
-                backgroundSize: '1.25rem'
-              }}
-            >
-              <option value="" className="bg-gray-800 text-white">Todas as categorias</option>
-              {categories.map(category => (
-                <option key={category} value={category} className="bg-gray-800 text-white">{category}</option>
+
+            {/* Quick Category Filter Buttons */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setCategoryFilter('')}
+                className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                  !categoryFilter
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
+                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 border border-gray-600/50'
+                }`}
+              >
+                Todas
+              </button>
+              {categories.sort().map(category => (
+                <button
+                  key={category}
+                  onClick={() => setCategoryFilter(category)}
+                  className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                    categoryFilter === category
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
+                      : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 border border-gray-600/50'
+                  }`}
+                >
+                  {category}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
         </div>
       </div>
@@ -184,7 +214,7 @@ export default function StockList() {
                   </div>
                   <div className="flex gap-2">
                     <Link
-                      to={`/app/estoque/${item.id}/editar`}
+                      to={`/app/estoque/${item.id}/editar${categoryFilter ? `?categoria=${encodeURIComponent(categoryFilter)}` : ''}`}
                       className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all"
                     >
                       <Edit size={16} />
