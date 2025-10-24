@@ -54,6 +54,14 @@ export default function ExpenseForm() {
     }
   }, [id, getExpense, fetchCategories])
 
+  const getTodayDateString = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -75,7 +83,7 @@ export default function ExpenseForm() {
         paymentStatus: formData.paymentStatus,
         dueDate: formData.dueDate || undefined,
         paidAt: formData.paymentStatus === 'paid'
-          ? (formData.paidAt || new Date().toISOString().split('T')[0])
+          ? (formData.paidAt || getTodayDateString())
           : (formData.paidAt || undefined),
         isRecurring: formData.isRecurring,
         recurringFrequency: formData.isRecurring ? formData.recurringFrequency : undefined,
