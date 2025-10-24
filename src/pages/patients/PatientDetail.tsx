@@ -526,26 +526,8 @@ export default function PatientDetail() {
 
       {/* Layout em 2 Colunas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Coluna Esquerda: Informações e Planejamento */}
+        {/* Coluna Esquerda: Planejamento */}
         <div className="space-y-6">
-          {/* Clinical Data */}
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
-              <FileText size={20} />
-              Informações Clínicas
-            </h3>
-            <p className="text-gray-300">{patient.clinicalInfo || 'Nenhuma informação clínica registrada'}</p>
-          </div>
-
-          {/* Observations */}
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
-              <FileText size={20} />
-              Observações
-            </h3>
-            <p className="text-gray-300">{patient.notes || 'Nenhuma observação'}</p>
-          </div>
-
           {/* Planned Procedures */}
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
