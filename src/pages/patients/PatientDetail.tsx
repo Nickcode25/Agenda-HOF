@@ -38,6 +38,17 @@ export default function PatientDetail() {
     fetchItems()
   }, [])
 
+  // Listener para tecla ESC
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        navigate('/app/pacientes')
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [navigate])
+
   // Resetar valor customizado quando quantidade, procedimento ou forma de pagamento mudar
   useEffect(() => {
     if (isEditingValue) {

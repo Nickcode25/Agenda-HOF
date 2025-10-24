@@ -20,6 +20,17 @@ export default function ProcedureDetail() {
     fetchAll()
   }, [])
 
+  // Listener para tecla ESC
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        navigate('/app/procedimentos')
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [navigate])
+
   if (!procedure) return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 text-center">

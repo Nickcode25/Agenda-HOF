@@ -232,7 +232,7 @@ export default function PatientsList() {
             return (
               <div key={p.id} className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl overflow-hidden hover:border-gray-600/80 transition-all duration-300">
                 {/* Main Card */}
-                <div className="p-6">
+                <Link to={`/app/pacientes/${p.id}`} className="block p-6 cursor-pointer hover:bg-gray-800/30 transition-colors">
                   <div className="flex items-center gap-4">
                     {/* Photo */}
                     {p.photoUrl ? (
@@ -246,9 +246,9 @@ export default function PatientsList() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">
-                        <Link to={`/app/pacientes/${p.id}`} className="text-lg font-semibold text-white hover:text-orange-400 transition-colors">
+                        <h3 className="text-lg font-semibold text-white">
                           {p.name}
-                        </Link>
+                        </h3>
                         <div className="flex items-center gap-2 text-xs">
                           {plannedCount > 0 && (
                             <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full">
@@ -287,10 +287,14 @@ export default function PatientsList() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
                       {p.phone && (
                         <button
-                          onClick={() => handleWhatsApp(p.name, p.phone)}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleWhatsApp(p.name, p.phone)
+                          }}
                           className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors border border-green-500/30"
                           title="Enviar mensagem no WhatsApp"
                         >
@@ -299,7 +303,11 @@ export default function PatientsList() {
                       )}
 
                       <button
-                        onClick={() => setShowAddProcedure(showAddProcedure === p.id ? null : p.id)}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setShowAddProcedure(showAddProcedure === p.id ? null : p.id)
+                        }}
                         className="p-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg transition-colors border border-orange-500/30"
                         title="Adicionar procedimento"
                       >
@@ -307,25 +315,19 @@ export default function PatientsList() {
                       </button>
 
                       <button
-                        onClick={() => toggleExpanded(p.id)}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          toggleExpanded(p.id)
+                        }}
                         className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
                         title={isExpanded ? "Recolher planejamento" : "Expandir planejamento"}
                       >
                         {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </button>
-
-                      <Link
-                        to={`/app/pacientes/${p.id}`}
-                        className="p-2 hover:bg-gray-700 text-gray-400 hover:text-orange-400 rounded-lg transition-colors"
-                        title="Ver ficha completa"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </Link>
                     </div>
                   </div>
-                </div>
+                </Link>
 
                 {/* Add Procedure Form */}
                 {showAddProcedure === p.id && (

@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
 import { Stethoscope, Award, Phone, Mail, ArrowLeft, Trash2, FileText, MapPin, Edit } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useEffect } from 'react'
 
 export default function ProfessionalDetail() {
   const { id } = useParams()
@@ -13,6 +14,17 @@ export default function ProfessionalDetail() {
   }))
   const { confirm, ConfirmDialog } = useConfirm()
   const professional = professionals.find(p => p.id === id)
+
+  // Listener para tecla ESC
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        navigate('/app/profissionais')
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [navigate])
 
   if (!professional) return (
     <div>

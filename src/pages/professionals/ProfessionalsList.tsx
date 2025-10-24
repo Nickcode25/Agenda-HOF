@@ -89,9 +89,10 @@ export default function ProfessionalsList() {
       ) : (
         <div className="grid gap-4">
           {filtered.map(prof => (
-            <div
+            <Link
               key={prof.id}
-              className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-cyan-500/50 transition-all hover:shadow-xl hover:shadow-cyan-500/10"
+              to={`/app/profissionais/${prof.id}`}
+              className="block bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-cyan-500/50 transition-all hover:shadow-xl hover:shadow-cyan-500/10 cursor-pointer"
             >
               <div className="flex items-center gap-4">
                 {/* Photo */}
@@ -138,25 +139,21 @@ export default function ProfessionalsList() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3" onClick={(e) => e.preventDefault()}>
                   <button
-                    onClick={() => toggleActive(prof.id)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      toggleActive(prof.id)
+                    }}
                     className={`p-2 rounded-lg transition-all ${prof.active ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
                     title={prof.active ? 'Desativar' : 'Ativar'}
                   >
                     {prof.active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                   </button>
-                  <Link
-                    to={`/app/profissionais/${prof.id}`}
-                    className="text-gray-400 hover:text-cyan-400 transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

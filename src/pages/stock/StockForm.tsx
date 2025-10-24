@@ -233,36 +233,42 @@ export default function StockForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Form com Header Integrado */}
-      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border-b border-gray-700 flex items-center gap-4">
-          <Link
-            to={returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque'}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Voltar"
-          >
-            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-white">{isEditMode ? 'Editar Produto' : 'Novo Produto'}</h1>
-            <p className="text-sm text-gray-400">Preencha os dados do produto no estoque</p>
+      <form onSubmit={onSubmit} className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-3xl shadow-2xl overflow-hidden">
+        {/* Header Premium */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-gray-800 to-gray-900 px-8 py-6 border-b border-gray-700/50">
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+          </div>
+          <div className="relative z-10 flex items-center gap-4">
+            <Link
+              to={returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque'}
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+              title="Voltar"
+            >
+              <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-white">{isEditMode ? 'Editar Produto' : 'Novo Produto'}</h1>
+              <p className="text-sm text-gray-400">Preencha os dados do produto no estoque</p>
+            </div>
           </div>
         </div>
 
         {/* Form Content */}
-        <div className="p-6 lg:p-8">
+        <div className="p-8 lg:p-10">
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Categoria */}
-          <div>
+          {/* Categoria - Ocupa 2 colunas para evitar sobreposição */}
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Categoria *</label>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 required
-                className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                className="flex-1 bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="">Selecione uma categoria</option>
                 {stockCategories.map(cat => (
@@ -274,7 +280,7 @@ export default function StockForm() {
               <button
                 type="button"
                 onClick={() => setShowCategoryModal(true)}
-                className="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 flex items-center gap-2 whitespace-nowrap"
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 flex items-center gap-2 whitespace-nowrap"
               >
                 <Plus size={18} />
                 Nova
@@ -290,7 +296,7 @@ export default function StockForm() {
                 <select
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 >
                   <option value="">Selecione uma marca</option>
                   <option value="Allergan Aesthetics">Allergan Aesthetics</option>
@@ -310,7 +316,7 @@ export default function StockForm() {
                     value={customBrand}
                     onChange={(e) => setCustomBrand(e.target.value)}
                     placeholder="Ex: Azzalure, Bocouture, etc..."
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
               )}
@@ -325,13 +331,13 @@ export default function StockForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Cânula, Agulha, Seringa..."
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             ) : availableProducts.length > 0 ? (
               <select
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="">Selecione um produto</option>
                 {availableProducts.map((product) => (
@@ -345,7 +351,7 @@ export default function StockForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Digite o nome do produto..."
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             )}
             {category && brand && availableProducts.length === 0 && category !== 'Insumos' && (
@@ -365,7 +371,7 @@ export default function StockForm() {
               min="0"
               step="1"
               placeholder="Ex: 100"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
 
@@ -378,7 +384,7 @@ export default function StockForm() {
               min="0"
               step="1"
               placeholder="0"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">Quantidade para alerta de estoque baixo</p>
           </div>
@@ -388,7 +394,7 @@ export default function StockForm() {
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
               <option value="">Selecione a unidade</option>
               <option value="ml">ml (mililitros)</option>
@@ -412,7 +418,7 @@ export default function StockForm() {
               min="1"
               step="1"
               placeholder="Ex: 4 (para toxinas botulínicas)"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">
               Quantas aplicações rendem cada unidade? Ex: 1 frasco de Nabota = 4 aplicações.
@@ -427,7 +433,7 @@ export default function StockForm() {
               value={cost}
               onChange={handleCostChange}
               placeholder="R$ 0,00"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">Custo por unidade do produto (opcional)</p>
           </div>

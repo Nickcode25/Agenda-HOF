@@ -6,15 +6,18 @@ import { Category } from '@/store/categories'
 
 // Categorias nativas pré-cadastradas
 const DEFAULT_PROCEDURE_CATEGORIES = [
-  'Toxina Botulínica',
-  'Preenchedores com Ácido Hialurônico',
+  'Bichectomia',
   'Bioestimuladores de Colágeno',
+  'Fios de Sustentação',
+  'Lipoaspiração',
+  'Lipoenzimática',
   'Microagulhamento',
   'Peelings',
-  'Fios de Sustentação',
+  'Preenchedores com Ácido Hialurônico',
+  'Rinomodelação',
   'Skinbooster',
-  'Lipoenzimática',
   'Tecnologia / Equipamentos',
+  'Toxina Botulínica',
   'Tratamentos Vasculares'
 ]
 

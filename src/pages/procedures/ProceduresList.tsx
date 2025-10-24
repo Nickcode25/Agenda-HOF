@@ -165,9 +165,10 @@ export default function ProceduresList() {
             const IconComponent = iconConfig.icon
 
             return (
-              <div
+              <Link
                 key={proc.id}
-                className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-gray-600/80 transition-all duration-300 hover:shadow-xl"
+                to={`/app/procedimentos/${proc.id}`}
+                className="group relative block bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-gray-600/80 transition-all duration-300 hover:shadow-xl cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   {/* Icon */}
@@ -222,9 +223,10 @@ export default function ProceduresList() {
                 </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
                     <Link
                       to={`/app/procedimentos/${proc.id}/editar`}
+                      onClick={(e) => e.stopPropagation()}
                       className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all border border-transparent hover:border-orange-500/30"
                       title="Editar procedimento"
                     >
@@ -232,25 +234,19 @@ export default function ProceduresList() {
                     </Link>
 
                     <button
-                      onClick={() => update(proc.id, { isActive: !proc.isActive })}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        update(proc.id, { isActive: !proc.isActive })
+                      }}
                       className={`p-2 rounded-lg transition-all ${proc.isActive ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
                       title={proc.isActive ? 'Desativar' : 'Ativar'}
                     >
                       {proc.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                     </button>
-
-                    <Link
-                      to={`/app/procedimentos/${proc.id}`}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
-                      title="Ver detalhes"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
                   </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
