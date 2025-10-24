@@ -256,6 +256,41 @@ export const useExpenses = create<ExpensesStore>()(
 
           if (error) throw error
 
+          // Se a despesa foi paga, criar movimentação no caixa aberto
+          if (expenseData.paymentStatus === 'paid') {
+            try {
+              // Buscar caixa aberto
+              const { data: openSession } = await supabase
+                .from('cash_sessions')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('status', 'open')
+                .order('opened_at', { ascending: false })
+                .limit(1)
+                .single()
+
+              if (openSession) {
+                // Criar movimentação no caixa
+                await supabase
+                  .from('cash_movements')
+                  .insert({
+                    user_id: user.id,
+                    cash_session_id: openSession.id,
+                    type: 'expense',
+                    category: 'expense',
+                    amount: expenseData.amount,
+                    payment_method: expenseData.paymentMethod,
+                    description: `${expenseData.categoryName} - ${expenseData.description}`,
+                    reference_type: 'expense',
+                    reference_id: data.id
+                  })
+              }
+            } catch (cashError) {
+              // Não falhar se não conseguir registrar no caixa
+              console.error('Erro ao registrar no caixa:', cashError)
+            }
+          }
+
           await get().fetchExpenses()
           set({ loading: false })
           return data.id
