@@ -145,3 +145,26 @@
   height: 0px;
   background: transparent;
 }
+
+/* Tornar inputs de data/hora totalmente clicáveis */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  cursor: pointer;
+  position: relative;
+}
+
+/* Expandir área clicável para todo o campo */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  opacity: 0;
+  cursor: pointer;
+}

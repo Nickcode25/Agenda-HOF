@@ -281,16 +281,6 @@ export default function CashSessionPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/30 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Minus size={16} className="text-yellow-400" />
-                <span className="text-xs text-gray-400">Sangrias</span>
-              </div>
-              <div className="text-2xl font-bold text-yellow-400">
-                {formatCurrency(totals?.withdrawals || 0)}
-              </div>
-            </div>
-
             <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign size={16} className="text-blue-400" />
@@ -303,7 +293,7 @@ export default function CashSessionPage() {
           </div>
 
           {/* Actions */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <button
               onClick={() => { setMovementType('income'); setIsMovementModalOpen(true) }}
               className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 hover:border-green-500/50 rounded-xl p-4 text-left transition-all group"
@@ -318,14 +308,6 @@ export default function CashSessionPage() {
             >
               <TrendingDown size={24} className="text-red-400 mb-2" />
               <div className="font-medium text-white group-hover:text-red-400 transition-colors">Saída</div>
-            </button>
-
-            <button
-              onClick={() => { setMovementType('withdrawal'); setIsMovementModalOpen(true) }}
-              className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/30 hover:border-yellow-500/50 rounded-xl p-4 text-left transition-all group"
-            >
-              <Minus size={24} className="text-yellow-400 mb-2" />
-              <div className="font-medium text-white group-hover:text-yellow-400 transition-colors">Sangria</div>
             </button>
 
             <button

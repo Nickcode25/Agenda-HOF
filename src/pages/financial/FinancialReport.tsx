@@ -189,7 +189,10 @@ export default function FinancialReport() {
   const otherPercentage = totalRevenue > 0 ? (otherRevenue.total / totalRevenue) * 100 : 0
 
   const getPeriodLabel = () => {
-    const date = new Date(selectedDate)
+    // Usar data local para evitar problema de timezone
+    const [year, month, day] = selectedDate.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+
     switch (periodFilter) {
       case 'day':
         return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -281,13 +284,18 @@ export default function FinancialReport() {
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
         </div>
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-green-500/20 rounded-xl">
-              <TrendingUp size={32} className="text-green-400" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Relatório Financeiro</h1>
-              <p className="text-gray-400">{getPeriodLabel()}</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-500/20 rounded-xl">
+                <TrendingUp size={32} className="text-green-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Relatório Financeiro</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <Calendar size={16} className="text-orange-400" />
+                  <span className="text-lg font-semibold text-orange-400">{getPeriodLabel()}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
