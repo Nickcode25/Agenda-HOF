@@ -258,9 +258,15 @@ export const useExpenses = create<ExpensesStore>()(
 
           // Se a despesa foi paga, criar movimentação no caixa aberto
           if (expenseData.paymentStatus === 'paid') {
+            console.log('Despesa paga detectada, tentando registrar no caixa...', {
+              paymentStatus: expenseData.paymentStatus,
+              amount: expenseData.amount,
+              description: expenseData.description
+            })
+
             try {
               // Buscar caixa aberto
-              const { data: openSession } = await supabase
+              const { data: openSession, error: sessionError } = await supabase
                 .from('cash_sessions')
                 .select('id')
                 .eq('user_id', user.id)
@@ -269,9 +275,11 @@ export const useExpenses = create<ExpensesStore>()(
                 .limit(1)
                 .single()
 
+              console.log('Resultado busca caixa:', { openSession, sessionError })
+
               if (openSession) {
                 // Criar movimentação no caixa
-                await supabase
+                const { data: movement, error: movementError } = await supabase
                   .from('cash_movements')
                   .insert({
                     user_id: user.id,
@@ -284,11 +292,21 @@ export const useExpenses = create<ExpensesStore>()(
                     reference_type: 'expense',
                     reference_id: data.id
                   })
+                  .select()
+                  .single()
+
+                console.log('Movimentação criada:', { movement, movementError })
+              } else {
+                console.warn('Nenhum caixa aberto encontrado')
               }
             } catch (cashError) {
               // Não falhar se não conseguir registrar no caixa
               console.error('Erro ao registrar no caixa:', cashError)
             }
+          } else {
+            console.log('Despesa não está como paga, pulando registro no caixa:', {
+              paymentStatus: expenseData.paymentStatus
+            })
           }
 
           await get().fetchExpenses()

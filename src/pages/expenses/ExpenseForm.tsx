@@ -74,7 +74,9 @@ export default function ExpenseForm() {
         paymentMethod: formData.paymentMethod,
         paymentStatus: formData.paymentStatus,
         dueDate: formData.dueDate || undefined,
-        paidAt: formData.paidAt || undefined,
+        paidAt: formData.paymentStatus === 'paid'
+          ? (formData.paidAt || new Date().toISOString().split('T')[0])
+          : (formData.paidAt || undefined),
         isRecurring: formData.isRecurring,
         recurringFrequency: formData.isRecurring ? formData.recurringFrequency : undefined,
         recurringDay: formData.isRecurring ? formData.recurringDay : undefined,
