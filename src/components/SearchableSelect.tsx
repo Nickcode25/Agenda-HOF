@@ -189,7 +189,13 @@ export default function SearchableSelect({
         {/* Trigger Button */}
         <button
           type="button"
-          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (!disabled) {
+              setIsOpen(!isOpen)
+            }
+          }}
           disabled={disabled}
           className={`w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-left flex items-center justify-between ${
             disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-500'

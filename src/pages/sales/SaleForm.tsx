@@ -318,6 +318,7 @@ export default function SaleForm() {
                       step="1"
                       value={item.quantity}
                       onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
+                      onFocus={(e) => e.target.select()}
                       className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                   </div>
