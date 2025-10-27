@@ -442,13 +442,6 @@ export default function PatientDetail() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/app/pacientes" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-      </div>
-
       {/* Profile Card - Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -458,14 +451,24 @@ export default function PatientDetail() {
 
         <div className="relative z-10">
           <div className="flex flex-col sm:flex-row items-start gap-6 mb-6">
-            {/* Photo */}
-            {patient.photoUrl ? (
-              <img src={patient.photoUrl} className="h-32 w-32 rounded-xl object-cover border-2 border-orange-500 shadow-lg" alt={patient.name} />
-            ) : (
-              <div className="h-32 w-32 rounded-xl bg-gray-700 flex items-center justify-center border-2 border-gray-700">
-                <span className="text-gray-500 text-4xl">👤</span>
-              </div>
-            )}
+            {/* Back Button + Photo */}
+            <div className="flex items-center gap-4">
+              <Link
+                to="/app/pacientes"
+                className="p-3 hover:bg-gray-700/50 rounded-xl transition-colors border border-gray-600/50 hover:border-orange-500/50"
+                title="Voltar para lista de pacientes"
+              >
+                <ArrowLeft size={24} className="text-gray-400 hover:text-orange-400" />
+              </Link>
+
+              {patient.photoUrl ? (
+                <img src={patient.photoUrl} className="h-32 w-32 rounded-xl object-cover border-2 border-orange-500 shadow-lg" alt={patient.name} />
+              ) : (
+                <div className="h-32 w-32 rounded-xl bg-gray-700 flex items-center justify-center border-2 border-gray-700">
+                  <span className="text-gray-500 text-4xl">👤</span>
+                </div>
+              )}
+            </div>
 
             {/* Info */}
             <div className="flex-1">
