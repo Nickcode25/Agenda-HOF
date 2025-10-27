@@ -7,6 +7,7 @@ import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
 import NotificationBell from '@/components/NotificationBell'
 import { startNotificationPolling } from '@/services/notificationService'
+import { useNotificationChecker } from '@/hooks/useNotificationChecker'
 import Toast from '@/components/Toast'
 import { useToast } from '@/hooks/useToast'
 import { supabase } from '@/lib/supabase'
@@ -22,6 +23,9 @@ export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const { message, type, isVisible, hide } = useToast()
+
+  // Ativar verificação automática de lembretes
+  useNotificationChecker()
 
   useEffect(() => {
     if (user) {
