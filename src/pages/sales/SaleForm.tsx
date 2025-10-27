@@ -5,7 +5,7 @@ import { useStock } from '@/store/stock'
 import { autoRegisterCashMovement } from '@/store/cash'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import { SaleItem } from '@/types/sales'
-import { Save, Plus, Trash2, User, ArrowLeft } from 'lucide-react'
+import { Save, Plus, Trash2, User, ArrowLeft, CreditCard, DollarSign } from 'lucide-react'
 
 export default function SaleForm() {
   const { id } = useParams<{ id: string }>()
@@ -212,28 +212,38 @@ export default function SaleForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Form com Header Integrado */}
       <form onSubmit={onSubmit} className="space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border border-gray-700 rounded-2xl shadow-xl flex items-center gap-4">
-          <Link
-            to="/app/vendas"
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Voltar"
-          >
-            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-white">{isEditing ? 'Editar Venda' : 'Nova Venda'}</h1>
-            <p className="text-sm text-gray-400">Preencha os dados da venda</p>
+        {/* Header Premium */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-6">
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+          </div>
+
+          <div className="relative z-10 flex items-center gap-4">
+            <Link
+              to="/app/vendas"
+              className="p-3 hover:bg-gray-700/50 rounded-xl transition-colors border border-gray-600/50 hover:border-orange-500/50"
+              title="Voltar"
+            >
+              <ArrowLeft size={24} className="text-gray-400 hover:text-orange-400" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-white">{isEditing ? 'Editar Venda' : 'Nova Venda'}</h1>
+              <p className="text-sm text-gray-400 mt-1">Preencha os dados da venda</p>
+            </div>
           </div>
         </div>
 
         {/* Professional Selection */}
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Profissional</h3>
-          
+        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
+            <User size={20} />
+            Profissional
+          </h3>
+
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-300 mb-2">Selecionar Profissional *</label>
@@ -241,7 +251,7 @@ export default function SaleForm() {
                 value={selectedProfessional}
                 onChange={(e) => setSelectedProfessional(e.target.value)}
                 required
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="">Selecione um profissional</option>
                 {professionals.map(prof => (
@@ -253,7 +263,7 @@ export default function SaleForm() {
             </div>
             <Link
               to="../profissionais/novo"
-              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium transition-colors h-fit mt-7"
+              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-xl font-medium transition-colors h-fit mt-7 shadow-lg shadow-orange-500/20"
             >
               <User size={16} />
               Novo
@@ -262,13 +272,16 @@ export default function SaleForm() {
         </div>
 
         {/* Products */}
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Produtos</h3>
+        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-orange-400 flex items-center gap-2">
+              <Plus size={20} />
+              Produtos
+            </h3>
             <button
               type="button"
               onClick={addItem}
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-lg shadow-orange-500/20"
             >
               <Plus size={16} />
               Adicionar Produto
@@ -277,14 +290,14 @@ export default function SaleForm() {
 
           <div className="space-y-4">
             {saleItems.map((item, index) => (
-              <div key={index} className="bg-gray-700/30 rounded-lg p-4">
+              <div key={index} className="bg-gray-700/40 border border-gray-600/50 rounded-xl p-5 hover:border-gray-600 transition-colors">
                 <div className="grid gap-4 md:grid-cols-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-300 mb-2">Produto</label>
                     <select
                       value={item.stockItemId}
                       onChange={(e) => updateItem(index, 'stockItemId', e.target.value)}
-                      className="w-full bg-gray-600 border border-gray-500 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500"
+                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     >
                       <option value="">Selecione um produto</option>
                       {stockItems.filter(s => s.quantity > 0).map(stock => (
@@ -294,7 +307,7 @@ export default function SaleForm() {
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
                     <input
@@ -303,10 +316,10 @@ export default function SaleForm() {
                       step="1"
                       value={item.quantity}
                       onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
-                      className="w-full bg-gray-600 border border-gray-500 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500"
+                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Preço de Venda</label>
                     <input
@@ -314,22 +327,22 @@ export default function SaleForm() {
                       value={item.salePrice}
                       onChange={(e) => updateItem(index, 'salePrice', e.target.value)}
                       placeholder="R$ 0,00"
-                      className="w-full bg-gray-600 border border-gray-500 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500"
+                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Item Summary */}
                 {calculatedItems[index] && (
-                  <div className="mt-3 pt-3 border-t border-gray-600 flex justify-between items-center text-sm">
+                  <div className="mt-4 pt-4 border-t border-gray-600/50 flex justify-between items-center text-sm">
                     <div className="text-gray-400">
-                      Custo unitário: {formatCurrency(calculatedItems[index].unitCost)}
+                      Custo unitário: <span className="font-medium">{formatCurrency(calculatedItems[index].unitCost)}</span>
                     </div>
-                    <div className="flex gap-4">
-                      <span className="text-white">
+                    <div className="flex gap-6">
+                      <span className="text-white font-medium">
                         Total: {formatCurrency(calculatedItems[index].totalPrice)}
                       </span>
-                      <span className="text-green-400">
+                      <span className="text-green-400 font-medium">
                         Lucro: {formatCurrency(calculatedItems[index].profit)}
                       </span>
                     </div>
@@ -340,10 +353,10 @@ export default function SaleForm() {
                   <button
                     type="button"
                     onClick={() => removeItem(index)}
-                    className="mt-3 flex items-center gap-1 text-red-400 hover:text-red-300 text-sm"
+                    className="mt-3 flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
                   >
-                    <Trash2 size={14} />
-                    Remover
+                    <Trash2 size={16} />
+                    Remover item
                   </button>
                 )}
               </div>
@@ -352,14 +365,14 @@ export default function SaleForm() {
 
           {/* Total */}
           {calculatedItems.length > 0 && (
-            <div className="mt-6 p-4 bg-gray-700/50 rounded-lg">
+            <div className="mt-6 p-5 bg-gradient-to-br from-gray-700/50 to-gray-800/50 rounded-xl border border-gray-600/50">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-medium text-gray-300">Total da Venda:</span>
+                <span className="text-lg font-semibold text-gray-300">Total da Venda:</span>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-green-400">
+                  <div className="text-3xl font-bold text-green-400">
                     {formatCurrency(totalAmount)}
                   </div>
-                  <div className="text-sm text-blue-400">
+                  <div className="text-sm text-blue-400 font-medium mt-1">
                     Lucro Total: {formatCurrency(totalProfit)}
                   </div>
                 </div>
@@ -369,16 +382,19 @@ export default function SaleForm() {
         </div>
 
         {/* Payment Details */}
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Pagamento</h3>
-          
+        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-orange-400 mb-6 flex items-center gap-2">
+            <CreditCard size={20} />
+            Pagamento
+          </h3>
+
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as any)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="cash">Dinheiro</option>
                 <option value="card">Cartão</option>
@@ -387,19 +403,19 @@ export default function SaleForm() {
                 <option value="check">Cheque</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Status do Pagamento</label>
               <select
                 value={paymentStatus}
                 onChange={(e) => setPaymentStatus(e.target.value as any)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               >
                 <option value="pending">Pendente</option>
                 <option value="paid">Pago</option>
               </select>
             </div>
-            
+
             {paymentStatus === 'pending' && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Data de Vencimento</label>
@@ -407,36 +423,36 @@ export default function SaleForm() {
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
             )}
           </div>
-          
+
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-300 mb-2">Observações</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Observações sobre a venda..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500"
+              className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
               rows={3}
             />
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 pb-8">
           <button
             type="submit"
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-4 rounded-xl font-semibold shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:scale-105"
           >
-            <Save size={18} />
+            <Save size={20} />
             {isEditing ? 'Atualizar Venda' : 'Registrar Venda'}
           </button>
           <Link
             to=".."
-            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
+            className="px-8 py-4 bg-gray-700/50 hover:bg-gray-600/50 border border-gray-600 text-white rounded-xl font-medium transition-all hover:border-gray-500"
           >
             Cancelar
           </Link>
