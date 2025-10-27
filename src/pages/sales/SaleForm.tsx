@@ -6,6 +6,7 @@ import { autoRegisterCashMovement } from '@/store/cash'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import { SaleItem } from '@/types/sales'
 import { Save, Plus, Trash2, User, ArrowLeft, CreditCard, DollarSign } from 'lucide-react'
+import SearchableSelect from '@/components/SearchableSelect'
 
 export default function SaleForm() {
   const { id } = useParams<{ id: string }>()
@@ -247,19 +248,18 @@ export default function SaleForm() {
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-300 mb-2">Selecionar Profissional *</label>
-              <select
+              <SearchableSelect
                 value={selectedProfessional}
-                onChange={(e) => setSelectedProfessional(e.target.value)}
-                required
-                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="">Selecione um profissional</option>
-                {professionals.map(prof => (
-                  <option key={prof.id} value={prof.id}>
-                    {prof.name} {prof.specialty ? `- ${prof.specialty}` : ''}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedProfessional}
+                options={[
+                  { value: '', label: 'Selecione um profissional', disabled: true },
+                  ...professionals.map(prof => ({
+                    value: prof.id,
+                    label: `${prof.name}${prof.specialty ? ` - ${prof.specialty}` : ''}`
+                  }))
+                ]}
+                placeholder="Selecione um profissional"
+              />
             </div>
             <Link
               to="../profissionais/novo"
@@ -294,18 +294,20 @@ export default function SaleForm() {
                 <div className="grid gap-4 md:grid-cols-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-300 mb-2">Produto</label>
-                    <select
+                    <SearchableSelect
                       value={item.stockItemId}
-                      onChange={(e) => updateItem(index, 'stockItemId', e.target.value)}
-                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                    >
-                      <option value="">Selecione um produto</option>
-                      {stockItems.filter(s => s.quantity > 0).map(stock => (
-                        <option key={stock.id} value={stock.id}>
-                          {stock.name} (Estoque: {stock.quantity} {stock.unit})
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => updateItem(index, 'stockItemId', value)}
+                      options={[
+                        { value: '', label: 'Selecione um produto', disabled: true },
+                        ...stockItems
+                          .filter(s => s.quantity > 0)
+                          .map(stock => ({
+                            value: stock.id,
+                            label: `${stock.name} (Estoque: ${stock.quantity} ${stock.unit})`
+                          }))
+                      ]}
+                      placeholder="Selecione um produto"
+                    />
                   </div>
 
                   <div>
