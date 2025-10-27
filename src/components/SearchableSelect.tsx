@@ -101,9 +101,9 @@ export default function SearchableSelect({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-[9999] w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
           {/* Search Input */}
-          <div className="p-3 border-b border-gray-700 bg-gray-800/95 backdrop-blur-sm sticky top-0">
+          <div className="p-3 border-b border-gray-700 bg-gray-800/95 backdrop-blur-sm sticky top-0 z-[10000]">
             <div className="relative">
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input

@@ -5,6 +5,7 @@ import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
 import { Save, ArrowLeft, Plus } from 'lucide-react'
 import CreateCategoryModal from '@/components/CreateCategoryModal'
+import SearchableSelect from '@/components/SearchableSelect'
 
 // Produtos pré-cadastrados por categoria e marca (em ordem alfabética)
 const PREDEFINED_PRODUCTS: Record<string, Record<string, string[]>> = {
