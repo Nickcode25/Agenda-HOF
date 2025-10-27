@@ -42,16 +42,28 @@ export default function SearchableSelect({
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
+    if (!isOpen) return
+
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+
+      // Verificar se o clique foi no container ou no dropdown
+      const clickedContainer = containerRef.current?.contains(target)
+      const clickedDropdown = (target as Element).closest('[data-searchable-dropdown]')
+
+      if (!clickedContainer && !clickedDropdown) {
         setIsOpen(false)
         setSearchTerm('')
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
+    // Usar timeout para garantir que o handler seja registrado após o dropdown ser renderizado
+    setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    }, 0)
+
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [isOpen])
 
   // Focar no input quando abrir e calcular posição
   useEffect(() => {
@@ -93,6 +105,7 @@ export default function SearchableSelect({
   }, [isOpen])
 
   const handleSelect = (optionValue: string) => {
+    console.log('🔍 handleSelect chamado com:', optionValue)
     onChange(optionValue)
     setIsOpen(false)
     setSearchTerm('')
@@ -106,6 +119,7 @@ export default function SearchableSelect({
 
   const dropdownContent = isOpen && (
     <div
+      data-searchable-dropdown="true"
       style={{
         position: 'absolute',
         top: `${dropdownPosition.top}px`,
@@ -137,7 +151,16 @@ export default function SearchableSelect({
             <button
               key={option.value}
               type="button"
-              onClick={() => !option.disabled && handleSelect(option.value)}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (!option.disabled) {
+                  handleSelect(option.value)
+                }
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault()
+              }}
               disabled={option.disabled}
               className={`w-full text-left px-4 py-3 transition-colors ${
                 option.value === value
