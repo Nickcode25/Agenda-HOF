@@ -29,6 +29,12 @@ type NotificationsState = {
   notifyAppointmentReminder: (appointmentId: string, patientName: string, date: string) => Promise<void>
   notifyLowStock: (itemName: string, quantity: number, minQuantity: number) => Promise<void>
   notifyStockOut: (itemName: string) => Promise<void>
+
+  // Sistema de lembretes automáticos
+  checkAndCreateReminders: () => Promise<void>
+  checkLowStock: () => Promise<void>
+  checkOverduePayments: () => Promise<void>
+  checkPlannedProcedures: () => Promise<void>
 }
 
 export const useNotifications = create<NotificationsState>((set, get) => ({
@@ -273,5 +279,162 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
       message: `${itemName} está ESGOTADO! Reponha o estoque urgentemente.`,
       actionUrl: '/app/estoque',
     })
+  },
+
+  // Função para verificar e criar lembretes automáticos
+  checkAndCreateReminders: async () => {
+    console.log('🔔 Verificando lembretes automáticos...')
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // 1. Verificar estoque baixo
+      await get().checkLowStock()
+
+      // 2. Verificar pagamentos atrasados
+      await get().checkOverduePayments()
+
+      // 3. Verificar procedimentos planejados não realizados
+      await get().checkPlannedProcedures()
+
+    } catch (error) {
+      console.error('❌ Erro ao verificar lembretes:', error)
+    }
+  },
+
+  checkLowStock: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const prefs = get().preferences
+      if (!prefs?.lowStockAlerts) return
+
+      // Buscar produtos com estoque baixo
+      const { data: items } = await supabase
+        .from('stock')
+        .select('*')
+        .eq('user_id', user.id)
+        .lte('quantity', 5) // threshold padrão
+
+      if (items && items.length > 0) {
+        for (const item of items) {
+          // Verificar se já existe notificação recente para este item
+          const { data: existingNotif } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('type', 'low_stock')
+            .eq('related_id', item.id)
+            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // últimas 24h
+            .single()
+
+          if (!existingNotif) {
+            await get().notifyLowStock(item.name, item.quantity, item.min_quantity || 5)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar estoque baixo:', error)
+    }
+  },
+
+  checkOverduePayments: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Buscar vendas com pagamento pendente e vencidas
+      const { data: sales } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('payment_status', 'pending')
+        .not('due_date', 'is', null)
+        .lt('due_date', new Date().toISOString())
+
+      if (sales && sales.length > 0) {
+        for (const sale of sales) {
+          // Verificar se já existe notificação recente
+          const { data: existingNotif } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('type', 'payment_overdue')
+            .eq('related_id', sale.id)
+            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+            .single()
+
+          if (!existingNotif) {
+            const daysOverdue = Math.floor(
+              (Date.now() - new Date(sale.due_date).getTime()) / (1000 * 60 * 60 * 24)
+            )
+
+            await get().createNotification({
+              type: 'payment_overdue',
+              priority: daysOverdue > 7 ? 'urgent' : 'high',
+              title: 'Pagamento Atrasado',
+              message: `Venda para ${sale.professional_name} está ${daysOverdue} dias atrasada (R$ ${sale.total_amount.toFixed(2)})`,
+              actionUrl: '/app/vendas',
+              relatedId: sale.id
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar pagamentos atrasados:', error)
+    }
+  },
+
+  checkPlannedProcedures: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Buscar pacientes com procedimentos planejados não realizados há mais de 7 dias
+      const { data: patients } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (patients) {
+        for (const patient of patients) {
+          const plannedProcs = patient.planned_procedures || []
+          const pendingProcs = plannedProcs.filter((p: any) => p.status === 'pending')
+
+          for (const proc of pendingProcs) {
+            const daysSincePlanned = Math.floor(
+              (Date.now() - new Date(proc.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+            )
+
+            if (daysSincePlanned >= 7) {
+              // Verificar se já existe notificação recente
+              const { data: existingNotif } = await supabase
+                .from('notifications')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('type', 'planned_procedure')
+                .eq('related_id', proc.id)
+                .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+                .single()
+
+              if (!existingNotif) {
+                await get().createNotification({
+                  type: 'planned_procedure',
+                  priority: 'medium',
+                  title: 'Procedimento Planejado Pendente',
+                  message: `${patient.name} tem procedimento "${proc.procedureName}" planejado há ${daysSincePlanned} dias`,
+                  actionUrl: `/app/pacientes/${patient.id}`,
+                  relatedId: proc.id
+                })
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar procedimentos planejados:', error)
+    }
   },
 }))

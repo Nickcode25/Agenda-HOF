@@ -6,6 +6,8 @@ export type NotificationType =
   | 'appointment_cancelled' // Agendamento cancelado
   | 'subscription_due' // Mensalidade a vencer
   | 'subscription_overdue' // Mensalidade vencida
+  | 'payment_overdue' // Pagamento atrasado
+  | 'planned_procedure' // Procedimento planejado não realizado
 
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent'
 

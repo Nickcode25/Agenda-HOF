@@ -87,7 +87,9 @@ export default function NotificationsPage() {
     appointment_confirmed: 'Agendamento Confirmado',
     appointment_cancelled: 'Agendamento Cancelado',
     subscription_due: 'Mensalidade a Vencer',
-    subscription_overdue: 'Mensalidade Vencida'
+    subscription_overdue: 'Mensalidade Vencida',
+    payment_overdue: 'Pagamento Atrasado',
+    planned_procedure: 'Procedimento Planejado'
   }
 
   return (
