@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useExpenses } from '@/store/expenses'
 import { useCash } from '@/store/cash'
+import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import {
   DollarSign,
@@ -15,7 +16,8 @@ import {
   Edit,
   X,
   Save,
-  Trash2
+  Trash2,
+  Package
 } from 'lucide-react'
 import { CashMovement, PaymentMethod } from '@/types/cash'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -25,6 +27,7 @@ type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 export default function FinancialReport() {
   const { sessions, movements, fetchSessions, fetchMovements, updateMovement, deleteMovement } = useCash()
   const { expenses, fetchExpenses } = useExpenses()
+  const { sales, fetchSales } = useSales()
   const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
@@ -39,6 +42,7 @@ export default function FinancialReport() {
     fetchExpenses()
     fetchSessions()
     fetchMovements()
+    fetchSales()
   }, [])
 
   // Função para filtrar por período
@@ -207,6 +211,12 @@ export default function FinancialReport() {
       case 'year':
         return date.getFullYear().toString()
     }
+  }
+
+  // Função para obter detalhes da venda
+  const getSaleDetails = (referenceId?: string) => {
+    if (!referenceId) return null
+    return sales.find(sale => sale.id === referenceId)
   }
 
   const handleEditClick = (movement: CashMovement) => {
@@ -579,27 +589,43 @@ export default function FinancialReport() {
               salesRevenue.items
                 .sort((a, b) => b.amount - a.amount)
                 .slice(0, 5)
-                .map((movement, index) => (
-                  <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center text-xs font-bold">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <span className="text-white font-medium block">{movement.description}</span>
-                        <span className="text-xs text-gray-400">
-                          {movement.paymentMethod === 'card' ? 'cartão' :
-                           movement.paymentMethod === 'pix' ? 'pix' :
-                           movement.paymentMethod === 'cash' ? 'dinheiro' :
-                           movement.paymentMethod}
+                .map((movement, index) => {
+                  const saleDetails = getSaleDetails(movement.referenceId)
+                  return (
+                    <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="w-6 h-6 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+                          {index + 1}
                         </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-white font-medium block">{movement.description}</span>
+                          {saleDetails && saleDetails.items.length > 0 && (
+                            <div className="flex items-center gap-1 mt-1 flex-wrap">
+                              <Package size={12} className="text-orange-400 shrink-0" />
+                              <span className="text-xs text-gray-400">
+                                {saleDetails.items.map((item, idx) => (
+                                  <span key={item.id}>
+                                    {item.quantity}x {item.stockItemName}
+                                    {idx < saleDetails.items.length - 1 && ', '}
+                                  </span>
+                                ))}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-xs text-gray-400 mt-1 inline-block">
+                            {movement.paymentMethod === 'card' ? 'cartão' :
+                             movement.paymentMethod === 'pix' ? 'pix' :
+                             movement.paymentMethod === 'cash' ? 'dinheiro' :
+                             movement.paymentMethod}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <span className="text-orange-400 font-bold block">{formatCurrency(movement.amount)}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-orange-400 font-bold block">{formatCurrency(movement.amount)}</span>
-                    </div>
-                  </div>
-                ))
+                  )
+                })
             ) : (
               <p className="text-gray-400 text-center py-8">Nenhuma venda no período</p>
             )}
@@ -636,6 +662,8 @@ export default function FinancialReport() {
                   other: 'outra receita'
                 }
 
+                const saleDetails = movement.category === 'sale' ? getSaleDetails(movement.referenceId) : null
+
                 return (
                   <div key={movement.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
                     <div className="flex items-center justify-between gap-4">
@@ -646,6 +674,25 @@ export default function FinancialReport() {
                             {categoryLabels[movement.category as keyof typeof categoryLabels] || movement.category}
                           </span>
                         </div>
+
+                        {/* Mostrar produtos da venda */}
+                        {saleDetails && saleDetails.items.length > 0 && (
+                          <div className="mb-2 p-2 bg-gray-800/50 rounded-lg border border-gray-600/30">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Package size={14} className="text-orange-400" />
+                              <span className="text-xs font-semibold text-orange-400">Produtos:</span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-1">
+                              {saleDetails.items.map((item) => (
+                                <div key={item.id} className="flex items-center justify-between text-xs text-gray-300">
+                                  <span>• {item.quantity}x {item.stockItemName}</span>
+                                  <span className="text-gray-400">{formatCurrency(item.totalPrice)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                           <span>Pagamento: {
                             movement.paymentMethod === 'card' ? 'cartão' :
