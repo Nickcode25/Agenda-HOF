@@ -79,9 +79,8 @@ export default function SalesHistory() {
       console.log('[SALES HISTORY] Filtro de data:', { startDate, endDate })
 
       result = result.filter(sale => {
-        // Pegar apenas a parte da data (YYYY-MM-DD) do createdAt
-        const saleDate = new Date(sale.createdAt)
-        const saleDateStr = saleDate.toLocaleDateString('en-CA') // Formato YYYY-MM-DD
+        // Extrair apenas a parte da data (YYYY-MM-DD) do ISO string
+        const saleDateStr = sale.createdAt.split('T')[0] // Pega apenas YYYY-MM-DD
 
         const matches = saleDateStr >= startDate && saleDateStr <= endDate
 
