@@ -10,7 +10,7 @@ export default function SalesHistory() {
   const { sales, fetchSales } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('month')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
@@ -58,6 +58,9 @@ export default function SalesHistory() {
   const filtered = useMemo(() => {
     let result = sales
 
+    console.log('[SALES HISTORY] Total vendas:', sales.length)
+    console.log('[SALES HISTORY] Vendas:', sales.map(s => ({ id: s.id, createdAt: s.createdAt, professional: s.professionalName })))
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       result = result.filter(sale =>
@@ -73,15 +76,28 @@ export default function SalesHistory() {
 
     // Filtrar por data
     if (startDate && endDate) {
-      const start = new Date(startDate)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
+      console.log('[SALES HISTORY] Filtro de data:', { startDate, endDate })
 
       result = result.filter(sale => {
+        // Pegar apenas a parte da data (YYYY-MM-DD) do createdAt
         const saleDate = new Date(sale.createdAt)
-        return saleDate >= start && saleDate <= end
+        const saleDateStr = saleDate.toLocaleDateString('en-CA') // Formato YYYY-MM-DD
+
+        const matches = saleDateStr >= startDate && saleDateStr <= endDate
+
+        console.log('[SALES HISTORY] Venda:', {
+          id: sale.id,
+          createdAt: sale.createdAt,
+          saleDateStr,
+          startDate,
+          endDate,
+          matches
+        })
+
+        return matches
       })
+
+      console.log('[SALES HISTORY] Vendas após filtro de data:', result.length)
     }
 
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
