@@ -45,8 +45,8 @@ export default function SignupPage() {
       const success = await signUp(formData.email, formData.password, formData.name)
 
       if (success) {
-        // Redirecionar para página de vendas (usuário precisa assinar)
-        navigate('/pricing')
+        // Redirecionar para página de checkout
+        navigate('/checkout')
       } else {
         setError('Erro ao criar conta. Este email pode já estar cadastrado.')
       }

@@ -1,12 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, createContext, useContext } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/store/auth'
 import { supabase } from '@/lib/supabase'
 import { Lock } from 'lucide-react'
+import UpgradeOverlay from './UpgradeOverlay'
 
 interface SubscriptionProtectedRouteProps {
   children: React.ReactNode
 }
+
+interface SubscriptionContextType {
+  hasActiveSubscription: boolean
+}
+
+const SubscriptionContext = createContext<SubscriptionContextType>({
+  hasActiveSubscription: false
+})
+
+export const useSubscription = () => useContext(SubscriptionContext)
 
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
   const { user } = useAuth()
@@ -21,26 +32,19 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
       }
 
       try {
-        console.log('🔍 Verificando assinatura para user:', user.id)
-
         // 1. Verificar se usuário tem assinatura ativa
-        const { data: subscription, error: subError } = await supabase
+        const { data: subscription } = await supabase
           .from('user_subscriptions')
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'active')
           .maybeSingle()
 
-        console.log('📊 Resultado da query:', { subscription, subError })
-
         if (subscription) {
-          console.log('✅ Assinatura ativa encontrada!')
           setHasActiveSubscription(true)
           setLoading(false)
           return
         }
-
-        console.log('⚠️ Nenhuma assinatura ativa encontrada')
 
         // 2. Se não tem subscription, verificar se é usuário cortesia ativo
         const { data: courtesyUser } = await supabase
@@ -98,11 +102,11 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
     return <Navigate to="/" replace />
   }
 
-  // Se não tem assinatura ativa, redirecionar para página de vendas
-  if (!hasActiveSubscription) {
-    return <Navigate to="/pricing" replace />
-  }
-
-  // Usuário autenticado com assinatura ativa - permitir acesso
-  return <>{children}</>
+  // Usuário autenticado - permitir acesso (com ou sem assinatura)
+  // Se não tem assinatura, o conteúdo mostrará overlay de bloqueio
+  return (
+    <SubscriptionContext.Provider value={{ hasActiveSubscription }}>
+      {children}
+    </SubscriptionContext.Provider>
+  )
 }

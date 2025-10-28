@@ -4,11 +4,14 @@ import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 export default function SalesList() {
   const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const { hasActiveSubscription } = useSubscription()
 
   useEffect(() => {
     fetchProfessionals()
@@ -117,7 +120,8 @@ export default function SalesList() {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {!hasActiveSubscription && <UpgradeOverlay message="Vendas bloqueadas" feature="a gestão completa de vendas e relatórios" />}
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">

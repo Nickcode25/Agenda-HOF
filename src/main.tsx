@@ -64,7 +64,6 @@ import ExpenseForm from './pages/expenses/ExpenseForm'
 import ExpenseCategories from './pages/expenses/ExpenseCategories'
 import CashRegistersList from './pages/cash/CashRegistersList'
 import CashSessionPage from './pages/cash/CashSessionPage'
-import PricingPage from './pages/PricingPage'
 import SignupPage from './pages/SignupPage'
 import LoginPage from './pages/LoginPage'
 
@@ -84,10 +83,6 @@ const router = createBrowserRouter([
   {
     path: '/checkout',
     element: <Checkout />,
-  },
-  {
-    path: '/pricing',
-    element: <PricingPage />,
   },
   {
     path: '/app',
@@ -360,7 +355,7 @@ const router = createBrowserRouter([
       { path: 'notificacoes', element: <NotificationsPage /> },
 
       {
-        path: 'configuracoes/whatsapp',
+        path: 'configuracoes/evolution',
         element: (
           <RoleGuard requireOwner>
             <EvolutionSettings />

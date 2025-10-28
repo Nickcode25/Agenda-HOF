@@ -6,6 +6,8 @@ import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, User, Phone, MapPin, Calendar, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText, MessageCircle } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 export default function PatientsList() {
   const patients = usePatients(s => s.patients)
@@ -13,6 +15,7 @@ export default function PatientsList() {
   const fetchPatients = usePatients(s => s.fetchAll)
   const procedures = useProcedures(s => s.procedures)
   const fetchProcedures = useProcedures(s => s.fetchAll)
+  const { hasActiveSubscription } = useSubscription()
 
   useEffect(() => {
     fetchPatients()
@@ -161,7 +164,9 @@ export default function PatientsList() {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Overlay de bloqueio se não tiver assinatura */}
+      {!hasActiveSubscription && <UpgradeOverlay message="Pacientes bloqueados" feature="o cadastro e gestão completa de pacientes" />}
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">

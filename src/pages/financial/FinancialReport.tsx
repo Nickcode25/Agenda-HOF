@@ -21,6 +21,8 @@ import {
 } from 'lucide-react'
 import { CashMovement, PaymentMethod } from '@/types/cash'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
@@ -28,6 +30,7 @@ export default function FinancialReport() {
   const { sessions, movements, fetchSessions, fetchMovements, updateMovement, deleteMovement } = useCash()
   const { expenses, fetchExpenses } = useExpenses()
   const { sales, fetchSales } = useSales()
+  const { hasActiveSubscription } = useSubscription()
   const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
@@ -286,7 +289,8 @@ export default function FinancialReport() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {!hasActiveSubscription && <UpgradeOverlay message="Relatório Financeiro bloqueado" feature="relatórios financeiros completos e detalhados" />}
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">

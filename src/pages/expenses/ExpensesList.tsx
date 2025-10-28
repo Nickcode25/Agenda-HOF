@@ -8,8 +8,11 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 export default function ExpensesList() {
+  const { hasActiveSubscription } = useSubscription()
   const {
     expenses,
     categories,
@@ -143,7 +146,8 @@ export default function ExpensesList() {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {!hasActiveSubscription && <UpgradeOverlay message="Despesas bloqueadas" feature="o controle completo de despesas e categorias" />}
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">

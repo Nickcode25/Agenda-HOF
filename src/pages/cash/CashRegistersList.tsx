@@ -4,8 +4,11 @@ import { useCash } from '@/store/cash'
 import { Plus, DollarSign, Edit, Trash2, CheckCircle, XCircle, Store } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 export default function CashRegistersList() {
+  const { hasActiveSubscription } = useSubscription()
   const { registers, fetchRegisters, deleteRegister, loading } = useCash()
   const { show } = useToast()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -67,7 +70,8 @@ export default function CashRegistersList() {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {!hasActiveSubscription && <UpgradeOverlay message="Controle de Caixa bloqueado" feature="o controle completo de caixa e fluxo financeiro" />}
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">

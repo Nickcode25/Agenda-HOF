@@ -9,6 +9,8 @@ import AppointmentModal from '@/components/AppointmentModal'
 import DayAppointmentsModal from '@/components/DayAppointmentsModal'
 import DayTimeline from '@/components/DayTimeline'
 import type { Appointment } from '@/types/schedule'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 type ViewMode = 'day' | 'week' | 'month'
 
@@ -16,6 +18,7 @@ export default function ScheduleCalendar() {
   const { appointments, removeAppointment, updateAppointment, fetchAppointments } = useSchedule()
   const { professionals, fetchAll: fetchProfessionals } = useProfessionals()
   const { selectedProfessional } = useProfessionalContext()
+  const { hasActiveSubscription } = useSubscription()
 
   // Carregar profissionais e agendamentos ao montar o componente
   useEffect(() => {
@@ -101,7 +104,10 @@ export default function ScheduleCalendar() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Overlay de bloqueio se não tiver assinatura */}
+      {!hasActiveSubscription && <UpgradeOverlay message="Agenda bloqueada" feature="a gestão completa da sua agenda" />}
+
       {/* Header with Professional Filter */}
       {selectedProfessionalName && (
         <div className="flex items-center gap-2 bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm border border-orange-500/30 w-fit">

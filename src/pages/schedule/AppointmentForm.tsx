@@ -11,6 +11,7 @@ import { Save, Package, AlertTriangle, Search, Calendar, X, User, Phone, Clock }
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/currency'
 import { useToast } from '@/hooks/useToast'
+import { useUserProfile } from '@/store/userProfile'
 
 export default function AppointmentForm() {
   const patients = usePatients(s => s.patients)
@@ -18,6 +19,7 @@ export default function AppointmentForm() {
   const updatePatient = usePatients(s => s.update)
   const professionals = useProfessionals(s => s.professionals.filter(p => p.active))
   const fetchProfessionals = useProfessionals(s => s.fetchAll)
+  const { currentProfile } = useUserProfile()
   const { procedures: registeredProcedures, fetchAll: fetchProcedures } = useProcedures()
   const { items: stockItems, fetchItems } = useStock()
   const { selectedProfessional } = useProfessionalContext()

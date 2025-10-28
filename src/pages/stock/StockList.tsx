@@ -4,6 +4,8 @@ import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Package, AlertTriangle, Calendar, TrendingDown, TrendingUp, Edit, Trash2, Tag } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 
 export default function StockList() {
@@ -11,6 +13,7 @@ export default function StockList() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoria') || '')
+  const { hasActiveSubscription } = useSubscription()
 
   useEffect(() => {
     fetchItems(true) // Força reload ao montar o componente
@@ -70,7 +73,8 @@ export default function StockList() {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {!hasActiveSubscription && <UpgradeOverlay message="Estoque bloqueado" feature="o controle completo de estoque e alertas" />}
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">

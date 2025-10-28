@@ -3,10 +3,13 @@ import { useProcedures } from '@/store/procedures'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Diamond, Gem, Flower2, Palette, Triangle, Tag } from 'lucide-react'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 export default function ProceduresList() {
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
   const [q, setQ] = useState('')
+  const { hasActiveSubscription } = useSubscription()
 
   useEffect(() => {
     fetchAll()
@@ -90,7 +93,9 @@ export default function ProceduresList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Overlay de bloqueio se não tiver assinatura */}
+      {!hasActiveSubscription && <UpgradeOverlay message="Procedimentos bloqueados" feature="o cadastro e gestão de procedimentos" />}
       {/* Header Premium */}
       <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
