@@ -47,17 +47,8 @@ import PhotoEditPage from './pages/medical/PhotoEditPage'
 import ConsentForm from './pages/medical/ConsentForm'
 import EvolutionSettings from './pages/settings/EvolutionSettings'
 import RoleGuard from './components/RoleGuard'
-import AdminLogin from './pages/admin/AdminLogin'
-import AdminLayout from './components/admin/AdminLayout'
-import AdminDashboard from './pages/admin/Dashboard'
-import MetricsPage from './pages/admin/MetricsPage'
-import ActivitiesPage from './pages/admin/ActivitiesPage'
-import AlertsPage from './pages/admin/AlertsPage'
-import CourtesyUsersPage from './pages/admin/CourtesyUsersPage'
-import CustomersManager from './pages/admin/CustomersManager'
-import PurchasesManager from './pages/admin/PurchasesManager'
-import CouponsManagement from './pages/admin/CouponsManagement'
-import ProtectedRoute from './components/admin/ProtectedRoute'
+import AdminLoginPage from './pages/admin/AdminLoginPage'
+import AdminDashboard from './pages/admin/AdminDashboard'
 import SubscriptionProtectedRoute from './components/SubscriptionProtectedRoute'
 import ExpensesList from './pages/expenses/ExpensesList'
 import ExpenseForm from './pages/expenses/ExpenseForm'
@@ -366,26 +357,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/admin/login',
-    element: <AdminLogin />,
+    element: <AdminLoginPage />,
   },
   {
-    path: '/admin',
-    element: (
-      <ProtectedRoute>
-        <AdminLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      { index: true, element: <AdminDashboard /> },
-      { path: 'dashboard', element: <AdminDashboard /> },
-      { path: 'metrics', element: <MetricsPage /> },
-      { path: 'customers', element: <CustomersManager /> },
-      { path: 'purchases', element: <PurchasesManager /> },
-      { path: 'coupons', element: <CouponsManagement /> },
-      { path: 'activities', element: <ActivitiesPage /> },
-      { path: 'alerts', element: <AlertsPage /> },
-      { path: 'courtesy-users', element: <CourtesyUsersPage /> },
-    ],
+    path: '/admin/dashboard',
+    element: <AdminDashboard />,
   },
 ])
 

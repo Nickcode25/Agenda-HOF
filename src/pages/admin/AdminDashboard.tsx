@@ -1,254 +1,746 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/store/auth'
-import { useAdmin } from '@/store/admin'
-import CourtesyUsersSection from '@/components/admin/CourtesyUsersSection'
-import SaasMetrics from '@/components/admin/SaasMetrics'
-import ActivityLogs from '@/components/admin/ActivityLogs'
-import AlertsPanel from '@/components/admin/AlertsPanel'
 import {
-  Users,
-  DollarSign,
-  Clock,
-  UserPlus,
-  TrendingUp,
-  LogOut,
-  Search,
-  Filter
+  Shield, Users, Building2, DollarSign, TrendingUp,
+  Calendar, Package, LogOut, BarChart3, Activity,
+  CheckCircle, Clock, XCircle, AlertTriangle, Search, Filter,
+  Home, FileText, Settings, PieChart
 } from 'lucide-react'
+import { LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../store/auth'
+
+interface Stats {
+  totalClinics: number
+  totalUsers: number
+  totalRevenue: number
+  activeSubscriptions: number
+  totalAppointments: number
+  totalSales: number
+  clinicsInTrial: number
+  clinicsExpired: number
+  clinicsWithoutPlan: number
+}
+
+interface Clinic {
+  id: string
+  owner_email: string
+  owner_name: string
+  created_at: string
+  users_count: number
+  patients_count: number
+  appointments_count: number
+  sales_count: number
+  total_revenue: number
+  subscription_status: 'active' | 'trial' | 'expired' | 'none'
+  trial_end_date: string | null
+  trial_days_remaining: number
+  has_active_subscription: boolean
+  last_login: string | null
+}
+
+type Period = 'day' | 'week' | 'month' | 'year'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
-  const { adminUser, signOut } = useAuth()
-  const { stats, purchases, customers, fetchStats, fetchPurchases, fetchCustomers, fetchCourtesyUsers, loading } = useAdmin()
+  const { signOut } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'analytics'>('overview')
+  const [period, setPeriod] = useState<Period>('month')
+  const [stats, setStats] = useState<Stats>({
+    totalClinics: 0,
+    totalUsers: 0,
+    totalRevenue: 0,
+    activeSubscriptions: 0,
+    totalAppointments: 0,
+    totalSales: 0,
+    clinicsInTrial: 0,
+    clinicsExpired: 0,
+    clinicsWithoutPlan: 0
+  })
+  const [clinics, setClinics] = useState<Clinic[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'trial' | 'expired' | 'none'>('all')
 
   useEffect(() => {
-    fetchStats()
-    fetchPurchases()
-    fetchCustomers()
-    fetchCourtesyUsers()
+    checkAdminAndLoadData()
   }, [])
 
-  const handleSignOut = async () => {
+  // Filtrar clínicas
+  const filteredClinics = clinics.filter(clinic => {
+    const matchesSearch =
+      clinic.owner_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      clinic.owner_email.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStatus = statusFilter === 'all' || clinic.subscription_status === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
+
+  const checkAdminAndLoadData = async () => {
+    try {
+      const { data: isAdmin, error: checkError } = await supabase
+        .rpc('is_super_admin')
+
+      if (checkError || !isAdmin) {
+        console.error('Não é super admin:', checkError)
+        navigate('/admin/login')
+        return
+      }
+
+      setIsSuperAdmin(true)
+      await loadClinics()
+      await loadStats()
+    } catch (err) {
+      console.error('Erro ao verificar admin:', err)
+      navigate('/admin/login')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadStats = async () => {
+    try {
+      const { count: clinicsCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'owner')
+
+      const { count: usersCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+
+      const { count: appointmentsCount } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+
+      const { data: salesData } = await supabase
+        .from('sales')
+        .select('total')
+
+      const totalRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
+      const salesCount = salesData?.length || 0
+
+      setStats(prev => ({
+        ...prev,
+        totalClinics: clinicsCount || 0,
+        totalUsers: usersCount || 0,
+        totalRevenue,
+        totalAppointments: appointmentsCount || 0,
+        totalSales: salesCount
+      }))
+    } catch (err) {
+      console.error('Erro ao carregar estatísticas:', err)
+    }
+  }
+
+  const loadClinics = async () => {
+    try {
+      const { data: owners } = await supabase
+        .from('user_profiles')
+        .select('id, display_name, created_at')
+        .eq('role', 'owner')
+        .order('created_at', { ascending: false })
+
+      if (!owners) return
+
+      const clinicsData: Clinic[] = await Promise.all(
+        owners.map(async (owner) => {
+          const { data: authData } = await supabase.auth.admin.getUserById(owner.id)
+          const ownerEmail = authData?.user?.email || 'N/A'
+          const lastLogin = authData?.user?.last_sign_in_at || null
+          const trialEndDate = authData?.user?.user_metadata?.trial_end_date || null
+
+          let trialDaysRemaining = 0
+          let isInTrial = false
+          if (trialEndDate) {
+            const trialEnd = new Date(trialEndDate)
+            const now = new Date()
+            if (now <= trialEnd) {
+              trialDaysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+              isInTrial = true
+            }
+          }
+
+          const { data: subscriptionData } = await supabase
+            .from('subscriptions')
+            .select('status, end_date')
+            .eq('user_id', owner.id)
+            .eq('status', 'active')
+            .single()
+
+          const hasActiveSubscription = !!subscriptionData
+
+          let subscriptionStatus: 'active' | 'trial' | 'expired' | 'none' = 'none'
+          if (hasActiveSubscription) {
+            subscriptionStatus = 'active'
+          } else if (isInTrial) {
+            subscriptionStatus = 'trial'
+          } else if (trialEndDate) {
+            subscriptionStatus = 'expired'
+          }
+
+          const { count: usersCount } = await supabase
+            .from('user_profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('clinic_id', owner.id)
+
+          const { count: patientsCount } = await supabase
+            .from('patients')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', owner.id)
+
+          const { count: appointmentsCount } = await supabase
+            .from('appointments')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', owner.id)
+
+          const { data: salesData } = await supabase
+            .from('sales')
+            .select('total')
+            .eq('user_id', owner.id)
+
+          const totalRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
+          const salesCount = salesData?.length || 0
+
+          return {
+            id: owner.id,
+            owner_email: ownerEmail,
+            owner_name: owner.display_name,
+            created_at: owner.created_at,
+            users_count: usersCount || 0,
+            patients_count: patientsCount || 0,
+            appointments_count: appointmentsCount || 0,
+            sales_count: salesCount,
+            total_revenue: totalRevenue,
+            subscription_status: subscriptionStatus,
+            trial_end_date: trialEndDate,
+            trial_days_remaining: trialDaysRemaining,
+            has_active_subscription: hasActiveSubscription,
+            last_login: lastLogin
+          }
+        })
+      )
+
+      setClinics(clinicsData)
+
+      const clinicsInTrial = clinicsData.filter(c => c.subscription_status === 'trial').length
+      const clinicsExpired = clinicsData.filter(c => c.subscription_status === 'expired').length
+      const clinicsWithoutPlan = clinicsData.filter(c => c.subscription_status === 'none').length
+      const activeSubscriptions = clinicsData.filter(c => c.subscription_status === 'active').length
+
+      setStats(prev => ({
+        ...prev,
+        clinicsInTrial,
+        clinicsExpired,
+        clinicsWithoutPlan,
+        activeSubscriptions
+      }))
+    } catch (err) {
+      console.error('Erro ao carregar clínicas:', err)
+    }
+  }
+
+  const handleLogout = async () => {
     await signOut()
     navigate('/admin/login')
   }
 
-  const filteredPurchases = purchases.filter(p =>
-    p.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.productName.toLowerCase().includes(searchQuery.toLowerCase())
-  ).slice(0, 10)
+  const getStatusBadge = (status: 'active' | 'trial' | 'expired' | 'none') => {
+    const badges = {
+      active: {
+        icon: CheckCircle,
+        text: 'Ativo',
+        class: 'bg-green-500/20 text-green-400 border-green-500/30'
+      },
+      trial: {
+        icon: Clock,
+        text: 'Trial',
+        class: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      },
+      expired: {
+        icon: XCircle,
+        text: 'Expirado',
+        class: 'bg-red-500/20 text-red-400 border-red-500/30'
+      },
+      none: {
+        icon: AlertTriangle,
+        text: 'Sem plano',
+        class: 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      }
+    }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value)
+    const badge = badges[status]
+    const Icon = badge.icon
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${badge.class}`}>
+        <Icon className="w-3.5 h-3.5" />
+        {badge.text}
+      </span>
+    )
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Nunca'
+    return new Date(dateStr).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     })
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid': return 'bg-green-500/10 text-green-400 border-green-500/20'
-      case 'pending': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-      case 'cancelled': return 'bg-red-500/10 text-red-400 border-red-500/20'
-      case 'refunded': return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-    }
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return 'Nunca'
+    return new Date(dateStr).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'paid': return 'Pago'
-      case 'pending': return 'Pendente'
-      case 'cancelled': return 'Cancelado'
-      case 'refunded': return 'Reembolsado'
-      default: return status
-    }
+  // Dados para gráficos baseados no período selecionado
+  const getRegistrationData = () => {
+    // Agrupar clínicas por data de criação
+    const grouped: Record<string, number> = {}
+
+    clinics.forEach(clinic => {
+      const date = new Date(clinic.created_at)
+      let key = ''
+
+      if (period === 'day') {
+        key = date.toLocaleDateString('pt-BR')
+      } else if (period === 'week') {
+        const weekStart = new Date(date)
+        weekStart.setDate(date.getDate() - date.getDay())
+        key = weekStart.toLocaleDateString('pt-BR')
+      } else if (period === 'month') {
+        key = `${date.toLocaleDateString('pt-BR', { month: 'short' })}/${date.getFullYear()}`
+      } else {
+        key = date.getFullYear().toString()
+      }
+
+      grouped[key] = (grouped[key] || 0) + 1
+    })
+
+    return Object.entries(grouped).map(([name, value]) => ({ name, cadastros: value })).slice(-10)
   }
 
-  if (loading && !stats) {
+  const getStatusData = () => {
+    return [
+      { name: 'Ativos', value: stats.activeSubscriptions, color: '#10b981' },
+      { name: 'Trial', value: stats.clinicsInTrial, color: '#3b82f6' },
+      { name: 'Expirados', value: stats.clinicsExpired, color: '#ef4444' },
+      { name: 'Sem Plano', value: stats.clinicsWithoutPlan, color: '#6b7280' }
+    ]
+  }
+
+  const getRevenueData = () => {
+    // Simular dados de receita por período
+    const grouped: Record<string, number> = {}
+
+    clinics.forEach(clinic => {
+      const date = new Date(clinic.created_at)
+      let key = ''
+
+      if (period === 'day') {
+        key = date.toLocaleDateString('pt-BR')
+      } else if (period === 'week') {
+        const weekStart = new Date(date)
+        weekStart.setDate(date.getDate() - date.getDay())
+        key = weekStart.toLocaleDateString('pt-BR')
+      } else if (period === 'month') {
+        key = `${date.toLocaleDateString('pt-BR', { month: 'short' })}/${date.getFullYear()}`
+      } else {
+        key = date.getFullYear().toString()
+      }
+
+      grouped[key] = (grouped[key] || 0) + clinic.total_revenue
+    })
+
+    return Object.entries(grouped).map(([name, value]) => ({ name, receita: value })).slice(-10)
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-lg">Carregando dashboard...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Carregando...</div>
       </div>
     )
   }
 
+  if (!isSuperAdmin) {
+    return null
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-              <p className="text-sm text-gray-400 mt-1">
-                Bem-vindo, {adminUser?.fullName || adminUser?.email}
-              </p>
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Sair
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Alertas */}
-        <div className="mb-8">
-          <AlertsPanel purchases={purchases} customers={customers} />
-        </div>
-
-        {/* SaaS Metrics */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Métricas SaaS</h2>
-          <SaasMetrics purchases={purchases} customers={customers} />
-        </div>
-
-        {/* Últimas Compras */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Últimas Compras</h2>
-            <div className="flex gap-2">
-              <button className="p-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors">
-                <Filter className="w-5 h-5" />
-              </button>
+              <h1 className="text-lg font-bold text-white">Admin Panel</h1>
+              <p className="text-xs text-gray-400">Super Administrador</p>
             </div>
           </div>
+        </div>
 
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nome, email ou produto..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 transition-colors"
-            />
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-2">
+          <button
+            onClick={() => setActiveView('overview')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              activeView === 'overview'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <Home className="w-5 h-5" />
+            <span className="font-medium">Overview</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('analytics')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              activeView === 'analytics'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <PieChart className="w-5 h-5" />
+            <span className="font-medium">Analytics</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('clinics')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              activeView === 'clinics'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <Building2 className="w-5 h-5" />
+            <span className="font-medium">Clínicas</span>
+          </button>
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all duration-200 border border-red-500/30"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sair</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        {/* Header */}
+        <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-10">
+          <div className="px-8 py-6">
+            <h2 className="text-3xl font-bold text-white">
+              {activeView === 'overview' && 'Dashboard Overview'}
+              {activeView === 'analytics' && 'Analytics & Estatísticas'}
+              {activeView === 'clinics' && 'Gerenciar Clínicas'}
+            </h2>
+            <p className="text-gray-400 mt-1">
+              {activeView === 'overview' && 'Visão geral da plataforma'}
+              {activeView === 'analytics' && 'Análise detalhada de dados'}
+              {activeView === 'clinics' && `${filteredClinics.length} clínicas registradas`}
+            </p>
           </div>
+        </header>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">Cliente</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">Email</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">Produto</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">Valor</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPurchases.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
-                      Nenhuma compra encontrada
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPurchases.map((purchase) => (
-                    <tr key={purchase.id} className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
-                      <td className="py-3 px-4 text-sm text-white">{purchase.customerName}</td>
-                      <td className="py-3 px-4 text-sm text-gray-300">{purchase.customerEmail}</td>
-                      <td className="py-3 px-4 text-sm text-gray-300">{purchase.productName}</td>
-                      <td className="py-3 px-4 text-sm font-semibold text-green-400">
-                        {formatCurrency(purchase.amount)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(purchase.paymentStatus)}`}>
-                          {getStatusLabel(purchase.paymentStatus)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-400">
-                        {formatDate(purchase.purchaseDate)}
-                      </td>
-                    </tr>
-                  ))
+        <div className="p-8">
+          {/* Overview View */}
+          {activeView === 'overview' && (
+            <>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <Building2 className="w-10 h-10 text-blue-400" />
+                    <span className="text-3xl font-bold text-white">{stats.totalClinics}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Total de Clínicas</h3>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <Users className="w-10 h-10 text-green-400" />
+                    <span className="text-3xl font-bold text-white">{stats.totalUsers}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Total de Usuários</h3>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <DollarSign className="w-10 h-10 text-yellow-400" />
+                    <span className="text-2xl font-bold text-white">R$ {stats.totalRevenue.toFixed(2)}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Receita Total</h3>
+                </div>
+
+                <div className="bg-green-500/10 backdrop-blur-xl rounded-2xl p-6 border border-green-500/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <CheckCircle className="w-10 h-10 text-green-400" />
+                    <span className="text-3xl font-bold text-white">{stats.activeSubscriptions}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Assinaturas Ativas</h3>
+                </div>
+
+                <div className="bg-blue-500/10 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <Clock className="w-10 h-10 text-blue-400" />
+                    <span className="text-3xl font-bold text-white">{stats.clinicsInTrial}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Em Trial</h3>
+                </div>
+
+                <div className="bg-red-500/10 backdrop-blur-xl rounded-2xl p-6 border border-red-500/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <XCircle className="w-10 h-10 text-red-400" />
+                    <span className="text-3xl font-bold text-white">{stats.clinicsExpired}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Expirados</h3>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <Calendar className="w-10 h-10 text-pink-400" />
+                    <span className="text-3xl font-bold text-white">{stats.totalAppointments}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Agendamentos</h3>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <Package className="w-10 h-10 text-orange-400" />
+                    <span className="text-3xl font-bold text-white">{stats.totalSales}</span>
+                  </div>
+                  <h3 className="text-gray-300 font-medium">Vendas</h3>
+                </div>
+              </div>
+
+              {/* Quick Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Status Distribution */}
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h3 className="text-xl font-bold text-white mb-6">Distribuição de Status</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RePieChart>
+                      <Pie
+                        data={getStatusData()}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {getStatusData().map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h3 className="text-xl font-bold text-white mb-6">Últimas Clínicas</h3>
+                  <div className="space-y-3">
+                    {clinics.slice(0, 5).map(clinic => (
+                      <div key={clinic.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">{clinic.owner_name}</p>
+                          <p className="text-gray-400 text-sm">{clinic.owner_email}</p>
+                        </div>
+                        {getStatusBadge(clinic.subscription_status)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Analytics View */}
+          {activeView === 'analytics' && (
+            <>
+              {/* Period Selector */}
+              <div className="mb-6 flex gap-4">
+                {(['day', 'week', 'month', 'year'] as Period[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`px-6 py-2 rounded-xl font-medium transition-all ${
+                      period === p
+                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {p === 'day' && 'Dia'}
+                    {p === 'week' && 'Semana'}
+                    {p === 'month' && 'Mês'}
+                    {p === 'year' && 'Ano'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Charts */}
+              <div className="space-y-6">
+                {/* Cadastros por Período */}
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h3 className="text-xl font-bold text-white mb-6">Cadastros por {period === 'day' ? 'Dia' : period === 'week' ? 'Semana' : period === 'month' ? 'Mês' : 'Ano'}</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={getRegistrationData()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                      <XAxis dataKey="name" stroke="#9ca3af" />
+                      <YAxis stroke="#9ca3af" />
+                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }} />
+                      <Legend />
+                      <Bar dataKey="cadastros" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Receita por Período */}
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h3 className="text-xl font-bold text-white mb-6">Receita por {period === 'day' ? 'Dia' : period === 'week' ? 'Semana' : period === 'month' ? 'Mês' : 'Ano'}</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={getRevenueData()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                      <XAxis dataKey="name" stroke="#9ca3af" />
+                      <YAxis stroke="#9ca3af" />
+                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="receita" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 5 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Clinics View */}
+          {activeView === 'clinics' && (
+            <>
+              {/* Filters */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nome ou email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-11 pr-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div className="relative min-w-[200px]">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="w-full pl-11 pr-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all appearance-none"
+                  >
+                    <option value="all">Todos os status</option>
+                    <option value="active">Ativos</option>
+                    <option value="trial">Em Trial</option>
+                    <option value="expired">Expirados</option>
+                    <option value="none">Sem plano</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/20 bg-white/5">
+                        <th className="text-left py-4 px-6 text-gray-300 font-semibold">Owner</th>
+                        <th className="text-left py-4 px-6 text-gray-300 font-semibold">Email</th>
+                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Status</th>
+                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Trial</th>
+                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Último Login</th>
+                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Pacientes</th>
+                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Agendamentos</th>
+                        <th className="text-right py-4 px-6 text-gray-300 font-semibold">Receita</th>
+                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Cadastro</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredClinics.map((clinic) => (
+                        <tr key={clinic.id} className="border-b border-white/10 hover:bg-white/5 transition-colors duration-200">
+                          <td className="py-4 px-6">
+                            <div className="text-white font-medium">{clinic.owner_name}</div>
+                          </td>
+                          <td className="py-4 px-6 text-gray-300 text-sm">{clinic.owner_email}</td>
+                          <td className="py-4 px-6 text-center">
+                            {getStatusBadge(clinic.subscription_status)}
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            {clinic.subscription_status === 'trial' ? (
+                              <span className="text-blue-400 font-semibold">
+                                {clinic.trial_days_remaining} dias
+                              </span>
+                            ) : clinic.subscription_status === 'expired' ? (
+                              <span className="text-red-400 text-sm">Expirado</span>
+                            ) : (
+                              <span className="text-gray-500 text-sm">-</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-center text-gray-400 text-sm">
+                            {formatDateTime(clinic.last_login)}
+                          </td>
+                          <td className="py-4 px-6 text-center text-white">{clinic.patients_count}</td>
+                          <td className="py-4 px-6 text-center text-white">{clinic.appointments_count}</td>
+                          <td className="py-4 px-6 text-right text-green-400 font-semibold">
+                            R$ {clinic.total_revenue.toFixed(2)}
+                          </td>
+                          <td className="py-4 px-6 text-center text-gray-400 text-sm">
+                            {formatDate(clinic.created_at)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {filteredClinics.length === 0 && clinics.length > 0 && (
+                  <div className="text-center py-12">
+                    <Search className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">Nenhuma clínica encontrada com os filtros aplicados</p>
+                  </div>
                 )}
-              </tbody>
-            </table>
-          </div>
 
-          {/* View All Link */}
-          {purchases.length > 10 && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => navigate('/admin/purchases')}
-                className="text-orange-400 hover:text-orange-300 text-sm font-medium transition-colors"
-              >
-                Ver todas as compras ({purchases.length})
-              </button>
-            </div>
+                {clinics.length === 0 && (
+                  <div className="text-center py-12">
+                    <Activity className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">Nenhuma clínica registrada ainda</p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
-
-        {/* Activity Logs e Usuários Cortesia */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-          {/* Activity Logs */}
-          <ActivityLogs />
-
-          {/* Estatísticas Rápidas */}
-          <div className="space-y-6">
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Resumo Rápido</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Total de Clientes</span>
-                  <span className="text-2xl font-bold text-white">{stats?.totalCustomers || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Novos este mês</span>
-                  <span className="text-2xl font-bold text-green-400">{stats?.newCustomersThisMonth || 0}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Vendas este mês</span>
-                  <span className="text-2xl font-bold text-blue-400">{formatCurrency(stats?.salesThisMonth || 0)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Ações Rápidas</h3>
-              <div className="space-y-3">
-                <button
-                  onClick={() => navigate('/admin/customers')}
-                  className="w-full py-2.5 px-4 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg font-medium transition-colors text-left"
-                >
-                  Ver Todos os Clientes
-                </button>
-                <button
-                  onClick={() => navigate('/admin/purchases')}
-                  className="w-full py-2.5 px-4 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg font-medium transition-colors text-left"
-                >
-                  Ver Todas as Compras
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Seção de Usuários Cortesia */}
-        <div className="mt-8">
-          <CourtesyUsersSection />
-        </div>
-      </div>
+      </main>
     </div>
   )
 }
