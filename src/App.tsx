@@ -11,6 +11,7 @@ import { useNotificationChecker } from '@/hooks/useNotificationChecker'
 import Toast from '@/components/Toast'
 import { useToast } from '@/hooks/useToast'
 import { supabase } from '@/lib/supabase'
+import TrialBanner from '@/components/TrialBanner'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile sidebar
@@ -395,8 +396,11 @@ export default function App() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 lg:p-8 overflow-auto">
-          <Outlet />
+        <main className="flex-1 overflow-auto">
+          <TrialBanner />
+          <div className="p-6 lg:p-8">
+            <Outlet />
+          </div>
         </main>
       </div>
 

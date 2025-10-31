@@ -79,13 +79,18 @@ export const useAuth = create<AuthState>()(
       signUp: async (email: string, password: string, fullName: string) => {
         set({ loading: true, error: null })
         try {
-          // 1. Criar conta no Supabase Auth
+          // Calcular data de fim do trial (7 dias a partir de agora)
+          const trialEndDate = new Date()
+          trialEndDate.setDate(trialEndDate.getDate() + 7)
+
+          // 1. Criar conta no Supabase Auth com trial_end_date no metadata
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
               data: {
                 full_name: fullName,
+                trial_end_date: trialEndDate.toISOString()
               }
             }
           })

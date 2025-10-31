@@ -11,10 +11,14 @@ interface SubscriptionProtectedRouteProps {
 
 interface SubscriptionContextType {
   hasActiveSubscription: boolean
+  isInTrial: boolean
+  trialDaysRemaining: number
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
-  hasActiveSubscription: false
+  hasActiveSubscription: false,
+  isInTrial: false,
+  trialDaysRemaining: 0
 })
 
 export const useSubscription = () => useContext(SubscriptionContext)
@@ -23,6 +27,8 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [isInTrial, setIsInTrial] = useState(false)
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState(0)
 
   useEffect(() => {
     async function checkSubscription() {
@@ -46,7 +52,26 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           return
         }
 
-        // 2. Se não tem subscription, verificar se é usuário cortesia ativo
+        // 2. Se não tem subscription, verificar período de trial (7 dias grátis)
+        const { data: userData } = await supabase.auth.getUser()
+        const trialEndDate = userData.user?.user_metadata?.trial_end_date
+
+        if (trialEndDate) {
+          const trialEnd = new Date(trialEndDate)
+          const now = new Date()
+
+          if (now <= trialEnd) {
+            // Ainda está no período de trial
+            const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            setIsInTrial(true)
+            setTrialDaysRemaining(daysRemaining)
+            setHasActiveSubscription(true) // Durante trial, tem acesso completo
+            setLoading(false)
+            return
+          }
+        }
+
+        // 3. Se não tem subscription nem trial, verificar se é usuário cortesia ativo
         const { data: courtesyUser } = await supabase
           .from('courtesy_users')
           .select('*')
@@ -105,7 +130,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   // Usuário autenticado - permitir acesso (com ou sem assinatura)
   // Se não tem assinatura, o conteúdo mostrará overlay de bloqueio
   return (
-    <SubscriptionContext.Provider value={{ hasActiveSubscription }}>
+    <SubscriptionContext.Provider value={{ hasActiveSubscription, isInTrial, trialDaysRemaining }}>
       {children}
     </SubscriptionContext.Provider>
   )

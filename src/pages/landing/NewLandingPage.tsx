@@ -33,7 +33,7 @@ export default function NewLandingPage() {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const navigate = useNavigate()
-  const { signIn } = useAuth()
+  const { signIn, signUp } = useAuth()
 
   // Carregar credenciais salvas ao abrir o modal de login
   useEffect(() => {
@@ -98,28 +98,46 @@ export default function NewLandingPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
+    setError('')
 
     // Validar senhas
     if (password !== confirmPassword) {
       setError('As senhas não coincidem')
+      setLoading(false)
       return
     }
 
     // Validar campos obrigatórios
     if (!fullName || !email || !phone || !password) {
       setError('Preencha todos os campos obrigatórios')
+      setLoading(false)
       return
     }
 
-    // Redirecionar para página de pricing com os dados do usuário
-    navigate('/pricing', {
-      state: {
-        name: fullName,
-        email,
-        phone,
-        password
+    // Validar tamanho da senha
+    if (password.length < 6) {
+      setError('A senha deve ter no mínimo 6 caracteres')
+      setLoading(false)
+      return
+    }
+
+    try {
+      // Criar conta diretamente
+      const success = await signUp(email, password, fullName)
+
+      if (success) {
+        // Redirecionar para dentro do app - usuário tem 7 dias de trial
+        navigate('/app/agenda')
+      } else {
+        setError('Erro ao criar conta. Este email pode já estar cadastrado.')
+        setLoading(false)
       }
-    })
+    } catch (err: any) {
+      console.error('Erro no cadastro:', err)
+      setError(err.message || 'Erro ao criar conta. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   const openRegisterModal = () => {

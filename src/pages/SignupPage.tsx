@@ -45,8 +45,8 @@ export default function SignupPage() {
       const success = await signUp(formData.email, formData.password, formData.name)
 
       if (success) {
-        // Redirecionar para página de checkout
-        navigate('/checkout')
+        // Redirecionar para dentro do app - usuário tem 7 dias de trial gratuito
+        navigate('/app/agenda')
       } else {
         setError('Erro ao criar conta. Este email pode já estar cadastrado.')
       }
@@ -217,10 +217,10 @@ export default function SignupPage() {
               </div>
             </form>
 
-            {/* Informação sobre pagamento */}
+            {/* Informação sobre trial */}
             <div className="mt-6 pt-6 border-t border-gray-700/50">
               <p className="text-xs text-center text-gray-500">
-                💡 Após criar sua conta, você será direcionado para escolher seu plano
+                🎉 Após criar sua conta, você terá 7 dias de acesso gratuito completo!
               </p>
             </div>
           </div>
