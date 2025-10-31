@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, Wallet } from 'lucide-react'
+import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, Wallet, Crown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -12,6 +12,7 @@ import Toast from '@/components/Toast'
 import { useToast } from '@/hooks/useToast'
 import { supabase } from '@/lib/supabase'
 import TrialBanner from '@/components/TrialBanner'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile sidebar
@@ -24,6 +25,7 @@ export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const { message, type, isVisible, hide } = useToast()
+  const { hasActiveSubscription } = useSubscription()
 
   // Ativar verificação automática de notificações
   useNotificationChecker()
@@ -373,6 +375,14 @@ export default function App() {
           <div className="flex items-center gap-4">
             {/* Notifications */}
             <NotificationBell />
+
+            {/* Premium Badge */}
+            {hasActiveSubscription && (
+              <div className="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 px-3 py-1.5 rounded-full">
+                <Crown className="w-4 h-4 text-orange-400" />
+                <span className="text-xs font-semibold text-orange-400">Premium</span>
+              </div>
+            )}
 
             {/* User Menu */}
             <div className="flex items-center gap-3 pl-4 border-l border-gray-700 dark:border-gray-700">

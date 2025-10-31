@@ -296,6 +296,10 @@ export default function Checkout() {
 
         if (insertError) {
           console.error('❌ Erro ao salvar assinatura:', insertError)
+          console.error('❌ Erro completo:', JSON.stringify(insertError, null, 2))
+          console.error('❌ Mensagem:', insertError.message)
+          console.error('❌ Código:', insertError.code)
+          console.error('❌ Detalhes:', insertError.details)
         } else {
           console.log('✅ Assinatura salva com sucesso!', insertData)
         }
