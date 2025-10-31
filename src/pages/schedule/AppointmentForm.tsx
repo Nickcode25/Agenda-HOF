@@ -39,6 +39,9 @@ export default function AppointmentForm() {
   const [selectedProcedureId, setSelectedProcedureId] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
+  const [selectedProducts, setSelectedProducts] = useState<Array<{ category: string, stockItemId: string, quantity: number }>>([])
+  const [customProcedureName, setCustomProcedureName] = useState('')
+  const [useCustomProcedure, setUseCustomProcedure] = useState(false)
 
   // Autocomplete patient search
   const [patientSearch, setPatientSearch] = useState('')
@@ -52,6 +55,33 @@ export default function AppointmentForm() {
     : ''
 
   const selectedProcedure = registeredProcedures.find(p => p.id === selectedProcedureId)
+
+  // Atualizar produtos selecionados quando procedimento muda
+  useEffect(() => {
+    if (selectedProcedure && selectedProcedure.stockCategories && selectedProcedure.stockCategories.length > 0) {
+      // Mapear categorias de estoque para produtos reais
+      const products: Array<{ category: string, stockItemId: string, quantity: number }> = []
+
+      selectedProcedure.stockCategories.forEach(stockCat => {
+        // Encontrar produtos da categoria
+        const categoryItems = stockItems.filter(item => item.category === stockCat.category)
+
+        if (categoryItems.length > 0) {
+          // Por enquanto, usar o primeiro produto da categoria
+          // Você pode adicionar lógica para usuário escolher qual produto específico depois
+          products.push({
+            category: stockCat.category,
+            stockItemId: categoryItems[0].id,
+            quantity: stockCat.quantityUsed
+          })
+        }
+      })
+
+      setSelectedProducts(products)
+    } else {
+      setSelectedProducts([])
+    }
+  }, [selectedProcedureId, selectedProcedure, stockItems])
 
   // Patient search filter
   const removeAccents = (str: string) => {
@@ -142,15 +172,18 @@ export default function AppointmentForm() {
     const start = startDateTime.toISOString()
     const end = endDateTime.toISOString()
 
-    // Pegar o nome do procedimento do input
-    const procedureName = String(data.get('procedure') || '')
+    // Pegar o nome do procedimento (do select ou do input customizado)
+    const procedureName = useCustomProcedure
+      ? customProcedureName
+      : selectedProcedure?.name || ''
 
     // Adicionar agendamento
     const appointmentId = await add({
       patientId,
       patientName: patient?.name || '',
       procedure: procedureName,
-      procedureId: undefined, // Não usar ID já que é campo livre
+      procedureId: selectedProcedureId || undefined,
+      selectedProducts: selectedProducts.length > 0 ? selectedProducts : undefined,
       professional: professional?.name || '',
       room: String(data.get('room')||''),
       start,
@@ -288,15 +321,78 @@ export default function AppointmentForm() {
           
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento *</label>
-            <input
-              name="procedure"
-              type="text"
-              required
-              value={selectedProcedureId}
-              onChange={(e) => setSelectedProcedureId(e.target.value)}
-              placeholder="Digite o procedimento (Ex: Botox, Preenchimento, Limpeza de pele...)"
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
+            {!useCustomProcedure ? (
+              <div className="space-y-2">
+                <select
+                  value={selectedProcedureId}
+                  onChange={(e) => setSelectedProcedureId(e.target.value)}
+                  required={!useCustomProcedure}
+                  className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer hover:bg-gray-700"
+                >
+                  <option value="">Selecione um procedimento cadastrado</option>
+                  {registeredProcedures.filter(p => p.isActive).map(proc => (
+                    <option key={proc.id} value={proc.id}>
+                      {proc.name} {proc.category ? `(${proc.category})` : ''} - {formatCurrency(proc.price)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setUseCustomProcedure(true)}
+                  className="text-sm text-orange-400 hover:text-orange-300 underline"
+                >
+                  Ou criar procedimento customizado
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={customProcedureName}
+                  onChange={(e) => setCustomProcedureName(e.target.value)}
+                  required={useCustomProcedure}
+                  placeholder="Digite o nome do procedimento..."
+                  className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseCustomProcedure(false)
+                    setCustomProcedureName('')
+                  }}
+                  className="text-sm text-orange-400 hover:text-orange-300 underline"
+                >
+                  Voltar para procedimentos cadastrados
+                </button>
+              </div>
+            )}
+            {selectedProcedure && selectedProducts.length > 0 && (
+              <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <Package size={16} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-blue-300 font-medium mb-1">
+                      Produtos que serão descontados do estoque ao concluir:
+                    </p>
+                    <div className="space-y-1">
+                      {selectedProducts.map(sp => {
+                        const stockItem = stockItems.find(s => s.id === sp.stockItemId)
+                        return stockItem ? (
+                          <div key={sp.stockItemId} className="text-xs text-gray-300">
+                            • {stockItem.name} - {sp.quantity} {stockItem.unit}
+                            {stockItem.quantity < sp.quantity && (
+                              <span className="ml-2 text-red-400 font-medium">
+                                (⚠️ Estoque insuficiente: {stockItem.quantity} {stockItem.unit})
+                              </span>
+                            )}
+                          </div>
+                        ) : null
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

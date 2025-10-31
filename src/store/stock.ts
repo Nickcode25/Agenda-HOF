@@ -143,7 +143,16 @@ export const useStock = create<StockStore>()(
           const updateData: any = {}
           if (updates.name !== undefined) updateData.name = updates.name
           if (updates.category !== undefined) updateData.category = updates.category || null
-          if (updates.quantity !== undefined) updateData.quantity = updates.quantity
+          if (updates.quantity !== undefined) {
+            // Garantir que quantity é um número válido
+            const qty = Number(updates.quantity)
+            if (isNaN(qty)) {
+              console.error('❌ [STOCK] Quantidade inválida:', updates.quantity)
+              throw new Error('Quantidade inválida')
+            }
+            // Arredondar para 2 casas decimais para evitar problemas de precisão
+            updateData.quantity = Math.round(qty * 100) / 100
+          }
           if (updates.minQuantity !== undefined) updateData.min_quantity = updates.minQuantity
           if (updates.unit !== undefined) updateData.unit = updates.unit
           if (updates.dosesPerUnit !== undefined) updateData.doses_per_unit = updates.dosesPerUnit || null
@@ -153,17 +162,23 @@ export const useStock = create<StockStore>()(
           if (updates.barcode !== undefined) updateData.barcode = updates.barcode || null
           if (updates.notes !== undefined) updateData.notes = updates.notes || null
 
+          console.log('🔄 [STOCK] Atualizando item:', id, 'com dados:', JSON.stringify(updateData, null, 2))
+
           const { error } = await supabase
             .from('stock')
             .update(updateData)
             .eq('id', id)
             .eq('user_id', user.id)
 
-          if (error) throw error
+          if (error) {
+            console.error('❌ [STOCK] Erro do Supabase:', JSON.stringify(error, null, 2))
+            throw error
+          }
 
-          await get().fetchItems()
+          await get().fetchItems(true) // Forçar reload
           set({ loading: false })
         } catch (error: any) {
+          console.error('❌ [STOCK] Erro ao atualizar item:', error)
           set({ error: error.message, loading: false })
         }
       },

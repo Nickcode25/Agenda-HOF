@@ -201,18 +201,60 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   updateAppointmentStatus: async (id, status) => {
     const appointment = get().appointments.find(ap => ap.id === id)
 
-    // Se está marcando como concluído e tem produtos selecionados, subtrair do estoque
-    if (status === 'done' && appointment?.selectedProducts && appointment.selectedProducts.length > 0) {
+    // Se está marcando como concluído, subtrair produtos do estoque
+    if (status === 'done' && appointment) {
       const stock = useStock.getState()
 
-      // Subtrair cada produto do estoque
-      appointment.selectedProducts.forEach(product => {
-        const stockItem = stock.items.find(s => s.id === product.stockItemId)
-        if (stockItem) {
-          const newQuantity = stockItem.quantity - product.quantity
-          stock.updateQuantity(product.stockItemId, newQuantity >= 0 ? newQuantity : 0)
+      let productsToSubtract = appointment.selectedProducts || []
+
+      // Se não tem selectedProducts, tentar buscar os produtos do procedimento
+      if (productsToSubtract.length === 0) {
+        const { useProcedures } = await import('./procedures')
+
+        // Tentar buscar procedimento por ID ou por nome
+        let procedure = appointment.procedureId
+          ? useProcedures.getState().procedures.find(p => p.id === appointment.procedureId)
+          : useProcedures.getState().procedures.find(p => p.name === appointment.procedure)
+
+        if (procedure && procedure.stockCategories && procedure.stockCategories.length > 0) {
+          console.log('📦 [STOCK] Buscando produtos do procedimento:', procedure.name)
+
+          // Mapear categorias para produtos reais
+          productsToSubtract = []
+          procedure.stockCategories.forEach(stockCat => {
+            const categoryItems = stock.items.filter(item => item.category === stockCat.category)
+
+            if (categoryItems.length > 0) {
+              productsToSubtract.push({
+                category: stockCat.category,
+                stockItemId: categoryItems[0].id,
+                quantity: stockCat.quantityUsed
+              })
+            }
+          })
+
+          // Atualizar o appointment com os produtos para futuras referências
+          if (productsToSubtract.length > 0) {
+            await get().updateAppointment(id, { selectedProducts: productsToSubtract })
+          }
         }
-      })
+      }
+
+      // Subtrair cada produto do estoque
+      if (productsToSubtract.length > 0) {
+        console.log('📦 [STOCK] Subtraindo', productsToSubtract.length, 'produtos do estoque')
+
+        for (const product of productsToSubtract) {
+          const stockItem = stock.items.find(s => s.id === product.stockItemId)
+          if (stockItem) {
+            console.log('📦 [STOCK] Subtraindo', product.quantity, stockItem.unit, 'de', stockItem.name)
+            const newQuantity = stockItem.quantity - product.quantity
+            await stock.updateQuantity(product.stockItemId, newQuantity >= 0 ? newQuantity : 0)
+          }
+        }
+      } else {
+        console.log('⚠️ [STOCK] Nenhum produto para subtrair do estoque')
+      }
     }
 
     await get().updateAppointment(id, { status })
