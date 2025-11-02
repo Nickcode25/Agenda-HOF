@@ -26,6 +26,19 @@ import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
 
+type TransactionItem = CashMovement | {
+  id: string
+  amount: number
+  description: string
+  category: 'expense'
+  createdAt: string
+  referenceId: null
+  professionalId: null
+  isExpense: true
+  expenseCategory?: string
+  paymentMethod: PaymentMethod
+}
+
 export default function FinancialReport() {
   const { sessions, movements, fetchSessions, fetchMovements, updateMovement, deleteMovement } = useCash()
   const { expenses, fetchExpenses } = useExpenses()
@@ -202,11 +215,12 @@ export default function FinancialReport() {
       amount: -expense.amount, // Negativo para despesas
       description: expense.description,
       category: 'expense' as const,
-      createdAt: expense.paidAt || expense.dueDate,
+      createdAt: (expense.paidAt || expense.dueDate)!,
       referenceId: null,
       professionalId: null,
-      isExpense: true,
-      expenseCategory: expense.categoryId
+      isExpense: true as const,
+      expenseCategory: expense.categoryId,
+      paymentMethod: expense.paymentMethod
     }))
   }, [expenses, periodFilter, selectedDate])
 
@@ -783,13 +797,17 @@ export default function FinancialReport() {
                         <p className="text-xs text-gray-400 mb-1">Valor</p>
                         <p className={`text-xl font-bold text-${color}-400`}>{formatCurrency(movement.amount)}</p>
                       </div>
-                      <button
-                        onClick={() => handleEditClick(movement)}
-                        className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
-                        title="Editar transação"
-                      >
-                        <Edit size={20} />
-                      </button>
+                      {'isExpense' in movement ? (
+                        <div className="w-[44px]"></div>
+                      ) : (
+                        <button
+                          onClick={() => handleEditClick(movement as CashMovement)}
+                          className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
+                          title="Editar transação"
+                        >
+                          <Edit size={20} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
