@@ -180,8 +180,13 @@ export default function FinancialReport() {
   // Despesas do período
   const expensesTotal = useMemo(() => {
     const filteredExpenses = expenses.filter(expense => {
-      if (expense.paymentStatus !== 'paid' || !expense.paidAt) return false
-      return filterByPeriod(selectedDate, new Date(expense.paidAt))
+      if (expense.paymentStatus !== 'paid') return false
+
+      // Usar paidAt se existir, senão usar dueDate
+      const dateToCheck = expense.paidAt || expense.dueDate
+      if (!dateToCheck) return false
+
+      return filterByPeriod(selectedDate, new Date(dateToCheck))
     })
     return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
   }, [expenses, periodFilter, selectedDate])
