@@ -1,11 +1,18 @@
 const express = require('express')
 const cors = require('cors')
 const { MercadoPagoConfig, PreApproval, Payment } = require('mercadopago')
+const { createClient } = require('@supabase/supabase-js')
 
 // Carregar .env apenas se não estiver em produção
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config()
 }
+
+// Inicializar Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -288,30 +295,93 @@ app.post('/api/mercadopago/webhook', async (req, res) => {
     console.log('📬 Webhook recebido:', {
       type,
       action,
-      id: data?.id
+      id: data?.id,
+      payload: req.body
+    })
+
+    // Salvar webhook no banco para auditoria
+    await supabase.from('mercadopago_webhooks').insert({
+      event_type: type,
+      event_action: action,
+      resource_id: data?.id,
+      payload: req.body,
+      processed: false,
+      created_at: new Date().toISOString()
     })
 
     // Processar diferentes tipos de eventos
     switch (type) {
       case 'subscription_preapproval':
+      case 'subscription_authorized_payment':
         console.log('🔄 Evento de assinatura:', action, data.id)
 
-        switch (action) {
-          case 'created':
-            console.log('🆕 Nova assinatura criada:', data.id)
-            // TODO: Salvar no banco de dados
+        // Buscar detalhes da assinatura
+        const subscription = await preApprovalClient.get({ id: data.id })
+        console.log('📋 Detalhes da assinatura:', {
+          id: subscription.id,
+          status: subscription.status,
+          payer_email: subscription.payer_email
+        })
+
+        // Buscar usuário pelo email
+        const { data: users, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', subscription.payer_email)
+          .single()
+
+        if (userError || !users) {
+          console.error('❌ Usuário não encontrado:', subscription.payer_email)
+          break
+        }
+
+        const userId = users.id
+
+        switch (subscription.status) {
+          case 'authorized':
+            console.log('✅ Assinatura autorizada:', data.id)
+            // Atualizar ou criar assinatura no banco
+            await supabase.from('user_subscriptions').upsert({
+              user_id: userId,
+              subscription_id: subscription.id,
+              status: 'active',
+              plan_type: 'professional',
+              amount: subscription.auto_recurring.transaction_amount,
+              next_billing_date: subscription.next_payment_date,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'subscription_id'
+            })
+            console.log('💾 Assinatura salva/atualizada no banco')
             break
 
-          case 'updated':
-            console.log('🔄 Assinatura atualizada:', data.id)
-            // Buscar detalhes da assinatura
-            const subscription = await preApprovalClient.get({ id: data.id })
-            console.log('Status atual:', subscription.status)
-            // TODO: Atualizar no banco de dados
+          case 'cancelled':
+            console.log('🚫 Assinatura cancelada:', data.id)
+            // Atualizar status da assinatura
+            await supabase
+              .from('user_subscriptions')
+              .update({
+                status: 'cancelled',
+                cancelled_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('subscription_id', subscription.id)
+            console.log('💾 Assinatura cancelada no banco')
+            break
+
+          case 'paused':
+            console.log('⏸️ Assinatura pausada:', data.id)
+            await supabase
+              .from('user_subscriptions')
+              .update({
+                status: 'paused',
+                updated_at: new Date().toISOString()
+              })
+              .eq('subscription_id', subscription.id)
             break
 
           default:
-            console.log('❓ Ação de assinatura não tratada:', action)
+            console.log('❓ Status de assinatura não tratado:', subscription.status)
         }
         break
 
@@ -320,22 +390,86 @@ app.post('/api/mercadopago/webhook', async (req, res) => {
 
         // Buscar detalhes do pagamento
         const payment = await paymentClient.get({ id: data.id })
-        console.log('Status do pagamento:', payment.status)
-        console.log('Valor:', payment.transaction_amount)
+        console.log('💳 Detalhes do pagamento:', {
+          id: payment.id,
+          status: payment.status,
+          amount: payment.transaction_amount,
+          payer_email: payment.payer?.email
+        })
 
+        // Salvar histórico de pagamento
+        const { data: paymentHistory, error: paymentError } = await supabase
+          .from('payment_history')
+          .insert({
+            payment_id: payment.id,
+            subscription_id: payment.metadata?.subscription_id || payment.external_reference,
+            amount: payment.transaction_amount,
+            status: payment.status,
+            status_detail: payment.status_detail,
+            payment_method: payment.payment_method_id,
+            payer_email: payment.payer?.email,
+            created_at: payment.date_created,
+            updated_at: new Date().toISOString()
+          })
+
+        if (paymentError) {
+          console.error('❌ Erro ao salvar histórico de pagamento:', paymentError)
+        } else {
+          console.log('💾 Histórico de pagamento salvo')
+        }
+
+        // Processar status do pagamento
         switch (payment.status) {
           case 'approved':
             console.log('✅ Pagamento aprovado:', data.id)
-            // TODO: Ativar acesso do usuário ou renovar assinatura
+
+            // Se tiver subscription_id, renovar a assinatura
+            if (payment.metadata?.subscription_id || payment.external_reference) {
+              const subscriptionId = payment.metadata?.subscription_id || payment.external_reference
+
+              await supabase
+                .from('user_subscriptions')
+                .update({
+                  status: 'active',
+                  last_payment_date: payment.date_approved,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('subscription_id', subscriptionId)
+
+              console.log('✅ Assinatura renovada:', subscriptionId)
+            }
             break
 
           case 'rejected':
-            console.log('❌ Pagamento rejeitado:', data.id)
-            // TODO: Notificar usuário e tentar novamente
+            console.log('❌ Pagamento rejeitado:', data.id, payment.status_detail)
+
+            // Notificar usuário sobre falha no pagamento
+            // TODO: Implementar notificação por email
+            break
+
+          case 'refunded':
+            console.log('💸 Pagamento reembolsado:', data.id)
+
+            // Cancelar assinatura se houver reembolso
+            if (payment.metadata?.subscription_id || payment.external_reference) {
+              const subscriptionId = payment.metadata?.subscription_id || payment.external_reference
+
+              await supabase
+                .from('user_subscriptions')
+                .update({
+                  status: 'refunded',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('subscription_id', subscriptionId)
+            }
             break
 
           case 'pending':
             console.log('⏳ Pagamento pendente:', data.id)
+            break
+
+          case 'in_process':
+            console.log('🔄 Pagamento em processamento:', data.id)
             break
 
           default:
@@ -347,20 +481,20 @@ app.post('/api/mercadopago/webhook', async (req, res) => {
         console.log('❓ Tipo de evento não tratado:', type)
     }
 
-    // TODO: Salvar webhook no banco para processamento posterior
-    // await supabase.from('mercadopago_webhooks').insert({
-    //   event_type: type,
-    //   event_action: action,
-    //   resource_id: data?.id,
-    //   payload: req.body,
-    //   processed: false
-    // })
+    // Marcar webhook como processado
+    await supabase
+      .from('mercadopago_webhooks')
+      .update({ processed: true, processed_at: new Date().toISOString() })
+      .eq('resource_id', data?.id)
+      .eq('processed', false)
 
     // Sempre retornar 200 OK para o Mercado Pago saber que recebemos
     res.status(200).json({ received: true })
   } catch (error) {
     console.error('❌ Erro ao processar webhook:', error)
-    res.status(500).json({ error: 'Erro ao processar webhook' })
+
+    // Mesmo com erro, retornar 200 para não ficar recebendo o mesmo evento
+    res.status(200).json({ received: true, error: error.message })
   }
 })
 

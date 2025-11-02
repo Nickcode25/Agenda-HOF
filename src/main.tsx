@@ -57,6 +57,7 @@ import CashRegistersList from './pages/cash/CashRegistersList'
 import CashSessionPage from './pages/cash/CashSessionPage'
 import SignupPage from './pages/SignupPage'
 import LoginPage from './pages/LoginPage'
+import SubscriptionManagement from './pages/account/SubscriptionManagement'
 
 const router = createBrowserRouter([
   {
@@ -344,6 +345,8 @@ const router = createBrowserRouter([
       },
 
       { path: 'notificacoes', element: <NotificationsPage /> },
+
+      { path: 'assinatura', element: <SubscriptionManagement /> },
 
       {
         path: 'configuracoes/evolution',

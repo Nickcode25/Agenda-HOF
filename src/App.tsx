@@ -378,10 +378,14 @@ export default function App() {
 
             {/* Premium Badge - só aparece se tem assinatura PAGA (não trial) */}
             {hasPaidSubscription && (
-              <div className="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 px-3 py-1.5 rounded-full">
+              <button
+                onClick={() => navigate('/app/assinatura')}
+                className="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 px-3 py-1.5 rounded-full hover:from-orange-500/30 hover:to-yellow-500/30 transition-all"
+                title="Gerenciar Assinatura"
+              >
                 <Crown className="w-4 h-4 text-orange-400" />
                 <span className="text-xs font-semibold text-orange-400">Premium</span>
-              </div>
+              </button>
             )}
 
             {/* User Menu */}
