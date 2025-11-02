@@ -24,7 +24,7 @@ import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 
-type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
+type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
 type TransactionItem = CashMovement | {
   id: string
@@ -46,15 +46,51 @@ export default function FinancialReport() {
   const { hasActiveSubscription } = useSubscription()
   const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
+  const today = new Date().toISOString().split('T')[0]
+  const [startDate, setStartDate] = useState(today)
+  const [endDate, setEndDate] = useState(today)
   const [editingMovement, setEditingMovement] = useState<CashMovement | null>(null)
   const [editForm, setEditForm] = useState({
     description: '',
     amount: 0,
     paymentMethod: 'pix' as PaymentMethod
   })
+
+  // Atualizar datas quando o período mudar
+  useEffect(() => {
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
+
+    switch (periodFilter) {
+      case 'day':
+        setStartDate(todayStr)
+        setEndDate(todayStr)
+        break
+
+      case 'week':
+        const weekStart = new Date(now)
+        weekStart.setDate(now.getDate() - now.getDay())
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+        setStartDate(weekStart.toISOString().split('T')[0])
+        setEndDate(weekEnd.toISOString().split('T')[0])
+        break
+
+      case 'month':
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        setStartDate(monthStart.toISOString().split('T')[0])
+        setEndDate(monthEnd.toISOString().split('T')[0])
+        break
+
+      case 'year':
+        const yearStart = new Date(now.getFullYear(), 0, 1)
+        const yearEnd = new Date(now.getFullYear(), 11, 31)
+        setStartDate(yearStart.toISOString().split('T')[0])
+        setEndDate(yearEnd.toISOString().split('T')[0])
+        break
+    }
+  }, [periodFilter])
 
   useEffect(() => {
     fetchExpenses()
@@ -63,58 +99,27 @@ export default function FinancialReport() {
     fetchSales()
   }, [])
 
-  // Função para filtrar por período
-  const filterByPeriod = (dateString: string, itemDate: Date): boolean => {
+  // Função para filtrar por período (sempre usa startDate e endDate)
+  const filterByPeriod = (_dateString: string, itemDate: Date): boolean => {
     const item = new Date(itemDate)
-
-    if (periodFilter === 'custom') {
-      const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
-      const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
-      const start = new Date(startYear, startMonth - 1, startDay)
-      const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59)
-      return item >= start && item <= end
-    }
-
-    // Criar data local a partir da string (sem conversão de timezone)
-    const [year, month, day] = dateString.split('-').map(Number)
-    const selected = new Date(year, month - 1, day)
-
-    switch (periodFilter) {
-      case 'day':
-        const selectedDay = selected.toDateString()
-        const itemDay = item.toDateString()
-        console.log('[FINANCIAL] Comparando datas - Selecionada:', selectedDay, 'Item:', itemDay, 'Match:', selectedDay === itemDay)
-        return selectedDay === itemDay
-
-      case 'week':
-        const weekStart = new Date(selected)
-        weekStart.setDate(selected.getDate() - selected.getDay())
-        const weekEnd = new Date(weekStart)
-        weekEnd.setDate(weekStart.getDate() + 6)
-        return item >= weekStart && item <= weekEnd
-
-      case 'month':
-        return selected.getMonth() === item.getMonth() && selected.getFullYear() === item.getFullYear()
-
-      case 'year':
-        return selected.getFullYear() === item.getFullYear()
-
-      default:
-        return true
-    }
+    const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
+    const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
+    const start = new Date(startYear, startMonth - 1, startDay, 0, 0, 0)
+    const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59)
+    return item >= start && item <= end
   }
 
   // Receitas de procedimentos (do caixa fechado)
   const procedureRevenue = useMemo(() => {
     console.log('[FINANCIAL] Total de sessões:', sessions.length)
     console.log('[FINANCIAL] Sessões fechadas:', sessions.filter(s => s.status === 'closed').length)
-    console.log('[FINANCIAL] Data selecionada:', selectedDate)
+    console.log('[FINANCIAL] Data inicial:', startDate, 'Data final:', endDate)
     console.log('[FINANCIAL] Período:', periodFilter)
 
     const closedSessions = sessions.filter(s => {
       const isClosed = s.status === 'closed'
       const hasClosedAt = !!s.closedAt
-      const matchesPeriod = s.closedAt && filterByPeriod(selectedDate, new Date(s.closedAt))
+      const matchesPeriod = s.closedAt && filterByPeriod('', new Date(s.closedAt))
 
       console.log('[FINANCIAL] Sessão:', s.id, 'Status:', s.status, 'ClosedAt:', s.closedAt, 'Matches:', isClosed && hasClosedAt && matchesPeriod)
 
@@ -135,14 +140,14 @@ export default function FinancialReport() {
     const count = procedureMovements.length
 
     return { total, count, items: procedureMovements }
-  }, [sessions, movements, periodFilter, selectedDate])
+  }, [sessions, movements, startDate, endDate])
 
   // Receitas de vendas (do caixa fechado)
   const salesRevenue = useMemo(() => {
     const closedSessions = sessions.filter(s =>
       s.status === 'closed' &&
       s.closedAt &&
-      filterByPeriod(selectedDate, new Date(s.closedAt))
+      filterByPeriod('', new Date(s.closedAt))
     )
 
     const saleMovements = movements.filter(m =>
@@ -155,14 +160,14 @@ export default function FinancialReport() {
     const count = saleMovements.length
 
     return { total, profit: 0, count, items: saleMovements }
-  }, [sessions, movements, periodFilter, selectedDate])
+  }, [sessions, movements, startDate, endDate])
 
   // Receitas de mensalidades (do caixa fechado)
   const subscriptionRevenue = useMemo(() => {
     const closedSessions = sessions.filter(s =>
       s.status === 'closed' &&
       s.closedAt &&
-      filterByPeriod(selectedDate, new Date(s.closedAt))
+      filterByPeriod('', new Date(s.closedAt))
     )
 
     const subscriptionMovements = movements.filter(m =>
@@ -175,14 +180,14 @@ export default function FinancialReport() {
     const count = subscriptionMovements.length
 
     return { total, count, items: subscriptionMovements }
-  }, [sessions, movements, periodFilter, selectedDate])
+  }, [sessions, movements, startDate, endDate])
 
   // Outras receitas (do caixa fechado) - parcelas, consultas, etc
   const otherRevenue = useMemo(() => {
     const closedSessions = sessions.filter(s =>
       s.status === 'closed' &&
       s.closedAt &&
-      filterByPeriod(selectedDate, new Date(s.closedAt))
+      filterByPeriod('', new Date(s.closedAt))
     )
 
     const otherMovements = movements.filter(m =>
@@ -195,7 +200,7 @@ export default function FinancialReport() {
     const count = otherMovements.length
 
     return { total, count, items: otherMovements }
-  }, [sessions, movements, periodFilter, selectedDate])
+  }, [sessions, movements, startDate, endDate])
 
   const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total + otherRevenue.total
   const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count + otherRevenue.count
@@ -209,7 +214,7 @@ export default function FinancialReport() {
       const dateToCheck = expense.paidAt || expense.dueDate
       if (!dateToCheck) return false
 
-      return filterByPeriod(selectedDate, new Date(dateToCheck))
+      return filterByPeriod('', new Date(dateToCheck))
     }).map(expense => ({
       id: expense.id,
       amount: -expense.amount, // Negativo para despesas
@@ -222,7 +227,7 @@ export default function FinancialReport() {
       expenseCategory: expense.categoryId,
       paymentMethod: expense.paymentMethod
     }))
-  }, [expenses, periodFilter, selectedDate])
+  }, [expenses, startDate, endDate])
 
   const expensesTotal = useMemo(() => {
     return expenseItems.reduce((sum, expense) => sum + Math.abs(expense.amount), 0)
@@ -238,32 +243,11 @@ export default function FinancialReport() {
   const otherPercentage = totalRevenue > 0 ? (otherRevenue.total / totalRevenue) * 100 : 0
 
   const getPeriodLabel = () => {
-    if (periodFilter === 'custom') {
-      const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
-      const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
-      const start = new Date(startYear, startMonth - 1, startDay)
-      const end = new Date(endYear, endMonth - 1, endDay)
-      return `${start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${end.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
-    }
-
-    // Usar data local para evitar problema de timezone
-    const [year, month, day] = selectedDate.split('-').map(Number)
-    const date = new Date(year, month - 1, day)
-
-    switch (periodFilter) {
-      case 'day':
-        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
-      case 'week':
-        const weekStart = new Date(date)
-        weekStart.setDate(date.getDate() - date.getDay())
-        const weekEnd = new Date(weekStart)
-        weekEnd.setDate(weekStart.getDate() + 6)
-        return `${weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
-      case 'month':
-        return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-      case 'year':
-        return date.getFullYear().toString()
-    }
+    const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
+    const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
+    const start = new Date(startYear, startMonth - 1, startDay)
+    const end = new Date(endYear, endMonth - 1, endDay)
+    return `${start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${end.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
   }
 
   // Função para obter detalhes da venda
@@ -415,50 +399,28 @@ export default function FinancialReport() {
               >
                 Ano
               </button>
-              <button
-                onClick={() => setPeriodFilter('custom')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'custom'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Personalizado
-              </button>
             </div>
           </div>
-          {periodFilter === 'custom' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Data Inicial</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Data Final</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                />
-              </div>
-            </div>
-          ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data de Referência</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Data Inicial</label>
               <input
                 type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
-          )}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Data Final</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
