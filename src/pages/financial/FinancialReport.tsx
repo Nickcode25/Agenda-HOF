@@ -178,8 +178,8 @@ export default function FinancialReport() {
   const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count + otherRevenue.count
 
   // Despesas do período
-  const expensesTotal = useMemo(() => {
-    const filteredExpenses = expenses.filter(expense => {
+  const expenseItems = useMemo(() => {
+    return expenses.filter(expense => {
       if (expense.paymentStatus !== 'paid') return false
 
       // Usar paidAt se existir, senão usar dueDate
@@ -187,9 +187,22 @@ export default function FinancialReport() {
       if (!dateToCheck) return false
 
       return filterByPeriod(selectedDate, new Date(dateToCheck))
-    })
-    return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+    }).map(expense => ({
+      id: expense.id,
+      amount: -expense.amount, // Negativo para despesas
+      description: expense.description,
+      category: 'expense' as const,
+      createdAt: expense.paidAt || expense.dueDate,
+      referenceId: null,
+      professionalId: null,
+      isExpense: true,
+      expenseCategory: expense.categoryId
+    }))
   }, [expenses, periodFilter, selectedDate])
+
+  const expensesTotal = useMemo(() => {
+    return expenseItems.reduce((sum, expense) => sum + Math.abs(expense.amount), 0)
+  }, [expenseItems])
 
   // Lucro líquido
   const netProfit = totalRevenue - expensesTotal
@@ -649,9 +662,9 @@ export default function FinancialReport() {
           <h3 className="text-xl font-semibold text-white">Todas as Transações do Período</h3>
         </div>
 
-        {totalTransactions > 0 ? (
+        {totalTransactions > 0 || expenseItems.length > 0 ? (
           <div className="space-y-3">
-            {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items]
+            {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items, ...expenseItems]
               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
               .map((movement) => {
                 const categoryColors = {
