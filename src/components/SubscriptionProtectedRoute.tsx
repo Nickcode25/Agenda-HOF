@@ -11,12 +11,14 @@ interface SubscriptionProtectedRouteProps {
 
 interface SubscriptionContextType {
   hasActiveSubscription: boolean
+  hasPaidSubscription: boolean  // Nova: true apenas se tem assinatura PAGA
   isInTrial: boolean
   trialDaysRemaining: number
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
   hasActiveSubscription: false,
+  hasPaidSubscription: false,
   isInTrial: false,
   trialDaysRemaining: 0
 })
@@ -27,6 +29,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
+  const [hasPaidSubscription, setHasPaidSubscription] = useState(false)
   const [isInTrial, setIsInTrial] = useState(false)
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(0)
 
@@ -48,6 +51,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
 
         if (subscription) {
           setHasActiveSubscription(true)
+          setHasPaidSubscription(true)  // Tem assinatura PAGA
           setLoading(false)
           return
         }
@@ -66,6 +70,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             setIsInTrial(true)
             setTrialDaysRemaining(daysRemaining)
             setHasActiveSubscription(true) // Durante trial, tem acesso completo
+            setHasPaidSubscription(false)  // Mas NÃO é assinatura paga
             setLoading(false)
             return
           }
@@ -130,7 +135,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   // Usuário autenticado - permitir acesso (com ou sem assinatura)
   // Se não tem assinatura, o conteúdo mostrará overlay de bloqueio
   return (
-    <SubscriptionContext.Provider value={{ hasActiveSubscription, isInTrial, trialDaysRemaining }}>
+    <SubscriptionContext.Provider value={{ hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining }}>
       {children}
     </SubscriptionContext.Provider>
   )

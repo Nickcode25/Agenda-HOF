@@ -25,7 +25,7 @@ export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const { message, type, isVisible, hide } = useToast()
-  const { hasActiveSubscription } = useSubscription()
+  const { hasActiveSubscription, hasPaidSubscription } = useSubscription()
 
   // Ativar verificação automática de notificações
   useNotificationChecker()
@@ -376,8 +376,8 @@ export default function App() {
             {/* Notifications */}
             <NotificationBell />
 
-            {/* Premium Badge */}
-            {hasActiveSubscription && (
+            {/* Premium Badge - só aparece se tem assinatura PAGA (não trial) */}
+            {hasPaidSubscription && (
               <div className="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 px-3 py-1.5 rounded-full">
                 <Crown className="w-4 h-4 text-orange-400" />
                 <span className="text-xs font-semibold text-orange-400">Premium</span>
