@@ -24,7 +24,7 @@ import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 
-type PeriodFilter = 'day' | 'week' | 'month' | 'year'
+type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
 
 export default function FinancialReport() {
   const { sessions, movements, fetchSessions, fetchMovements, updateMovement, deleteMovement } = useCash()
@@ -34,6 +34,8 @@ export default function FinancialReport() {
   const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
   const [editingMovement, setEditingMovement] = useState<CashMovement | null>(null)
   const [editForm, setEditForm] = useState({
     description: '',
@@ -50,11 +52,19 @@ export default function FinancialReport() {
 
   // Função para filtrar por período
   const filterByPeriod = (dateString: string, itemDate: Date): boolean => {
+    const item = new Date(itemDate)
+
+    if (periodFilter === 'custom') {
+      const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
+      const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
+      const start = new Date(startYear, startMonth - 1, startDay)
+      const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59)
+      return item >= start && item <= end
+    }
+
     // Criar data local a partir da string (sem conversão de timezone)
     const [year, month, day] = dateString.split('-').map(Number)
     const selected = new Date(year, month - 1, day)
-
-    const item = new Date(itemDate)
 
     switch (periodFilter) {
       case 'day':
@@ -214,6 +224,14 @@ export default function FinancialReport() {
   const otherPercentage = totalRevenue > 0 ? (otherRevenue.total / totalRevenue) * 100 : 0
 
   const getPeriodLabel = () => {
+    if (periodFilter === 'custom') {
+      const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
+      const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
+      const start = new Date(startYear, startMonth - 1, startDay)
+      const end = new Date(endYear, endMonth - 1, endDay)
+      return `${start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${end.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+    }
+
     // Usar data local para evitar problema de timezone
     const [year, month, day] = selectedDate.split('-').map(Number)
     const date = new Date(year, month - 1, day)
@@ -383,17 +401,50 @@ export default function FinancialReport() {
               >
                 Ano
               </button>
+              <button
+                onClick={() => setPeriodFilter('custom')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  periodFilter === 'custom'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Personalizado
+              </button>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Data de Referência</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-          </div>
+          {periodFilter === 'custom' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Data Inicial</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Data Final</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Data de Referência</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+          )}
         </div>
       </div>
 
