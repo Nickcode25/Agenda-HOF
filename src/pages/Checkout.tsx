@@ -315,6 +315,20 @@ export default function Checkout() {
         console.log('Subscription ID:', subscriptionResponse.id)
         console.log('✅ Status aprovado:', subscriptionResponse.status)
 
+        // Atualizar metadados do usuário com CPF e telefone
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: {
+            cpf: cardCpf.replace(/\D/g, ''),
+            phone: userData!.phone
+          }
+        })
+
+        if (updateError) {
+          console.error('⚠️ Erro ao atualizar metadados do usuário:', updateError)
+        } else {
+          console.log('✅ CPF e telefone salvos nos metadados do usuário')
+        }
+
         const { data: insertData, error: insertError } = await supabase.from('user_subscriptions').insert({
           user_id: userData2.user.id,
           mercadopago_subscription_id: subscriptionResponse.id,

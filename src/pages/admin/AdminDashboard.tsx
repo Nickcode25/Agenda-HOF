@@ -119,8 +119,18 @@ export default function AdminDashboard() {
         .from('sales')
         .select('total')
 
-      const totalRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
+      const salesRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
       const salesCount = salesData?.length || 0
+
+      // Calcular receita de assinaturas
+      const { data: subscriptionsData } = await supabase
+        .from('user_subscriptions')
+        .select('plan_amount')
+        .eq('status', 'active')
+
+      const subscriptionsRevenue = subscriptionsData?.reduce((sum, sub) => sum + (parseFloat(sub.plan_amount) || 0), 0) || 0
+
+      const totalRevenue = salesRevenue + subscriptionsRevenue
 
       setStats(prev => ({
         ...prev,
@@ -164,8 +174,8 @@ export default function AdminDashboard() {
           }
 
           const { data: subscriptionData } = await supabase
-            .from('subscriptions')
-            .select('status, end_date')
+            .from('user_subscriptions')
+            .select('status, next_billing_date')
             .eq('user_id', owner.id)
             .eq('status', 'active')
             .single()
