@@ -163,7 +163,10 @@ export default function SalesHistory() {
 
     // Preparar dados da tabela
     const tableData = filtered.map(sale => {
-      const products = sale.items.map(item => item.stockItemName).join(', ')
+      // Formatar produtos com quantidade: "2 Belinelo, 1 Rennova Lift Lido, 3 Mesofiller"
+      const products = sale.items
+        .map(item => `${item.quantity} ${item.stockItemName}`)
+        .join(', ')
       const statusLabel = getPaymentStatusConfig(sale.paymentStatus).label
 
       return [

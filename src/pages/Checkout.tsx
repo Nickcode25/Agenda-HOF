@@ -88,8 +88,8 @@ export default function Checkout() {
       .replace(/(-\d{2})\d+?$/, '$1')
   }
 
-  // Calcular preço final com desconto
-  const finalPrice = PLAN_PRICE * (1 - couponDiscount / 100)
+  // Calcular preço final com desconto (arredondado para 2 casas decimais)
+  const finalPrice = Math.round(PLAN_PRICE * (1 - couponDiscount / 100) * 100) / 100
 
   // Validar cupom
   const validateCoupon = async () => {
