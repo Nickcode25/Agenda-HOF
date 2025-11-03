@@ -6,6 +6,7 @@ export interface CreateSubscriptionData {
   customerPhone?: string
   customerCpf: string
   cardToken: string
+  amount?: number // Valor da assinatura (com desconto, se houver cupom)
 }
 
 export interface SubscriptionResponse {
@@ -25,6 +26,15 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
  */
 export async function createSubscription(data: CreateSubscriptionData): Promise<SubscriptionResponse> {
   try {
+    // Usar amount fornecido (com desconto) ou PLAN_PRICE padrão
+    const finalAmount = data.amount || PLAN_PRICE
+
+    console.log('💰 Criando assinatura com valor:', finalAmount)
+    if (data.amount && data.amount < PLAN_PRICE) {
+      const discount = ((1 - data.amount / PLAN_PRICE) * 100).toFixed(0)
+      console.log('🎟️ Cupom aplicado! Desconto de', discount + '%')
+    }
+
     const response = await fetch(`${BACKEND_URL}/api/mercadopago/create-subscription`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,7 +44,7 @@ export async function createSubscription(data: CreateSubscriptionData): Promise<
         customerPhone: data.customerPhone,
         customerCpf: data.customerCpf,
         cardToken: data.cardToken,
-        amount: PLAN_PRICE,
+        amount: finalAmount,
         planName: PLAN_NAME,
       }),
     })

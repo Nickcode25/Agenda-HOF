@@ -256,14 +256,19 @@ export default function Checkout() {
 
       console.log('✅ Token criado:', cardToken)
       console.log('🔄 Criando assinatura recorrente...')
+      console.log('💰 Valor final com desconto:', finalPrice)
+      if (couponDiscount > 0) {
+        console.log('🎟️ Cupom aplicado:', couponCode, '- Desconto:', couponDiscount + '%')
+      }
 
-      // Criar assinatura recorrente
+      // Criar assinatura recorrente com valor final (incluindo desconto)
       const subscriptionResponse = await createSubscription({
         customerEmail: userData!.email,
         customerName: userData!.name,
         customerPhone: userData!.phone,
         customerCpf: cardCpf.replace(/\D/g, ''),
         cardToken: cardToken,
+        amount: finalPrice, // 🎟️ Envia valor com desconto aplicado
       })
 
       console.log('✅ Assinatura criada:', subscriptionResponse)
