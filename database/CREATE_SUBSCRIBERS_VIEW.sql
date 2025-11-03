@@ -35,7 +35,7 @@ SELECT
 
   -- Dados do cupom (se houver)
   dc.code as coupon_code,
-  dc.discount as coupon_discount_value
+  dc.discount_percentage as coupon_discount_percentage
 
 FROM user_subscriptions us
 LEFT JOIN auth.users u ON us.user_id = u.id

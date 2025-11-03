@@ -38,7 +38,8 @@ SELECT
   name,
   email,
   coupon_code,
-  discount_percentage,
+  coupon_discount_percentage,
+  discount_percentage as discount_applied_on_subscription,
   plan_amount,
   subscription_created_at
 FROM subscribers_view
