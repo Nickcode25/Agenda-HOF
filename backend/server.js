@@ -116,6 +116,14 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
       })
     }
 
+    // Validar CPF (obrigatório para produção)
+    if (!customerCpf || customerCpf.replace(/\D/g, '').length !== 11) {
+      return res.status(400).json({
+        error: 'CPF inválido ou não fornecido',
+        details: 'O CPF deve conter 11 dígitos'
+      })
+    }
+
     // Detectar se está em modo TEST
     const isTestMode = MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')
 
@@ -130,7 +138,6 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
         token: cardToken,
         description: planName || 'Agenda+ HOF - Plano Profissional',
         installments: 1,
-        payment_method_id: 'master', // ou 'visa', dependendo do cartão
         payer: {
           email: customerEmail,
           identification: {
@@ -140,7 +147,7 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
         }
       }
 
-      console.log('📦 Dados do pagamento:', JSON.stringify(paymentData, null, 2))
+      console.log('📦 Dados do pagamento (sem payment_method_id):', JSON.stringify(paymentData, null, 2))
 
       const payment = await paymentClient.create({
         body: paymentData
@@ -159,6 +166,9 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
     } else {
       // No modo PRODUÇÃO, usar PreApproval normalmente
       console.log('🔄 Usando PreApproval API (modo produção)')
+      console.log('📧 Email do pagador:', customerEmail)
+      console.log('💰 Valor da assinatura:', amount)
+      console.log('🆔 CPF do titular:', customerCpf.substring(0, 3) + '...')
 
       const subscriptionData = {
         reason: planName || 'Agenda+ HOF - Plano Profissional',
@@ -178,22 +188,46 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
         status: 'authorized'
       }
 
-      console.log('📦 Dados da assinatura:', JSON.stringify(subscriptionData, null, 2))
+      console.log('📦 Criando assinatura com os seguintes dados:')
+      console.log('  - Plano:', subscriptionData.reason)
+      console.log('  - Valor mensal: R$', subscriptionData.auto_recurring.transaction_amount)
+      console.log('  - Email:', subscriptionData.payer_email)
+      console.log('  - Token do cartão:', cardToken.substring(0, 10) + '...')
 
-      const subscription = await preApprovalClient.create({
-        body: subscriptionData
-      })
+      try {
+        const subscription = await preApprovalClient.create({
+          body: subscriptionData
+        })
 
-      console.log('✅ Assinatura criada:', subscription.id, 'Status:', subscription.status)
+        console.log('✅ Assinatura criada com sucesso!')
+        console.log('  - ID:', subscription.id)
+        console.log('  - Status:', subscription.status)
+        console.log('  - Próximo pagamento:', subscription.next_payment_date)
+        console.log('  - Últimos dígitos do cartão:', subscription.summarized?.last_four_digits)
 
-      res.json({
-        id: subscription.id,
-        status: subscription.status,
-        amount: amount,
-        nextBillingDate: subscription.next_payment_date,
-        cardLastDigits: subscription.summarized?.last_four_digits || '****',
-        cardBrand: subscription.payment_method_id || 'UNKNOWN'
-      })
+        res.json({
+          id: subscription.id,
+          status: subscription.status,
+          amount: amount,
+          nextBillingDate: subscription.next_payment_date,
+          cardLastDigits: subscription.summarized?.last_four_digits || '****',
+          cardBrand: subscription.payment_method_id || 'UNKNOWN'
+        })
+      } catch (subscriptionError) {
+        console.error('❌ Erro específico ao criar PreApproval:')
+        console.error('  - Status HTTP:', subscriptionError.status)
+        console.error('  - Message:', subscriptionError.message)
+
+        // Log mais detalhado para erros de segurança
+        if (subscriptionError.cause) {
+          console.error('  - Causas do erro:')
+          subscriptionError.cause.forEach((cause, index) => {
+            console.error(`    ${index + 1}. ${cause.code}: ${cause.description}`)
+          })
+        }
+
+        throw subscriptionError
+      }
     }
   } catch (error) {
     console.error('❌ Erro ao criar assinatura:')
@@ -203,9 +237,16 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
     console.error('  - Full error:', JSON.stringify(error, null, 2))
 
     // Extrair mensagem de erro mais específica
-    const errorMessage = error.cause?.[0]?.description ||
-                        error.message ||
-                        'Erro ao criar assinatura'
+    let errorMessage = error.cause?.[0]?.description || error.message || 'Erro ao criar assinatura'
+
+    // Tratar erros específicos de segurança do Mercado Pago
+    if (errorMessage.includes('security') || errorMessage.includes('fraud')) {
+      errorMessage = 'Pagamento recusado por medidas de segurança. Verifique os dados ou entre em contato com seu banco.'
+    } else if (errorMessage.includes('invalid') && errorMessage.includes('card')) {
+      errorMessage = 'Dados do cartão inválidos. Verifique o número, validade e CVV.'
+    } else if (errorMessage.includes('CPF') || errorMessage.includes('identification')) {
+      errorMessage = 'CPF inválido. Verifique os dados e tente novamente.'
+    }
 
     res.status(error.status || 500).json({
       error: errorMessage,
