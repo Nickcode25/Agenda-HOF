@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, Edit, ArrowLeft, ShoppingCart } from 'lucide-react'
+import { Search, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, Edit, ArrowLeft, ShoppingCart, FileDown } from 'lucide-react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
 
@@ -134,6 +136,101 @@ export default function SalesHistory() {
     return methods[method as keyof typeof methods] || method
   }
 
+  const exportToPDF = () => {
+    const doc = new jsPDF()
+
+    // Configurar título
+    doc.setFontSize(20)
+    doc.setTextColor(255, 120, 40) // Cor laranja
+    doc.text('Relatório de Vendas', 14, 20)
+
+    // Período do relatório
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    const periodText = `Período: ${new Date(startDate).toLocaleDateString('pt-BR')} até ${new Date(endDate).toLocaleDateString('pt-BR')}`
+    doc.text(periodText, 14, 28)
+
+    // Totais do período
+    doc.setFontSize(12)
+    doc.setTextColor(0, 0, 0)
+    doc.text('Resumo do Período', 14, 38)
+
+    doc.setFontSize(10)
+    doc.setTextColor(60, 60, 60)
+    doc.text(`Total de Vendas: ${periodTotals.count}`, 14, 45)
+    doc.text(`Faturamento Total: ${formatCurrency(periodTotals.total)}`, 14, 51)
+    doc.text(`Lucro Total: ${formatCurrency(periodTotals.profit)}`, 14, 57)
+
+    // Preparar dados da tabela
+    const tableData = filtered.map(sale => {
+      const products = sale.items.map(item => item.stockItemName).join(', ')
+      const statusLabel = getPaymentStatusConfig(sale.paymentStatus).label
+
+      return [
+        new Date(sale.createdAt).toLocaleDateString('pt-BR'),
+        sale.professionalName,
+        products,
+        getPaymentMethodLabel(sale.paymentMethod),
+        statusLabel,
+        formatCurrency(sale.totalAmount),
+        formatCurrency(sale.totalProfit)
+      ]
+    })
+
+    // Criar tabela
+    autoTable(doc, {
+      startY: 65,
+      head: [['Data', 'Profissional', 'Produtos', 'Pagamento', 'Status', 'Total', 'Lucro']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [255, 120, 40], // Cor laranja
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      bodyStyles: {
+        fontSize: 8,
+        textColor: [60, 60, 60]
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        0: { cellWidth: 22 },  // Data
+        1: { cellWidth: 35 },  // Profissional
+        2: { cellWidth: 45 },  // Produtos
+        3: { cellWidth: 25 },  // Pagamento
+        4: { cellWidth: 20 },  // Status
+        5: { cellWidth: 23 },  // Total
+        6: { cellWidth: 23 }   // Lucro
+      },
+      margin: { left: 14, right: 14 }
+    })
+
+    // Adicionar rodapé
+    const pageCount = doc.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text(
+        `Agenda+ HOF - Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+        14,
+        doc.internal.pageSize.height - 10
+      )
+      doc.text(
+        `Página ${i} de ${pageCount}`,
+        doc.internal.pageSize.width - 40,
+        doc.internal.pageSize.height - 10
+      )
+    }
+
+    // Salvar PDF
+    const fileName = `relatorio-vendas-${startDate}-${endDate}.pdf`
+    doc.save(fileName)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header Premium */}
@@ -158,56 +255,69 @@ export default function SalesHistory() {
             </div>
           </div>
           {/* Filtros de Período */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4 items-center justify-between">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setPeriodFilter('day')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  periodFilter === 'day'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                Hoje
+              </button>
+              <button
+                onClick={() => setPeriodFilter('week')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  periodFilter === 'week'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                Semana
+              </button>
+              <button
+                onClick={() => setPeriodFilter('month')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  periodFilter === 'month'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                Mês
+              </button>
+              <button
+                onClick={() => setPeriodFilter('year')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  periodFilter === 'year'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                Ano
+              </button>
+              <button
+                onClick={() => setPeriodFilter('custom')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  periodFilter === 'custom'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                Personalizado
+              </button>
+            </div>
+
+            {/* Botão Exportar PDF */}
             <button
-              onClick={() => setPeriodFilter('day')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                periodFilter === 'day'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-              }`}
+              onClick={exportToPDF}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all"
+              title="Exportar relatório em PDF"
             >
-              Hoje
-            </button>
-            <button
-              onClick={() => setPeriodFilter('week')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                periodFilter === 'week'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              Semana
-            </button>
-            <button
-              onClick={() => setPeriodFilter('month')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                periodFilter === 'month'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              Mês
-            </button>
-            <button
-              onClick={() => setPeriodFilter('year')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                periodFilter === 'year'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              Ano
-            </button>
-            <button
-              onClick={() => setPeriodFilter('custom')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                periodFilter === 'custom'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              Personalizado
+              <FileDown size={18} />
+              Exportar PDF
             </button>
           </div>
 
