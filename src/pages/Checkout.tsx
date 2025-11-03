@@ -22,6 +22,7 @@ export default function Checkout() {
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvv, setCardCvv] = useState('')
   const [cardCpf, setCardCpf] = useState('')
+  const [cardBrand, setCardBrand] = useState<string>('')
 
   // Cupom de desconto
   const [couponCode, setCouponCode] = useState('')
@@ -46,8 +47,27 @@ export default function Checkout() {
     }
   }, [userData, navigate])
 
+  // Detectar bandeira do cartão
+  const detectCardBrand = (number: string) => {
+    const cleanNumber = number.replace(/\D/g, '')
+
+    if (/^4/.test(cleanNumber)) return 'visa'
+    if (/^5[1-5]/.test(cleanNumber)) return 'mastercard'
+    if (/^3[47]/.test(cleanNumber)) return 'amex'
+    if (/^6(?:011|5)/.test(cleanNumber)) return 'discover'
+    if (/^35/.test(cleanNumber)) return 'jcb'
+    if (/^36|38/.test(cleanNumber)) return 'diners'
+    if (/^50|^60|^63|^67/.test(cleanNumber)) return 'elo'
+    if (/^62/.test(cleanNumber)) return 'unionpay'
+    if (/^60|^65/.test(cleanNumber)) return 'hipercard'
+
+    return ''
+  }
+
   const formatCardNumber = (value: string) => {
     const numbers = value.replace(/\D/g, '')
+    const brand = detectCardBrand(numbers)
+    setCardBrand(brand)
     return numbers.replace(/(\d{4})/g, '$1 ').trim()
   }
 
@@ -536,15 +556,28 @@ export default function Checkout() {
             <form onSubmit={handleCardPayment} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Número do Cartão</label>
-                <input
-                  type="text"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                  placeholder="0000 0000 0000 0000"
-                  maxLength={19}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                    placeholder="0000 0000 0000 0000"
+                    maxLength={19}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 pr-16 text-white"
+                    required
+                  />
+                  {cardBrand && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <span className="text-xs font-semibold px-2 py-1 bg-gray-600 text-white rounded uppercase">
+                        {cardBrand === 'visa' && '💳 Visa'}
+                        {cardBrand === 'mastercard' && '💳 Master'}
+                        {cardBrand === 'elo' && '💳 Elo'}
+                        {cardBrand === 'amex' && '💳 Amex'}
+                        {cardBrand === 'hipercard' && '💳 Hiper'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
