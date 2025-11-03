@@ -484,7 +484,32 @@ app.post('/api/mercadopago/webhook', async (req, res) => {
           case 'rejected':
             console.log('❌ Pagamento rejeitado:', data.id, payment.status_detail)
 
-            // Notificar usuário sobre falha no pagamento
+            // Desativar assinatura se pagamento rejeitado
+            if (payment.metadata?.subscription_id || payment.external_reference) {
+              const subscriptionId = payment.metadata?.subscription_id || payment.external_reference
+
+              console.log('🚫 Desativando assinatura por pagamento recusado:', subscriptionId)
+
+              // Buscar assinatura pelo mercadopago_subscription_id
+              const { data: existingSubscription } = await supabase
+                .from('user_subscriptions')
+                .select('*')
+                .eq('mercadopago_subscription_id', subscriptionId)
+                .single()
+
+              if (existingSubscription) {
+                await supabase
+                  .from('user_subscriptions')
+                  .update({
+                    status: 'payment_failed',
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('mercadopago_subscription_id', subscriptionId)
+
+                console.log('✅ Assinatura marcada como payment_failed')
+              }
+            }
+
             // TODO: Implementar notificação por email
             break
 

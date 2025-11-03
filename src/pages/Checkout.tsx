@@ -272,23 +272,33 @@ export default function Checkout() {
       })
 
       console.log('✅ Assinatura criada:', subscriptionResponse)
+      console.log('📊 Status da assinatura:', subscriptionResponse.status)
+
+      // Validar se o pagamento foi aprovado antes de ativar
+      const isApproved = subscriptionResponse.status === 'authorized' || subscriptionResponse.status === 'approved'
+
+      if (!isApproved) {
+        console.error('❌ Pagamento não aprovado! Status:', subscriptionResponse.status)
+        throw new Error('Pagamento não foi aprovado. Verifique os dados do cartão e tente novamente.')
+      }
 
       // Registrar uso de cupom se houver
       if (validatedCouponId) {
         await registerCouponUsage(validatedCouponId, finalPrice)
       }
 
-      // Salvar assinatura no banco de dados
+      // Salvar assinatura no banco de dados SOMENTE se aprovada
       const { data: userData2 } = await supabase.auth.getUser()
       if (userData2.user) {
         console.log('💾 Salvando assinatura no banco de dados...')
         console.log('User ID:', userData2.user.id)
         console.log('Subscription ID:', subscriptionResponse.id)
+        console.log('✅ Status aprovado:', subscriptionResponse.status)
 
         const { data: insertData, error: insertError } = await supabase.from('user_subscriptions').insert({
           user_id: userData2.user.id,
           mercadopago_subscription_id: subscriptionResponse.id,
-          status: 'active',
+          status: 'active', // Só chega aqui se isApproved === true
           plan_amount: finalPrice,
           billing_cycle: 'MONTHLY',
           next_billing_date: subscriptionResponse.nextBillingDate,
