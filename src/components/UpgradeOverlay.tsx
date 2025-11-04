@@ -13,8 +13,8 @@ export default function UpgradeOverlay({
   const navigate = useNavigate()
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/95 backdrop-blur-md rounded-3xl">
-      <div className="max-w-lg w-full mx-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/95 backdrop-blur-md">
+      <div className="max-w-lg w-full mx-4 my-8 overflow-y-auto max-h-screen">
         {/* Card Premium */}
         <div className="relative group">
           {/* Glow effect */}
@@ -87,7 +87,7 @@ export default function UpgradeOverlay({
               {/* Preço */}
               <div className="border-t border-gray-700/50 pt-4">
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-4xl font-bold text-white">R$ 109</span>
+                  <span className="text-4xl font-bold text-white">R$ 99</span>
                   <span className="text-xl text-gray-400">,90</span>
                   <span className="text-gray-500">/mês</span>
                 </div>
