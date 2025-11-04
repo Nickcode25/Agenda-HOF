@@ -103,44 +103,39 @@ export default function AdminDashboard() {
   const loadStats = async () => {
     try {
       // Contar clínicas únicas (usuários com assinatura)
-      const { data: subscriptionsData } = await supabase
+      const { data: subscriptionsData, error: subsError } = await supabase
         .from('user_subscriptions')
         .select('user_id, plan_amount, status')
+
+      if (subsError) {
+        console.error('Erro ao buscar assinaturas:', subsError)
+        return
+      }
+
+      console.log('📊 Assinaturas encontradas:', subscriptionsData)
 
       // Usuários únicos com assinatura (clínicas)
       const uniqueOwners = new Set(subscriptionsData?.map(sub => sub.user_id) || [])
       const clinicsCount = uniqueOwners.size
 
-      // Total de usuários = clínicas (não temos acesso a auth.users.count do cliente)
-      // Vamos usar o mesmo número de clínicas como proxy
+      // Total de usuários = clínicas
       const totalUsers = clinicsCount
-
-      // Contar agendamentos e vendas GLOBAIS (todas as clínicas)
-      const { count: appointmentsCount } = await supabase
-        .from('appointments')
-        .select('*', { count: 'exact', head: true })
-
-      const { data: salesData } = await supabase
-        .from('sales')
-        .select('total')
-
-      const salesRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
-      const salesCount = salesData?.length || 0
 
       // Calcular receita de assinaturas ATIVAS
       const subscriptionsRevenue = subscriptionsData
         ?.filter(sub => sub.status === 'active')
         ?.reduce((sum, sub) => sum + (parseFloat(sub.plan_amount) || 0), 0) || 0
 
-      const totalRevenue = salesRevenue + subscriptionsRevenue
+      const activeSubscriptionsCount = subscriptionsData?.filter(sub => sub.status === 'active').length || 0
 
       setStats(prev => ({
         ...prev,
         totalClinics: clinicsCount,
         totalUsers: totalUsers,
-        totalRevenue,
-        totalAppointments: appointmentsCount || 0,
-        totalSales: salesCount
+        totalRevenue: subscriptionsRevenue,
+        activeSubscriptions: activeSubscriptionsCount,
+        totalAppointments: 0, // Não acessível sem RLS
+        totalSales: 0 // Não acessível sem RLS
       }))
     } catch (err) {
       console.error('Erro ao carregar estatísticas:', err)
@@ -199,28 +194,12 @@ export default function AdminDashboard() {
             subscriptionStatus = 'expired'
           }
 
-          const { count: usersCount } = await supabase
-            .from('user_profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('clinic_id', userId)
-
-          const { count: patientsCount } = await supabase
-            .from('patients')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId)
-
-          const { count: appointmentsCount } = await supabase
-            .from('appointments')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId)
-
-          const { data: salesData } = await supabase
-            .from('sales')
-            .select('total')
-            .eq('user_id', userId)
-
-          const totalRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
-          const salesCount = salesData?.length || 0
+          // Dados de clínicas não acessíveis sem permissão RLS adequada
+          const usersCount = 0
+          const patientsCount = 0
+          const appointmentsCount = 0
+          const totalRevenue = parseFloat(subscription.plan_amount) || 0
+          const salesCount = 0
 
           return {
             id: userId,
