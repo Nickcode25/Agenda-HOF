@@ -4,11 +4,12 @@ import {
   Shield, Users, Building2, DollarSign, TrendingUp,
   Calendar, Package, LogOut, BarChart3, Activity,
   CheckCircle, Clock, XCircle, AlertTriangle, Search, Filter,
-  Home, FileText, Settings, PieChart
+  Home, FileText, Settings, PieChart, Tag, Phone
 } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../store/auth'
+import CouponManager from '@/components/admin/CouponManager'
 
 interface Stats {
   totalClinics: number
@@ -26,6 +27,7 @@ interface Clinic {
   id: string
   owner_email: string
   owner_name: string
+  owner_phone: string | null
   created_at: string
   users_count: number
   patients_count: number
@@ -46,7 +48,7 @@ export default function AdminDashboard() {
   const { signOut } = useAuth()
   const [loading, setLoading] = useState(true)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'analytics'>('overview')
+  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'analytics' | 'coupons'>('overview')
   const [period, setPeriod] = useState<Period>('month')
   const [stats, setStats] = useState<Stats>({
     totalClinics: 0,
@@ -181,6 +183,7 @@ export default function AdminDashboard() {
           const userId = subscription.user_id
           const ownerEmail = subscription.email || 'Email não disponível'
           const ownerName = subscription.name || 'Nome não disponível'
+          const ownerPhone = subscription.phone || null
           const lastLogin = subscription.last_sign_in_at
           const userCreatedAt = subscription.user_created_at || subscription.subscription_created_at
           const trialEndDate = null
@@ -224,6 +227,7 @@ export default function AdminDashboard() {
             id: userId,
             owner_email: ownerEmail,
             owner_name: ownerName,
+            owner_phone: ownerPhone,
             created_at: userCreatedAt,
             users_count: usersCount || 0,
             patients_count: patientsCount || 0,
@@ -446,6 +450,18 @@ export default function AdminDashboard() {
             <Building2 className="w-5 h-5" />
             <span className="font-medium">Clínicas</span>
           </button>
+
+          <button
+            onClick={() => setActiveView('coupons')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              activeView === 'coupons'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <Tag className="w-5 h-5" />
+            <span className="font-medium">Cupons</span>
+          </button>
         </nav>
 
         {/* Footer */}
@@ -469,11 +485,13 @@ export default function AdminDashboard() {
               {activeView === 'overview' && 'Dashboard Overview'}
               {activeView === 'analytics' && 'Analytics & Estatísticas'}
               {activeView === 'clinics' && 'Gerenciar Clínicas'}
+              {activeView === 'coupons' && 'Cupons de Desconto'}
             </h2>
             <p className="text-gray-400 mt-1">
               {activeView === 'overview' && 'Visão geral da plataforma'}
               {activeView === 'analytics' && 'Análise detalhada de dados'}
               {activeView === 'clinics' && `${filteredClinics.length} clínicas registradas`}
+              {activeView === 'coupons' && 'Gerencie cupons para o checkout'}
             </p>
           </div>
         </header>
@@ -692,6 +710,7 @@ export default function AdminDashboard() {
                       <tr className="border-b border-white/20 bg-white/5">
                         <th className="text-left py-4 px-6 text-gray-300 font-semibold">Owner</th>
                         <th className="text-left py-4 px-6 text-gray-300 font-semibold">Email</th>
+                        <th className="text-left py-4 px-6 text-gray-300 font-semibold">Telefone</th>
                         <th className="text-center py-4 px-6 text-gray-300 font-semibold">Status</th>
                         <th className="text-center py-4 px-6 text-gray-300 font-semibold">Trial</th>
                         <th className="text-center py-4 px-6 text-gray-300 font-semibold">Último Login</th>
@@ -708,6 +727,16 @@ export default function AdminDashboard() {
                             <div className="text-white font-medium">{clinic.owner_name}</div>
                           </td>
                           <td className="py-4 px-6 text-gray-300 text-sm">{clinic.owner_email}</td>
+                          <td className="py-4 px-6 text-gray-300 text-sm">
+                            {clinic.owner_phone ? (
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-blue-400" />
+                                <span>{clinic.owner_phone}</span>
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </td>
                           <td className="py-4 px-6 text-center">
                             {getStatusBadge(clinic.subscription_status)}
                           </td>
@@ -754,6 +783,11 @@ export default function AdminDashboard() {
                 )}
               </div>
             </>
+          )}
+
+          {/* Coupons View */}
+          {activeView === 'coupons' && (
+            <CouponManager />
           )}
         </div>
       </main>
