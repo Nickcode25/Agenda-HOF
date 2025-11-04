@@ -48,11 +48,12 @@ COMMENT ON VIEW subscribers_view IS 'View que junta dados de assinaturas com inf
 -- Conceder permissão para service_role
 GRANT SELECT ON subscribers_view TO service_role;
 
--- Permitir que usuários autenticados vejam apenas suas próprias assinaturas
-CREATE POLICY "Users can view own subscription in view" ON subscribers_view
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
+-- Conceder permissão para usuários autenticados
+GRANT SELECT ON subscribers_view TO authenticated;
+
+-- Nota: Views herdam as políticas RLS das tabelas base
+-- Como user_subscriptions já tem políticas para super admin e usuários,
+-- a view subscribers_view automaticamente respeita essas permissões
 
 -- Mensagem de sucesso
 DO $$

@@ -150,11 +150,11 @@ export default function AdminDashboard() {
 
   const loadClinics = async () => {
     try {
-      // Buscar todas as assinaturas com dados completos
+      // Buscar assinaturas usando a view que já tem dados de usuários
       const { data: subscriptions } = await supabase
-        .from('user_subscriptions')
+        .from('subscribers_view')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('subscription_created_at', { ascending: false })
 
       if (!subscriptions) return
 
@@ -169,10 +169,10 @@ export default function AdminDashboard() {
       const clinicsData: Clinic[] = await Promise.all(
         Array.from(clinicsMap.values()).map(async (subscription) => {
           const userId = subscription.user_id
-          const ownerEmail = 'Email não disponível'
-          const ownerName = 'Usuário ID: ' + userId.substring(0, 8) + '...'
-          const lastLogin = null
-          const userCreatedAt = subscription.created_at
+          const ownerEmail = subscription.email || 'Email não disponível'
+          const ownerName = subscription.name || 'Nome não disponível'
+          const lastLogin = subscription.last_sign_in_at
+          const userCreatedAt = subscription.user_created_at || subscription.subscription_created_at
           const trialEndDate = null
 
           let trialDaysRemaining = 0

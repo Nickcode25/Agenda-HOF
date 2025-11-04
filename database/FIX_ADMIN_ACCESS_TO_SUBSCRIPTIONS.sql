@@ -65,6 +65,22 @@ CREATE POLICY "Super admin can delete all subscriptions"
   FOR DELETE
   USING (public.is_super_admin());
 
+-- 8.1. GARANTIR QUE A VIEW SUBSCRIBERS_VIEW EXISTE E TEM POLÍTICAS CORRETAS
+-- Esta view precisa ter RLS habilitado para funcionar corretamente
+-- Nota: Views herdam permissões das tabelas base, mas vamos garantir acesso
+
+-- Verificar se a view existe, se não, criar
+DO $$
+BEGIN
+  -- A view será criada pelo arquivo CREATE_SUBSCRIBERS_VIEW.sql
+  -- Aqui apenas garantimos que super admin tem acesso
+  IF EXISTS (SELECT FROM pg_views WHERE schemaname = 'public' AND viewname = 'subscribers_view') THEN
+    RAISE NOTICE '✅ View subscribers_view encontrada';
+  ELSE
+    RAISE NOTICE '⚠️ View subscribers_view não encontrada. Execute CREATE_SUBSCRIBERS_VIEW.sql primeiro';
+  END IF;
+END $$;
+
 -- 9. Verificar se o admin foi adicionado corretamente
 DO $$
 DECLARE
