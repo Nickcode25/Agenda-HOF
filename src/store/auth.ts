@@ -12,7 +12,7 @@ type AuthState = {
 
   // Actions
   signIn: (email: string, password: string) => Promise<boolean>
-  signUp: (email: string, password: string, fullName: string) => Promise<boolean>
+  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<boolean>
   signOut: () => Promise<void>
   checkSession: () => Promise<void>
   clearError: () => void
@@ -76,20 +76,21 @@ export const useAuth = create<AuthState>()(
         }
       },
 
-      signUp: async (email: string, password: string, fullName: string) => {
+      signUp: async (email: string, password: string, fullName: string, phone?: string) => {
         set({ loading: true, error: null })
         try {
           // Calcular data de fim do trial (7 dias a partir de agora)
           const trialEndDate = new Date()
           trialEndDate.setDate(trialEndDate.getDate() + 7)
 
-          // 1. Criar conta no Supabase Auth com trial_end_date no metadata
+          // 1. Criar conta no Supabase Auth com trial_end_date e phone no metadata
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
             options: {
               data: {
                 full_name: fullName,
+                phone: phone || null,
                 trial_end_date: trialEndDate.toISOString()
               }
             }

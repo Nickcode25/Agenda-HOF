@@ -42,7 +42,7 @@ export default function SignupPage() {
 
     try {
       // Criar conta do usuário
-      const success = await signUp(formData.email, formData.password, formData.name)
+      const success = await signUp(formData.email, formData.password, formData.name, formData.phone)
 
       if (success) {
         // Redirecionar para dentro do app - usuário tem 7 dias de trial gratuito
