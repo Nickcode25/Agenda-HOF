@@ -435,8 +435,8 @@ export default function AdminDashboard() {
                 : 'text-gray-400 hover:bg-white/5 hover:text-white'
             }`}
           >
-            <Building2 className="w-5 h-5" />
-            <span className="font-medium">Clínicas</span>
+            <Users className="w-5 h-5" />
+            <span className="font-medium">Usuários</span>
           </button>
 
           <button
@@ -471,12 +471,12 @@ export default function AdminDashboard() {
           <div className="px-8 py-6">
             <h2 className="text-3xl font-bold text-white">
               {activeView === 'overview' && 'Dashboard Overview'}
-              {activeView === 'clinics' && 'Gerenciar Clínicas'}
+              {activeView === 'clinics' && 'Gerenciar Usuários'}
               {activeView === 'coupons' && 'Cupons de Desconto'}
             </h2>
             <p className="text-gray-400 mt-1">
               {activeView === 'overview' && 'Visão geral da plataforma'}
-              {activeView === 'clinics' && `${filteredClinics.length} clínicas registradas`}
+              {activeView === 'clinics' && `${filteredClinics.length} usuários registrados`}
               {activeView === 'coupons' && 'Gerencie cupons para o checkout'}
             </p>
           </div>
