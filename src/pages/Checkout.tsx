@@ -91,6 +91,10 @@ export default function Checkout() {
   // Calcular preço final com desconto (arredondado para 2 casas decimais)
   const finalPrice = Math.round(PLAN_PRICE * (1 - couponDiscount / 100) * 100) / 100
 
+  // Validar valor mínimo (Mercado Pago pode recusar valores muito baixos)
+  const MINIMUM_SUBSCRIPTION_VALUE = 10.00
+  const isFinalPriceTooLow = finalPrice < MINIMUM_SUBSCRIPTION_VALUE
+
   // Validar cupom
   const validateCoupon = async () => {
     if (!couponCode.trim()) {
@@ -548,10 +552,29 @@ export default function Checkout() {
               )}
               <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-gray-700/50">
                 <span className="text-white">Total:</span>
-                <span className="text-orange-400">
+                <span className={isFinalPriceTooLow ? "text-red-400" : "text-orange-400"}>
                   R$ {finalPrice.toFixed(2).replace('.', ',')}/mês
                 </span>
               </div>
+
+              {/* Aviso de valor muito baixo */}
+              {isFinalPriceTooLow && (
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-red-400">Valor muito baixo</p>
+                      <p className="text-red-300 mt-1">
+                        O Mercado Pago pode recusar pagamentos inferiores a R$ {MINIMUM_SUBSCRIPTION_VALUE.toFixed(2)}.
+                        O cupom aplicado resulta em um valor muito baixo (R$ {finalPrice.toFixed(2)}).
+                      </p>
+                      <p className="text-red-300 mt-1">
+                        Por favor, use um cupom com desconto menor ou remova o cupom.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -654,10 +677,11 @@ export default function Checkout() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || isFinalPriceTooLow}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isFinalPriceTooLow ? 'Valor muito baixo - Remova ou use outro cupom' : ''}
               >
-                {loading ? 'Processando...' : `Assinar por R$ ${finalPrice.toFixed(2).replace('.', ',')}/mês`}
+                {loading ? 'Processando...' : isFinalPriceTooLow ? 'Valor muito baixo para processar' : `Assinar por R$ ${finalPrice.toFixed(2).replace('.', ',')}/mês`}
               </button>
 
               <p className="text-xs text-center text-gray-500 italic">
