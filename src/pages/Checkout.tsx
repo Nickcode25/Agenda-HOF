@@ -333,14 +333,14 @@ export default function Checkout() {
           user_id: userData2.user.id,
           mercadopago_subscription_id: subscriptionResponse.id,
           status: 'active', // Só chega aqui se isApproved === true
-          plan_amount: finalPrice,
+          plan_amount: PLAN_PRICE, // ✅ SEMPRE salvar valor cheio do plano (99.90), não o valor com desconto
           billing_cycle: 'MONTHLY',
           next_billing_date: subscriptionResponse.nextBillingDate,
           payment_method: 'CREDIT_CARD',
           card_last_digits: subscriptionResponse.cardLastDigits,
           card_brand: subscriptionResponse.cardBrand,
           coupon_id: validatedCouponId,
-          discount_percentage: couponDiscount,
+          discount_percentage: couponDiscount, // Desconto é salvo aqui, não no plan_amount
         })
 
         if (insertError) {
