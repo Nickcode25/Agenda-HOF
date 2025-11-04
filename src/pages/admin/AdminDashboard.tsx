@@ -102,17 +102,18 @@ export default function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      // Contar OWNERS únicos da tabela auth.users (dados globais)
-      const { data: ownersData, error: ownersError } = await supabase
+      // Contar clínicas únicas (usuários com assinatura)
+      const { data: subscriptionsData } = await supabase
         .from('user_subscriptions')
-        .select('user_id')
+        .select('user_id, plan_amount, status')
 
       // Usuários únicos com assinatura (clínicas)
-      const uniqueOwners = new Set(ownersData?.map(sub => sub.user_id) || [])
+      const uniqueOwners = new Set(subscriptionsData?.map(sub => sub.user_id) || [])
       const clinicsCount = uniqueOwners.size
 
-      // Total de usuários cadastrados (auth.users - global)
-      const { count: authUsersCount } = await supabase.auth.admin.listUsers()
+      // Total de usuários = clínicas (não temos acesso a auth.users.count do cliente)
+      // Vamos usar o mesmo número de clínicas como proxy
+      const totalUsers = clinicsCount
 
       // Contar agendamentos e vendas GLOBAIS (todas as clínicas)
       const { count: appointmentsCount } = await supabase
@@ -126,20 +127,17 @@ export default function AdminDashboard() {
       const salesRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
       const salesCount = salesData?.length || 0
 
-      // Calcular receita de assinaturas
-      const { data: subscriptionsData } = await supabase
-        .from('user_subscriptions')
-        .select('plan_amount')
-        .eq('status', 'active')
-
-      const subscriptionsRevenue = subscriptionsData?.reduce((sum, sub) => sum + (parseFloat(sub.plan_amount) || 0), 0) || 0
+      // Calcular receita de assinaturas ATIVAS
+      const subscriptionsRevenue = subscriptionsData
+        ?.filter(sub => sub.status === 'active')
+        ?.reduce((sum, sub) => sum + (parseFloat(sub.plan_amount) || 0), 0) || 0
 
       const totalRevenue = salesRevenue + subscriptionsRevenue
 
       setStats(prev => ({
         ...prev,
         totalClinics: clinicsCount,
-        totalUsers: authUsersCount || 0,
+        totalUsers: totalUsers,
         totalRevenue,
         totalAppointments: appointmentsCount || 0,
         totalSales: salesCount
