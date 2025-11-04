@@ -48,7 +48,7 @@ export default function AdminDashboard() {
   const { signOut } = useAuth()
   const [loading, setLoading] = useState(true)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'analytics' | 'coupons'>('overview')
+  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'coupons'>('overview')
   const [period, setPeriod] = useState<Period>('month')
   const [stats, setStats] = useState<Stats>({
     totalClinics: 0,
@@ -428,18 +428,6 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveView('analytics')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-              activeView === 'analytics'
-                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-                : 'text-gray-400 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <PieChart className="w-5 h-5" />
-            <span className="font-medium">Analytics</span>
-          </button>
-
-          <button
             onClick={() => setActiveView('clinics')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
               activeView === 'clinics'
@@ -483,13 +471,11 @@ export default function AdminDashboard() {
           <div className="px-8 py-6">
             <h2 className="text-3xl font-bold text-white">
               {activeView === 'overview' && 'Dashboard Overview'}
-              {activeView === 'analytics' && 'Analytics & Estatísticas'}
               {activeView === 'clinics' && 'Gerenciar Clínicas'}
               {activeView === 'coupons' && 'Cupons de Desconto'}
             </h2>
             <p className="text-gray-400 mt-1">
               {activeView === 'overview' && 'Visão geral da plataforma'}
-              {activeView === 'analytics' && 'Análise detalhada de dados'}
               {activeView === 'clinics' && `${filteredClinics.length} clínicas registradas`}
               {activeView === 'coupons' && 'Gerencie cupons para o checkout'}
             </p>
@@ -630,204 +616,6 @@ export default function AdminDashboard() {
                         {getStatusBadge(clinic.subscription_status)}
                       </div>
                     ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Analytics View */}
-          {activeView === 'analytics' && (
-            <>
-              {/* KPIs Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {/* Taxa de Conversão */}
-                <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <Activity className="w-8 h-8 text-blue-400" />
-                    <TrendingUp className="w-5 h-5 text-green-400" />
-                  </div>
-                  <h4 className="text-gray-300 text-sm font-medium mb-1">Taxa de Conversão</h4>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.totalClinics > 0 ? ((stats.activeSubscriptions / stats.totalClinics) * 100).toFixed(1) : 0}%
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    {stats.activeSubscriptions} de {stats.totalClinics} clínicas
-                  </p>
-                </div>
-
-                {/* MRR (Monthly Recurring Revenue) */}
-                <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-6 border border-green-500/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <DollarSign className="w-8 h-8 text-green-400" />
-                    <TrendingUp className="w-5 h-5 text-green-400" />
-                  </div>
-                  <h4 className="text-gray-300 text-sm font-medium mb-1">MRR</h4>
-                  <p className="text-3xl font-bold text-white">R$ {stats.totalRevenue.toFixed(2)}</p>
-                  <p className="text-xs text-gray-400 mt-2">Receita Mensal Recorrente</p>
-                </div>
-
-                {/* Ticket Médio */}
-                <div className="bg-gradient-to-br from-orange-500/20 to-pink-500/20 backdrop-blur-xl rounded-2xl p-6 border border-orange-500/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <BarChart3 className="w-8 h-8 text-orange-400" />
-                  </div>
-                  <h4 className="text-gray-300 text-sm font-medium mb-1">Ticket Médio</h4>
-                  <p className="text-3xl font-bold text-white">
-                    R$ {stats.activeSubscriptions > 0 ? (stats.totalRevenue / stats.activeSubscriptions).toFixed(2) : '0.00'}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">Por assinatura ativa</p>
-                </div>
-
-                {/* Churn Rate */}
-                <div className="bg-gradient-to-br from-red-500/20 to-rose-500/20 backdrop-blur-xl rounded-2xl p-6 border border-red-500/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <XCircle className="w-8 h-8 text-red-400" />
-                  </div>
-                  <h4 className="text-gray-300 text-sm font-medium mb-1">Churn Rate</h4>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.totalClinics > 0 ? ((stats.clinicsExpired / stats.totalClinics) * 100).toFixed(1) : 0}%
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">{stats.clinicsExpired} clínicas expiradas</p>
-                </div>
-              </div>
-
-              {/* Period Selector */}
-              <div className="mb-6 flex gap-4">
-                {(['day', 'week', 'month', 'year'] as Period[]).map(p => (
-                  <button
-                    key={p}
-                    onClick={() => setPeriod(p)}
-                    className={`px-6 py-2 rounded-xl font-medium transition-all ${
-                      period === p
-                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {p === 'day' && 'Dia'}
-                    {p === 'week' && 'Semana'}
-                    {p === 'month' && 'Mês'}
-                    {p === 'year' && 'Ano'}
-                  </button>
-                ))}
-              </div>
-
-              {/* Charts Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Cadastros por Período */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white">Cadastros por {period === 'day' ? 'Dia' : period === 'week' ? 'Semana' : period === 'month' ? 'Mês' : 'Ano'}</h3>
-                    <Users className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={getRegistrationData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="name" stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
-                      <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1f2937',
-                          border: 'none',
-                          borderRadius: '12px',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-                        }}
-                      />
-                      <Legend />
-                      <Bar dataKey="cadastros" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Receita por Período */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white">Receita por {period === 'day' ? 'Dia' : period === 'week' ? 'Semana' : period === 'month' ? 'Mês' : 'Ano'}</h3>
-                    <DollarSign className="w-6 h-6 text-green-400" />
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={getRevenueData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="name" stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
-                      <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1f2937',
-                          border: 'none',
-                          borderRadius: '12px',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-                        }}
-                        formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Receita']}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="receita" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 6 }} activeDot={{ r: 8 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Bottom Section: Status Distribution + Top Performers */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Status Distribution */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <h3 className="text-xl font-bold text-white mb-6">Distribuição de Status</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <RePieChart>
-                      <Pie
-                        data={getStatusData()}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }: any) => `${name} ${((percent as number) * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {getStatusData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1f2937',
-                          border: 'none',
-                          borderRadius: '12px',
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-                        }}
-                      />
-                    </RePieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Top Performers */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <h3 className="text-xl font-bold text-white mb-6">Top Clínicas</h3>
-                  <div className="space-y-4">
-                    {clinics
-                      .filter(c => c.has_active_subscription)
-                      .sort((a, b) => b.total_revenue - a.total_revenue)
-                      .slice(0, 5)
-                      .map((clinic, index) => (
-                        <div key={clinic.id} className="flex items-center gap-4 p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all">
-                          <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">{index + 1}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium truncate">{clinic.owner_name}</p>
-                            <p className="text-gray-400 text-xs truncate">{clinic.owner_email}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-green-400 font-bold">R$ {clinic.total_revenue.toFixed(2)}</p>
-                            <p className="text-gray-400 text-xs">{clinic.patients_count} pacientes</p>
-                          </div>
-                        </div>
-                      ))}
-                    {clinics.filter(c => c.has_active_subscription).length === 0 && (
-                      <div className="text-center py-8 text-gray-400">
-                        <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Nenhuma clínica ativa ainda</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
