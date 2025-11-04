@@ -105,7 +105,7 @@ export default function AdminDashboard() {
       // Contar clínicas únicas (usuários com assinatura)
       const { data: subscriptionsData, error: subsError } = await supabase
         .from('user_subscriptions')
-        .select('user_id, plan_amount, status')
+        .select('user_id, plan_amount, status, discount_percentage')
 
       if (subsError) {
         console.error('Erro ao buscar assinaturas:', subsError)
@@ -121,10 +121,16 @@ export default function AdminDashboard() {
       // Total de usuários = clínicas
       const totalUsers = clinicsCount
 
-      // Calcular receita de assinaturas ATIVAS
+      // Calcular receita de assinaturas ATIVAS (considerando descontos)
       const subscriptionsRevenue = subscriptionsData
         ?.filter(sub => sub.status === 'active')
-        ?.reduce((sum, sub) => sum + (parseFloat(sub.plan_amount) || 0), 0) || 0
+        ?.reduce((sum, sub) => {
+          const planAmount = parseFloat(sub.plan_amount) || 0
+          const discountPercentage = sub.discount_percentage || 0
+          // Valor real = plan_amount * (1 - discount_percentage / 100)
+          const realAmount = planAmount * (1 - discountPercentage / 100)
+          return sum + realAmount
+        }, 0) || 0
 
       const activeSubscriptionsCount = subscriptionsData?.filter(sub => sub.status === 'active').length || 0
 
@@ -198,7 +204,10 @@ export default function AdminDashboard() {
           const usersCount = 0
           const patientsCount = 0
           const appointmentsCount = 0
-          const totalRevenue = parseFloat(subscription.plan_amount) || 0
+          // Calcular receita considerando desconto
+          const planAmount = parseFloat(subscription.plan_amount) || 0
+          const discountPercentage = subscription.discount_percentage || 0
+          const totalRevenue = planAmount * (1 - discountPercentage / 100)
           const salesCount = 0
 
           return {
