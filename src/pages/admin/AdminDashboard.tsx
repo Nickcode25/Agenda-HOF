@@ -122,17 +122,20 @@ export default function AdminDashboard() {
       const totalUsers = clinicsCount
 
       // Calcular receita de assinaturas ATIVAS (considerando descontos)
-      const subscriptionsRevenue = subscriptionsData
-        ?.filter(sub => sub.status === 'active')
-        ?.reduce((sum, sub) => {
-          const planAmount = parseFloat(sub.plan_amount) || 0
-          const discountPercentage = sub.discount_percentage || 0
-          // Valor real = plan_amount * (1 - discount_percentage / 100)
-          const realAmount = planAmount * (1 - discountPercentage / 100)
-          return sum + realAmount
-        }, 0) || 0
+      const activeSubscriptions = subscriptionsData?.filter(sub => sub.status === 'active') || []
 
-      const activeSubscriptionsCount = subscriptionsData?.filter(sub => sub.status === 'active').length || 0
+      console.log('💰 Calculando receita...')
+      const subscriptionsRevenue = activeSubscriptions.reduce((sum, sub) => {
+        const planAmount = parseFloat(sub.plan_amount) || 0
+        const discountPercentage = sub.discount_percentage || 0
+        // Valor real = plan_amount * (1 - discount_percentage / 100)
+        const realAmount = planAmount * (1 - discountPercentage / 100)
+        console.log(`  - Assinatura: R$ ${planAmount.toFixed(2)} - ${discountPercentage}% desconto = R$ ${realAmount.toFixed(2)}`)
+        return sum + realAmount
+      }, 0)
+
+      console.log(`💰 Receita total: R$ ${subscriptionsRevenue.toFixed(2)}`)
+      const activeSubscriptionsCount = activeSubscriptions.length
 
       setStats(prev => ({
         ...prev,
@@ -151,10 +154,17 @@ export default function AdminDashboard() {
   const loadClinics = async () => {
     try {
       // Buscar assinaturas usando a view que já tem dados de usuários
-      const { data: subscriptions } = await supabase
+      const { data: subscriptions, error: viewError } = await supabase
         .from('subscribers_view')
         .select('*')
         .order('subscription_created_at', { ascending: false })
+
+      if (viewError) {
+        console.error('❌ Erro ao buscar subscribers_view:', viewError)
+        return
+      }
+
+      console.log('📋 Assinaturas na view:', subscriptions)
 
       if (!subscriptions) return
 
