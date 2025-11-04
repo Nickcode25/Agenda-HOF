@@ -50,6 +50,28 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           .maybeSingle()
 
         if (subscription) {
+          // Verificar se a assinatura realmente está válida
+          // Se next_billing_date passou e não há pagamento, pode estar vencida
+          if (subscription.next_billing_date) {
+            const nextBilling = new Date(subscription.next_billing_date)
+            const now = new Date()
+
+            // Se passou mais de 5 dias da data de cobrança, considerar suspensa
+            const daysDiff = Math.floor((now.getTime() - nextBilling.getTime()) / (1000 * 60 * 60 * 24))
+
+            if (daysDiff > 5) {
+              console.warn('⚠️ Assinatura com cobrança atrasada:', {
+                next_billing_date: subscription.next_billing_date,
+                days_late: daysDiff
+              })
+              // Não considerar como ativa se está muito atrasada
+              setHasActiveSubscription(false)
+              setHasPaidSubscription(false)
+              setLoading(false)
+              return
+            }
+          }
+
           setHasActiveSubscription(true)
           setHasPaidSubscription(true)  // Tem assinatura PAGA
           setLoading(false)
