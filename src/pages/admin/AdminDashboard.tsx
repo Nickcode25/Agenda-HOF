@@ -102,15 +102,19 @@ export default function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      const { count: clinicsCount } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'owner')
+      // Contar OWNERS únicos da tabela auth.users (dados globais)
+      const { data: ownersData, error: ownersError } = await supabase
+        .from('user_subscriptions')
+        .select('user_id')
 
-      const { count: usersCount } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
+      // Usuários únicos com assinatura (clínicas)
+      const uniqueOwners = new Set(ownersData?.map(sub => sub.user_id) || [])
+      const clinicsCount = uniqueOwners.size
 
+      // Total de usuários cadastrados (auth.users - global)
+      const { count: authUsersCount } = await supabase.auth.admin.listUsers()
+
+      // Contar agendamentos e vendas GLOBAIS (todas as clínicas)
       const { count: appointmentsCount } = await supabase
         .from('appointments')
         .select('*', { count: 'exact', head: true })
@@ -134,8 +138,8 @@ export default function AdminDashboard() {
 
       setStats(prev => ({
         ...prev,
-        totalClinics: clinicsCount || 0,
-        totalUsers: usersCount || 0,
+        totalClinics: clinicsCount,
+        totalUsers: authUsersCount || 0,
         totalRevenue,
         totalAppointments: appointmentsCount || 0,
         totalSales: salesCount
@@ -147,19 +151,24 @@ export default function AdminDashboard() {
 
   const loadClinics = async () => {
     try {
-      const { data: owners } = await supabase
-        .from('user_profiles')
-        .select('id, display_name, created_at')
-        .eq('role', 'owner')
+      // Buscar todas as assinaturas (dados globais)
+      const { data: subscriptions } = await supabase
+        .from('user_subscriptions')
+        .select('user_id, status, created_at')
         .order('created_at', { ascending: false })
 
-      if (!owners) return
+      if (!subscriptions) return
+
+      // Obter usuários únicos (clínicas)
+      const uniqueUserIds = [...new Set(subscriptions.map(sub => sub.user_id))]
 
       const clinicsData: Clinic[] = await Promise.all(
-        owners.map(async (owner) => {
-          const { data: authData } = await supabase.auth.admin.getUserById(owner.id)
+        uniqueUserIds.map(async (userId) => {
+          const { data: authData } = await supabase.auth.admin.getUserById(userId)
           const ownerEmail = authData?.user?.email || 'N/A'
+          const ownerName = authData?.user?.user_metadata?.name || authData?.user?.email || 'N/A'
           const lastLogin = authData?.user?.last_sign_in_at || null
+          const userCreatedAt = authData?.user?.created_at || new Date().toISOString()
           const trialEndDate = authData?.user?.user_metadata?.trial_end_date || null
 
           let trialDaysRemaining = 0
@@ -176,7 +185,7 @@ export default function AdminDashboard() {
           const { data: subscriptionData } = await supabase
             .from('user_subscriptions')
             .select('status, next_billing_date')
-            .eq('user_id', owner.id)
+            .eq('user_id', userId)
             .eq('status', 'active')
             .single()
 
@@ -194,31 +203,31 @@ export default function AdminDashboard() {
           const { count: usersCount } = await supabase
             .from('user_profiles')
             .select('*', { count: 'exact', head: true })
-            .eq('clinic_id', owner.id)
+            .eq('clinic_id', userId)
 
           const { count: patientsCount } = await supabase
             .from('patients')
             .select('*', { count: 'exact', head: true })
-            .eq('user_id', owner.id)
+            .eq('user_id', userId)
 
           const { count: appointmentsCount } = await supabase
             .from('appointments')
             .select('*', { count: 'exact', head: true })
-            .eq('user_id', owner.id)
+            .eq('user_id', userId)
 
           const { data: salesData } = await supabase
             .from('sales')
             .select('total')
-            .eq('user_id', owner.id)
+            .eq('user_id', userId)
 
           const totalRevenue = salesData?.reduce((sum, sale) => sum + (sale.total || 0), 0) || 0
           const salesCount = salesData?.length || 0
 
           return {
-            id: owner.id,
+            id: userId,
             owner_email: ownerEmail,
-            owner_name: owner.display_name,
-            created_at: owner.created_at,
+            owner_name: ownerName,
+            created_at: userCreatedAt,
             users_count: usersCount || 0,
             patients_count: patientsCount || 0,
             appointments_count: appointmentsCount || 0,
