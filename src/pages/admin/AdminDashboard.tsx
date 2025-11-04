@@ -149,25 +149,30 @@ export default function AdminDashboard() {
 
   const loadClinics = async () => {
     try {
-      // Buscar todas as assinaturas (dados globais)
+      // Buscar todas as assinaturas com dados completos
       const { data: subscriptions } = await supabase
         .from('user_subscriptions')
-        .select('user_id, status, created_at')
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (!subscriptions) return
 
-      // Obter usuários únicos (clínicas)
-      const uniqueUserIds = [...new Set(subscriptions.map(sub => sub.user_id))]
+      // Agrupar por user_id para obter clínicas únicas
+      const clinicsMap = new Map<string, typeof subscriptions[0]>()
+      subscriptions.forEach(sub => {
+        if (!clinicsMap.has(sub.user_id)) {
+          clinicsMap.set(sub.user_id, sub)
+        }
+      })
 
       const clinicsData: Clinic[] = await Promise.all(
-        uniqueUserIds.map(async (userId) => {
-          const { data: authData } = await supabase.auth.admin.getUserById(userId)
-          const ownerEmail = authData?.user?.email || 'N/A'
-          const ownerName = authData?.user?.user_metadata?.name || authData?.user?.email || 'N/A'
-          const lastLogin = authData?.user?.last_sign_in_at || null
-          const userCreatedAt = authData?.user?.created_at || new Date().toISOString()
-          const trialEndDate = authData?.user?.user_metadata?.trial_end_date || null
+        Array.from(clinicsMap.values()).map(async (subscription) => {
+          const userId = subscription.user_id
+          const ownerEmail = 'Email não disponível'
+          const ownerName = 'Usuário ID: ' + userId.substring(0, 8) + '...'
+          const lastLogin = null
+          const userCreatedAt = subscription.created_at
+          const trialEndDate = null
 
           let trialDaysRemaining = 0
           let isInTrial = false
@@ -180,18 +185,14 @@ export default function AdminDashboard() {
             }
           }
 
-          const { data: subscriptionData } = await supabase
-            .from('user_subscriptions')
-            .select('status, next_billing_date')
-            .eq('user_id', userId)
-            .eq('status', 'active')
-            .single()
-
-          const hasActiveSubscription = !!subscriptionData
+          // Determinar status baseado nos dados da assinatura
+          const hasActiveSubscription = subscription.status === 'active'
 
           let subscriptionStatus: 'active' | 'trial' | 'expired' | 'none' = 'none'
-          if (hasActiveSubscription) {
+          if (subscription.status === 'active') {
             subscriptionStatus = 'active'
+          } else if (subscription.status === 'payment_failed') {
+            subscriptionStatus = 'expired'
           } else if (isInTrial) {
             subscriptionStatus = 'trial'
           } else if (trialEndDate) {
