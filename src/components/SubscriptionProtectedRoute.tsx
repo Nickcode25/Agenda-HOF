@@ -9,18 +9,30 @@ interface SubscriptionProtectedRouteProps {
   children: React.ReactNode
 }
 
+interface Subscription {
+  id: string
+  user_id: string
+  plan_id: string
+  status: string
+  plan_amount: number
+  next_billing_date: string | null
+  created_at: string
+}
+
 interface SubscriptionContextType {
   hasActiveSubscription: boolean
   hasPaidSubscription: boolean  // Nova: true apenas se tem assinatura PAGA
   isInTrial: boolean
   trialDaysRemaining: number
+  subscription: Subscription | null
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
   hasActiveSubscription: false,
   hasPaidSubscription: false,
   isInTrial: false,
-  trialDaysRemaining: 0
+  trialDaysRemaining: 0,
+  subscription: null
 })
 
 export const useSubscription = () => useContext(SubscriptionContext)
@@ -32,6 +44,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   const [hasPaidSubscription, setHasPaidSubscription] = useState(false)
   const [isInTrial, setIsInTrial] = useState(false)
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(0)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
 
   useEffect(() => {
     async function checkSubscription() {
@@ -67,6 +80,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
               // Não considerar como ativa se está muito atrasada
               setHasActiveSubscription(false)
               setHasPaidSubscription(false)
+              setSubscription(null)
               setLoading(false)
               return
             }
@@ -74,6 +88,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
 
           setHasActiveSubscription(true)
           setHasPaidSubscription(true)  // Tem assinatura PAGA
+          setSubscription(subscription)
           setLoading(false)
           return
         }
@@ -157,7 +172,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   // Usuário autenticado - permitir acesso (com ou sem assinatura)
   // Se não tem assinatura, o conteúdo mostrará overlay de bloqueio
   return (
-    <SubscriptionContext.Provider value={{ hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining }}>
+    <SubscriptionContext.Provider value={{ hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription }}>
       {children}
     </SubscriptionContext.Provider>
   )

@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Mail, Shield } from 'lucide-react'
-import { useAuth } from '../../store/auth'
 import { supabase } from '../../lib/supabase'
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
-  const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -18,11 +16,20 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-      // 1. Fazer login
-      const success = await signIn(email, password)
+      // 1. Fazer login direto com Supabase Auth (não usar signIn do store)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-      if (!success) {
+      if (authError) {
         setError('Email ou senha inválidos')
+        setLoading(false)
+        return
+      }
+
+      if (!authData.user) {
+        setError('Erro ao autenticar usuário')
         setLoading(false)
         return
       }

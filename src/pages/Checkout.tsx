@@ -39,6 +39,12 @@ export default function Checkout() {
     phone: string
     password: string
     existingUser?: boolean // Flag para indicar que usuário já existe
+    selectedPlan?: {
+      id: string
+      name: string
+      price: number
+      duration_months: number
+    }
   } | null
 
   useEffect(() => {
@@ -88,8 +94,19 @@ export default function Checkout() {
       .replace(/(-\d{2})\d+?$/, '$1')
   }
 
+  // Usar preço do plano selecionado ou preço padrão
+  const planPrice = userData?.selectedPlan?.price || PLAN_PRICE
+
+  // Debug: Log do plano recebido
+  useEffect(() => {
+    if (userData?.selectedPlan) {
+      console.log('💰 Checkout - Plano recebido:', userData.selectedPlan)
+      console.log('💰 Checkout - Preço do plano:', planPrice)
+    }
+  }, [userData, planPrice])
+
   // Calcular preço final com desconto (arredondado para 2 casas decimais)
-  const finalPrice = Math.round(PLAN_PRICE * (1 - couponDiscount / 100) * 100) / 100
+  const finalPrice = Math.round(planPrice * (1 - couponDiscount / 100) * 100) / 100
 
   // Validar valor mínimo (Mercado Pago pode recusar valores muito baixos)
   const MINIMUM_SUBSCRIPTION_VALUE = 10.00

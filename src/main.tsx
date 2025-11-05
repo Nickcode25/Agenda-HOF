@@ -57,6 +57,7 @@ import CashRegistersList from './pages/cash/CashRegistersList'
 import CashSessionPage from './pages/cash/CashSessionPage'
 import SignupPage from './pages/SignupPage'
 import LoginPage from './pages/LoginPage'
+import PlansPage from './pages/PlansPage'
 import SubscriptionManagement from './pages/account/SubscriptionManagement'
 
 const router = createBrowserRouter([
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/planos',
+    element: <PlansPage />,
   },
   {
     path: '/checkout',

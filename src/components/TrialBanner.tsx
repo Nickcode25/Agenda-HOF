@@ -56,18 +56,7 @@ export default function TrialBanner() {
 
         {/* Right side - CTA */}
         <button
-          onClick={() => {
-            // Navegar para checkout com dados do usuário atual
-            navigate('/checkout', {
-              state: {
-                name: currentProfile?.displayName || user?.email?.split('@')[0] || '',
-                email: user?.email || '',
-                phone: '',
-                password: '', // Não precisa de senha pois usuário já existe
-                existingUser: true // Flag indicando que usuário já está logado
-              }
-            })
-          }}
+          onClick={() => navigate('/planos')}
           className="flex-shrink-0 inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50"
         >
           <CreditCard size={16} />

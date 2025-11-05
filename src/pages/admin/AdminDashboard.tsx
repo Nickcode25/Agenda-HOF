@@ -4,12 +4,15 @@ import {
   Shield, Users, Building2, DollarSign, TrendingUp,
   Calendar, Package, LogOut, BarChart3, Activity,
   CheckCircle, Clock, XCircle, AlertTriangle, Search, Filter,
-  Home, FileText, Settings, PieChart, Tag, Phone
+  Home, FileText, Settings, PieChart, Tag, Phone, CreditCard, UserCheck
 } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../store/auth'
 import CouponManager from '@/components/admin/CouponManager'
+import PlansManager from '@/components/admin/PlansManager'
+import ActiveSubscriptions from '@/components/admin/ActiveSubscriptions'
+import PaymentsManager from '@/components/admin/PaymentsManager'
 
 interface Stats {
   totalClinics: number
@@ -48,7 +51,7 @@ export default function AdminDashboard() {
   const { signOut } = useAuth()
   const [loading, setLoading] = useState(true)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'coupons'>('overview')
+  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'plans' | 'subscriptions' | 'payments' | 'coupons'>('overview')
   const [period, setPeriod] = useState<Period>('month')
   const [stats, setStats] = useState<Stats>({
     totalClinics: 0,
@@ -440,6 +443,42 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveView('plans')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              activeView === 'plans'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span className="font-medium">Planos</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('subscriptions')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              activeView === 'subscriptions'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <UserCheck className="w-5 h-5" />
+            <span className="font-medium">Assinaturas</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('payments')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              activeView === 'payments'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <CreditCard className="w-5 h-5" />
+            <span className="font-medium">Pagamentos</span>
+          </button>
+
+          <button
             onClick={() => setActiveView('coupons')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
               activeView === 'coupons'
@@ -472,11 +511,17 @@ export default function AdminDashboard() {
             <h2 className="text-3xl font-bold text-white">
               {activeView === 'overview' && 'Dashboard Overview'}
               {activeView === 'clinics' && 'Gerenciar Usuários'}
+              {activeView === 'plans' && 'Gestão de Planos'}
+              {activeView === 'subscriptions' && 'Assinaturas Ativas'}
+              {activeView === 'payments' && 'Pagamentos e Faturamento'}
               {activeView === 'coupons' && 'Cupons de Desconto'}
             </h2>
             <p className="text-gray-400 mt-1">
               {activeView === 'overview' && 'Visão geral da plataforma'}
               {activeView === 'clinics' && `${filteredClinics.length} usuários registrados`}
+              {activeView === 'plans' && 'Crie e gerencie planos de assinatura'}
+              {activeView === 'subscriptions' && 'Acompanhe todas as assinaturas ativas'}
+              {activeView === 'payments' && 'Histórico de transações e pagamentos'}
               {activeView === 'coupons' && 'Gerencie cupons para o checkout'}
             </p>
           </div>
@@ -735,6 +780,21 @@ export default function AdminDashboard() {
                 )}
               </div>
             </>
+          )}
+
+          {/* Plans View */}
+          {activeView === 'plans' && (
+            <PlansManager />
+          )}
+
+          {/* Subscriptions View */}
+          {activeView === 'subscriptions' && (
+            <ActiveSubscriptions />
+          )}
+
+          {/* Payments View */}
+          {activeView === 'payments' && (
+            <PaymentsManager />
           )}
 
           {/* Coupons View */}
