@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCash } from '@/store/cash'
 import { Plus, DollarSign, Edit, Trash2, CheckCircle, XCircle, Store } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
@@ -8,8 +8,9 @@ import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 export default function CashRegistersList() {
+  const navigate = useNavigate()
   const { hasActiveSubscription } = useSubscription()
-  const { registers, fetchRegisters, deleteRegister, loading } = useCash()
+  const { registers, currentSession, fetchRegisters, deleteRegister, loading } = useCash()
   const { show } = useToast()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingRegister, setEditingRegister] = useState<any>(null)
@@ -21,8 +22,13 @@ export default function CashRegistersList() {
   const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
+    // Se há uma sessão aberta, redirecionar para ela
+    if (currentSession) {
+      navigate(`/app/caixa/sessao/${currentSession.cashRegisterId}`)
+      return
+    }
     fetchRegisters()
-  }, [])
+  }, [currentSession, navigate])
 
   const handleOpenModal = (register?: any) => {
     if (register) {

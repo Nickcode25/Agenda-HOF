@@ -105,7 +105,6 @@ export default function SearchableSelect({
   }, [isOpen])
 
   const handleSelect = (optionValue: string) => {
-    console.log('🔍 handleSelect chamado com:', optionValue)
     onChange(optionValue)
     setIsOpen(false)
     setSearchTerm('')

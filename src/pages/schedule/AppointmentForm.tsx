@@ -36,12 +36,10 @@ export default function AppointmentForm() {
     fetchItems()
   }, [])
 
-  const [selectedProcedureId, setSelectedProcedureId] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [selectedProducts, setSelectedProducts] = useState<Array<{ category: string, stockItemId: string, quantity: number }>>([])
+  const [appointmentDate, setAppointmentDate] = useState('')
   const [customProcedureName, setCustomProcedureName] = useState('')
-  const [useCustomProcedure, setUseCustomProcedure] = useState(false)
 
   // Autocomplete patient search
   const [patientSearch, setPatientSearch] = useState('')
@@ -53,35 +51,6 @@ export default function AppointmentForm() {
   const selectedProfessionalName = selectedProfessional
     ? professionals.find(p => p.id === selectedProfessional)?.name || ''
     : ''
-
-  const selectedProcedure = registeredProcedures.find(p => p.id === selectedProcedureId)
-
-  // Atualizar produtos selecionados quando procedimento muda
-  useEffect(() => {
-    if (selectedProcedure && selectedProcedure.stockCategories && selectedProcedure.stockCategories.length > 0) {
-      // Mapear categorias de estoque para produtos reais
-      const products: Array<{ category: string, stockItemId: string, quantity: number }> = []
-
-      selectedProcedure.stockCategories.forEach(stockCat => {
-        // Encontrar produtos da categoria
-        const categoryItems = stockItems.filter(item => item.category === stockCat.category)
-
-        if (categoryItems.length > 0) {
-          // Por enquanto, usar o primeiro produto da categoria
-          // Você pode adicionar lógica para usuário escolher qual produto específico depois
-          products.push({
-            category: stockCat.category,
-            stockItemId: categoryItems[0].id,
-            quantity: stockCat.quantityUsed
-          })
-        }
-      })
-
-      setSelectedProducts(products)
-    } else {
-      setSelectedProducts([])
-    }
-  }, [selectedProcedureId, selectedProcedure, stockItems])
 
   // Patient search filter
   const removeAccents = (str: string) => {
@@ -136,13 +105,57 @@ export default function AppointmentForm() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Obter produtos disponíveis da categoria do procedimento selecionado
-  const availableProducts = selectedProcedure?.category
-    ? stockItems.filter(item => item.category === selectedProcedure.category)
-    : []
+  // Função para formatar horário enquanto digita
+  const formatTimeInput = (value: string): string => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '')
 
-  const handleStartTimeChange = (time: string) => {
-    setStartTime(time)
+    // Limita a 4 dígitos
+    const limited = numbers.slice(0, 4)
+
+    // Formata como HH:MM
+    if (limited.length >= 3) {
+      return `${limited.slice(0, 2)}:${limited.slice(2)}`
+    } else if (limited.length >= 1) {
+      return limited
+    }
+
+    return ''
+  }
+
+  // Função para formatar data enquanto digita
+  const formatDateInput = (value: string): string => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '')
+
+    // Limita a 8 dígitos (ddmmaaaa)
+    const limited = numbers.slice(0, 8)
+
+    // Formata como dd/mm/aaaa
+    if (limited.length >= 5) {
+      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`
+    } else if (limited.length >= 3) {
+      return `${limited.slice(0, 2)}/${limited.slice(2)}`
+    } else if (limited.length >= 1) {
+      return limited
+    }
+
+    return ''
+  }
+
+  const handleStartTimeChange = (value: string) => {
+    const formatted = formatTimeInput(value)
+    setStartTime(formatted)
+  }
+
+  const handleEndTimeChange = (value: string) => {
+    const formatted = formatTimeInput(value)
+    setEndTime(formatted)
+  }
+
+  const handleDateChange = (value: string) => {
+    const formatted = formatDateInput(value)
+    setAppointmentDate(formatted)
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -160,30 +173,24 @@ export default function AppointmentForm() {
     const professionalId = String(data.get('professional')||'')
     const professional = professionals.find(p => p.id === professionalId)
 
-    // Combinar data e hora para criar datetime completo com timezone correto
-    const appointmentDate = String(data.get('appointmentDate')||'')
-    const startTime = String(data.get('startTime')||'')
-    const endTime = String(data.get('endTime')||'')
+    // Converter data do formato dd/mm/aaaa para aaaa-mm-dd
+    const dateParts = appointmentDate.split('/')
+    const dateISO = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : ''
 
     // Criar objetos Date e converter para ISO string (UTC)
-    const startDateTime = new Date(`${appointmentDate}T${startTime}:00`)
-    const endDateTime = new Date(`${appointmentDate}T${endTime}:00`)
+    const startDateTime = new Date(`${dateISO}T${startTime}:00`)
+    const endDateTime = new Date(`${dateISO}T${endTime}:00`)
 
     const start = startDateTime.toISOString()
     const end = endDateTime.toISOString()
-
-    // Pegar o nome do procedimento (do select ou do input customizado)
-    const procedureName = useCustomProcedure
-      ? customProcedureName
-      : selectedProcedure?.name || ''
 
     // Adicionar agendamento
     const appointmentId = await add({
       patientId,
       patientName: patient?.name || '',
-      procedure: procedureName,
-      procedureId: selectedProcedureId || undefined,
-      selectedProducts: selectedProducts.length > 0 ? selectedProducts : undefined,
+      procedure: customProcedureName,
+      procedureId: undefined,
+      selectedProducts: undefined,
       professional: professional?.name || '',
       room: String(data.get('room')||''),
       start,
@@ -321,78 +328,14 @@ export default function AppointmentForm() {
           
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento *</label>
-            {!useCustomProcedure ? (
-              <div className="space-y-2">
-                <select
-                  value={selectedProcedureId}
-                  onChange={(e) => setSelectedProcedureId(e.target.value)}
-                  required={!useCustomProcedure}
-                  className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer hover:bg-gray-700"
-                >
-                  <option value="">Selecione um procedimento cadastrado</option>
-                  {registeredProcedures.filter(p => p.isActive).map(proc => (
-                    <option key={proc.id} value={proc.id}>
-                      {proc.name} {proc.category ? `(${proc.category})` : ''} - {formatCurrency(proc.price)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setUseCustomProcedure(true)}
-                  className="text-sm text-orange-400 hover:text-orange-300 underline"
-                >
-                  Ou criar procedimento customizado
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={customProcedureName}
-                  onChange={(e) => setCustomProcedureName(e.target.value)}
-                  required={useCustomProcedure}
-                  placeholder="Digite o nome do procedimento..."
-                  className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUseCustomProcedure(false)
-                    setCustomProcedureName('')
-                  }}
-                  className="text-sm text-orange-400 hover:text-orange-300 underline"
-                >
-                  Voltar para procedimentos cadastrados
-                </button>
-              </div>
-            )}
-            {selectedProcedure && selectedProducts.length > 0 && (
-              <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                <div className="flex items-start gap-2">
-                  <Package size={16} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm text-blue-300 font-medium mb-1">
-                      Produtos que serão descontados do estoque ao concluir:
-                    </p>
-                    <div className="space-y-1">
-                      {selectedProducts.map(sp => {
-                        const stockItem = stockItems.find(s => s.id === sp.stockItemId)
-                        return stockItem ? (
-                          <div key={sp.stockItemId} className="text-xs text-gray-300">
-                            • {stockItem.name} - {sp.quantity} {stockItem.unit}
-                            {stockItem.quantity < sp.quantity && (
-                              <span className="ml-2 text-red-400 font-medium">
-                                (⚠️ Estoque insuficiente: {stockItem.quantity} {stockItem.unit})
-                              </span>
-                            )}
-                          </div>
-                        ) : null
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <input
+              type="text"
+              value={customProcedureName}
+              onChange={(e) => setCustomProcedureName(e.target.value)}
+              required
+              placeholder="Digite o procedimento ou apenas agendamento"
+              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
           </div>
 
           <div>
@@ -430,12 +373,18 @@ export default function AppointmentForm() {
             <div className="relative">
               <Calendar size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
-                type="date"
+                type="text"
                 name="appointmentDate"
+                value={appointmentDate}
+                onChange={(e) => handleDateChange(e.target.value)}
                 required
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                maxLength={10}
+                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
+            <p className="text-xs text-gray-400 mt-1.5 ml-1">
+              Digite apenas números (ex: 05112025 para 05/11/2025)
+            </p>
           </div>
 
           <div>
@@ -448,19 +397,17 @@ export default function AppointmentForm() {
             <div className="relative">
               <Clock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
-                type="time"
+                type="text"
                 name="startTime"
                 value={startTime}
                 onChange={(e) => handleStartTimeChange(e.target.value)}
                 required
-                step="300"
+                maxLength={5}
                 className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
             <p className="text-xs text-gray-400 mt-1.5 ml-1">
-              {selectedProcedure?.durationMinutes
-                ? `⏱️ Duração: ${selectedProcedure.durationMinutes} min (término calculado automaticamente)`
-                : 'Selecione um procedimento para calcular a duração'}
+              Digite apenas números (ex: 0900 para 09:00)
             </p>
           </div>
 
@@ -474,16 +421,16 @@ export default function AppointmentForm() {
             <div className="relative">
               <Clock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
-                type="time"
+                type="text"
                 name="endTime"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => handleEndTimeChange(e.target.value)}
                 required
-                step="300"
+                maxLength={5}
                 className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1.5 ml-1">Ajuste manualmente se necessário</p>
+            <p className="text-xs text-gray-400 mt-1.5 ml-1">Digite apenas números (ex: 1000 para 10:00)</p>
           </div>
         </div>
 

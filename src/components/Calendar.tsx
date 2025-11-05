@@ -284,7 +284,7 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                               className={`w-full text-left p-1 rounded ${colors.bg} border ${colors.border} transition-all mb-1`}
                             >
                               <div className={`text-xs ${colors.text} font-medium`}>
-                                {format(parseISO(apt.start), 'HH:mm')}
+                                {format(parseISO(apt.start), 'HH:mm')} - {format(parseISO(apt.end), 'HH:mm')}
                               </div>
                               <div className="text-xs text-white truncate">{apt.patientName}</div>
                             </button>

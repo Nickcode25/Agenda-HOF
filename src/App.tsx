@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, Wallet, Crown } from 'lucide-react'
+import { Calendar, Users, PlusCircle, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, Wallet, Crown, GraduationCap } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -68,6 +68,17 @@ export default function App() {
           if (path === 'pacientes') {
             const result = await supabase
               .from('patients')
+              .select('name')
+              .eq('id', id)
+              .single()
+            data = result.data
+            if (data) newEntityNames[id] = data.name
+          }
+
+          // Alunos
+          else if (path === 'alunos') {
+            const result = await supabase
+              .from('students')
               .select('name')
               .eq('id', id)
               .single()
@@ -145,6 +156,7 @@ export default function App() {
       'app': 'Início',
       'agenda': 'Agenda',
       'pacientes': 'Pacientes',
+      'alunos': 'Alunos',
       'profissionais': 'Profissionais',
       'procedimentos': 'Procedimentos',
       'categorias': 'Categorias',
@@ -278,6 +290,10 @@ export default function App() {
             <NavLink to="/app/procedimentos" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Procedimentos">
               <Scissors size={22} className="flex-shrink-0"/>
               <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Procedimentos</span>
+            </NavLink>
+            <NavLink to="/app/alunos" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Alunos">
+              <GraduationCap size={22} className="flex-shrink-0"/>
+              <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Alunos</span>
             </NavLink>
 
             {/* Seção Estoque & Vendas - só para owner */}

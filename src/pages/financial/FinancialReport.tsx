@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useExpenses } from '@/store/expenses'
 import { useCash } from '@/store/cash'
 import { useSales } from '@/store/sales'
@@ -14,15 +15,14 @@ import {
   TrendingDown,
   Receipt,
   Edit,
-  X,
-  Save,
-  Trash2,
-  Package
+  Package,
+  ArrowRight
 } from 'lucide-react'
 import { CashMovement, PaymentMethod } from '@/types/cash'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import EditTransactionModal from './components/EditTransactionModal'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
@@ -426,71 +426,95 @@ export default function FinancialReport() {
 
       {/* Resumo Total */}
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-xl p-6">
+        <Link
+          to={`/app/financeiro/detalhes/total/${startDate}/${endDate}`}
+          className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-xl p-6 hover:scale-105 hover:border-green-500/50 transition-all cursor-pointer group"
+        >
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-green-500/20 rounded-lg">
               <TrendingUp size={20} className="text-green-400" />
             </div>
             <h3 className="text-sm font-medium text-gray-300">Receita Total</h3>
+            <ArrowRight size={16} className="text-green-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-2xl font-bold text-green-400">{formatCurrency(totalRevenue)}</p>
           <p className="text-xs text-gray-400 mt-1">{totalTransactions} transações</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-xl p-6">
+        <Link
+          to={`/app/financeiro/detalhes/procedures/${startDate}/${endDate}`}
+          className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-xl p-6 hover:scale-105 hover:border-blue-500/50 transition-all cursor-pointer group"
+        >
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-blue-500/20 rounded-lg">
               <Activity size={20} className="text-blue-400" />
             </div>
             <h3 className="text-sm font-medium text-gray-300">Procedimentos</h3>
+            <ArrowRight size={16} className="text-blue-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-2xl font-bold text-blue-400">{formatCurrency(procedureRevenue.total)}</p>
           <p className="text-xs text-gray-400 mt-1">{procedureRevenue.count} realizados</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/30 rounded-xl p-6">
+        <Link
+          to={`/app/financeiro/detalhes/sales/${startDate}/${endDate}`}
+          className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/30 rounded-xl p-6 hover:scale-105 hover:border-orange-500/50 transition-all cursor-pointer group"
+        >
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-orange-500/20 rounded-lg">
               <ShoppingCart size={20} className="text-orange-400" />
             </div>
             <h3 className="text-sm font-medium text-gray-300">Vendas</h3>
+            <ArrowRight size={16} className="text-orange-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-2xl font-bold text-orange-400">{formatCurrency(salesRevenue.total)}</p>
           <p className="text-xs text-gray-400 mt-1">{salesRevenue.count} vendas</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/30 rounded-xl p-6">
+        <Link
+          to={`/app/financeiro/detalhes/subscriptions/${startDate}/${endDate}`}
+          className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/30 rounded-xl p-6 hover:scale-105 hover:border-purple-500/50 transition-all cursor-pointer group"
+        >
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-purple-500/20 rounded-lg">
               <CreditCard size={20} className="text-purple-400" />
             </div>
             <h3 className="text-sm font-medium text-gray-300">Mensalidades</h3>
+            <ArrowRight size={16} className="text-purple-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-2xl font-bold text-purple-400">{formatCurrency(subscriptionRevenue.total)}</p>
           <p className="text-xs text-gray-400 mt-1">{subscriptionRevenue.count} pagamentos</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/30 rounded-xl p-6">
+        <Link
+          to={`/app/financeiro/detalhes/other/${startDate}/${endDate}`}
+          className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/30 rounded-xl p-6 hover:scale-105 hover:border-cyan-500/50 transition-all cursor-pointer group"
+        >
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-cyan-500/20 rounded-lg">
               <Receipt size={20} className="text-cyan-400" />
             </div>
             <h3 className="text-sm font-medium text-gray-300">Outras Receitas</h3>
+            <ArrowRight size={16} className="text-cyan-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-2xl font-bold text-cyan-400">{formatCurrency(otherRevenue.total)}</p>
           <p className="text-xs text-gray-400 mt-1">{otherRevenue.count} lançamentos</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 rounded-xl p-6">
+        <Link
+          to={`/app/financeiro/detalhes/expenses/${startDate}/${endDate}`}
+          className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 rounded-xl p-6 hover:scale-105 hover:border-red-500/50 transition-all cursor-pointer group"
+        >
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-red-500/20 rounded-lg">
               <TrendingDown size={20} className="text-red-400" />
             </div>
             <h3 className="text-sm font-medium text-gray-300">Despesas</h3>
+            <ArrowRight size={16} className="text-red-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-2xl font-bold text-red-400">{formatCurrency(expensesTotal)}</p>
           <p className="text-xs text-gray-400 mt-1">Custos</p>
-        </div>
+        </Link>
 
         <div className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500/10 to-emerald-600/5 border-emerald-500/30' : 'from-red-500/10 to-red-600/5 border-red-500/30'} border rounded-xl p-6`}>
           <div className="flex items-center gap-2 mb-3">
@@ -782,86 +806,15 @@ export default function FinancialReport() {
 
       {/* Modal de Edição */}
       {editingMovement && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-md w-full">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">Editar Transação</h3>
-              <button
-                onClick={handleCancelEdit}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X size={20} className="text-gray-400" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Descrição */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
-                <input
-                  type="text"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-
-              {/* Valor */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Valor (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={editForm.amount}
-                  onChange={(e) => setEditForm({ ...editForm, amount: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-
-              {/* Método de Pagamento */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
-                <select
-                  value={editForm.paymentMethod}
-                  onChange={(e) => setEditForm({ ...editForm, paymentMethod: e.target.value as PaymentMethod })}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="pix">PIX</option>
-                  <option value="cash">Dinheiro</option>
-                  <option value="card">Cartão</option>
-                  <option value="transfer">Transferência</option>
-                  <option value="check">Cheque</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Botões */}
-            <div className="flex flex-col gap-3 mt-6">
-              <div className="flex gap-3">
-                <button
-                  onClick={handleCancelEdit}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Save size={18} />
-                  Salvar
-                </button>
-              </div>
-              <button
-                onClick={handleDeleteMovement}
-                className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <Trash2 size={18} />
-                Excluir Transação
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditTransactionModal
+          editForm={editForm}
+          onDescriptionChange={(value) => setEditForm({ ...editForm, description: value })}
+          onAmountChange={(value) => setEditForm({ ...editForm, amount: value })}
+          onPaymentMethodChange={(value) => setEditForm({ ...editForm, paymentMethod: value })}
+          onCancel={handleCancelEdit}
+          onSave={handleSaveEdit}
+          onDelete={handleDeleteMovement}
+        />
       )}
 
       {/* Modal de Confirmação */}

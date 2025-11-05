@@ -171,14 +171,19 @@ export const CASH_MOVEMENT_CATEGORY_LABELS: Record<CashMovementCategory, string>
   other: 'Outro'
 }
 
-// Categorias padrão de despesas
+// Categorias padrão de despesas (em ordem alfabética)
 export const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: 'Aluguel', description: 'Aluguel do imóvel', color: '#EF4444', icon: 'Home' },
-  { name: 'Salários', description: 'Folha de pagamento', color: '#F59E0B', icon: 'Users' },
-  { name: 'Fornecedores', description: 'Compra de produtos e insumos', color: '#10B981', icon: 'ShoppingCart' },
   { name: 'Água/Luz/Internet', description: 'Contas de consumo', color: '#3B82F6', icon: 'Zap' },
+  { name: 'Aluguel', description: 'Aluguel do imóvel', color: '#EF4444', icon: 'Home' },
+  { name: 'Descarte de Resíduos', description: 'Coleta de lixo hospitalar', color: '#DC2626', icon: 'Trash2' },
+  { name: 'Descartáveis e EPIs', description: 'Luvas, máscaras, toucas, jalecos', color: '#059669', icon: 'Shield' },
+  { name: 'Equipamentos e Aparelhos', description: 'Compra e aluguel', color: '#7C3AED', icon: 'Monitor' },
+  { name: 'Fornecedores', description: 'Compra de produtos e insumos', color: '#10B981', icon: 'ShoppingCart' },
+  { name: 'Impostos', description: 'Tributos e impostos', color: '#6B7280', icon: 'FileText' },
   { name: 'Manutenção', description: 'Reparos e manutenções', color: '#8B5CF6', icon: 'Wrench' },
   { name: 'Marketing', description: 'Publicidade e marketing', color: '#EC4899', icon: 'Megaphone' },
-  { name: 'Impostos', description: 'Tributos e impostos', color: '#6B7280', icon: 'FileText' },
-  { name: 'Outros', description: 'Outras despesas', color: '#94A3B8', icon: 'MoreHorizontal' }
+  { name: 'Materiais de Procedimento', description: 'Seringas, agulhas, cânulas, anestésicos, fios, gazes', color: '#0891B2', icon: 'Syringe' },
+  { name: 'Mercado', description: 'Alimentos e produtos de limpeza', color: '#16A34A', icon: 'ShoppingBag' },
+  { name: 'Outros', description: 'Outras despesas', color: '#94A3B8', icon: 'MoreHorizontal' },
+  { name: 'Salários', description: 'Folha de pagamento', color: '#F59E0B', icon: 'Users' }
 ]

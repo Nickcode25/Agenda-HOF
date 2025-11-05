@@ -8,6 +8,10 @@ import PatientsList from './pages/patients/PatientsList'
 import PatientForm from './pages/patients/PatientForm'
 import PatientDetail from './pages/patients/PatientDetail'
 import PatientEdit from './pages/patients/PatientEdit'
+import PatientEvolution from './pages/patients/PatientEvolution'
+import StudentsList from './pages/students/StudentsList'
+import StudentForm from './pages/students/StudentForm'
+import StudentDetail from './pages/students/StudentDetail'
 import ScheduleCalendar from './pages/schedule/ScheduleCalendar'
 import AppointmentForm from './pages/schedule/AppointmentForm'
 import ProfessionalsList from './pages/professionals/ProfessionalsList'
@@ -28,6 +32,7 @@ import SalesProfessionalEdit from './pages/sales/ProfessionalEdit'
 import SalesHistory from './pages/sales/SalesHistory'
 import SalesProfessionalsList from './pages/sales/SalesProfessionalsList'
 import FinancialReport from './pages/financial/FinancialReport'
+import TransactionDetails from './pages/financial/TransactionDetails'
 import LandingPage from './pages/landing/NewLandingPage'
 import Checkout from './pages/Checkout'
 import PlansList from './pages/subscriptions/PlansList'
@@ -111,12 +116,17 @@ const router = createBrowserRouter([
       { path: 'pacientes/novo', element: <PatientForm /> },
       { path: 'pacientes/:id', element: <PatientDetail /> },
       { path: 'pacientes/:id/editar', element: <PatientEdit /> },
+      { path: 'pacientes/:id/evolucao', element: <PatientEvolution /> },
       { path: 'pacientes/:id/prontuario', element: <MedicalRecordPage /> },
       { path: 'pacientes/:id/prontuario/anamnese', element: <AnamnesisForm /> },
       { path: 'pacientes/:id/prontuario/evolucao/nova', element: <ClinicalEvolutionForm /> },
       { path: 'pacientes/:id/prontuario/fotos/upload', element: <PhotoUploadPage /> },
       { path: 'pacientes/:id/prontuario/fotos/:photoId/editar', element: <PhotoEditPage /> },
       { path: 'pacientes/:id/prontuario/consentimento/novo', element: <ConsentForm /> },
+
+      { path: 'alunos', element: <StudentsList /> },
+      { path: 'alunos/novo', element: <StudentForm /> },
+      { path: 'alunos/:id', element: <StudentDetail /> },
 
       {
         path: 'estoque',
@@ -213,6 +223,14 @@ const router = createBrowserRouter([
         element: (
           <RoleGuard requireOwner>
             <FinancialReport />
+          </RoleGuard>
+        )
+      },
+      {
+        path: 'financeiro/detalhes/:category/:startDate/:endDate',
+        element: (
+          <RoleGuard requireOwner>
+            <TransactionDetails />
           </RoleGuard>
         )
       },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Sparkles, Crown, ArrowRight, Loader2 } from 'lucide-react'
+import { Check, Sparkles, Crown, ArrowRight, Loader2, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
@@ -61,7 +61,7 @@ export default function PlansPage() {
       state: {
         name: currentProfile?.displayName || user?.email?.split('@')[0] || '',
         email: user?.email || '',
-        phone: currentProfile?.phone || '',
+        phone: '',
         password: '', // Não precisa de senha pois usuário já existe
         existingUser: true, // Flag indicando que usuário já está logado
         selectedPlan: {
@@ -94,6 +94,17 @@ export default function PlansPage() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Back Button */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/app/agenda')}
+            className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Voltar para Agenda</span>
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">

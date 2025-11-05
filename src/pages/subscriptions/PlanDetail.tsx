@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Users, TrendingUp, X, Trash2, FileText, Search } from 'lucide-react'
+import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
 import { useConfirm } from '@/hooks/useConfirm'
+import PlanStatsGrid from './components/PlanStatsGrid'
+import AddSubscriberModal from './components/AddSubscriberModal'
+import ConfirmPaymentModal from './components/ConfirmPaymentModal'
 
 export default function PlanDetail() {
   const { id } = useParams()
@@ -200,37 +203,6 @@ export default function PlanDetail() {
     }
   }
 
-  const stats = [
-    {
-      label: 'Assinantes Ativos',
-      value: totalSubscribers.toString(),
-      icon: Users,
-      color: 'text-orange-400',
-      bg: 'bg-orange-500/20',
-    },
-    {
-      label: 'Receita Mensal',
-      value: `R$ ${monthlyRevenue.toFixed(2).replace('.', ',')}`,
-      icon: TrendingUp,
-      color: 'text-green-400',
-      bg: 'bg-green-500/20',
-    },
-    {
-      label: 'Receita Recebida',
-      value: `R$ ${receivedRevenue.toFixed(2).replace('.', ',')}`,
-      icon: DollarSign,
-      color: 'text-blue-400',
-      bg: 'bg-blue-500/20',
-    },
-    {
-      label: 'Em Atraso',
-      value: `R$ ${overdueRevenue.toFixed(2).replace('.', ',')}`,
-      icon: AlertCircle,
-      color: 'text-red-400',
-      bg: 'bg-red-500/20',
-    },
-  ]
-
   return (
     <>
     <div className="p-8">
@@ -272,22 +244,12 @@ export default function PlanDetail() {
       </div>
 
       {/* Stats */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div key={index} className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg ${stat.bg}`}>
-                  <Icon className={stat.color} size={24} />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-sm text-gray-400">{stat.label}</div>
-            </div>
-          )
-        })}
-      </div>
+      <PlanStatsGrid
+        totalSubscribers={totalSubscribers}
+        monthlyRevenue={monthlyRevenue}
+        receivedRevenue={receivedRevenue}
+        overdueRevenue={overdueRevenue}
+      />
 
       {/* Ações */}
       <div className="flex gap-4 mb-6">
@@ -405,244 +367,35 @@ export default function PlanDetail() {
       </div>
 
       {/* Modal Confirmar Pagamento */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Confirmar Pagamento</h2>
-              <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-white">
-                <X size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleConfirmPayment} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Método de Pagamento *</label>
-                <select
-                  required
-                  value={confirmPaymentMethod}
-                  onChange={(e) => setConfirmPaymentMethod(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                >
-                  <option value="PIX">PIX</option>
-                  <option value="Cartão de Crédito">Cartão de Crédito</option>
-                  <option value="Cartão de Débito">Cartão de Débito</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Transferência">Transferência</option>
-                  <option value="Cheque">Cheque</option>
-                </select>
-              </div>
-
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <div className="flex gap-3">
-                  <CheckCircle className="text-blue-400 flex-shrink-0" size={20} />
-                  <div className="text-sm text-gray-300">
-                    <p className="font-medium text-white mb-1">Confirmar recebimento</p>
-                    <p>O pagamento será marcado como recebido e a próxima cobrança será agendada automaticamente.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Confirmar Pagamento
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ConfirmPaymentModal
+        isOpen={showPaymentModal}
+        confirmPaymentMethod={confirmPaymentMethod}
+        onConfirmPaymentMethodChange={setConfirmPaymentMethod}
+        onSubmit={handleConfirmPayment}
+        onClose={() => setShowPaymentModal(false)}
+      />
 
       {/* Modal Adicionar Assinante */}
-      {showAddSubscriberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Adicionar Assinante ao {plan.name}</h2>
-              <button onClick={() => setShowAddSubscriberModal(false)} className="text-gray-400 hover:text-white">
-                <X size={24} />
-              </button>
-            </div>
-
-            {allAvailablePatients.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="mx-auto mb-4 text-gray-500" size={48} />
-                <h3 className="text-xl font-semibold text-gray-300 mb-2">
-                  {patients.length === 0 ? 'Nenhum paciente cadastrado' : 'Todos os pacientes já são assinantes'}
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  {patients.length === 0
-                    ? 'Cadastre pacientes primeiro para poder adicioná-los a este plano'
-                    : 'Todos os pacientes disponíveis já estão neste plano'}
-                </p>
-                {patients.length === 0 && (
-                  <button
-                    onClick={() => navigate('/app/pacientes/novo')}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors"
-                  >
-                    Cadastrar Paciente
-                  </button>
-                )}
-              </div>
-            ) : (
-              <form onSubmit={handleAddSubscriber} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Buscar e Selecionar Paciente
-                  </label>
-
-                  {/* Campo de Busca */}
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nome, CPF ou telefone..."
-                      value={searchPatient}
-                      onChange={(e) => setSearchPatient(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-
-                  {/* Grid de Cards de Pacientes */}
-                  {!searchPatient || searchPatient.length < 2 ? (
-                    <div className="text-center py-12 bg-gray-700/30 rounded-lg border border-gray-600">
-                      <Search className="mx-auto mb-3 text-gray-500" size={40} />
-                      <p className="text-gray-400 mb-1">Digite ao menos 2 caracteres para buscar</p>
-                      <p className="text-sm text-gray-500">
-                        {allAvailablePatients.length} paciente(s) disponível(is)
-                      </p>
-                    </div>
-                  ) : availablePatients.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-700/30 rounded-lg border border-gray-600">
-                      <Search className="mx-auto mb-3 text-gray-500" size={40} />
-                      <p className="text-gray-400">Nenhum paciente encontrado com "{searchPatient}"</p>
-                    </div>
-                  ) : (
-                    <div className="grid md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1 scrollbar-hide">
-                      {availablePatients.map((patient) => (
-                        <button
-                          key={patient.id}
-                          type="button"
-                          onClick={() => setSelectedPatientId(patient.id)}
-                          className={`text-left p-4 rounded-lg border-2 transition-all ${
-                            selectedPatientId === patient.id
-                              ? 'border-orange-500 bg-orange-500/10'
-                              : 'border-gray-600 bg-gray-700 hover:border-gray-500 hover:bg-gray-650'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-white mb-1">{patient.name}</h3>
-                              <p className="text-sm text-gray-400">{patient.cpf}</p>
-                              <p className="text-sm text-gray-400">{patient.phone}</p>
-                            </div>
-                            {selectedPatientId === patient.id && (
-                              <CheckCircle className="text-orange-400 flex-shrink-0" size={20} />
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {!selectedPatientId && (
-                    <p className="text-sm text-yellow-400 mt-2">
-                      ⚠️ Selecione um paciente para continuar
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Data do Pagamento *</label>
-                    <input
-                      type="date"
-                      required
-                      value={paymentDate}
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Valor Pago (R$) *</label>
-                    <input
-                      type="number"
-                      required
-                      step="0.01"
-                      value={paidAmount}
-                      onChange={(e) => setPaidAmount(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                      placeholder={plan.price.toString()}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Método de Pagamento *</label>
-                  <select
-                    required
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                  >
-                    <option value="PIX">PIX</option>
-                    <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    <option value="Cartão de Débito">Cartão de Débito</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Transferência">Transferência</option>
-                  </select>
-                </div>
-
-                <div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-                  <h3 className="text-white font-medium mb-2">Resumo</h3>
-                  <div className="space-y-1 text-sm">
-                    <p className="text-gray-300">
-                      <span className="text-gray-400">Valor mensal:</span>{' '}
-                      <span className="text-orange-400 font-medium">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
-                    </p>
-                    <p className="text-gray-300">
-                      <span className="text-gray-400">Próxima cobrança:</span>{' '}
-                      {(() => {
-                        const [year, month, day] = paymentDate.split('-').map(Number)
-                        const nextDate = new Date(year, month - 1, day)
-                        nextDate.setMonth(nextDate.getMonth() + 1)
-                        return nextDate.toLocaleDateString('pt-BR')
-                      })()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium"
-                  >
-                    Adicionar Assinante
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddSubscriberModal(false)}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+      <AddSubscriberModal
+        isOpen={showAddSubscriberModal}
+        planName={plan.name}
+        planPrice={plan.price}
+        availablePatients={availablePatients}
+        allAvailablePatients={allAvailablePatients}
+        selectedPatientId={selectedPatientId}
+        searchPatient={searchPatient}
+        paymentDate={paymentDate}
+        paidAmount={paidAmount}
+        paymentMethod={paymentMethod}
+        onPatientSelect={setSelectedPatientId}
+        onSearchChange={setSearchPatient}
+        onPaymentDateChange={setPaymentDate}
+        onPaidAmountChange={setPaidAmount}
+        onPaymentMethodChange={setPaymentMethod}
+        onSubmit={handleAddSubscriber}
+        onClose={() => setShowAddSubscriberModal(false)}
+        onNavigateToNewPatient={() => navigate('/app/pacientes/novo')}
+      />
 
       {/* Toast */}
       {toast && (

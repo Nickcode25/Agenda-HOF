@@ -62,9 +62,7 @@ export default function CashSessionPage() {
     if (!registerId) return
     setLoading(true)
     try {
-      console.log('Tentando abrir caixa...', { registerId, openingBalance })
       const sessionId = await openSession(registerId, parseCurrency(openingBalance))
-      console.log('Sessão criada:', sessionId)
       if (sessionId) {
         show('Caixa aberto com sucesso!', 'success')
         await loadSession()

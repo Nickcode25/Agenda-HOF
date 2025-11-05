@@ -4,10 +4,11 @@ import { useProcedures } from '@/store/procedures'
 import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Plus, User, Phone, MapPin, Calendar, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText, MessageCircle } from 'lucide-react'
+import { Search, Plus, Phone, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText, MessageCircle } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import AddProcedureInlineForm from './components/AddProcedureInlineForm'
 
 export default function PatientsList() {
   const patients = usePatients(s => s.patients)
@@ -27,7 +28,9 @@ export default function PatientsList() {
   const [selectedProcedure, setSelectedProcedure] = useState('')
   const [procedureNotes, setProcedureNotes] = useState('')
   const [procedureQuantity, setProcedureQuantity] = useState(1)
-  const [paymentType, setPaymentType] = useState<'default' | 'cash' | 'card'>('default')
+  const [paymentType, setPaymentType] = useState<'cash' | 'installment'>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'pix' | 'card'>('cash')
+  const [installments, setInstallments] = useState(1)
 
   // Função para remover acentos
   const { confirm, ConfirmDialog } = useConfirm()
@@ -95,13 +98,6 @@ export default function PatientsList() {
     const selectedProc = procedures.find(p => p.name === selectedProcedure)
     let unitValue = selectedProc?.price || 0
 
-    // Ajustar valor baseado no tipo de pagamento
-    if (paymentType === 'cash' && selectedProc?.cashValue) {
-      unitValue = selectedProc.cashValue
-    } else if (paymentType === 'card' && selectedProc?.cardValue) {
-      unitValue = selectedProc.cardValue
-    }
-    
     const totalValue = procedureQuantity * unitValue
 
     const newPlannedProcedure: PlannedProcedure = {
@@ -111,6 +107,8 @@ export default function PatientsList() {
       unitValue,
       totalValue,
       paymentType,
+      paymentMethod,
+      installments,
       status: 'pending',
       notes: procedureNotes,
       createdAt: new Date().toISOString()
@@ -124,7 +122,9 @@ export default function PatientsList() {
     setSelectedProcedure('')
     setProcedureNotes('')
     setProcedureQuantity(1)
-    setPaymentType('default')
+    setPaymentType('cash')
+    setPaymentMethod('cash')
+    setInstallments(1)
     setShowAddProcedure(null)
   }
 
@@ -336,102 +336,35 @@ export default function PatientsList() {
 
                 {/* Add Procedure Form */}
                 {showAddProcedure === p.id && (
-                  <div className="px-6 pb-4">
-                    <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600 space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento</label>
-                          <select
-                            value={selectedProcedure}
-                            onChange={(e) => setSelectedProcedure(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500"
-                          >
-                            <option value="">Selecione um procedimento</option>
-                            {procedures.filter(proc => proc.isActive).map(proc => (
-                              <option key={proc.id} value={proc.name}>
-                                {proc.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={procedureQuantity}
-                            onChange={(e) => setProcedureQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
-                          <select
-                            value={paymentType}
-                            onChange={(e) => setPaymentType(e.target.value as 'default' | 'cash' | 'card')}
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500"
-                          >
-                            <option value="default">Valor à Vista</option>
-                            <option value="cash">Desconto Adicional</option>
-                            <option value="card">Valor Parcelado</option>
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
-                          <div className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-green-400 text-sm font-medium">
-                            {(() => {
-                              const selectedProc = procedures.find(p => p.name === selectedProcedure)
-                              let unitValue = selectedProc?.price || 0
-
-                              if (paymentType === 'cash' && selectedProc?.cashValue) {
-                                unitValue = selectedProc.cashValue
-                              } else if (paymentType === 'card' && selectedProc?.cardValue) {
-                                unitValue = selectedProc.cardValue
-                              }
-
-                              return formatCurrency(procedureQuantity * unitValue)
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Observações</label>
-                        <input
-                          type="text"
-                          value={procedureNotes}
-                          onChange={(e) => setProcedureNotes(e.target.value)}
-                          placeholder="Ex: região frontal, aplicação suave..."
-                          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-orange-500"
-                        />
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleAddProcedure(p.id)}
-                          disabled={!selectedProcedure}
-                          className="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
-                        >
-                          Adicionar
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowAddProcedure(null)
-                            setSelectedProcedure('')
-                            setProcedureNotes('')
-                            setProcedureQuantity(1)
-                            setPaymentType('default')
-                          }}
-                          className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <AddProcedureInlineForm
+                    selectedProcedure={selectedProcedure}
+                    procedureNotes={procedureNotes}
+                    procedureQuantity={procedureQuantity}
+                    paymentType={paymentType}
+                    procedures={procedures}
+                    onProcedureChange={setSelectedProcedure}
+                    onNotesChange={setProcedureNotes}
+                    onQuantityChange={setProcedureQuantity}
+                    onPaymentTypeChange={(type) => {
+                      setPaymentType(type)
+                      if (type === 'cash') {
+                        setPaymentMethod('cash')
+                        setInstallments(1)
+                      } else {
+                        setPaymentMethod('card')
+                      }
+                    }}
+                    onSubmit={() => handleAddProcedure(p.id)}
+                    onCancel={() => {
+                      setShowAddProcedure(null)
+                      setSelectedProcedure('')
+                      setProcedureNotes('')
+                      setProcedureQuantity(1)
+                      setPaymentType('cash')
+                      setPaymentMethod('cash')
+                      setInstallments(1)
+                    }}
+                  />
                 )}
 
                 {/* Expanded Planning Section */}
@@ -463,8 +396,15 @@ export default function PatientsList() {
                                       <span>Unit: {formatCurrency(proc.unitValue)}</span>
                                       <span className="text-green-400 font-medium">Total: {formatCurrency(proc.totalValue)}</span>
                                       <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
-                                        {proc.paymentType === 'cash' ? 'Desconto' : 
-                                         proc.paymentType === 'card' ? 'Parcelado' : 'À Vista'}
+                                        {proc.paymentType === 'cash'
+                                          ? proc.paymentMethod === 'cash'
+                                            ? 'Dinheiro'
+                                            : proc.paymentMethod === 'pix'
+                                            ? 'PIX'
+                                            : 'À Vista'
+                                          : proc.installments > 1
+                                          ? `Cartão ${proc.installments}x`
+                                          : 'Cartão à Vista'}
                                       </span>
                                     </div>
                                     

@@ -6,13 +6,23 @@ export type ProcedurePhoto = {
   notes?: string
 }
 
+export type EvolutionPhoto = {
+  id: string
+  url: string
+  date: string
+  notes: string
+  procedureName?: string
+}
+
 export type PlannedProcedure = {
   id: string
   procedureName: string
   quantity: number
   unitValue: number // valor unitário em reais
   totalValue: number // quantidade * valor unitário
-  paymentType: 'default' | 'cash' | 'card' // tipo de pagamento escolhido
+  paymentType: 'cash' | 'installment' // à vista ou parcelado
+  paymentMethod: 'cash' | 'pix' | 'card' // método de pagamento (dinheiro, pix, cartão)
+  installments: number // número de parcelas (1 para à vista)
   status: 'pending' | 'in_progress' | 'completed'
   notes?: string
   createdAt: string
@@ -39,5 +49,6 @@ export type Patient = {
   notes?: string
   photoUrl?: string
   plannedProcedures?: PlannedProcedure[]
+  evolutionPhotos?: EvolutionPhoto[]
   createdAt: string
 }

@@ -4,7 +4,6 @@ import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Appointment } from '@/types/schedule'
-import { getProcedureColor } from '@/utils/procedureColors'
 import { useConfirm } from '@/hooks/useConfirm'
 
 interface DayTimelineProps {
@@ -26,6 +25,36 @@ const getStatusBadge = (status?: Appointment['status']) => {
       return <span className="px-2 py-0.5 text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30 rounded-full">Cancelado</span>
     default:
       return <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full">Agendado</span>
+  }
+}
+
+// Cores do card baseadas no status
+const getStatusColors = (status?: Appointment['status']) => {
+  switch (status) {
+    case 'confirmed':
+      return {
+        bg: 'bg-green-500/10',
+        border: 'border-green-500/50',
+        borderLeft: 'border-l-green-500'
+      }
+    case 'done':
+      return {
+        bg: 'bg-blue-500/10',
+        border: 'border-blue-500/50',
+        borderLeft: 'border-l-blue-500'
+      }
+    case 'cancelled':
+      return {
+        bg: 'bg-red-500/10',
+        border: 'border-red-500/50',
+        borderLeft: 'border-l-red-500'
+      }
+    default:
+      return {
+        bg: 'bg-gray-800',
+        border: 'border-gray-700',
+        borderLeft: 'border-l-gray-500'
+      }
   }
 }
 
@@ -67,13 +96,13 @@ function SortableAppointment({
     minute: '2-digit'
   })
 
-  const colors = getProcedureColor(appointment.procedure)
+  const colors = getStatusColors(appointment.status)
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`border-l-4 rounded-lg p-4 transition-all cursor-move ${colors.bg} border ${colors.border} ${
+      className={`border-l-4 ${colors.borderLeft} rounded-lg p-4 transition-all cursor-move ${colors.bg} border ${colors.border} ${
         isDragging ? 'shadow-2xl scale-105' : 'shadow-md'
       }`}
       {...attributes}
@@ -200,7 +229,6 @@ export default function DayTimeline({
     if (!over || active.id === over.id) return
 
     // Aqui você pode implementar a lógica de reagendamento
-    console.log('Drag ended:', active.id, 'over:', over.id)
   }
 
   const handleUpdateStatus = async (id: string, status: Appointment['status']) => {
@@ -223,37 +251,6 @@ export default function DayTimeline({
         <p className="text-sm text-gray-400 mt-1">
           {sortedAppointments.length} agendamento{sortedAppointments.length !== 1 ? 's' : ''}
         </p>
-      </div>
-
-      {/* Legend */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-white mb-3">Legenda de Cores</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-            <span className="text-gray-300">Botox/Toxina</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-pink-500"></div>
-            <span className="text-gray-300">Preenchimento</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-            <span className="text-gray-300">Bioestimulador</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="text-gray-300">Limpeza/Peeling</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span className="text-gray-300">Avaliação</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-            <span className="text-gray-300">Outros</span>
-          </div>
-        </div>
       </div>
 
       {/* Timeline */}

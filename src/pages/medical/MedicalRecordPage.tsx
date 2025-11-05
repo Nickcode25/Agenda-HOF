@@ -6,24 +6,21 @@ import {
   ArrowLeft,
   FileText,
   Image,
-  Clock,
-  User,
   AlertCircle,
   Plus,
   Calendar,
   Activity,
-  Pill,
   Heart,
   Stethoscope,
   FileSignature,
-  X,
-  MapPin,
   Edit,
-  Trash2
+  Trash2,
+  User
 } from 'lucide-react'
 import { MedicalPhoto } from '@/types/medicalRecords'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
+import PhotoDetailModal from './components/PhotoDetailModal'
 
 export default function MedicalRecordPage() {
   const { id } = useParams<{ id: string }>()
@@ -464,116 +461,10 @@ export default function MedicalRecordPage() {
       </div>
 
       {/* Modal de Detalhes da Foto */}
-      {selectedPhoto && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <div
-            className="bg-gray-800 border border-gray-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white">Detalhes da Foto</h2>
-              <button
-                onClick={() => setSelectedPhoto(null)}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X size={24} className="text-gray-400" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Foto */}
-                <div>
-                  <img
-                    src={selectedPhoto.photo_url}
-                    alt={selectedPhoto.description || 'Foto médica'}
-                    className="w-full rounded-xl border-2 border-gray-700"
-                  />
-                  <div className="mt-4">
-                    <span className={`inline-block px-3 py-1 text-sm font-medium rounded-lg ${
-                      selectedPhoto.photo_type === 'before' ? 'bg-blue-500 text-white' :
-                      selectedPhoto.photo_type === 'after' ? 'bg-green-500 text-white' :
-                      selectedPhoto.photo_type === 'during' ? 'bg-yellow-500 text-white' :
-                      'bg-red-500 text-white'
-                    }`}>
-                      {selectedPhoto.photo_type === 'before' ? 'Antes' :
-                       selectedPhoto.photo_type === 'after' ? 'Depois' :
-                       selectedPhoto.photo_type === 'during' ? 'Durante' :
-                       'Complicação'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Informações */}
-                <div className="space-y-4">
-                  {selectedPhoto.procedure_name && (
-                    <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Stethoscope size={18} className="text-orange-400" />
-                        <h3 className="text-sm font-medium text-gray-400">Procedimento</h3>
-                      </div>
-                      <p className="text-white font-medium">{selectedPhoto.procedure_name}</p>
-                    </div>
-                  )}
-
-                  {selectedPhoto.body_area && (
-                    <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MapPin size={18} className="text-orange-400" />
-                        <h3 className="text-sm font-medium text-gray-400">Área do Corpo</h3>
-                      </div>
-                      <p className="text-white font-medium">{selectedPhoto.body_area}</p>
-                    </div>
-                  )}
-
-                  {selectedPhoto.taken_at && (
-                    <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar size={18} className="text-orange-400" />
-                        <h3 className="text-sm font-medium text-gray-400">Data da Foto</h3>
-                      </div>
-                      <p className="text-white font-medium">
-                        {new Date(selectedPhoto.taken_at).toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedPhoto.description && (
-                    <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText size={18} className="text-orange-400" />
-                        <h3 className="text-sm font-medium text-gray-400">Descrição</h3>
-                      </div>
-                      <p className="text-white whitespace-pre-wrap">{selectedPhoto.description}</p>
-                    </div>
-                  )}
-
-                  {selectedPhoto.created_at && (
-                    <div className="bg-gray-700/50 border border-gray-600 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock size={18} className="text-orange-400" />
-                        <h3 className="text-sm font-medium text-gray-400">Cadastrado em</h3>
-                      </div>
-                      <p className="text-white text-sm">
-                        {new Date(selectedPhoto.created_at).toLocaleString('pt-BR')}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <PhotoDetailModal
+        photo={selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+      />
     </div>
 
     {/* Modal de Confirmação */}

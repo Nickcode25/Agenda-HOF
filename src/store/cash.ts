@@ -634,7 +634,8 @@ export const useCash = create<CashStore>()(
     {
       name: 'cash-storage',
       partialize: (state) => ({
-        // Não persistir nada no localStorage
+        // Persistir apenas a sessão atual no localStorage
+        currentSession: state.currentSession
       })
     }
   )

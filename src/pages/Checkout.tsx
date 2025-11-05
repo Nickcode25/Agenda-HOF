@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Check, CreditCard, Lock, ArrowLeft, AlertCircle, X, Tag } from 'lucide-react'
+import { Check, Lock, ArrowLeft, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import { PLAN_PRICE, MERCADOPAGO_PUBLIC_KEY } from '@/lib/mercadopago'
 import { supabase } from '@/lib/supabase'
 import { supabaseAnon } from '@/lib/supabaseAnon'
 import { createSubscription, type SubscriptionResponse } from '@/services/mercadopagoService'
+import PaymentSection from './checkout/components/PaymentSection'
+import PlanSummary from './checkout/components/PlanSummary'
+import SuccessModal from './checkout/components/SuccessModal'
 
 export default function Checkout() {
   const navigate = useNavigate()
@@ -451,342 +454,50 @@ export default function Checkout() {
         )}
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Resumo do Pedido */}
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-white mb-6">Resumo do Pedido</h2>
+          <PlanSummary
+            userData={userData}
+            couponCode={couponCode}
+            setCouponCode={setCouponCode}
+            couponLoading={couponLoading}
+            couponError={couponError}
+            setCouponError={setCouponError}
+            couponSuccess={couponSuccess}
+            couponDiscount={couponDiscount}
+            validateCoupon={validateCoupon}
+            removeCoupon={removeCoupon}
+            finalPrice={finalPrice}
+            isFinalPriceTooLow={isFinalPriceTooLow}
+            minimumSubscriptionValue={MINIMUM_SUBSCRIPTION_VALUE}
+          />
 
-            <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white">Plano Profissional</h3>
-                  <p className="text-sm text-gray-400">Acesso completo ao sistema</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-orange-400">
-                    R${Math.floor(PLAN_PRICE)}
-                    <span className="text-xl">,{(PLAN_PRICE % 1).toFixed(2).substring(2)}</span>
-                  </div>
-                  <div className="text-sm text-gray-400">por mês</div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Sistema completo para Harmonização Orofacial
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Gestão de pacientes e profissionais
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Check className="w-4 h-4 text-green-400" />
-                  Dashboard com analytics em tempo real
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-700/30 rounded-lg p-4 mb-6">
-              <h3 className="text-sm font-semibold text-gray-400 mb-3">Seus Dados</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Nome:</span>
-                  <span className="text-white font-medium">{userData.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Email:</span>
-                  <span className="text-white font-medium">{userData.email}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Campo de Cupom de Desconto */}
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 border border-green-500/20 rounded-xl p-4 mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Tag className="w-5 h-5 text-green-400" />
-                <h3 className="text-sm font-semibold text-green-400">Cupom de Desconto</h3>
-              </div>
-
-              {!couponSuccess ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => {
-                      setCouponCode(e.target.value.toUpperCase())
-                      setCouponError('')
-                    }}
-                    placeholder="Digite seu cupom"
-                    className="flex-1 bg-gray-700/50 border border-gray-600 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all placeholder:text-gray-500 uppercase"
-                    disabled={couponLoading}
-                  />
-                  <button
-                    onClick={validateCoupon}
-                    disabled={!couponCode || couponLoading}
-                    className="px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all"
-                  >
-                    {couponLoading ? 'Validando...' : 'Aplicar'}
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between bg-green-500/20 border border-green-500/30 rounded-lg p-3">
-                  <div className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-400" />
-                    <span className="text-green-400 font-medium">{couponCode} aplicado!</span>
-                  </div>
-                  <button
-                    onClick={removeCoupon}
-                    className="text-green-400 hover:text-green-300 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-
-              {couponError && (
-                <p className="text-red-400 text-sm mt-2">{couponError}</p>
-              )}
-              {couponSuccess && (
-                <p className="text-green-400 text-sm mt-2">
-                  Desconto de {couponDiscount}% aplicado!
-                </p>
-              )}
-            </div>
-
-            {/* Cálculo do Total */}
-            <div className="border-t border-gray-700 pt-4 space-y-2">
-              {couponDiscount > 0 && (
-                <>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400">Subtotal:</span>
-                    <span className="text-gray-300">R$ {PLAN_PRICE.toFixed(2).replace('.', ',')}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-green-400">Desconto ({couponDiscount}%):</span>
-                    <span className="text-green-400">- R$ {((PLAN_PRICE * couponDiscount) / 100).toFixed(2).replace('.', ',')}</span>
-                  </div>
-                </>
-              )}
-              <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-gray-700/50">
-                <span className="text-white">Total:</span>
-                <span className={isFinalPriceTooLow ? "text-red-400" : "text-orange-400"}>
-                  R$ {finalPrice.toFixed(2).replace('.', ',')}/mês
-                </span>
-              </div>
-
-              {/* Aviso de valor muito baixo */}
-              {isFinalPriceTooLow && (
-                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-semibold text-red-400">Valor muito baixo</p>
-                      <p className="text-red-300 mt-1">
-                        O Mercado Pago pode recusar pagamentos inferiores a R$ {MINIMUM_SUBSCRIPTION_VALUE.toFixed(2)}.
-                        O cupom aplicado resulta em um valor muito baixo (R$ {finalPrice.toFixed(2)}).
-                      </p>
-                      <p className="text-red-300 mt-1">
-                        Por favor, use um cupom com desconto menor ou remova o cupom.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Formulário de Pagamento */}
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <CreditCard className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Pagamento via Mercado Pago</h2>
-                <p className="text-sm text-gray-400">Pagamento seguro e criptografado</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleCardPayment} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Número do Cartão</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                    placeholder="0000 0000 0000 0000"
-                    maxLength={19}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 pr-16 text-white"
-                    required
-                  />
-                  {cardBrand && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <span className="text-xs font-semibold px-2 py-1 bg-gray-600 text-white rounded uppercase">
-                        {cardBrand === 'visa' && '💳 Visa'}
-                        {cardBrand === 'mastercard' && '💳 Master'}
-                        {cardBrand === 'elo' && '💳 Elo'}
-                        {cardBrand === 'amex' && '💳 Amex'}
-                        {cardBrand === 'hipercard' && '💳 Hiper'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Validade</label>
-                  <input
-                    type="text"
-                    value={cardExpiry}
-                    onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                    placeholder="MM/AA"
-                    maxLength={5}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">CVV</label>
-                  <input
-                    type="text"
-                    value={cardCvv}
-                    onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
-                    placeholder="000"
-                    maxLength={4}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Nome no Cartão</label>
-                <input
-                  type="text"
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">CPF do Titular</label>
-                <input
-                  type="text"
-                  value={cardCpf}
-                  onChange={(e) => setCardCpf(formatCPF(e.target.value))}
-                  placeholder="000.000.000-00"
-                  maxLength={14}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                  required
-                />
-              </div>
-
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <Lock className="w-5 h-5 text-green-400" />
-                  <div>
-                    <p className="text-sm font-medium text-green-400">Pagamento 100% Seguro</p>
-                    <p className="text-xs text-gray-400">Processado pelo Mercado Pago com criptografia SSL</p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || isFinalPriceTooLow}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                title={isFinalPriceTooLow ? 'Valor muito baixo - Remova ou use outro cupom' : ''}
-              >
-                {loading ? 'Processando...' : isFinalPriceTooLow ? 'Valor muito baixo para processar' : `Assinar por R$ ${finalPrice.toFixed(2).replace('.', ',')}/mês`}
-              </button>
-
-              <p className="text-xs text-center text-gray-500 italic">
-                💡 Após o pagamento, você terá acesso imediato ao sistema
-              </p>
-            </form>
-          </div>
+          <PaymentSection
+            cardNumber={cardNumber}
+            setCardNumber={setCardNumber}
+            formatCardNumber={formatCardNumber}
+            cardBrand={cardBrand}
+            cardExpiry={cardExpiry}
+            setCardExpiry={setCardExpiry}
+            formatExpiry={formatExpiry}
+            cardCvv={cardCvv}
+            setCardCvv={setCardCvv}
+            cardName={cardName}
+            setCardName={setCardName}
+            cardCpf={cardCpf}
+            setCardCpf={setCardCpf}
+            formatCPF={formatCPF}
+            loading={loading}
+            isFinalPriceTooLow={isFinalPriceTooLow}
+            finalPrice={finalPrice}
+            onSubmit={handleCardPayment}
+          />
         </div>
       </div>
 
-      {/* Modal de Sucesso */}
-      {showSuccessModal && subscriptionData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-green-500/50 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-green-500/20 animate-scaleIn">
-            {/* Ícone de Sucesso */}
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-green-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                <div className="relative bg-gradient-to-br from-green-400 to-green-600 rounded-full p-6">
-                  <Check className="w-16 h-16 text-white" strokeWidth={3} />
-                </div>
-              </div>
-            </div>
-
-            {/* Título */}
-            <h2 className="text-3xl font-bold text-center text-white mb-2">
-              Assinatura Criada!
-            </h2>
-            <p className="text-center text-gray-400 mb-6">
-              Bem-vindo ao Agenda+ HOF
-            </p>
-
-            {/* Informações da Assinatura */}
-            <div className="bg-gray-700/50 rounded-2xl p-6 mb-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-500/20 p-2 rounded-lg">
-                    <CreditCard className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Cartão</p>
-                    <p className="text-white font-medium">**** **** **** {subscriptionData.cardLastDigits}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-600 pt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-400 text-sm">Valor mensal:</span>
-                  <span className="text-2xl font-bold text-green-400">
-                    R$ {subscriptionData.amount.toFixed(2).replace('.', ',')}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 text-sm">Próxima cobrança:</span>
-                  <span className="text-white font-medium">
-                    {new Date(subscriptionData.nextBillingDate).toLocaleDateString('pt-BR')}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Mensagens de Sucesso */}
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-3 text-sm">
-                <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                <p className="text-gray-300">Sua conta foi criada e o acesso está liberado!</p>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                <p className="text-gray-300">Você será cobrado automaticamente todo mês</p>
-              </div>
-            </div>
-
-            {/* Botão de Ação */}
-            <button
-              onClick={() => navigate('/app/agenda')}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-500/30"
-            >
-              Acessar o Sistema
-            </button>
-
-            <p className="text-center text-xs text-gray-500 mt-4">
-              Redirecionando automaticamente em 3 segundos...
-            </p>
-          </div>
-        </div>
-      )}
+      <SuccessModal
+        show={showSuccessModal}
+        subscriptionData={subscriptionData}
+        onNavigate={() => navigate('/app/agenda')}
+      />
     </div>
   )
 }

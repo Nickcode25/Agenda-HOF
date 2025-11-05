@@ -5,6 +5,8 @@ import { useMedicalRecords } from '@/store/medicalRecords'
 import { ArrowLeft, Save, FileText, Upload, X } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
+import HealthInfoSection from './components/HealthInfoSection'
+import LifestyleSection from './components/LifestyleSection'
 
 export default function AnamnesisForm() {
   const { id } = useParams<{ id: string }>()
@@ -267,79 +269,19 @@ export default function AnamnesisForm() {
         </div>
 
         {/* 4. Informações de Saúde */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500/20 text-orange-400 text-sm font-bold">4</span>
-            Informações de Saúde
-          </h2>
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Condições de Saúde Relevantes
-                </label>
-                <textarea
-                  value={healthConditions}
-                  onChange={(e) => setHealthConditions(e.target.value)}
-                  rows={3}
-                  placeholder="Ex: Diabetes, hipertensão, problemas de coagulação, herpes labial..."
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Medicamentos em Uso
-                </label>
-                <textarea
-                  value={medications}
-                  onChange={(e) => setMedications(e.target.value)}
-                  rows={3}
-                  placeholder="Liste medicamentos contínuos, suplementos, anticoagulantes..."
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Alergias</label>
-                <textarea
-                  value={allergies}
-                  onChange={(e) => setAllergies(e.target.value)}
-                  rows={2}
-                  placeholder="Alergias a medicamentos, produtos, substâncias..."
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Histórico Familiar</label>
-                <textarea
-                  value={familyHistory}
-                  onChange={(e) => setFamilyHistory(e.target.value)}
-                  rows={2}
-                  placeholder="Doenças relevantes na família..."
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Gestação ou Amamentação
-              </label>
-              <select
-                value={pregnancy}
-                onChange={(e) => setPregnancy(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="nao">Não</option>
-                <option value="gravida">Grávida</option>
-                <option value="amamentando">Amamentando</option>
-                <option value="planejando">Planejando gravidez</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <HealthInfoSection
+          healthConditions={healthConditions}
+          medications={medications}
+          allergies={allergies}
+          familyHistory={familyHistory}
+          pregnancy={pregnancy}
+          loading={saving}
+          onHealthConditionsChange={setHealthConditions}
+          onMedicationsChange={setMedications}
+          onAllergiesChange={setAllergies}
+          onFamilyHistoryChange={setFamilyHistory}
+          onPregnancyChange={setPregnancy}
+        />
 
         {/* 5. Análise Facial */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
@@ -426,54 +368,15 @@ export default function AnamnesisForm() {
         </div>
 
         {/* 6. Hábitos e Estilo de Vida */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500/20 text-orange-400 text-sm font-bold">6</span>
-            Hábitos e Estilo de Vida
-          </h2>
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="smoking"
-                  checked={smoking}
-                  onChange={(e) => setSmoking(e.target.checked)}
-                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-orange-500 focus:ring-2 text-orange-500"
-                />
-                <label htmlFor="smoking" className="text-sm font-medium text-gray-300 cursor-pointer">
-                  Fumante
-                </label>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="alcohol"
-                  checked={alcoholConsumption}
-                  onChange={(e) => setAlcoholConsumption(e.target.checked)}
-                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-orange-500 focus:ring-2 text-orange-500"
-                />
-                <label htmlFor="alcohol" className="text-sm font-medium text-gray-300 cursor-pointer">
-                  Consome Álcool
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Exposição Solar</label>
-              <select
-                value={sunExposure}
-                onChange={(e) => setSunExposure(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="frequente">Frequente (diariamente)</option>
-                <option value="moderada">Moderada (às vezes)</option>
-                <option value="minima">Mínima (raramente)</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <LifestyleSection
+          smoking={smoking}
+          alcoholConsumption={alcoholConsumption}
+          sunExposure={sunExposure}
+          loading={saving}
+          onSmokingChange={setSmoking}
+          onAlcoholConsumptionChange={setAlcoholConsumption}
+          onSunExposureChange={setSunExposure}
+        />
 
         {/* 7. Escala de Incômodo */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">

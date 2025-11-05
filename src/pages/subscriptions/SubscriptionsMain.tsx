@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, X, Check, DollarSign, Calendar, Users, TrendingUp, AlertCircle, CheckCircle, Zap, Sparkles, CreditCard } from 'lucide-react'
+import { Plus, X, Check, Calendar, Sparkles, CreditCard, Users } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
+import StatsOverview from './components/StatsOverview'
+import TabsNav from './components/TabsNav'
+import SubscriptionCard from './components/SubscriptionCard'
 
 type ToastState = {
   show: boolean
@@ -183,45 +184,6 @@ export default function SubscriptionsMain() {
     return sub.payments.find((p: any) => p.status === 'pending' || p.status === 'overdue')
   }
 
-  const stats = [
-    {
-      label: 'Receita Recorrente (MRR)',
-      value: `R$ ${mrr.toFixed(2).replace('.', ',')}`,
-      icon: TrendingUp,
-      color: 'text-green-400',
-      bg: 'bg-gradient-to-br from-green-500/10 to-green-600/5',
-      border: 'border-green-500/30',
-      iconBg: 'bg-green-500/20'
-    },
-    {
-      label: 'Receita Recebida',
-      value: `R$ ${receivedRevenue.toFixed(2).replace('.', ',')}`,
-      icon: DollarSign,
-      color: 'text-blue-400',
-      bg: 'bg-gradient-to-br from-blue-500/10 to-blue-600/5',
-      border: 'border-blue-500/30',
-      iconBg: 'bg-blue-500/20'
-    },
-    {
-      label: 'Em Atraso',
-      value: `R$ ${overdueRevenue.toFixed(2).replace('.', ',')}`,
-      icon: AlertCircle,
-      color: 'text-red-400',
-      bg: 'bg-gradient-to-br from-red-500/10 to-red-600/5',
-      border: 'border-red-500/30',
-      iconBg: 'bg-red-500/20'
-    },
-    {
-      label: 'Assinantes Ativos',
-      value: activeCount.toString(),
-      icon: Users,
-      color: 'text-purple-400',
-      bg: 'bg-gradient-to-br from-purple-500/10 to-purple-600/5',
-      border: 'border-purple-500/30',
-      iconBg: 'bg-purple-500/20'
-    },
-  ]
-
   const activePlans = plans.filter(p => p.active)
 
   return (
@@ -245,57 +207,17 @@ export default function SubscriptionsMain() {
         </div>
       </div>
 
-      {/* Stats Cards Modernos */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div key={index} className={`${stat.bg} border ${stat.border} rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-${stat.color}/10`}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`p-3 rounded-xl ${stat.iconBg}`}>
-                  <Icon className={stat.color} size={24} />
-                </div>
-                <div className="flex-1">
-                  <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
-                  <div className="text-xs text-gray-400 mt-1">{stat.label}</div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      <StatsOverview
+        mrr={mrr}
+        receivedRevenue={receivedRevenue}
+        overdueRevenue={overdueRevenue}
+        activeCount={activeCount}
+      />
 
-      {/* Tabs Modernos */}
-      <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-2">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab('plans')}
-            className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-              activeTab === 'plans'
-                ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
-                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Sparkles size={18} />
-              <span>Planos</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('subscribers')}
-            className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-              activeTab === 'subscribers'
-                ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
-                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Users size={18} />
-              <span>Assinantes</span>
-            </div>
-          </button>
-        </div>
-      </div>
+      <TabsNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       {/* Plans Tab */}
       {activeTab === 'plans' && (
@@ -434,84 +356,14 @@ export default function SubscriptionsMain() {
                     {subscriptions.map((sub) => {
                       const currentPayment = getCurrentPayment(sub)
                       return (
-                        <tr key={sub.id} className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
-                                <Users size={18} className="text-purple-400" />
-                              </div>
-                              <span className="font-medium text-white">{sub.patientName}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-sm font-medium text-purple-400">
-                              <Sparkles size={12} />
-                              {sub.planName}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="font-semibold text-white">R$ {sub.price.toFixed(2).replace('.', ',')}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <Calendar size={16} className="text-purple-400" />
-                              {(() => {
-                                if (!sub.nextBillingDate) return '-'
-                                const dateStr = sub.nextBillingDate.split('T')[0]
-                                const [year, month, day] = dateStr.split('-').map(Number)
-                                if (!year || !month || !day) return '-'
-                                const date = new Date(year, month - 1, day)
-                                if (isNaN(date.getTime())) return '-'
-                                return format(date, "dd 'de' MMMM", { locale: ptBR })
-                              })()}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            {currentPayment ? (
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
-                                currentPayment.status === 'paid'
-                                  ? 'bg-green-500/20 border border-green-500/30 text-green-400'
-                                  : currentPayment.status === 'pending'
-                                  ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-400'
-                                  : 'bg-red-500/20 border border-red-500/30 text-red-400'
-                              }`}>
-                                {currentPayment.status === 'paid' ? '✓ Pago' : currentPayment.status === 'pending' ? '○ Pendente' : '! Atrasado'}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-green-500/20 border border-green-500/30 text-green-400">
-                                ✓ Em dia
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              {currentPayment && currentPayment.status !== 'paid' ? (
-                                <>
-                                  <button
-                                    onClick={() => handleMarkAsPaid(sub.id, currentPayment.id, sub.patientName)}
-                                    className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 px-3 py-2 rounded-lg transition-all text-sm font-medium hover:scale-105"
-                                  >
-                                    <CheckCircle size={14} />
-                                    Confirmar
-                                  </button>
-                                  <button
-                                    onClick={() => handleSimulatePixPayment(sub.id, sub.patientName)}
-                                    disabled={processingPayment === sub.id}
-                                    className="flex items-center gap-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-400 px-3 py-2 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                                  >
-                                    <Zap size={14} />
-                                    {processingPayment === sub.id ? 'Processando...' : 'PIX'}
-                                  </button>
-                                </>
-                              ) : (
-                                <div className="flex items-center gap-2 text-green-400">
-                                  <CheckCircle size={16} />
-                                  <span className="text-sm font-medium">Pago</span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                        <SubscriptionCard
+                          key={sub.id}
+                          subscription={sub}
+                          currentPayment={currentPayment}
+                          processingPayment={processingPayment}
+                          onMarkAsPaid={handleMarkAsPaid}
+                          onSimulatePixPayment={handleSimulatePixPayment}
+                        />
                       )
                     })}
                   </tbody>
