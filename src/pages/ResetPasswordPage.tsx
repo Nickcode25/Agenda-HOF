@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Mail, Lock, User, Phone, ArrowLeft, CheckCircle, Eye, EyeOff } from 'lucide-react'
+import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator'
-import { validateEmail, validatePhone, validatePasswordStrength } from '@/utils/validation'
+import { validatePasswordStrength } from '@/utils/validation'
 
-export default function SignupPage() {
+export default function ResetPasswordPage() {
   const navigate = useNavigate()
-  const { signUp } = useAuth()
+  const { updatePassword } = useAuth()
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
     password: '',
     confirmPassword: ''
   })
@@ -21,53 +18,28 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  // Validações em tempo real
-  const [emailValidation, setEmailValidation] = useState<{ isValid: boolean; message: string } | null>(null)
-  const [phoneValidation, setPhoneValidation] = useState<{ isValid: boolean; message: string } | null>(null)
+  const [success, setSuccess] = useState(false)
   const [passwordTouched, setPasswordTouched] = useState(false)
 
-  // Validação de email em tempo real
+  // Verificar se há um hash de recuperação na URL
   useEffect(() => {
-    if (formData.email) {
-      const validation = validateEmail(formData.email)
-      setEmailValidation(validation)
-    } else {
-      setEmailValidation(null)
-    }
-  }, [formData.email])
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const accessToken = hashParams.get('access_token')
+    const type = hashParams.get('type')
 
-  // Validação de telefone em tempo real
-  useEffect(() => {
-    if (formData.phone.replace(/\D/g, '').length >= 10) {
-      const validation = validatePhone(formData.phone)
-      setPhoneValidation(validation)
-    } else {
-      setPhoneValidation(null)
+    // Se não houver token de acesso ou tipo não for recovery, redirecionar
+    if (!accessToken || type !== 'recovery') {
+      setError('Link de recuperação inválido ou expirado.')
     }
-  }, [formData.phone])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
     // Validações
-    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
+    if (!formData.password || !formData.confirmPassword) {
       setError('Preencha todos os campos')
-      return
-    }
-
-    // Validar email
-    const emailCheck = validateEmail(formData.email)
-    if (!emailCheck.isValid) {
-      setError(emailCheck.message)
-      return
-    }
-
-    // Validar telefone
-    const phoneCheck = validatePhone(formData.phone)
-    if (!phoneCheck.isValid) {
-      setError(phoneCheck.message)
       return
     }
 
@@ -86,29 +58,64 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      // Criar conta do usuário
-      const success = await signUp(formData.email, formData.password, formData.name, formData.phone)
+      const result = await updatePassword(formData.password)
 
-      if (success) {
-        // Redirecionar para dentro do app - usuário tem 7 dias de trial gratuito
-        navigate('/app/agenda')
+      if (result) {
+        setSuccess(true)
+        // Redirecionar para login após 3 segundos
+        setTimeout(() => {
+          navigate('/login')
+        }, 3000)
       } else {
-        setError('Erro ao criar conta. Este email pode já estar cadastrado.')
+        setError('Erro ao redefinir senha. O link pode ter expirado.')
       }
     } catch (err: any) {
-      console.error('Erro no cadastro:', err)
-      setError(err.message || 'Erro ao criar conta. Tente novamente.')
+      console.error('Erro ao redefinir senha:', err)
+      setError(err.message || 'Erro ao redefinir senha. Tente novamente.')
     } finally {
       setLoading(false)
     }
   }
 
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '')
-    if (numbers.length <= 10) {
-      return numbers.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
-    }
-    return numbers.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {/* Card de Sucesso */}
+          <div className="relative group">
+            {/* Glow effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-3xl blur-2xl opacity-25 group-hover:opacity-40 transition duration-1000" />
+
+            {/* Card */}
+            <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  Senha Redefinida!
+                </h1>
+                <p className="text-gray-400 mb-6">
+                  Sua senha foi alterada com sucesso.
+                </p>
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
+                  <p className="text-sm text-blue-400">
+                    Você será redirecionado para a página de login em instantes...
+                  </p>
+                </div>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Ir para login agora
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -116,11 +123,11 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         {/* Botão Voltar */}
         <Link
-          to="/"
+          to="/login"
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Voltar</span>
+          <span>Voltar para login</span>
         </Link>
 
         {/* Card Principal */}
@@ -133,13 +140,13 @@ export default function SignupPage() {
             {/* Header */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <User className="w-8 h-8 text-blue-400" />
+                <Lock className="w-8 h-8 text-blue-400" />
               </div>
               <h1 className="text-3xl font-bold text-white mb-2">
-                Criar Conta
+                Redefinir Senha
               </h1>
               <p className="text-gray-400">
-                Crie sua conta para começar
+                Digite sua nova senha
               </p>
             </div>
 
@@ -147,92 +154,17 @@ export default function SignupPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-                  <p className="text-red-400 text-sm">{error}</p>
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
                 </div>
               )}
 
-              {/* Nome */}
+              {/* Nova Senha */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Nome Completo
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    placeholder="Seu nome completo"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                      emailValidation === null
-                        ? 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
-                        : emailValidation.isValid
-                        ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
-                        : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                    }`}
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </div>
-                {emailValidation && !emailValidation.isValid && (
-                  <p className="text-xs text-red-400 mt-1">{emailValidation.message}</p>
-                )}
-                {emailValidation && emailValidation.isValid && (
-                  <p className="text-xs text-green-400 mt-1">✓ Email válido</p>
-                )}
-              </div>
-
-              {/* Telefone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Telefone
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
-                    className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                      phoneValidation === null
-                        ? 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
-                        : phoneValidation.isValid
-                        ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
-                        : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                    }`}
-                    placeholder="(00) 00000-0000"
-                    required
-                  />
-                </div>
-                {phoneValidation && !phoneValidation.isValid && (
-                  <p className="text-xs text-red-400 mt-1">{phoneValidation.message}</p>
-                )}
-                {phoneValidation && phoneValidation.isValid && (
-                  <p className="text-xs text-green-400 mt-1">✓ Telefone válido</p>
-                )}
-              </div>
-
-              {/* Senha */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Senha
+                  Nova Senha
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -260,10 +192,10 @@ export default function SignupPage() {
                 )}
               </div>
 
-              {/* Confirmar Senha */}
+              {/* Confirmar Nova Senha */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Confirmar Senha
+                  Confirmar Nova Senha
                 </label>
                 <div className="relative">
                   <CheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -278,7 +210,7 @@ export default function SignupPage() {
                         ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
                         : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
                     }`}
-                    placeholder="Confirme sua senha"
+                    placeholder="Confirme sua nova senha"
                     required
                   />
                   <button
@@ -303,26 +235,19 @@ export default function SignupPage() {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-blue-500/30"
               >
-                {loading ? 'Criando conta...' : 'Criar Conta'}
+                {loading ? 'Redefinindo senha...' : 'Redefinir Senha'}
               </button>
 
               {/* Link para Login */}
               <div className="text-center">
                 <p className="text-sm text-gray-400">
-                  Já tem uma conta?{' '}
+                  Lembrou sua senha?{' '}
                   <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                     Fazer login
                   </Link>
                 </p>
               </div>
             </form>
-
-            {/* Informação sobre trial */}
-            <div className="mt-6 pt-6 border-t border-gray-700/50">
-              <p className="text-xs text-center text-gray-500">
-                🎉 Após criar sua conta, você terá 7 dias de acesso gratuito completo!
-              </p>
-            </div>
           </div>
         </div>
       </div>

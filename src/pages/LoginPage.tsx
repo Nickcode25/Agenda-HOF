@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Mail, Lock, ArrowLeft, LogIn } from 'lucide-react'
+import { Mail, Lock, ArrowLeft, LogIn, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 
 export default function LoginPage() {
@@ -12,6 +12,7 @@ export default function LoginPage() {
     password: ''
   })
 
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -109,22 +110,29 @@ export default function LoginPage() {
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     placeholder="Sua senha"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
 
-              {/* Esqueci a senha - pode adicionar depois */}
-              {/* <div className="text-right">
+              {/* Esqueci a senha */}
+              <div className="text-right">
                 <Link to="/forgot-password" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
                   Esqueceu a senha?
                 </Link>
-              </div> */}
+              </div>
 
               {/* Botão */}
               <button

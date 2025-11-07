@@ -16,6 +16,8 @@ import SubscriptionProtectedRoute from './components/SubscriptionProtectedRoute'
 const LandingPage = lazy(() => import('./pages/landing/NewLandingPage'))
 const SignupPage = lazy(() => import('./pages/SignupPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const PlansPage = lazy(() => import('./pages/PlansPage'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 
@@ -128,6 +130,14 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: withSuspense(LoginPage),
+  },
+  {
+    path: '/forgot-password',
+    element: withSuspense(ForgotPasswordPage),
+  },
+  {
+    path: '/reset-password',
+    element: withSuspense(ResetPasswordPage),
   },
   {
     path: '/planos',

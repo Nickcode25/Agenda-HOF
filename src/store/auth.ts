@@ -16,6 +16,8 @@ type AuthState = {
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<boolean>
   signOut: () => Promise<void>
   checkSession: () => Promise<void>
+  resetPassword: (email: string) => Promise<boolean>
+  updatePassword: (newPassword: string) => Promise<boolean>
   clearError: () => void
 }
 
@@ -173,6 +175,46 @@ export const useAuth = create<AuthState>()(
           })
         } catch (error) {
           set({ error: getErrorMessage(error), loading: false })
+        }
+      },
+
+      resetPassword: async (email: string) => {
+        set({ loading: true, error: null })
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          })
+
+          if (error) throw error
+
+          set({ loading: false })
+          return true
+        } catch (error) {
+          set({
+            error: getErrorMessage(error),
+            loading: false,
+          })
+          return false
+        }
+      },
+
+      updatePassword: async (newPassword: string) => {
+        set({ loading: true, error: null })
+        try {
+          const { error } = await supabase.auth.updateUser({
+            password: newPassword
+          })
+
+          if (error) throw error
+
+          set({ loading: false })
+          return true
+        } catch (error) {
+          set({
+            error: getErrorMessage(error),
+            loading: false,
+          })
+          return false
         }
       },
 
