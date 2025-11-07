@@ -95,6 +95,15 @@ export default function SubscriptionsMain() {
 
       if (!selectedPatient || !selectedPlan) return
 
+      // Usar o valor digitado pelo usuário (campo obrigatório)
+      const subscriptionPrice = parseFloat(paidAmount)
+
+      // Validar que o valor é maior que zero
+      if (isNaN(subscriptionPrice) || subscriptionPrice <= 0) {
+        showToast('Por favor, preencha o campo "Valor Pago" com um valor válido maior que zero.', 'error')
+        return
+      }
+
       // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
       const [year, month, day] = paymentDate.split('-').map(Number)
 
@@ -107,9 +116,6 @@ export default function SubscriptionsMain() {
       }
 
       const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-
-      // Usar o valor digitado pelo usuário (campo obrigatório)
-      const subscriptionPrice = parseFloat(paidAmount)
 
       const subscriptionData = {
         patientId: selectedPatient.id,

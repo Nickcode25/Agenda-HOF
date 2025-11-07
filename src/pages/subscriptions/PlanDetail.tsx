@@ -109,6 +109,15 @@ export default function PlanDetail() {
     const selectedPatient = patients.find(p => p.id === selectedPatientId)
     if (!selectedPatient) return
 
+    // Usar o valor digitado pelo usuário (campo obrigatório)
+    const subscriptionPrice = parseCurrency(paidAmount)
+
+    // Validar que o valor é maior que zero
+    if (subscriptionPrice <= 0) {
+      alert('Por favor, preencha o campo "Valor Pago" com um valor válido maior que zero.')
+      return
+    }
+
     // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
     const [year, month, day] = paymentDate.split('-').map(Number)
 
@@ -121,9 +130,6 @@ export default function PlanDetail() {
     }
 
     const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-
-    // Usar o valor digitado pelo usuário (campo obrigatório)
-    const subscriptionPrice = parseCurrency(paidAmount)
 
     const subscriptionData = {
       patientId: selectedPatient.id,
