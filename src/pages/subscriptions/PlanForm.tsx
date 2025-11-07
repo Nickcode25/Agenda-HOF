@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, X } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
+import { parseCurrency, formatCurrency } from '@/utils/currency'
+import CurrencyInput from '@/components/CurrencyInput'
 
 export default function PlanForm() {
   const navigate = useNavigate()
@@ -23,7 +25,7 @@ export default function PlanForm() {
     if (existingPlan) {
       setName(existingPlan.name)
       setDescription(existingPlan.description)
-      setPrice(existingPlan.price.toString())
+      setPrice(formatCurrency(existingPlan.price))
       setSessionsPerYear(existingPlan.sessionsPerYear.toString())
       setBenefits(existingPlan.benefits)
       setActive(existingPlan.active)
@@ -47,7 +49,7 @@ export default function PlanForm() {
     const planData = {
       name,
       description,
-      price: parseFloat(price),
+      price: parseCurrency(price),
       sessionsPerYear: parseInt(sessionsPerYear),
       benefits,
       active,
@@ -106,15 +108,12 @@ export default function PlanForm() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Valor Mensal (R$) *
                 </label>
-                <input
-                  type="number"
+                <CurrencyInput
                   required
-                  step="0.01"
-                  min="0"
                   value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                  placeholder="225.00"
+                  onChange={setPrice}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  placeholder="R$ 0,00"
                 />
               </div>
 

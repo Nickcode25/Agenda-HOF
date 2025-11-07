@@ -2,6 +2,7 @@ import { DollarSign, TrendingUp, AlertCircle, Users, Calendar, CheckCircle } fro
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { normalizeDateString } from '@/utils/dateHelpers'
 
 export default function SubscriptionReports() {
   const {
@@ -150,7 +151,17 @@ export default function SubscriptionReports() {
                     <div className="text-white font-medium truncate">{payment.patientName}</div>
                     <div className="text-sm text-gray-400">{payment.planName}</div>
                     <div className="text-xs text-gray-500">
-                      {format(new Date(payment.paidAt!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {(() => {
+                        const paidAtStr = payment.paidAt!
+                        // Se tiver horário (formato ISO completo), usar diretamente
+                        if (paidAtStr.includes('T')) {
+                          return format(new Date(paidAtStr), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                        }
+                        // Se for apenas data, normalizar
+                        const [year, month, day] = paidAtStr.split('-').map(Number)
+                        const date = new Date(year, month - 1, day)
+                        return format(date, "dd/MM/yyyy", { locale: ptBR })
+                      })()}
                     </div>
                   </div>
                   <div className="text-green-400 font-bold text-sm whitespace-nowrap">
@@ -192,7 +203,12 @@ export default function SubscriptionReports() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 text-red-400">
                         <Calendar size={16} />
-                        {format(new Date(payment.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                        {(() => {
+                          const dateStr = payment.dueDate.split('T')[0]
+                          const [year, month, day] = dateStr.split('-').map(Number)
+                          const date = new Date(year, month - 1, day)
+                          return format(date, 'dd/MM/yyyy', { locale: ptBR })
+                        })()}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-red-400 font-bold">

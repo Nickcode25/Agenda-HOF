@@ -23,9 +23,18 @@ export default function SubscriptionForm() {
 
     if (!selectedPatient || !selectedPlan) return
 
-    // Calcular próxima data de cobrança (1 mês após a data de início)
-    const nextBillingDate = new Date(startDate)
-    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+    // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
+    const [year, month, day] = startDate.split('-').map(Number)
+
+    // Adicionar 1 mês mantendo o mesmo dia
+    let nextMonth = month + 1
+    let nextYear = year
+    if (nextMonth > 12) {
+      nextMonth = 1
+      nextYear += 1
+    }
+
+    const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
     const subscriptionData = {
       patientId: selectedPatient.id,
@@ -34,7 +43,7 @@ export default function SubscriptionForm() {
       planName: selectedPlan.name,
       price: selectedPlan.price,
       startDate,
-      nextBillingDate: nextBillingDate.toISOString(),
+      nextBillingDate: nextBillingDateStr,
       status: 'active' as const,
       payments: [],
     }
@@ -47,7 +56,7 @@ export default function SubscriptionForm() {
 
     addPayment(newSubscription.id, {
       amount: selectedPlan.price,
-      dueDate: nextBillingDate.toISOString(),
+      dueDate: nextBillingDateStr,
       status: 'pending',
     })
 

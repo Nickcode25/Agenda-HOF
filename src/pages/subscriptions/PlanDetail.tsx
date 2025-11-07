@@ -10,11 +10,13 @@ import { useConfirm } from '@/hooks/useConfirm'
 import PlanStatsGrid from './components/PlanStatsGrid'
 import AddSubscriberModal from './components/AddSubscriberModal'
 import ConfirmPaymentModal from './components/ConfirmPaymentModal'
+import { parseCurrency, formatCurrency } from '@/utils/currency'
+import { normalizeDateString } from '@/utils/dateHelpers'
 
 export default function PlanDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { plans, subscriptions, addSubscription, addPayment, confirmPayment, removeSubscription, generateNextPayment } = useSubscriptionStore()
+  const { plans, subscriptions, fetchPlans, fetchSubscriptions, addSubscription, addPayment, confirmPayment, removeSubscription, generateNextPayment } = useSubscriptionStore()
   const { patients, fetchAll: fetchPatients } = usePatients()
 
   // Estados do componente
@@ -31,8 +33,10 @@ export default function PlanDetail() {
   const { confirm, ConfirmDialog } = useConfirm()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null)
 
-  // Carregar pacientes ao montar o componente
+  // Carregar planos, assinaturas e pacientes ao montar o componente
   useEffect(() => {
+    fetchPlans()
+    fetchSubscriptions()
     fetchPatients()
   }, [])
 
@@ -105,13 +109,18 @@ export default function PlanDetail() {
     const selectedPatient = patients.find(p => p.id === selectedPatientId)
     if (!selectedPatient) return
 
-    // Criar data local sem conversão UTC
+    // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
     const [year, month, day] = paymentDate.split('-').map(Number)
-    const nextBillingDate = new Date(year, month - 1, day) // month é 0-indexed
-    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
 
-    // Formatar como string ISO local
-    const nextBillingDateStr = `${nextBillingDate.getFullYear()}-${String(nextBillingDate.getMonth() + 1).padStart(2, '0')}-${String(nextBillingDate.getDate()).padStart(2, '0')}`
+    // Adicionar 1 mês mantendo o mesmo dia
+    let nextMonth = month + 1
+    let nextYear = year
+    if (nextMonth > 12) {
+      nextMonth = 1
+      nextYear += 1
+    }
+
+    const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
     const subscriptionData = {
       patientId: selectedPatient.id,
@@ -130,8 +139,9 @@ export default function PlanDetail() {
     const subscriptions = useSubscriptionStore.getState().subscriptions
     const newSubscription = subscriptions[subscriptions.length - 1]
 
+    const paymentAmount = parseCurrency(paidAmount)
     addPayment(newSubscription.id, {
-      amount: parseFloat(paidAmount || plan.price.toString()),
+      amount: paymentAmount > 0 ? paymentAmount : plan.price,
       dueDate: paymentDate,
       status: 'pending',
     })
@@ -149,7 +159,7 @@ export default function PlanDetail() {
     setSelectedPatientId('')
     setSearchPatient('')
     setPaymentDate(new Date().toISOString().split('T')[0])
-    setPaidAmount(plan.price.toString())
+    setPaidAmount(formatCurrency(plan.price))
     setPaymentMethod('PIX')
   }
 
@@ -299,7 +309,12 @@ export default function PlanDetail() {
                       <td className="px-6 py-4">
                         <div className="text-white font-medium">{sub.patientName}</div>
                         <div className="text-sm text-gray-400">
-                          Desde {format(new Date(sub.startDate), 'dd/MM/yyyy', { locale: ptBR })}
+                          Desde {(() => {
+                            const dateStr = sub.startDate.split('T')[0]
+                            const [year, month, day] = dateStr.split('-').map(Number)
+                            const date = new Date(year, month - 1, day)
+                            return format(date, 'dd/MM/yyyy', { locale: ptBR })
+                          })()}
                         </div>
                       </td>
                       <td className="px-6 py-4">

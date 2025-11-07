@@ -416,12 +416,19 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
         status: 'pending',
       })
 
-      // Calcular próxima data de cobrança (adicionar 1 mês)
+      // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
       const dateStr = subscription.nextBillingDate.split('T')[0]
       const [year, month, day] = dateStr.split('-').map(Number)
-      const nextDate = new Date(year, month - 1, day)
-      nextDate.setMonth(nextDate.getMonth() + 1)
-      const nextBillingDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`
+
+      // Adicionar 1 mês mantendo o mesmo dia
+      let nextMonth = month + 1
+      let nextYear = year
+      if (nextMonth > 12) {
+        nextMonth = 1
+        nextYear += 1
+      }
+
+      const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
       // Atualizar próxima data de cobrança
       await updateSubscription(subscriptionId, {

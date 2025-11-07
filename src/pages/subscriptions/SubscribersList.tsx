@@ -5,6 +5,7 @@ import { useSubscriptionStore } from '../../store/subscriptions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
+import { normalizeDateString } from '@/utils/dateHelpers'
 
 type ToastState = {
   show: boolean
@@ -175,7 +176,12 @@ export default function SubscribersList() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-gray-300">
                           <Calendar size={16} />
-                          {format(new Date(sub.nextBillingDate), "dd 'de' MMMM", { locale: ptBR })}
+                          {(() => {
+                            const dateStr = sub.nextBillingDate.split('T')[0]
+                            const [year, month, day] = dateStr.split('-').map(Number)
+                            const date = new Date(year, month - 1, day)
+                            return format(date, "dd 'de' MMMM", { locale: ptBR })
+                          })()}
                         </div>
                       </td>
                       <td className="px-6 py-4">

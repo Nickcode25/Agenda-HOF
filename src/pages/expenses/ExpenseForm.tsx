@@ -55,6 +55,13 @@ export default function ExpenseForm() {
     }
   }, [id, getExpense, fetchCategories])
 
+  // Preencher automaticamente a data de pagamento quando o status mudar para "Pago"
+  useEffect(() => {
+    if (formData.paymentStatus === 'paid' && !formData.paidAt) {
+      setFormData(prev => ({ ...prev, paidAt: getTodayString() }))
+    }
+  }, [formData.paymentStatus])
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -244,12 +251,13 @@ export default function ExpenseForm() {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               <Calendar size={16} className="inline mr-2" />
-              Data de Pagamento
+              Data de Pagamento {formData.paymentStatus === 'paid' && '*'}
             </label>
             <input
               type="date"
               value={formData.paidAt}
               onChange={(e) => setFormData({ ...formData, paidAt: e.target.value })}
+              required={formData.paymentStatus === 'paid'}
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
             />
           </div>

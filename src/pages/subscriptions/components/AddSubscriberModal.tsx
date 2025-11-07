@@ -1,5 +1,6 @@
 import { X, Search, CheckCircle, Users } from 'lucide-react'
 import { Patient } from '@/types/patient'
+import CurrencyInput from '@/components/CurrencyInput'
 
 interface AddSubscriberModalProps {
   isOpen: boolean
@@ -148,14 +149,12 @@ export default function AddSubscriberModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Valor Pago (R$) *</label>
-                <input
-                  type="number"
+                <CurrencyInput
                   required
-                  step="0.01"
                   value={paidAmount}
-                  onChange={(e) => onPaidAmountChange(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                  placeholder={planPrice.toString()}
+                  onChange={onPaidAmountChange}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  placeholder="R$ 0,00"
                 />
               </div>
             </div>

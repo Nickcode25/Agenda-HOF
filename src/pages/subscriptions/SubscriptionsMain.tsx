@@ -97,8 +97,18 @@ export default function SubscriptionsMain() {
 
       if (!selectedPatient || !selectedPlan) return
 
-      const nextBillingDate = new Date(paymentDate)
-      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+      // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
+      const [year, month, day] = paymentDate.split('-').map(Number)
+
+      // Adicionar 1 mês mantendo o mesmo dia
+      let nextMonth = month + 1
+      let nextYear = year
+      if (nextMonth > 12) {
+        nextMonth = 1
+        nextYear += 1
+      }
+
+      const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
       const subscriptionData = {
         patientId: selectedPatient.id,
@@ -107,7 +117,7 @@ export default function SubscriptionsMain() {
         planName: selectedPlan.name,
         price: selectedPlan.price,
         startDate: paymentDate,
-        nextBillingDate: nextBillingDate.toISOString(),
+        nextBillingDate: nextBillingDateStr,
         status: 'active' as const,
         payments: [],
       }
@@ -620,7 +630,17 @@ export default function SubscriptionsMain() {
                     </p>
                     <p className="text-gray-300">
                       <span className="text-gray-400">Próxima cobrança:</span>{' '}
-                      <span className="font-medium">{new Date(new Date(paymentDate).setMonth(new Date(paymentDate).getMonth() + 1)).toLocaleDateString('pt-BR')}</span>
+                      <span className="font-medium">{(() => {
+                        const [year, month, day] = paymentDate.split('-').map(Number)
+                        let nextMonth = month + 1
+                        let nextYear = year
+                        if (nextMonth > 12) {
+                          nextMonth = 1
+                          nextYear += 1
+                        }
+                        const nextDate = new Date(nextYear, nextMonth - 1, day)
+                        return nextDate.toLocaleDateString('pt-BR')
+                      })()}</span>
                     </p>
                   </div>
                 </div>
