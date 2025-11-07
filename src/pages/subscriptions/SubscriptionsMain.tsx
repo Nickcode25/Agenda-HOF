@@ -47,8 +47,6 @@ export default function SubscriptionsMain() {
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [planName, setPlanName] = useState('')
   const [planDescription, setPlanDescription] = useState('')
-  const [planPrice, setPlanPrice] = useState('')
-  const [planSessions, setPlanSessions] = useState('')
   const [planBenefits, setPlanBenefits] = useState<string[]>([])
   const [newBenefit, setNewBenefit] = useState('')
 
@@ -75,8 +73,8 @@ export default function SubscriptionsMain() {
       await addPlan({
         name: planName,
         description: planDescription,
-        price: parseFloat(planPrice),
-        sessionsPerYear: parseInt(planSessions),
+        price: 0,
+        sessionsPerYear: 0,
         benefits: planBenefits,
         active: true,
       })
@@ -158,8 +156,6 @@ export default function SubscriptionsMain() {
   const resetPlanForm = () => {
     setPlanName('')
     setPlanDescription('')
-    setPlanPrice('')
-    setPlanSessions('')
     setPlanBenefits([])
     setNewBenefit('')
   }
@@ -310,16 +306,8 @@ export default function SubscriptionsMain() {
 
                     <p className="text-gray-400 text-sm mb-6 line-clamp-2">{plan.description}</p>
 
-                    <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-4xl font-bold text-white group-hover:text-purple-400 transition-colors">
-                        R$ {plan.price.toFixed(2).replace('.', ',')}
-                      </span>
-                      <span className="text-gray-400">/mês</span>
-                    </div>
-
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full mb-6">
-                      <Calendar size={14} className="text-purple-400" />
-                      <span className="text-sm font-medium text-purple-400">{plan.sessionsPerYear} sessões/ano</span>
+                    <div className="mb-6">
+                      <span className="text-sm text-gray-400">Valor definido por paciente</span>
                     </div>
 
                     {plan.benefits.length > 0 && (
@@ -441,31 +429,10 @@ export default function SubscriptionsMain() {
                 />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Valor Mensal (R$) *</label>
-                  <input
-                    type="number"
-                    required
-                    step="0.01"
-                    value={planPrice}
-                    onChange={(e) => setPlanPrice(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                    placeholder="225.00"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Sessões por Ano *</label>
-                  <input
-                    type="number"
-                    required
-                    value={planSessions}
-                    onChange={(e) => setPlanSessions(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                    placeholder="3"
-                  />
-                </div>
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-4">
+                <p className="text-sm text-blue-300">
+                  💡 Dica: O valor e detalhes específicos serão definidos ao adicionar cada paciente ao plano.
+                </p>
               </div>
 
               <div>

@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, X } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
-import { parseCurrency, formatCurrency } from '@/utils/currency'
-import CurrencyInput from '@/components/CurrencyInput'
 
 export default function PlanForm() {
   const navigate = useNavigate()
@@ -15,33 +13,15 @@ export default function PlanForm() {
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [price, setPrice] = useState('')
-  const [sessionsPerYear, setSessionsPerYear] = useState('')
-  const [benefits, setBenefits] = useState<string[]>([])
-  const [newBenefit, setNewBenefit] = useState('')
   const [active, setActive] = useState(true)
 
   useEffect(() => {
     if (existingPlan) {
       setName(existingPlan.name)
       setDescription(existingPlan.description)
-      setPrice(formatCurrency(existingPlan.price))
-      setSessionsPerYear(existingPlan.sessionsPerYear.toString())
-      setBenefits(existingPlan.benefits)
       setActive(existingPlan.active)
     }
   }, [existingPlan])
-
-  const handleAddBenefit = () => {
-    if (newBenefit.trim()) {
-      setBenefits([...benefits, newBenefit.trim()])
-      setNewBenefit('')
-    }
-  }
-
-  const handleRemoveBenefit = (index: number) => {
-    setBenefits(benefits.filter((_, i) => i !== index))
-  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,9 +29,9 @@ export default function PlanForm() {
     const planData = {
       name,
       description,
-      price: parseCurrency(price),
-      sessionsPerYear: parseInt(sessionsPerYear),
-      benefits,
+      price: 0, // Valor padrão - será definido por assinatura
+      sessionsPerYear: 0, // Valor padrão - será definido por assinatura
+      benefits: [], // Removido da criação do plano
       active,
     }
 
@@ -94,7 +74,7 @@ export default function PlanForm() {
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Descrição
+                  Descrição (opcional)
                 </label>
                 <textarea
                   value={description}
@@ -103,77 +83,12 @@ export default function PlanForm() {
                   placeholder="Descreva o plano de mensalidade"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Valor Mensal (R$) *
-                </label>
-                <CurrencyInput
-                  required
-                  value={price}
-                  onChange={setPrice}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                  placeholder="R$ 0,00"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Sessões por Ano *
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  value={sessionsPerYear}
-                  onChange={(e) => setSessionsPerYear(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                  placeholder="3"
-                />
-              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Benefícios do Plano
-              </label>
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={newBenefit}
-                  onChange={(e) => setNewBenefit(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBenefit())}
-                  className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500"
-                  placeholder="Digite um benefício"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddBenefit}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Plus size={20} />
-                </button>
-              </div>
-
-              {benefits.length > 0 && (
-                <div className="space-y-2">
-                  {benefits.map((benefit, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-2"
-                    >
-                      <span className="text-white text-sm">{benefit}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveBenefit(index)}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <p className="text-sm text-blue-300">
+                💡 <strong>Dica:</strong> O valor e detalhes específicos serão definidos ao adicionar cada paciente ao plano.
+              </p>
             </div>
 
             <div className="flex items-center gap-3">

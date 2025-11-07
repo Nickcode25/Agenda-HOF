@@ -77,14 +77,8 @@ export default function PlansList() {
               </div>
 
               <div className="mb-4">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white">
-                    R$ {plan.price.toFixed(2).replace('.', ',')}
-                  </span>
-                  <span className="text-gray-400">/mês</span>
-                </div>
-                <p className="text-sm text-orange-400 mt-1">
-                  {plan.sessionsPerYear} sessões por ano
+                <p className="text-sm text-gray-400">
+                  Valor definido por paciente
                 </p>
               </div>
 

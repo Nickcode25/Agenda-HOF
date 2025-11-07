@@ -108,7 +108,7 @@ export default function SubscriptionForm() {
                 <option value="">Selecione um plano</option>
                 {activePlans.map((plan) => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.name} - R$ {plan.price.toFixed(2).replace('.', ',')} /mês ({plan.sessionsPerYear} sessões/ano)
+                    {plan.name}
                   </option>
                 ))}
               </select>
