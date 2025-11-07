@@ -223,7 +223,7 @@ export default function App() {
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg flex-shrink-0">
                 <span className="text-white font-bold text-lg">H</span>
               </div>
-              <h1 className={`font-bold text-white text-lg whitespace-nowrap transition-all duration-500 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>Agenda+ HOF</h1>
+              <h1 className={`font-bold text-white text-lg whitespace-nowrap transition-all duration-500 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>Agenda HOF</h1>
             </NavLink>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-white flex-shrink-0">
               <X size={20} />
@@ -334,7 +334,7 @@ export default function App() {
           {/* Footer */}
           <div className="p-4 border-t border-gray-700">
             {isExpanded && (
-              <p className="text-xs text-gray-500 text-center">© 2025 Agenda+ HOF</p>
+              <p className="text-xs text-gray-500 text-center">© 2025 Agenda HOF</p>
             )}
           </div>
         </div>
@@ -352,7 +352,7 @@ export default function App() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
                 <span className="text-white font-bold">H</span>
               </div>
-              <h1 className="font-bold text-white">Agenda+ HOF</h1>
+              <h1 className="font-bold text-white">Agenda HOF</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">

@@ -8,7 +8,7 @@ if (!PAGBANK_TOKEN) {
 
 // Plano mensal - R$ 109,90
 export const PLAN_PRICE = 109.90
-export const PLAN_NAME = 'Agenda+ HOF - Plano Profissional'
+export const PLAN_NAME = 'Agenda HOF - Plano Profissional'
 export const PLAN_DESCRIPTION = 'Sistema completo de gestão para clínicas de Harmonização Orofacial'
 
 // URLs do PagBank

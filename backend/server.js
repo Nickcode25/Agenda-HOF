@@ -136,7 +136,7 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
       const paymentData = {
         transaction_amount: amount,
         token: cardToken,
-        description: planName || 'Agenda+ HOF - Plano Profissional',
+        description: planName || 'Agenda HOF - Plano Profissional',
         installments: 1,
         payer: {
           email: customerEmail,
@@ -171,7 +171,7 @@ app.post('/api/mercadopago/create-subscription', async (req, res) => {
       console.log('🆔 CPF do titular:', customerCpf.substring(0, 3) + '...')
 
       const subscriptionData = {
-        reason: planName || 'Agenda+ HOF - Plano Profissional',
+        reason: planName || 'Agenda HOF - Plano Profissional',
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',

@@ -7,5 +7,5 @@ if (!MERCADOPAGO_PUBLIC_KEY) {
 
 // Plano mensal - R$ 99,90
 export const PLAN_PRICE = 99.90
-export const PLAN_NAME = 'Agenda+ HOF - Plano Profissional'
+export const PLAN_NAME = 'Agenda HOF - Plano Profissional'
 export const PLAN_DESCRIPTION = 'Sistema completo de gestão para clínicas de Harmonização Orofacial'

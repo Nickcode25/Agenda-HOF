@@ -31,7 +31,7 @@ export default function SuccessModal({ show, subscriptionData, onNavigate }: Suc
           Assinatura Criada!
         </h2>
         <p className="text-center text-gray-400 mb-6">
-          Bem-vindo ao Agenda+ HOF
+          Bem-vindo ao Agenda HOF
         </p>
 
         {/* Informações da Assinatura */}

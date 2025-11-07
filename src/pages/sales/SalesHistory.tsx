@@ -218,7 +218,7 @@ export default function SalesHistory() {
       doc.setFontSize(8)
       doc.setTextColor(150, 150, 150)
       doc.text(
-        `Agenda+ HOF - Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+        `Agenda HOF - Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
         14,
         doc.internal.pageSize.height - 10
       )
