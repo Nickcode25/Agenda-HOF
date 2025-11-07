@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useExpenses } from '@/store/expenses'
 import { formatCurrency } from '@/utils/currency'
+import { formatDateBR } from '@/utils/dateHelpers'
 import {
   Plus, Receipt, Search, Calendar, DollarSign, TrendingDown,
   CheckCircle, Clock, AlertCircle, Edit, Trash2, Tag, Filter
@@ -336,9 +337,9 @@ export default function ExpensesList() {
                         <Calendar size={14} />
                         <span>
                           {expense.paidAt
-                            ? `Pago em ${new Date(expense.paidAt).toLocaleDateString('pt-BR')}`
+                            ? `Pago em ${formatDateBR(expense.paidAt)}`
                             : expense.dueDate
-                            ? `Vence em ${new Date(expense.dueDate).toLocaleDateString('pt-BR')}`
+                            ? `Vence em ${formatDateBR(expense.dueDate)}`
                             : 'Sem data'}
                         </span>
                       </div>

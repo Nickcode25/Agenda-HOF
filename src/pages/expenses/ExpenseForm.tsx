@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useExpenses } from '@/store/expenses'
 import { parseCurrency, formatCurrency } from '@/utils/currency'
+import { normalizeDateString, getTodayString } from '@/utils/dateHelpers'
 import { Receipt, ArrowLeft, Save, Calendar, DollarSign, Tag, Repeat } from 'lucide-react'
 import type { RecurringFrequency } from '@/types/cash'
 import { useToast } from '@/hooks/useToast'
@@ -54,13 +55,6 @@ export default function ExpenseForm() {
     }
   }, [id, getExpense, fetchCategories])
 
-  const getTodayDateString = () => {
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,14 +75,14 @@ export default function ExpenseForm() {
         amount: parseCurrency(formData.amount),
         paymentMethod: formData.paymentMethod,
         paymentStatus: formData.paymentStatus,
-        dueDate: formData.dueDate || undefined,
+        dueDate: formData.dueDate ? normalizeDateString(formData.dueDate) : undefined,
         paidAt: formData.paymentStatus === 'paid'
-          ? (formData.paidAt || getTodayDateString())
-          : (formData.paidAt || undefined),
+          ? normalizeDateString(formData.paidAt || getTodayString())
+          : (formData.paidAt ? normalizeDateString(formData.paidAt) : undefined),
         isRecurring: formData.isRecurring,
         recurringFrequency: formData.isRecurring ? formData.recurringFrequency : undefined,
         recurringDay: formData.isRecurring ? formData.recurringDay : undefined,
-        recurringEndDate: formData.isRecurring && formData.recurringEndDate ? formData.recurringEndDate : undefined,
+        recurringEndDate: formData.isRecurring && formData.recurringEndDate ? normalizeDateString(formData.recurringEndDate) : undefined,
         notes: formData.notes || undefined
       }
 
