@@ -122,9 +122,8 @@ export default function PlanDetail() {
 
     const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
-    // Usar valor personalizado ou valor padrão do plano
-    const paymentAmount = parseCurrency(paidAmount)
-    const subscriptionPrice = paymentAmount > 0 ? paymentAmount : plan.price
+    // Usar o valor digitado pelo usuário (campo obrigatório)
+    const subscriptionPrice = parseCurrency(paidAmount)
 
     const subscriptionData = {
       patientId: selectedPatient.id,
@@ -162,7 +161,7 @@ export default function PlanDetail() {
     setSelectedPatientId('')
     setSearchPatient('')
     setPaymentDate(new Date().toISOString().split('T')[0])
-    setPaidAmount(formatCurrency(plan.price))
+    setPaidAmount('')
     setPaymentMethod('PIX')
   }
 

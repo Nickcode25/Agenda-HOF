@@ -108,8 +108,8 @@ export default function SubscriptionsMain() {
 
       const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
-      // Usar valor personalizado ou valor padrão do plano
-      const subscriptionPrice = parseFloat(paidAmount || selectedPlan.price.toString())
+      // Usar o valor digitado pelo usuário (campo obrigatório)
+      const subscriptionPrice = parseFloat(paidAmount)
 
       const subscriptionData = {
         patientId: selectedPatient.id,
@@ -531,15 +531,13 @@ export default function SubscriptionsMain() {
                   value={selectedPlanId}
                   onChange={(e) => {
                     setSelectedPlanId(e.target.value)
-                    const plan = activePlans.find(p => p.id === e.target.value)
-                    if (plan) setPaidAmount(plan.price.toString())
                   }}
                   className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 >
                   <option value="">Selecione um plano</option>
                   {activePlans.map((plan) => (
                     <option key={plan.id} value={plan.id}>
-                      {plan.name} - R$ {plan.price.toFixed(2).replace('.', ',')}
+                      {plan.name}
                     </option>
                   ))}
                 </select>
