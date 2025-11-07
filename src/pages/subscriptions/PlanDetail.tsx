@@ -103,7 +103,7 @@ export default function PlanDetail() {
     return total + overduePayments.reduce((sum, p) => sum + p.amount, 0)
   }, 0)
 
-  const handleAddSubscriber = (e: React.FormEvent) => {
+  const handleAddSubscriber = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const selectedPatient = patients.find(p => p.id === selectedPatientId)
@@ -143,12 +143,12 @@ export default function PlanDetail() {
       payments: [],
     }
 
-    addSubscription(subscriptionData)
+    await addSubscription(subscriptionData)
 
     const subscriptions = useSubscriptionStore.getState().subscriptions
     const newSubscription = subscriptions[subscriptions.length - 1]
 
-    addPayment(newSubscription.id, {
+    await addPayment(newSubscription.id, {
       amount: subscriptionPrice,
       dueDate: paymentDate,
       status: 'pending',

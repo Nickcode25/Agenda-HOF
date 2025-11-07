@@ -175,24 +175,26 @@ export default function AddSubscriberModal({
               </select>
             </div>
 
-            <div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-              <h3 className="text-white font-medium mb-2">Resumo</h3>
-              <div className="space-y-1 text-sm">
-                <p className="text-gray-300">
-                  <span className="text-gray-400">Valor mensal:</span>{' '}
-                  <span className="text-orange-400 font-medium">R$ {planPrice.toFixed(2).replace('.', ',')}</span>
-                </p>
-                <p className="text-gray-300">
-                  <span className="text-gray-400">Próxima cobrança:</span>{' '}
-                  {(() => {
-                    const [year, month, day] = paymentDate.split('-').map(Number)
-                    const nextDate = new Date(year, month - 1, day)
-                    nextDate.setMonth(nextDate.getMonth() + 1)
-                    return nextDate.toLocaleDateString('pt-BR')
-                  })()}
-                </p>
+            {paidAmount && parseFloat(paidAmount.replace(/[^\d,]/g, '').replace(',', '.')) > 0 && (
+              <div className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                <h3 className="text-white font-medium mb-2">Resumo</h3>
+                <div className="space-y-1 text-sm">
+                  <p className="text-gray-300">
+                    <span className="text-gray-400">Valor mensal:</span>{' '}
+                    <span className="text-orange-400 font-medium">{paidAmount}</span>
+                  </p>
+                  <p className="text-gray-300">
+                    <span className="text-gray-400">Próxima cobrança:</span>{' '}
+                    {(() => {
+                      const [year, month, day] = paymentDate.split('-').map(Number)
+                      const nextDate = new Date(year, month - 1, day)
+                      nextDate.setMonth(nextDate.getMonth() + 1)
+                      return nextDate.toLocaleDateString('pt-BR')
+                    })()}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex gap-4 pt-4">
               <button
