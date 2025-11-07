@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, X, Check, Calendar, Sparkles, CreditCard, Users } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
@@ -19,6 +19,8 @@ export default function SubscriptionsMain() {
   const {
     plans,
     subscriptions,
+    fetchPlans,
+    fetchSubscriptions,
     addPlan,
     addSubscription,
     addPayment,
@@ -32,6 +34,12 @@ export default function SubscriptionsMain() {
   } = useSubscriptionStore()
 
   const { patients } = usePatients()
+
+  // Carregar dados ao montar o componente
+  useEffect(() => {
+    fetchPlans()
+    fetchSubscriptions()
+  }, [])
 
   const [activeTab, setActiveTab] = useState<'plans' | 'subscribers'>('plans')
 
@@ -61,65 +69,77 @@ export default function SubscriptionsMain() {
   const overdueRevenue = getOverdueRevenue()
   const activeCount = getActiveSubscriptionsCount()
 
-  const handleCreatePlan = (e: React.FormEvent) => {
+  const handleCreatePlan = async (e: React.FormEvent) => {
     e.preventDefault()
-    addPlan({
-      name: planName,
-      description: planDescription,
-      price: parseFloat(planPrice),
-      sessionsPerYear: parseInt(planSessions),
-      benefits: planBenefits,
-      active: true,
-    })
-    setShowPlanModal(false)
-    resetPlanForm()
-    showToast('Plano criado com sucesso!', 'success')
+    try {
+      await addPlan({
+        name: planName,
+        description: planDescription,
+        price: parseFloat(planPrice),
+        sessionsPerYear: parseInt(planSessions),
+        benefits: planBenefits,
+        active: true,
+      })
+      setShowPlanModal(false)
+      resetPlanForm()
+      showToast('Plano criado com sucesso!', 'success')
+    } catch (error) {
+      showToast('Erro ao criar plano. Tente novamente.', 'error')
+    }
   }
 
-  const handleCreateSubscription = (e: React.FormEvent) => {
+  const handleCreateSubscription = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const selectedPatient = patients.find((p) => p.id === selectedPatientId)
-    const selectedPlan = plans.find((p) => p.id === selectedPlanId)
+    try {
+      const selectedPatient = patients.find((p) => p.id === selectedPatientId)
+      const selectedPlan = plans.find((p) => p.id === selectedPlanId)
 
-    if (!selectedPatient || !selectedPlan) return
+      if (!selectedPatient || !selectedPlan) return
 
-    const nextBillingDate = new Date(paymentDate)
-    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+      const nextBillingDate = new Date(paymentDate)
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
 
-    const subscriptionData = {
-      patientId: selectedPatient.id,
-      patientName: selectedPatient.name,
-      planId: selectedPlan.id,
-      planName: selectedPlan.name,
-      price: selectedPlan.price,
-      startDate: paymentDate,
-      nextBillingDate: nextBillingDate.toISOString(),
-      status: 'active' as const,
-      payments: [],
+      const subscriptionData = {
+        patientId: selectedPatient.id,
+        patientName: selectedPatient.name,
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        price: selectedPlan.price,
+        startDate: paymentDate,
+        nextBillingDate: nextBillingDate.toISOString(),
+        status: 'active' as const,
+        payments: [],
+      }
+
+      await addSubscription(subscriptionData)
+
+      // Buscar a assinatura recém-criada
+      const subscriptions = useSubscriptionStore.getState().subscriptions
+      const newSubscription = subscriptions[subscriptions.length - 1]
+
+      if (newSubscription) {
+        // Criar e confirmar primeiro pagamento
+        await addPayment(newSubscription.id, {
+          amount: parseFloat(paidAmount || selectedPlan.price.toString()),
+          dueDate: paymentDate,
+          status: 'pending',
+        })
+
+        // Confirmar pagamento imediatamente
+        const updatedSub = useSubscriptionStore.getState().subscriptions.find(s => s.id === newSubscription.id)
+        const payments = updatedSub?.payments
+        if (payments && payments.length > 0) {
+          await confirmPayment(newSubscription.id, payments[payments.length - 1].id, paymentMethod)
+        }
+      }
+
+      setShowSubscriberModal(false)
+      resetSubscriberForm()
+      showToast('Assinante adicionado com sucesso!', 'success')
+    } catch (error) {
+      showToast('Erro ao adicionar assinante. Tente novamente.', 'error')
     }
-
-    addSubscription(subscriptionData)
-
-    // Criar e confirmar primeiro pagamento
-    const subscriptions = useSubscriptionStore.getState().subscriptions
-    const newSubscription = subscriptions[subscriptions.length - 1]
-
-    addPayment(newSubscription.id, {
-      amount: parseFloat(paidAmount || selectedPlan.price.toString()),
-      dueDate: paymentDate,
-      status: 'pending',
-    })
-
-    // Confirmar pagamento imediatamente
-    const payments = useSubscriptionStore.getState().subscriptions.find(s => s.id === newSubscription.id)?.payments
-    if (payments && payments.length > 0) {
-      confirmPayment(newSubscription.id, payments[payments.length - 1].id, paymentMethod)
-    }
-
-    setShowSubscriberModal(false)
-    resetSubscriberForm()
-    showToast('Assinante adicionado com sucesso!', 'success')
   }
 
   const resetPlanForm = () => {

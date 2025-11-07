@@ -1,28 +1,34 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { SubscriptionPlan, Subscription, SubscriptionPayment } from '../types/subscription'
 import { autoRegisterCashMovement, removeCashMovementByReference } from './cash'
+import { supabase } from '@/lib/supabase'
 
 type SubscriptionStore = {
   plans: SubscriptionPlan[]
   subscriptions: Subscription[]
+  loading: boolean
+  error: string | null
+
+  // Data loading
+  fetchPlans: () => Promise<void>
+  fetchSubscriptions: () => Promise<void>
 
   // Plans
-  addPlan: (plan: Omit<SubscriptionPlan, 'id' | 'createdAt'>) => void
-  updatePlan: (id: string, plan: Partial<SubscriptionPlan>) => void
-  deletePlan: (id: string) => void
+  addPlan: (plan: Omit<SubscriptionPlan, 'id' | 'createdAt'>) => Promise<void>
+  updatePlan: (id: string, plan: Partial<SubscriptionPlan>) => Promise<void>
+  deletePlan: (id: string) => Promise<void>
   getPlanById: (id: string) => SubscriptionPlan | undefined
 
   // Subscriptions
-  addSubscription: (subscription: Omit<Subscription, 'id'>) => void
-  updateSubscription: (id: string, subscription: Partial<Subscription>) => void
-  cancelSubscription: (id: string) => void
+  addSubscription: (subscription: Omit<Subscription, 'id'>) => Promise<void>
+  updateSubscription: (id: string, subscription: Partial<Subscription>) => Promise<void>
+  cancelSubscription: (id: string) => Promise<void>
   removeSubscription: (id: string) => Promise<void>
 
   // Payments
-  addPayment: (subscriptionId: string, payment: Omit<SubscriptionPayment, 'id' | 'subscriptionId'>) => void
-  confirmPayment: (subscriptionId: string, paymentId: string, paymentMethod: string) => void
-  generateNextPayment: (subscriptionId: string) => void
+  addPayment: (subscriptionId: string, payment: Omit<SubscriptionPayment, 'id' | 'subscriptionId'>) => Promise<void>
+  confirmPayment: (subscriptionId: string, paymentId: string, paymentMethod: string) => Promise<void>
+  generateNextPayment: (subscriptionId: string) => Promise<void>
   simulatePixPayment: (subscriptionId: string) => Promise<boolean>
 
   // Reports
@@ -32,234 +38,457 @@ type SubscriptionStore = {
   getActiveSubscriptionsCount: () => number
 }
 
-export const useSubscriptionStore = create<SubscriptionStore>()(
-  persist(
-    (set, get) => ({
-      plans: [],
-      subscriptions: [],
+export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
+  plans: [],
+  subscriptions: [],
+  loading: false,
+  error: null,
 
-      // Plans
-      addPlan: (plan) => {
-        const newPlan: SubscriptionPlan = {
-          ...plan,
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
+  // ============================================
+  // DATA LOADING
+  // ============================================
+  fetchPlans: async () => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      const { data, error } = await supabase
+        .from('user_monthly_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const plans: SubscriptionPlan[] = (data || []).map(row => ({
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        price: parseFloat(row.price),
+        sessionsPerYear: row.sessions_per_year,
+        benefits: row.benefits || [],
+        active: row.active,
+        createdAt: row.created_at
+      }))
+
+      set({ plans, loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao carregar planos:', error)
+    }
+  },
+
+  fetchSubscriptions: async () => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      // Buscar assinaturas
+      const { data: subsData, error: subsError } = await supabase
+        .from('patient_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (subsError) throw subsError
+
+      // Buscar pagamentos de cada assinatura
+      const subscriptions: Subscription[] = []
+
+      for (const sub of subsData || []) {
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from('subscription_payments')
+          .select('*')
+          .eq('subscription_id', sub.id)
+          .order('due_date', { ascending: false })
+
+        if (paymentsError) throw paymentsError
+
+        const payments: SubscriptionPayment[] = (paymentsData || []).map(p => ({
+          id: p.id,
+          subscriptionId: p.subscription_id,
+          amount: parseFloat(p.amount),
+          dueDate: p.due_date,
+          paidAt: p.paid_at,
+          paymentMethod: p.payment_method,
+          status: p.status
+        }))
+
+        subscriptions.push({
+          id: sub.id,
+          patientId: sub.patient_id,
+          patientName: sub.patient_name,
+          planId: sub.plan_id,
+          planName: sub.plan_name,
+          price: parseFloat(sub.price),
+          startDate: sub.start_date,
+          nextBillingDate: sub.next_billing_date,
+          status: sub.status,
+          payments
+        })
+      }
+
+      set({ subscriptions, loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao carregar assinaturas:', error)
+    }
+  },
+
+  // ============================================
+  // PLANS
+  // ============================================
+  addPlan: async (planData) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      const { error } = await supabase
+        .from('user_monthly_plans')
+        .insert({
+          user_id: user.id,
+          name: planData.name,
+          description: planData.description || null,
+          price: planData.price,
+          sessions_per_year: planData.sessionsPerYear,
+          benefits: planData.benefits || [],
+          active: planData.active
+        })
+
+      if (error) throw error
+
+      await get().fetchPlans()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao adicionar plano:', error)
+      throw error
+    }
+  },
+
+  updatePlan: async (id, planData) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      const updateData: any = {}
+      if (planData.name !== undefined) updateData.name = planData.name
+      if (planData.description !== undefined) updateData.description = planData.description
+      if (planData.price !== undefined) updateData.price = planData.price
+      if (planData.sessionsPerYear !== undefined) updateData.sessions_per_year = planData.sessionsPerYear
+      if (planData.benefits !== undefined) updateData.benefits = planData.benefits
+      if (planData.active !== undefined) updateData.active = planData.active
+
+      const { error } = await supabase
+        .from('user_monthly_plans')
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      await get().fetchPlans()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao atualizar plano:', error)
+      throw error
+    }
+  },
+
+  deletePlan: async (id) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      const { error } = await supabase
+        .from('user_monthly_plans')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      await get().fetchPlans()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao deletar plano:', error)
+      throw error
+    }
+  },
+
+  getPlanById: (id) => {
+    return get().plans.find((plan) => plan.id === id)
+  },
+
+  // ============================================
+  // SUBSCRIPTIONS
+  // ============================================
+  addSubscription: async (subscriptionData) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      const { error } = await supabase
+        .from('patient_subscriptions')
+        .insert({
+          user_id: user.id,
+          patient_id: subscriptionData.patientId,
+          patient_name: subscriptionData.patientName,
+          plan_id: subscriptionData.planId,
+          plan_name: subscriptionData.planName,
+          price: subscriptionData.price,
+          start_date: subscriptionData.startDate,
+          next_billing_date: subscriptionData.nextBillingDate,
+          status: subscriptionData.status
+        })
+
+      if (error) throw error
+
+      await get().fetchSubscriptions()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao adicionar assinatura:', error)
+      throw error
+    }
+  },
+
+  updateSubscription: async (id, subscriptionData) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      const updateData: any = {}
+      if (subscriptionData.status !== undefined) updateData.status = subscriptionData.status
+      if (subscriptionData.nextBillingDate !== undefined) updateData.next_billing_date = subscriptionData.nextBillingDate
+      if (subscriptionData.price !== undefined) updateData.price = subscriptionData.price
+
+      const { error } = await supabase
+        .from('patient_subscriptions')
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      await get().fetchSubscriptions()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao atualizar assinatura:', error)
+      throw error
+    }
+  },
+
+  cancelSubscription: async (id) => {
+    await get().updateSubscription(id, { status: 'cancelled' })
+  },
+
+  removeSubscription: async (id) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      // Buscar pagamentos antes de remover
+      const subscription = get().subscriptions.find(sub => sub.id === id)
+      if (subscription) {
+        for (const payment of subscription.payments) {
+          await removeCashMovementByReference(payment.id)
         }
-        set((state) => ({ plans: [...state.plans, newPlan] }))
-      },
+      }
 
-      updatePlan: (id, planData) => {
-        set((state) => ({
-          plans: state.plans.map((plan) =>
-            plan.id === id ? { ...plan, ...planData } : plan
-          ),
-        }))
-      },
+      const { error } = await supabase
+        .from('patient_subscriptions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
 
-      deletePlan: (id) => {
-        set((state) => ({
-          plans: state.plans.filter((plan) => plan.id !== id),
-        }))
-      },
+      if (error) throw error
 
-      getPlanById: (id) => {
-        return get().plans.find((plan) => plan.id === id)
-      },
+      await get().fetchSubscriptions()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao remover assinatura:', error)
+      throw error
+    }
+  },
 
-      // Subscriptions
-      addSubscription: (subscription) => {
-        const newSubscription: Subscription = {
-          ...subscription,
-          id: crypto.randomUUID(),
-        }
-        set((state) => ({
-          subscriptions: [...state.subscriptions, newSubscription],
-        }))
-      },
+  // ============================================
+  // PAYMENTS
+  // ============================================
+  addPayment: async (subscriptionId, paymentData) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
 
-      updateSubscription: (id, subscriptionData) => {
-        set((state) => ({
-          subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, ...subscriptionData } : sub
-          ),
-        }))
-      },
+      const { error } = await supabase
+        .from('subscription_payments')
+        .insert({
+          user_id: user.id,
+          subscription_id: subscriptionId,
+          amount: paymentData.amount,
+          due_date: paymentData.dueDate,
+          status: paymentData.status || 'pending'
+        })
 
-      cancelSubscription: (id) => {
-        set((state) => ({
-          subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, status: 'cancelled' as const } : sub
-          ),
-        }))
-      },
+      if (error) throw error
 
-      removeSubscription: async (id) => {
-        // Buscar a assinatura antes de remover para pegar os paymentIds
-        const subscription = get().subscriptions.find(sub => sub.id === id)
+      await get().fetchSubscriptions()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao adicionar pagamento:', error)
+      throw error
+    }
+  },
 
-        if (subscription) {
-          // Remover movimentações de caixa de todos os pagamentos desta assinatura
-          for (const payment of subscription.payments) {
-            await removeCashMovementByReference(payment.id)
-          }
-        }
+  confirmPayment: async (subscriptionId, paymentId, paymentMethod) => {
+    set({ loading: true, error: null })
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
 
-        set((state) => ({
-          subscriptions: state.subscriptions.filter((sub) => sub.id !== id),
-        }))
-      },
+      const now = new Date().toISOString()
+      const subscription = get().subscriptions.find(s => s.id === subscriptionId)
+      const payment = subscription?.payments.find(p => p.id === paymentId)
 
-      // Payments
-      addPayment: (subscriptionId, payment) => {
-        const newPayment: SubscriptionPayment = {
-          ...payment,
-          id: crypto.randomUUID(),
-          subscriptionId,
-        }
+      const { error } = await supabase
+        .from('subscription_payments')
+        .update({
+          status: 'paid',
+          paid_at: now,
+          payment_method: paymentMethod
+        })
+        .eq('id', paymentId)
+        .eq('user_id', user.id)
 
-        set((state) => ({
-          subscriptions: state.subscriptions.map((sub) => {
-            if (sub.id === subscriptionId) {
-              return {
-                ...sub,
-                payments: [...sub.payments, newPayment],
-              }
-            }
-            return sub
-          }),
-        }))
-      },
+      if (error) throw error
 
-      confirmPayment: async (subscriptionId, paymentId, paymentMethod) => {
-        const now = new Date().toISOString()
-        const subscription = get().subscriptions.find(s => s.id === subscriptionId)
-        const payment = subscription?.payments.find(p => p.id === paymentId)
+      // Registrar movimentação no caixa
+      if (subscription && payment) {
+        await autoRegisterCashMovement({
+          type: 'income',
+          category: 'subscription',
+          amount: payment.amount,
+          paymentMethod: paymentMethod.toLowerCase() as 'cash' | 'card' | 'pix' | 'transfer' | 'check',
+          referenceId: paymentId,
+          description: `Mensalidade - ${subscription.patientName} - ${subscription.planName}`
+        })
+      }
 
-        set((state) => ({
-          subscriptions: state.subscriptions.map((sub) => {
-            if (sub.id === subscriptionId) {
-              const updatedPayments = sub.payments.map((payment) =>
-                payment.id === paymentId
-                  ? { ...payment, status: 'paid' as const, paidAt: now, paymentMethod }
-                  : payment
-              )
+      await get().fetchSubscriptions()
+      set({ loading: false })
+    } catch (error: any) {
+      set({ error: error.message, loading: false })
+      console.error('Erro ao confirmar pagamento:', error)
+      throw error
+    }
+  },
 
-              return {
-                ...sub,
-                payments: updatedPayments,
-              }
-            }
-            return sub
-          }),
-        }))
+  generateNextPayment: async (subscriptionId) => {
+    try {
+      const { subscriptions, addPayment, updateSubscription } = get()
+      const subscription = subscriptions.find(s => s.id === subscriptionId)
 
-        // Registrar movimentação no caixa
-        if (subscription && payment) {
-          await autoRegisterCashMovement({
-            type: 'income',
-            category: 'subscription',
-            amount: payment.amount,
-            paymentMethod: paymentMethod.toLowerCase() as 'cash' | 'card' | 'pix' | 'transfer' | 'check',
-            referenceId: paymentId,
-            description: `Mensalidade - ${subscription.patientName} - ${subscription.planName}`
-          })
-        }
-      },
+      if (!subscription) return
 
-      generateNextPayment: (subscriptionId) => {
-        const { subscriptions, addPayment } = get()
-        const subscription = subscriptions.find(s => s.id === subscriptionId)
+      // Verificar se já existe um pagamento pendente/overdue
+      const hasPendingPayment = subscription.payments.some(
+        p => p.status === 'pending' || p.status === 'overdue'
+      )
 
-        if (!subscription) return
+      if (hasPendingPayment) return
 
-        // Verificar se já existe um pagamento pendente/overdue
-        const hasPendingPayment = subscription.payments.some(
+      // Criar próximo pagamento
+      await addPayment(subscriptionId, {
+        amount: subscription.price,
+        dueDate: subscription.nextBillingDate,
+        status: 'pending',
+      })
+
+      // Calcular próxima data de cobrança (adicionar 1 mês)
+      const dateStr = subscription.nextBillingDate.split('T')[0]
+      const [year, month, day] = dateStr.split('-').map(Number)
+      const nextDate = new Date(year, month - 1, day)
+      nextDate.setMonth(nextDate.getMonth() + 1)
+      const nextBillingDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`
+
+      // Atualizar próxima data de cobrança
+      await updateSubscription(subscriptionId, {
+        nextBillingDate: nextBillingDateStr
+      })
+    } catch (error: any) {
+      console.error('Erro ao gerar próximo pagamento:', error)
+      throw error
+    }
+  },
+
+  simulatePixPayment: async (subscriptionId) => {
+    // Simular delay de API (500ms - 2s)
+    const delay = Math.random() * 1500 + 500
+    await new Promise(resolve => setTimeout(resolve, delay))
+
+    // Simular 95% de sucesso
+    const success = Math.random() > 0.05
+
+    if (success) {
+      const { subscriptions, confirmPayment } = get()
+      const subscription = subscriptions.find(s => s.id === subscriptionId)
+
+      if (subscription) {
+        const pendingPayment = subscription.payments.find(
           p => p.status === 'pending' || p.status === 'overdue'
         )
 
-        if (hasPendingPayment) return
-
-        // Criar próximo pagamento com vencimento na data atual de nextBillingDate
-        addPayment(subscriptionId, {
-          amount: subscription.price,
-          dueDate: subscription.nextBillingDate,
-          status: 'pending',
-        })
-
-        // Calcular a próxima data de cobrança (adicionar 1 mês)
-        const dateStr = subscription.nextBillingDate.split('T')[0]
-        const [year, month, day] = dateStr.split('-').map(Number)
-        const nextDate = new Date(year, month - 1, day)
-        nextDate.setMonth(nextDate.getMonth() + 1)
-        const nextBillingDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`
-
-        // Atualizar próxima data de cobrança
-        set((state) => ({
-          subscriptions: state.subscriptions.map((sub) =>
-            sub.id === subscriptionId
-              ? { ...sub, nextBillingDate: nextBillingDateStr }
-              : sub
-          ),
-        }))
-      },
-
-      simulatePixPayment: async (subscriptionId) => {
-        // Simular delay de API (500ms - 2s)
-        const delay = Math.random() * 1500 + 500
-        await new Promise(resolve => setTimeout(resolve, delay))
-
-        // Simular 95% de sucesso
-        const success = Math.random() > 0.05
-
-        if (success) {
-          const { subscriptions, confirmPayment } = get()
-          const subscription = subscriptions.find(s => s.id === subscriptionId)
-
-          if (subscription) {
-            const pendingPayment = subscription.payments.find(
-              p => p.status === 'pending' || p.status === 'overdue'
-            )
-
-            if (pendingPayment) {
-              confirmPayment(subscriptionId, pendingPayment.id, 'PIX')
-            }
-          }
+        if (pendingPayment) {
+          await confirmPayment(subscriptionId, pendingPayment.id, 'PIX')
         }
-
-        return success
-      },
-
-      // Reports
-      getMonthlyRecurringRevenue: () => {
-        const { subscriptions } = get()
-        return subscriptions
-          .filter((sub) => sub.status === 'active')
-          .reduce((total, sub) => total + sub.price, 0)
-      },
-
-      getReceivedRevenue: () => {
-        const { subscriptions } = get()
-        return subscriptions.reduce((total, sub) => {
-          const paidPayments = sub.payments.filter((p) => p.status === 'paid')
-          return total + paidPayments.reduce((sum, p) => sum + p.amount, 0)
-        }, 0)
-      },
-
-      getOverdueRevenue: () => {
-        const { subscriptions } = get()
-        return subscriptions.reduce((total, sub) => {
-          const overduePayments = sub.payments.filter((p) => p.status === 'overdue')
-          return total + overduePayments.reduce((sum, p) => sum + p.amount, 0)
-        }, 0)
-      },
-
-      getActiveSubscriptionsCount: () => {
-        const { subscriptions } = get()
-        return subscriptions.filter((sub) => sub.status === 'active').length
-      },
-    }),
-    {
-      name: 'subscription-storage',
+      }
     }
-  )
-)
+
+    return success
+  },
+
+  // ============================================
+  // REPORTS
+  // ============================================
+  getMonthlyRecurringRevenue: () => {
+    const { subscriptions } = get()
+    return subscriptions
+      .filter((sub) => sub.status === 'active')
+      .reduce((total, sub) => total + sub.price, 0)
+  },
+
+  getReceivedRevenue: () => {
+    const { subscriptions } = get()
+    return subscriptions.reduce((total, sub) => {
+      const paidPayments = sub.payments.filter((p) => p.status === 'paid')
+      return total + paidPayments.reduce((sum, p) => sum + p.amount, 0)
+    }, 0)
+  },
+
+  getOverdueRevenue: () => {
+    const { subscriptions } = get()
+    return subscriptions.reduce((total, sub) => {
+      const overduePayments = sub.payments.filter((p) => p.status === 'overdue')
+      return total + overduePayments.reduce((sum, p) => sum + p.amount, 0)
+    }, 0)
+  },
+
+  getActiveSubscriptionsCount: () => {
+    const { subscriptions } = get()
+    return subscriptions.filter((sub) => sub.status === 'active').length
+  },
+}))
