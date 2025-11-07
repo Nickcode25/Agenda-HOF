@@ -1,6 +1,6 @@
-import { Shield, Home, Users, Package, UserCheck, CreditCard, Tag, LogOut } from 'lucide-react'
+import { Shield, Home, Users, Package, UserCheck, CreditCard, Tag, Gift, LogOut } from 'lucide-react'
 
-type ActiveView = 'overview' | 'clinics' | 'plans' | 'subscriptions' | 'payments' | 'coupons'
+type ActiveView = 'overview' | 'clinics' | 'plans' | 'subscriptions' | 'payments' | 'coupons' | 'courtesy'
 
 interface AdminSidebarProps {
   activeView: ActiveView
@@ -10,11 +10,11 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ activeView, onViewChange, onLogout }: AdminSidebarProps) {
   return (
-    <aside className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col">
+    <aside className="w-64 bg-gray-800/50 backdrop-blur-xl border-r border-gray-700 flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-white/10">
+      <div className="p-6 border-b border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl">
+          <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl">
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -30,8 +30,8 @@ export default function AdminSidebar({ activeView, onViewChange, onLogout }: Adm
           onClick={() => onViewChange('overview')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
             activeView === 'overview'
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
+              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
           }`}
         >
           <Home className="w-5 h-5" />
@@ -42,8 +42,8 @@ export default function AdminSidebar({ activeView, onViewChange, onLogout }: Adm
           onClick={() => onViewChange('clinics')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
             activeView === 'clinics'
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
+              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
           }`}
         >
           <Users className="w-5 h-5" />
@@ -54,8 +54,8 @@ export default function AdminSidebar({ activeView, onViewChange, onLogout }: Adm
           onClick={() => onViewChange('plans')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
             activeView === 'plans'
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
+              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
           }`}
         >
           <Package className="w-5 h-5" />
@@ -66,8 +66,8 @@ export default function AdminSidebar({ activeView, onViewChange, onLogout }: Adm
           onClick={() => onViewChange('subscriptions')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
             activeView === 'subscriptions'
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
+              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
           }`}
         >
           <UserCheck className="w-5 h-5" />
@@ -78,8 +78,8 @@ export default function AdminSidebar({ activeView, onViewChange, onLogout }: Adm
           onClick={() => onViewChange('payments')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
             activeView === 'payments'
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
+              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
           }`}
         >
           <CreditCard className="w-5 h-5" />
@@ -90,17 +90,29 @@ export default function AdminSidebar({ activeView, onViewChange, onLogout }: Adm
           onClick={() => onViewChange('coupons')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
             activeView === 'coupons'
-              ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
+              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
           }`}
         >
           <Tag className="w-5 h-5" />
           <span className="font-medium">Cupons</span>
         </button>
+
+        <button
+          onClick={() => onViewChange('courtesy')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+            activeView === 'courtesy'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
+              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+          }`}
+        >
+          <Gift className="w-5 h-5" />
+          <span className="font-medium">Cortesia</span>
+        </button>
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-white/10">
+      <div className="p-4 border-t border-gray-700">
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all duration-200 border border-red-500/30"

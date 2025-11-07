@@ -11,6 +11,7 @@ import CouponManager from '@/components/admin/CouponManager'
 import PlansManager from '@/components/admin/PlansManager'
 import ActiveSubscriptions from '@/components/admin/ActiveSubscriptions'
 import PaymentsManager from '@/components/admin/PaymentsManager'
+import CourtesyManager from '@/components/admin/CourtesyManager'
 import AdminSidebar from './components/AdminSidebar'
 import AdminStatsGrid from './components/AdminStatsGrid'
 
@@ -51,7 +52,7 @@ export default function AdminDashboard() {
   const { signOut } = useAuth()
   const [loading, setLoading] = useState(true)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'plans' | 'subscriptions' | 'payments' | 'coupons'>('overview')
+  const [activeView, setActiveView] = useState<'overview' | 'clinics' | 'plans' | 'subscriptions' | 'payments' | 'coupons' | 'courtesy'>('overview')
   const [period, setPeriod] = useState<Period>('month')
   const [stats, setStats] = useState<Stats>({
     totalClinics: 0,
@@ -185,9 +186,9 @@ export default function AdminDashboard() {
         Array.from(clinicsMap.values()).map(async (subscription) => {
           const userId = subscription.user_id
           const ownerEmail = subscription.email || 'Email não disponível'
-          const ownerName = subscription.name || 'Nome não disponível'
+          const ownerName = subscription.full_name || 'Nome não disponível'
           const ownerPhone = subscription.phone || null
-          const lastLogin = subscription.last_sign_in_at
+          const lastLogin = subscription.last_login
           const userCreatedAt = subscription.user_created_at || subscription.subscription_created_at
           const trialEndDate = null
 
@@ -400,18 +401,34 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-black flex">
       {/* Sidebar */}
       <AdminSidebar
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={(view) => {
+          if (view === 'overview') {
+            setActiveView(view)
+          } else if (view === 'clinics') {
+            navigate('/admin/users')
+          } else if (view === 'plans') {
+            navigate('/admin/plans')
+          } else if (view === 'subscriptions') {
+            navigate('/admin/subscriptions')
+          } else if (view === 'payments') {
+            navigate('/admin/payments')
+          } else if (view === 'coupons') {
+            navigate('/admin/coupons')
+          } else if (view === 'courtesy') {
+            navigate('/admin/courtesy')
+          }
+        }}
         onLogout={handleLogout}
       />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-10">
+        <header className="bg-gray-800/50 backdrop-blur-xl border-b border-gray-700 sticky top-0 z-10">
           <div className="px-8 py-6">
             <h2 className="text-3xl font-bold text-white">
               {activeView === 'overview' && 'Dashboard Overview'}
@@ -420,6 +437,7 @@ export default function AdminDashboard() {
               {activeView === 'subscriptions' && 'Assinaturas Ativas'}
               {activeView === 'payments' && 'Pagamentos e Faturamento'}
               {activeView === 'coupons' && 'Cupons de Desconto'}
+              {activeView === 'courtesy' && 'Gestão de Cortesias'}
             </h2>
             <p className="text-gray-400 mt-1">
               {activeView === 'overview' && 'Visão geral da plataforma'}
@@ -428,6 +446,7 @@ export default function AdminDashboard() {
               {activeView === 'subscriptions' && 'Acompanhe todas as assinaturas ativas'}
               {activeView === 'payments' && 'Histórico de transações e pagamentos'}
               {activeView === 'coupons' && 'Gerencie cupons para o checkout'}
+              {activeView === 'courtesy' && 'Conceda acesso gratuito aos planos para usuários'}
             </p>
           </div>
         </header>
@@ -617,6 +636,11 @@ export default function AdminDashboard() {
           {/* Coupons View */}
           {activeView === 'coupons' && (
             <CouponManager />
+          )}
+
+          {/* Courtesy View */}
+          {activeView === 'courtesy' && (
+            <CourtesyManager />
           )}
         </div>
       </main>

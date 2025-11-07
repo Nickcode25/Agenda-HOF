@@ -44,6 +44,10 @@ export default function PlanSummary({
   isFinalPriceTooLow,
   minimumSubscriptionValue
 }: PlanSummaryProps) {
+  // Usar preço do plano selecionado ou preço padrão
+  const planPrice = userData.selectedPlan?.price || PLAN_PRICE
+  const planName = userData.selectedPlan?.name || 'Plano Profissional'
+
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
       <h2 className="text-xl font-bold text-white mb-6">Resumo do Pedido</h2>
@@ -51,13 +55,13 @@ export default function PlanSummary({
       <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-white">Plano Profissional</h3>
+            <h3 className="text-lg font-bold text-white">{planName}</h3>
             <p className="text-sm text-gray-400">Acesso completo ao sistema</p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-orange-400">
-              R${Math.floor(PLAN_PRICE)}
-              <span className="text-xl">,{(PLAN_PRICE % 1).toFixed(2).substring(2)}</span>
+              R${Math.floor(planPrice)}
+              <span className="text-xl">,{(planPrice % 1).toFixed(2).substring(2)}</span>
             </div>
             <div className="text-sm text-gray-400">por mês</div>
           </div>
@@ -152,11 +156,11 @@ export default function PlanSummary({
           <>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-400">Subtotal:</span>
-              <span className="text-gray-300">R$ {PLAN_PRICE.toFixed(2).replace('.', ',')}</span>
+              <span className="text-gray-300">R$ {planPrice.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-green-400">Desconto ({couponDiscount}%):</span>
-              <span className="text-green-400">- R$ {((PLAN_PRICE * couponDiscount) / 100).toFixed(2).replace('.', ',')}</span>
+              <span className="text-green-400">- R$ {((planPrice * couponDiscount) / 100).toFixed(2).replace('.', ',')}</span>
             </div>
           </>
         )}

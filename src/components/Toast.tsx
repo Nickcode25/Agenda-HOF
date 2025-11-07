@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, memo, useMemo } from 'react'
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -10,7 +10,7 @@ interface ToastProps {
   duration?: number
 }
 
-export default function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
+function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose()
@@ -19,7 +19,7 @@ export default function Toast({ message, type, onClose, duration = 3000 }: Toast
     return () => clearTimeout(timer)
   }, [duration, onClose])
 
-  const config = {
+  const config = useMemo(() => ({
     success: {
       icon: CheckCircle,
       gradient: 'from-green-500/20 to-green-600/30',
@@ -56,7 +56,7 @@ export default function Toast({ message, type, onClose, duration = 3000 }: Toast
       progressBar: 'from-orange-500 to-orange-600',
       shadow: 'shadow-orange-500/20'
     }
-  }
+  }), [])
 
   const { icon: Icon, gradient, borderColor, iconColor, iconBg, progressBar, shadow } = config[type]
 
@@ -125,3 +125,6 @@ export default function Toast({ message, type, onClose, duration = 3000 }: Toast
     </div>
   )
 }
+
+// Export memoized component for performance optimization
+export default memo(Toast)

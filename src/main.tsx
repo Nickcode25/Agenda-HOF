@@ -1,90 +1,141 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
-import App from './App'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
-import PatientsList from './pages/patients/PatientsList'
-import PatientForm from './pages/patients/PatientForm'
-import PatientDetail from './pages/patients/PatientDetail'
-import PatientEdit from './pages/patients/PatientEdit'
-import PatientEvolution from './pages/patients/PatientEvolution'
-import StudentsList from './pages/students/StudentsList'
-import StudentForm from './pages/students/StudentForm'
-import StudentDetail from './pages/students/StudentDetail'
-import ScheduleCalendar from './pages/schedule/ScheduleCalendar'
-import AppointmentForm from './pages/schedule/AppointmentForm'
-import ProfessionalsList from './pages/professionals/ProfessionalsList'
-import ProfessionalForm from './pages/professionals/ProfessionalForm'
-import ProfessionalDetail from './pages/professionals/ProfessionalDetail'
-import ProfessionalEdit from './pages/professionals/ProfessionalEdit'
-import ProceduresList from './pages/procedures/ProceduresList'
-import ProcedureForm from './pages/procedures/ProcedureForm'
-import ProcedureDetail from './pages/procedures/ProcedureDetail'
-import ProcedureEdit from './pages/procedures/ProcedureEdit'
-import ProcedureCategories from './pages/procedures/ProcedureCategories'
-import StockList from './pages/stock/StockList'
-import StockForm from './pages/stock/StockForm'
-import SalesList from './pages/sales/SalesList'
-import SaleForm from './pages/sales/SaleForm'
-import SalesProfessionalForm from './pages/sales/ProfessionalForm'
-import SalesProfessionalEdit from './pages/sales/ProfessionalEdit'
-import SalesHistory from './pages/sales/SalesHistory'
-import SalesProfessionalsList from './pages/sales/SalesProfessionalsList'
-import FinancialReport from './pages/financial/FinancialReport'
-import TransactionDetails from './pages/financial/TransactionDetails'
-import LandingPage from './pages/landing/NewLandingPage'
-import Checkout from './pages/Checkout'
-import PlansList from './pages/subscriptions/PlansList'
-import PlanForm from './pages/subscriptions/PlanForm'
-import PlanDetail from './pages/subscriptions/PlanDetail'
-import SubscribersList from './pages/subscriptions/SubscribersList'
-import SubscriptionForm from './pages/subscriptions/SubscriptionForm'
-import SubscriptionReports from './pages/subscriptions/SubscriptionReports'
-import SubscriptionsMain from './pages/subscriptions/SubscriptionsMain'
-import StaffManagement from './pages/staff/StaffManagement'
-import NotificationsPage from './pages/notifications/NotificationsPage'
-import MedicalRecordPage from './pages/medical/MedicalRecordPage'
-import AnamnesisForm from './pages/medical/AnamnesisForm'
-import ClinicalEvolutionForm from './pages/medical/ClinicalEvolutionForm'
-import PhotoUploadPage from './pages/medical/PhotoUploadPage'
-import PhotoEditPage from './pages/medical/PhotoEditPage'
-import ConsentForm from './pages/medical/ConsentForm'
-import EvolutionSettings from './pages/settings/EvolutionSettings'
+
+// Loading component - minimal fallback
+const LoadingFallback = () => null
+
+// Core components (loaded immediately)
+import App from './App'
 import RoleGuard from './components/RoleGuard'
-import AdminLoginPage from './pages/admin/AdminLoginPage'
-import AdminDashboard from './pages/admin/AdminDashboard'
 import SubscriptionProtectedRoute from './components/SubscriptionProtectedRoute'
-import ExpensesList from './pages/expenses/ExpensesList'
-import ExpenseForm from './pages/expenses/ExpenseForm'
-import ExpenseCategories from './pages/expenses/ExpenseCategories'
-import CashRegistersList from './pages/cash/CashRegistersList'
-import CashSessionPage from './pages/cash/CashSessionPage'
-import SignupPage from './pages/SignupPage'
-import LoginPage from './pages/LoginPage'
-import PlansPage from './pages/PlansPage'
-import SubscriptionManagement from './pages/account/SubscriptionManagement'
+
+// Lazy loaded pages
+const LandingPage = lazy(() => import('./pages/landing/NewLandingPage'))
+const SignupPage = lazy(() => import('./pages/SignupPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const PlansPage = lazy(() => import('./pages/PlansPage'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+
+// Schedule
+const ScheduleCalendar = lazy(() => import('./pages/schedule/ScheduleCalendar'))
+const AppointmentForm = lazy(() => import('./pages/schedule/AppointmentForm'))
+
+// Patients
+const PatientsList = lazy(() => import('./pages/patients/PatientsList'))
+const PatientForm = lazy(() => import('./pages/patients/PatientForm'))
+const PatientDetail = lazy(() => import('./pages/patients/PatientDetail'))
+const PatientEdit = lazy(() => import('./pages/patients/PatientEdit'))
+const PatientEvolution = lazy(() => import('./pages/patients/PatientEvolution'))
+
+// Students
+const StudentsList = lazy(() => import('./pages/students/StudentsList'))
+const StudentForm = lazy(() => import('./pages/students/StudentForm'))
+const StudentDetail = lazy(() => import('./pages/students/StudentDetail'))
+
+// Professionals
+const ProfessionalsList = lazy(() => import('./pages/professionals/ProfessionalsList'))
+const ProfessionalForm = lazy(() => import('./pages/professionals/ProfessionalForm'))
+const ProfessionalDetail = lazy(() => import('./pages/professionals/ProfessionalDetail'))
+const ProfessionalEdit = lazy(() => import('./pages/professionals/ProfessionalEdit'))
+
+// Procedures
+const ProceduresList = lazy(() => import('./pages/procedures/ProceduresList'))
+const ProcedureForm = lazy(() => import('./pages/procedures/ProcedureForm'))
+const ProcedureDetail = lazy(() => import('./pages/procedures/ProcedureDetail'))
+const ProcedureEdit = lazy(() => import('./pages/procedures/ProcedureEdit'))
+const ProcedureCategories = lazy(() => import('./pages/procedures/ProcedureCategories'))
+
+// Stock
+const StockList = lazy(() => import('./pages/stock/StockList'))
+const StockForm = lazy(() => import('./pages/stock/StockForm'))
+
+// Sales
+const SalesList = lazy(() => import('./pages/sales/SalesList'))
+const SaleForm = lazy(() => import('./pages/sales/SaleForm'))
+const SalesProfessionalForm = lazy(() => import('./pages/sales/ProfessionalForm'))
+const SalesProfessionalEdit = lazy(() => import('./pages/sales/ProfessionalEdit'))
+const SalesHistory = lazy(() => import('./pages/sales/SalesHistory'))
+const SalesProfessionalsList = lazy(() => import('./pages/sales/SalesProfessionalsList'))
+
+// Financial
+const FinancialReport = lazy(() => import('./pages/financial/FinancialReport'))
+const TransactionDetails = lazy(() => import('./pages/financial/TransactionDetails'))
+
+// Expenses
+const ExpensesList = lazy(() => import('./pages/expenses/ExpensesList'))
+const ExpenseForm = lazy(() => import('./pages/expenses/ExpenseForm'))
+const ExpenseCategories = lazy(() => import('./pages/expenses/ExpenseCategories'))
+
+// Cash
+const CashRegistersList = lazy(() => import('./pages/cash/CashRegistersList'))
+const CashSessionPage = lazy(() => import('./pages/cash/CashSessionPage'))
+
+// Subscriptions
+const PlansList = lazy(() => import('./pages/subscriptions/PlansList'))
+const PlanForm = lazy(() => import('./pages/subscriptions/PlanForm'))
+const PlanDetail = lazy(() => import('./pages/subscriptions/PlanDetail'))
+const SubscribersList = lazy(() => import('./pages/subscriptions/SubscribersList'))
+const SubscriptionForm = lazy(() => import('./pages/subscriptions/SubscriptionForm'))
+const SubscriptionReports = lazy(() => import('./pages/subscriptions/SubscriptionReports'))
+const SubscriptionsMain = lazy(() => import('./pages/subscriptions/SubscriptionsMain'))
+
+// Staff
+const StaffManagement = lazy(() => import('./pages/staff/StaffManagement'))
+
+// Notifications
+const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage'))
+
+// Clinical Evolution and Photos - moved to patients directory
+const ClinicalEvolutionForm = lazy(() => import('./pages/patients/ClinicalEvolutionForm'))
+const PhotoUploadPage = lazy(() => import('./pages/patients/PhotoUploadPage'))
+const PhotoEditPage = lazy(() => import('./pages/patients/PhotoEditPage'))
+
+// Settings
+const EvolutionSettings = lazy(() => import('./pages/settings/EvolutionSettings'))
+
+// Account
+const SubscriptionManagement = lazy(() => import('./pages/account/SubscriptionManagement'))
+
+// Admin
+const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const UsersPage = lazy(() => import('./pages/admin/UsersPage'))
+const PlansAdminPage = lazy(() => import('./pages/admin/PlansAdminPage'))
+const SubscriptionsAdminPage = lazy(() => import('./pages/admin/SubscriptionsAdminPage'))
+const PaymentsAdminPage = lazy(() => import('./pages/admin/PaymentsAdminPage'))
+const CouponsAdminPage = lazy(() => import('./pages/admin/CouponsAdminPage'))
+const CourtesyAdminPage = lazy(() => import('./pages/admin/CourtesyAdminPage'))
+
+// Helper to wrap lazy components with Suspense
+const withSuspense = (Component: React.LazyExoticComponent<React.ComponentType>) => (
+  <Suspense fallback={<LoadingFallback />}>
+    <Component />
+  </Suspense>
+)
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <LandingPage />,
+    element: withSuspense(LandingPage),
   },
   {
     path: '/signup',
-    element: <SignupPage />,
+    element: withSuspense(SignupPage),
   },
   {
     path: '/login',
-    element: <LoginPage />,
+    element: withSuspense(LoginPage),
   },
   {
     path: '/planos',
-    element: <PlansPage />,
+    element: withSuspense(PlansPage),
   },
   {
     path: '/checkout',
-    element: <Checkout />,
+    element: withSuspense(Checkout),
   },
   {
     path: '/app',
@@ -96,43 +147,40 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <ScheduleCalendar />
+        element: withSuspense(ScheduleCalendar)
       },
-      { path: 'agenda', element: <ScheduleCalendar /> },
-      { path: 'agenda/nova', element: <AppointmentForm /> },
+      { path: 'agenda', element: withSuspense(ScheduleCalendar) },
+      { path: 'agenda/nova', element: withSuspense(AppointmentForm) },
 
-      { path: 'procedimentos', element: <ProceduresList /> },
-      { path: 'procedimentos/categorias', element: <ProcedureCategories /> },
-      { path: 'procedimentos/novo', element: <ProcedureForm /> },
-      { path: 'procedimentos/:id', element: <ProcedureDetail /> },
-      { path: 'procedimentos/:id/editar', element: <ProcedureEdit /> },
+      { path: 'procedimentos', element: withSuspense(ProceduresList) },
+      { path: 'procedimentos/categorias', element: withSuspense(ProcedureCategories) },
+      { path: 'procedimentos/novo', element: withSuspense(ProcedureForm) },
+      { path: 'procedimentos/:id', element: withSuspense(ProcedureDetail) },
+      { path: 'procedimentos/:id/editar', element: withSuspense(ProcedureEdit) },
 
-      { path: 'profissionais', element: <ProfessionalsList /> },
-      { path: 'profissionais/novo', element: <ProfessionalForm /> },
-      { path: 'profissionais/:id', element: <ProfessionalDetail /> },
-      { path: 'profissionais/:id/editar', element: <ProfessionalEdit /> },
+      { path: 'profissionais', element: withSuspense(ProfessionalsList) },
+      { path: 'profissionais/novo', element: withSuspense(ProfessionalForm) },
+      { path: 'profissionais/:id', element: withSuspense(ProfessionalDetail) },
+      { path: 'profissionais/:id/editar', element: withSuspense(ProfessionalEdit) },
 
-      { path: 'pacientes', element: <PatientsList /> },
-      { path: 'pacientes/novo', element: <PatientForm /> },
-      { path: 'pacientes/:id', element: <PatientDetail /> },
-      { path: 'pacientes/:id/editar', element: <PatientEdit /> },
-      { path: 'pacientes/:id/evolucao', element: <PatientEvolution /> },
-      { path: 'pacientes/:id/prontuario', element: <MedicalRecordPage /> },
-      { path: 'pacientes/:id/prontuario/anamnese', element: <AnamnesisForm /> },
-      { path: 'pacientes/:id/prontuario/evolucao/nova', element: <ClinicalEvolutionForm /> },
-      { path: 'pacientes/:id/prontuario/fotos/upload', element: <PhotoUploadPage /> },
-      { path: 'pacientes/:id/prontuario/fotos/:photoId/editar', element: <PhotoEditPage /> },
-      { path: 'pacientes/:id/prontuario/consentimento/novo', element: <ConsentForm /> },
+      { path: 'pacientes', element: withSuspense(PatientsList) },
+      { path: 'pacientes/novo', element: withSuspense(PatientForm) },
+      { path: 'pacientes/:id', element: withSuspense(PatientDetail) },
+      { path: 'pacientes/:id/editar', element: withSuspense(PatientEdit) },
+      { path: 'pacientes/:id/evolucao', element: withSuspense(PatientEvolution) },
+      { path: 'pacientes/:id/evolucao/nova', element: withSuspense(ClinicalEvolutionForm) },
+      { path: 'pacientes/:id/fotos/upload', element: withSuspense(PhotoUploadPage) },
+      { path: 'pacientes/:id/fotos/:photoId/editar', element: withSuspense(PhotoEditPage) },
 
-      { path: 'alunos', element: <StudentsList /> },
-      { path: 'alunos/novo', element: <StudentForm /> },
-      { path: 'alunos/:id', element: <StudentDetail /> },
+      { path: 'alunos', element: withSuspense(StudentsList) },
+      { path: 'alunos/novo', element: withSuspense(StudentForm) },
+      { path: 'alunos/:id', element: withSuspense(StudentDetail) },
 
       {
         path: 'estoque',
         element: (
           <RoleGuard requireOwner>
-            <StockList />
+            {withSuspense(StockList)}
           </RoleGuard>
         )
       },
@@ -140,7 +188,7 @@ const router = createBrowserRouter([
         path: 'estoque/novo',
         element: (
           <RoleGuard requireOwner>
-            <StockForm />
+            {withSuspense(StockForm)}
           </RoleGuard>
         )
       },
@@ -148,7 +196,7 @@ const router = createBrowserRouter([
         path: 'estoque/:id/editar',
         element: (
           <RoleGuard requireOwner>
-            <StockForm />
+            {withSuspense(StockForm)}
           </RoleGuard>
         )
       },
@@ -157,7 +205,7 @@ const router = createBrowserRouter([
         path: 'vendas',
         element: (
           <RoleGuard requireOwner>
-            <SalesList />
+            {withSuspense(SalesList)}
           </RoleGuard>
         )
       },
@@ -165,7 +213,7 @@ const router = createBrowserRouter([
         path: 'vendas/nova',
         element: (
           <RoleGuard requireOwner>
-            <SaleForm />
+            {withSuspense(SaleForm)}
           </RoleGuard>
         )
       },
@@ -173,7 +221,7 @@ const router = createBrowserRouter([
         path: 'vendas/editar/:id',
         element: (
           <RoleGuard requireOwner>
-            <SaleForm />
+            {withSuspense(SaleForm)}
           </RoleGuard>
         )
       },
@@ -181,7 +229,7 @@ const router = createBrowserRouter([
         path: 'vendas/historico',
         element: (
           <RoleGuard requireOwner>
-            <SalesHistory />
+            {withSuspense(SalesHistory)}
           </RoleGuard>
         )
       },
@@ -189,7 +237,7 @@ const router = createBrowserRouter([
         path: 'vendas/profissionais',
         element: (
           <RoleGuard requireOwner>
-            <SalesProfessionalsList />
+            {withSuspense(SalesProfessionalsList)}
           </RoleGuard>
         )
       },
@@ -197,7 +245,7 @@ const router = createBrowserRouter([
         path: 'vendas/profissionais-lista',
         element: (
           <RoleGuard requireOwner>
-            <SalesProfessionalsList />
+            {withSuspense(SalesProfessionalsList)}
           </RoleGuard>
         )
       },
@@ -205,7 +253,7 @@ const router = createBrowserRouter([
         path: 'vendas/profissionais/novo',
         element: (
           <RoleGuard requireOwner>
-            <SalesProfessionalForm />
+            {withSuspense(SalesProfessionalForm)}
           </RoleGuard>
         )
       },
@@ -213,7 +261,7 @@ const router = createBrowserRouter([
         path: 'vendas/profissionais/editar/:id',
         element: (
           <RoleGuard requireOwner>
-            <SalesProfessionalEdit />
+            {withSuspense(SalesProfessionalEdit)}
           </RoleGuard>
         )
       },
@@ -222,7 +270,7 @@ const router = createBrowserRouter([
         path: 'financeiro',
         element: (
           <RoleGuard requireOwner>
-            <FinancialReport />
+            {withSuspense(FinancialReport)}
           </RoleGuard>
         )
       },
@@ -230,7 +278,7 @@ const router = createBrowserRouter([
         path: 'financeiro/detalhes/:category/:startDate/:endDate',
         element: (
           <RoleGuard requireOwner>
-            <TransactionDetails />
+            {withSuspense(TransactionDetails)}
           </RoleGuard>
         )
       },
@@ -239,7 +287,7 @@ const router = createBrowserRouter([
         path: 'despesas',
         element: (
           <RoleGuard requireOwner>
-            <ExpensesList />
+            {withSuspense(ExpensesList)}
           </RoleGuard>
         )
       },
@@ -247,7 +295,7 @@ const router = createBrowserRouter([
         path: 'despesas/nova',
         element: (
           <RoleGuard requireOwner>
-            <ExpenseForm />
+            {withSuspense(ExpenseForm)}
           </RoleGuard>
         )
       },
@@ -255,7 +303,7 @@ const router = createBrowserRouter([
         path: 'despesas/editar/:id',
         element: (
           <RoleGuard requireOwner>
-            <ExpenseForm />
+            {withSuspense(ExpenseForm)}
           </RoleGuard>
         )
       },
@@ -263,7 +311,7 @@ const router = createBrowserRouter([
         path: 'despesas/categorias',
         element: (
           <RoleGuard requireOwner>
-            <ExpenseCategories />
+            {withSuspense(ExpenseCategories)}
           </RoleGuard>
         )
       },
@@ -272,7 +320,7 @@ const router = createBrowserRouter([
         path: 'caixa',
         element: (
           <RoleGuard requireOwner>
-            <CashRegistersList />
+            {withSuspense(CashRegistersList)}
           </RoleGuard>
         )
       },
@@ -288,7 +336,7 @@ const router = createBrowserRouter([
         path: 'caixa/sessao/:registerId',
         element: (
           <RoleGuard requireOwner>
-            <CashSessionPage />
+            {withSuspense(CashSessionPage)}
           </RoleGuard>
         )
       },
@@ -297,7 +345,7 @@ const router = createBrowserRouter([
         path: 'mensalidades',
         element: (
           <RoleGuard requireOwner>
-            <SubscriptionsMain />
+            {withSuspense(SubscriptionsMain)}
           </RoleGuard>
         )
       },
@@ -305,7 +353,7 @@ const router = createBrowserRouter([
         path: 'mensalidades/planos',
         element: (
           <RoleGuard requireOwner>
-            <PlansList />
+            {withSuspense(PlansList)}
           </RoleGuard>
         )
       },
@@ -313,7 +361,7 @@ const router = createBrowserRouter([
         path: 'mensalidades/planos/novo',
         element: (
           <RoleGuard requireOwner>
-            <PlanForm />
+            {withSuspense(PlanForm)}
           </RoleGuard>
         )
       },
@@ -321,7 +369,7 @@ const router = createBrowserRouter([
         path: 'mensalidades/planos/:id',
         element: (
           <RoleGuard requireOwner>
-            <PlanDetail />
+            {withSuspense(PlanDetail)}
           </RoleGuard>
         )
       },
@@ -329,7 +377,7 @@ const router = createBrowserRouter([
         path: 'mensalidades/planos/:id/editar',
         element: (
           <RoleGuard requireOwner>
-            <PlanForm />
+            {withSuspense(PlanForm)}
           </RoleGuard>
         )
       },
@@ -337,7 +385,7 @@ const router = createBrowserRouter([
         path: 'mensalidades/assinantes',
         element: (
           <RoleGuard requireOwner>
-            <SubscribersList />
+            {withSuspense(SubscribersList)}
           </RoleGuard>
         )
       },
@@ -345,7 +393,7 @@ const router = createBrowserRouter([
         path: 'mensalidades/assinantes/novo',
         element: (
           <RoleGuard requireOwner>
-            <SubscriptionForm />
+            {withSuspense(SubscriptionForm)}
           </RoleGuard>
         )
       },
@@ -353,7 +401,7 @@ const router = createBrowserRouter([
         path: 'mensalidades/relatorios',
         element: (
           <RoleGuard requireOwner>
-            <SubscriptionReports />
+            {withSuspense(SubscriptionReports)}
           </RoleGuard>
         )
       },
@@ -362,20 +410,20 @@ const router = createBrowserRouter([
         path: 'funcionarios',
         element: (
           <RoleGuard requireOwner>
-            <StaffManagement />
+            {withSuspense(StaffManagement)}
           </RoleGuard>
         )
       },
 
-      { path: 'notificacoes', element: <NotificationsPage /> },
+      { path: 'notificacoes', element: withSuspense(NotificationsPage) },
 
-      { path: 'assinatura', element: <SubscriptionManagement /> },
+      { path: 'assinatura', element: withSuspense(SubscriptionManagement) },
 
       {
         path: 'configuracoes/evolution',
         element: (
           <RoleGuard requireOwner>
-            <EvolutionSettings />
+            {withSuspense(EvolutionSettings)}
           </RoleGuard>
         )
       },
@@ -383,11 +431,35 @@ const router = createBrowserRouter([
   },
   {
     path: '/admin/login',
-    element: <AdminLoginPage />,
+    element: withSuspense(AdminLoginPage),
   },
   {
     path: '/admin/dashboard',
-    element: <AdminDashboard />,
+    element: withSuspense(AdminDashboard),
+  },
+  {
+    path: '/admin/users',
+    element: withSuspense(UsersPage),
+  },
+  {
+    path: '/admin/plans',
+    element: withSuspense(PlansAdminPage),
+  },
+  {
+    path: '/admin/subscriptions',
+    element: withSuspense(SubscriptionsAdminPage),
+  },
+  {
+    path: '/admin/payments',
+    element: withSuspense(PaymentsAdminPage),
+  },
+  {
+    path: '/admin/coupons',
+    element: withSuspense(CouponsAdminPage),
+  },
+  {
+    path: '/admin/courtesy',
+    element: withSuspense(CourtesyAdminPage),
   },
 ])
 

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import type { AdminUser } from '@/types/admin'
+import { getErrorMessage } from '@/types/errors'
 
 type AuthState = {
   user: User | null
@@ -65,9 +66,9 @@ export const useAuth = create<AuthState>()(
           })
 
           return true
-        } catch (error: any) {
+        } catch (error) {
           set({
-            error: error.message,
+            error: getErrorMessage(error),
             loading: false,
             user: null,
             adminUser: null,
@@ -110,9 +111,9 @@ export const useAuth = create<AuthState>()(
 
           set({ loading: false })
           return false
-        } catch (error: any) {
+        } catch (error) {
           set({
-            error: error.message,
+            error: getErrorMessage(error),
             loading: false,
             user: null,
             adminUser: null,
@@ -130,8 +131,8 @@ export const useAuth = create<AuthState>()(
             adminUser: null,
             loading: false,
           })
-        } catch (error: any) {
-          set({ error: error.message, loading: false })
+        } catch (error) {
+          set({ error: getErrorMessage(error), loading: false })
         }
       },
 
@@ -170,8 +171,8 @@ export const useAuth = create<AuthState>()(
             adminUser,
             loading: false,
           })
-        } catch (error: any) {
-          set({ error: error.message, loading: false })
+        } catch (error) {
+          set({ error: getErrorMessage(error), loading: false })
         }
       },
 

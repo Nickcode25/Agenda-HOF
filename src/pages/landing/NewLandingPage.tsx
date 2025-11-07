@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import {
-  Check,
   Calendar,
   Users,
   BarChart3,
@@ -11,21 +10,21 @@ import {
   Zap,
   TrendingUp,
   Star,
-  ChevronDown,
   Play,
   Droplet,
   Syringe
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/store/auth'
+import { useModal } from '@/hooks/useModal'
 import LoginModal from './components/LoginModal'
 import RegisterModal from './components/RegisterModal'
 import ForgotPasswordModal from './components/ForgotPasswordModal'
 
 export default function NewLandingPage() {
-  const [showLogin, setShowLogin] = useState(false)
-  const [showRegisterModal, setShowRegisterModal] = useState(false)
-  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const loginModal = useModal(false)
+  const registerModal = useModal(false)
+  const forgotPasswordModal = useModal(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -38,20 +37,18 @@ export default function NewLandingPage() {
   const navigate = useNavigate()
   const { signIn, signUp } = useAuth()
 
-  // Carregar credenciais salvas ao abrir o modal de login
+  // Carregar apenas email salvo ao abrir o modal de login
   useEffect(() => {
-    if (showLogin) {
+    if (loginModal.isOpen) {
       const savedEmail = localStorage.getItem('savedEmail')
-      const savedPassword = localStorage.getItem('savedPassword')
       const savedRememberMe = localStorage.getItem('rememberMe') === 'true'
 
-      if (savedRememberMe && savedEmail && savedPassword) {
+      if (savedRememberMe && savedEmail) {
         setEmail(savedEmail)
-        setPassword(savedPassword)
         setRememberMe(true)
       }
     }
-  }, [showLogin])
+  }, [loginModal.isOpen])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,15 +58,13 @@ export default function NewLandingPage() {
     const success = await signIn(email, password)
 
     if (success) {
-      // Salvar credenciais se "Lembrar de mim" estiver marcado
+      // Salvar apenas email se "Lembrar de mim" estiver marcado
       if (rememberMe) {
         localStorage.setItem('savedEmail', email)
-        localStorage.setItem('savedPassword', password)
         localStorage.setItem('rememberMe', 'true')
       } else {
-        // Remover credenciais salvas se não marcar "Lembrar de mim"
+        // Remover email salvo se não marcar "Lembrar de mim"
         localStorage.removeItem('savedEmail')
-        localStorage.removeItem('savedPassword')
         localStorage.removeItem('rememberMe')
       }
 
@@ -92,8 +87,8 @@ export default function NewLandingPage() {
       setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.')
       setLoading(false)
       setTimeout(() => {
-        setShowForgotPassword(false)
-        setShowLogin(true)
+        forgotPasswordModal.close()
+        loginModal.open()
         setSuccessMessage('')
       }, 3000)
     }, 1500)
@@ -144,12 +139,12 @@ export default function NewLandingPage() {
   }
 
   const openRegisterModal = () => {
-    setShowRegisterModal(true)
-    setShowLogin(false)
+    registerModal.open()
+    loginModal.close()
   }
 
   const closeRegisterModal = () => {
-    setShowRegisterModal(false)
+    registerModal.close()
   }
 
   return (
@@ -166,7 +161,7 @@ export default function NewLandingPage() {
             </div>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setShowLogin(!showLogin)}
+                onClick={() => loginModal.toggle()}
                 className="px-6 py-2.5 text-gray-300 hover:text-white transition-colors font-medium"
                 aria-label="Entrar"
               >
@@ -588,7 +583,7 @@ export default function NewLandingPage() {
 
       {/* Login Modal */}
       <LoginModal
-        isOpen={showLogin}
+        isOpen={loginModal.isOpen}
         email={email}
         password={password}
         rememberMe={rememberMe}
@@ -598,20 +593,17 @@ export default function NewLandingPage() {
         onPasswordChange={setPassword}
         onRememberMeChange={setRememberMe}
         onSubmit={handleLogin}
-        onClose={() => setShowLogin(false)}
+        onClose={loginModal.close}
         onForgotPassword={() => {
-          setShowLogin(false)
-          setShowForgotPassword(true)
+          loginModal.close()
+          forgotPasswordModal.open()
         }}
-        onSwitchToRegister={() => {
-          setShowLogin(false)
-          openRegisterModal()
-        }}
+        onSwitchToRegister={openRegisterModal}
       />
 
       {/* Register Modal */}
       <RegisterModal
-        isOpen={showRegisterModal}
+        isOpen={registerModal.isOpen}
         fullName={fullName}
         email={email}
         phone={phone}
@@ -626,14 +618,14 @@ export default function NewLandingPage() {
         onSubmit={handleRegister}
         onClose={closeRegisterModal}
         onSwitchToLogin={() => {
-          setShowRegisterModal(false)
-          setShowLogin(true)
+          registerModal.close()
+          loginModal.open()
         }}
       />
 
       {/* Forgot Password Modal */}
       <ForgotPasswordModal
-        isOpen={showForgotPassword}
+        isOpen={forgotPasswordModal.isOpen}
         email={email}
         loading={loading}
         error={error}
@@ -641,12 +633,12 @@ export default function NewLandingPage() {
         onEmailChange={setEmail}
         onSubmit={handleForgotPassword}
         onClose={() => {
-          setShowForgotPassword(false)
-          setShowLogin(true)
+          forgotPasswordModal.close()
+          loginModal.open()
         }}
         onBackToLogin={() => {
-          setShowForgotPassword(false)
-          setShowLogin(true)
+          forgotPasswordModal.close()
+          loginModal.open()
         }}
       />
 

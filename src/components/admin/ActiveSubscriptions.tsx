@@ -53,7 +53,7 @@ export default function ActiveSubscriptions() {
         id: sub.subscription_id,
         user_id: sub.user_id,
         user_email: sub.email,
-        user_name: sub.name || 'Nome não disponível',
+        user_name: sub.full_name || 'Nome não disponível',
         plan_name: 'Premium', // Você pode adicionar plan_name na view
         status: sub.subscription_status,
         started_at: sub.subscription_created_at,

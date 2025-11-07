@@ -1,26 +1,17 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
 import type {
-  Anamnesis,
   ClinicalEvolution,
   MedicalPhoto,
-  InformedConsent,
-  AnamnesisFormData,
   ClinicalEvolutionFormData,
   MedicalPhotoFormData,
 } from '@/types/medicalRecords'
 
 interface MedicalRecordsState {
-  // State
-  anamnesis: Anamnesis[]
+  // State - apenas evolução e fotos
   clinicalEvolutions: ClinicalEvolution[]
   medicalPhotos: MedicalPhoto[]
-  informedConsents: InformedConsent[]
   loading: boolean
-
-  // Anamnesis Actions
-  fetchAnamnesisByPatient: (patientId: string) => Promise<void>
-  createOrUpdateAnamnesis: (patientId: string, data: AnamnesisFormData) => Promise<void>
 
   // Clinical Evolution Actions
   fetchClinicalEvolutionsByPatient: (patientId: string) => Promise<void>
@@ -33,91 +24,12 @@ interface MedicalRecordsState {
   uploadMedicalPhoto: (patientId: string, file: File, data: MedicalPhotoFormData) => Promise<void>
   updateMedicalPhoto: (id: string, data: Partial<MedicalPhotoFormData>) => Promise<void>
   deleteMedicalPhoto: (id: string, photoUrl: string) => Promise<void>
-
-  // Informed Consents Actions
-  fetchInformedConsentsByPatient: (patientId: string) => Promise<void>
-  createInformedConsent: (patientId: string, data: Omit<InformedConsent, 'id' | 'user_id' | 'patient_id' | 'created_at' | 'created_by'>) => Promise<void>
-  signInformedConsent: (id: string, signatureUrl: string) => Promise<void>
 }
 
 export const useMedicalRecords = create<MedicalRecordsState>((set, get) => ({
-  anamnesis: [],
   clinicalEvolutions: [],
   medicalPhotos: [],
-  informedConsents: [],
   loading: false,
-
-  // ============================================
-  // ANAMNESIS
-  // ============================================
-
-  fetchAnamnesisByPatient: async (patientId: string) => {
-    set({ loading: true })
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Não autenticado')
-
-      const { data, error } = await supabase
-        .from('anamnesis')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('patient_id', patientId)
-        .single()
-
-      if (error && error.code !== 'PGRST116') throw error
-
-      set({ anamnesis: data ? [data] : [] })
-    } catch (error) {
-      console.error('Erro ao buscar anamnese:', error)
-    } finally {
-      set({ loading: false })
-    }
-  },
-
-  createOrUpdateAnamnesis: async (patientId: string, formData: AnamnesisFormData) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Não autenticado')
-
-      // Verificar se já existe anamnese para este paciente
-      const { data: existing } = await supabase
-        .from('anamnesis')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('patient_id', patientId)
-        .single()
-
-      const anamnesisData = {
-        user_id: user.id,
-        patient_id: patientId,
-        ...formData,
-        created_by: user.id,
-      }
-
-      if (existing) {
-        // Atualizar existente
-        const { error } = await supabase
-          .from('anamnesis')
-          .update(anamnesisData)
-          .eq('id', existing.id)
-
-        if (error) throw error
-      } else {
-        // Criar novo
-        const { error } = await supabase
-          .from('anamnesis')
-          .insert(anamnesisData)
-
-        if (error) throw error
-      }
-
-      // Recarregar
-      await get().fetchAnamnesisByPatient(patientId)
-    } catch (error) {
-      console.error('Erro ao salvar anamnese:', error)
-      throw error
-    }
-  },
 
   // ============================================
   // CLINICAL EVOLUTIONS
@@ -333,84 +245,6 @@ export const useMedicalRecords = create<MedicalRecordsState>((set, get) => ({
       }))
     } catch (error) {
       console.error('Erro ao deletar foto médica:', error)
-      throw error
-    }
-  },
-
-  // ============================================
-  // INFORMED CONSENTS
-  // ============================================
-
-  fetchInformedConsentsByPatient: async (patientId: string) => {
-    set({ loading: true })
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Não autenticado')
-
-      const { data, error } = await supabase
-        .from('informed_consents')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('patient_id', patientId)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
-      set({ informedConsents: data || [] })
-    } catch (error) {
-      console.error('Erro ao buscar consentimentos:', error)
-    } finally {
-      set({ loading: false })
-    }
-  },
-
-  createInformedConsent: async (patientId: string, consentData) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Não autenticado')
-
-      const { error } = await supabase
-        .from('informed_consents')
-        .insert({
-          user_id: user.id,
-          patient_id: patientId,
-          ...consentData,
-          created_by: user.id,
-        })
-
-      if (error) throw error
-
-      // Recarregar
-      await get().fetchInformedConsentsByPatient(patientId)
-    } catch (error) {
-      console.error('Erro ao criar consentimento:', error)
-      throw error
-    }
-  },
-
-  signInformedConsent: async (id: string, signatureUrl: string) => {
-    try {
-      const { error } = await supabase
-        .from('informed_consents')
-        .update({
-          patient_signature_url: signatureUrl,
-          signed_at: new Date().toISOString(),
-          status: 'signed',
-        })
-        .eq('id', id)
-
-      if (error) throw error
-
-      // Atualizar estado local
-      set(state => ({
-        informedConsents: state.informedConsents.map(consent =>
-          consent.id === id
-            ? { ...consent, patient_signature_url: signatureUrl, signed_at: new Date().toISOString(), status: 'signed' as const }
-            : consent
-        )
-      }))
-    } catch (error) {
-      console.error('Erro ao assinar consentimento:', error)
       throw error
     }
   },

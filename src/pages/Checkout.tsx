@@ -99,6 +99,7 @@ export default function Checkout() {
 
   // Usar preço do plano selecionado ou preço padrão
   const planPrice = userData?.selectedPlan?.price || PLAN_PRICE
+  const planName = userData?.selectedPlan?.name || 'Plano Profissional'
 
   // Debug: Log do plano recebido
   useEffect(() => {
@@ -357,7 +358,7 @@ export default function Checkout() {
           user_id: userData2.user.id,
           mercadopago_subscription_id: subscriptionResponse.id,
           status: 'active', // Só chega aqui se isApproved === true
-          plan_amount: PLAN_PRICE, // ✅ SEMPRE salvar valor cheio do plano (99.90), não o valor com desconto
+          plan_amount: planPrice, // ✅ Usar o preço do plano selecionado
           billing_cycle: 'MONTHLY',
           next_billing_date: subscriptionResponse.nextBillingDate,
           payment_method: 'CREDIT_CARD',
@@ -434,7 +435,7 @@ export default function Checkout() {
               <div>
                 <h3 className="text-blue-400 font-semibold mb-1">Ativação da Assinatura</h3>
                 <p className="text-sm text-gray-300">
-                  Você está prestes a ativar sua assinatura Premium. Após o pagamento, seu acesso será liberado imediatamente!
+                  Você está prestes a ativar sua assinatura {planName}. Após o pagamento, seu acesso será liberado imediatamente!
                 </p>
               </div>
             </div>

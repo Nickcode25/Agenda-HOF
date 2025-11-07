@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react'
 import { Bell, Check, CheckCheck, X, AlertCircle, AlertTriangle, Info, Calendar, Package } from 'lucide-react'
 import { useNotifications } from '@/store/notifications'
 import { useNavigate } from 'react-router-dom'
 import type { Notification } from '@/types/notification'
 
-export default function NotificationBell() {
+function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -37,7 +37,7 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = useCallback(async (notification: Notification) => {
     if (!notification.isRead) {
       await markAsRead(notification.id)
     }
@@ -45,9 +45,9 @@ export default function NotificationBell() {
       navigate(notification.actionUrl)
       setIsOpen(false)
     }
-  }
+  }, [markAsRead, navigate])
 
-  const getIcon = (type: Notification['type']) => {
+  const getIcon = useCallback((type: Notification['type']) => {
     switch (type) {
       case 'appointment_reminder':
       case 'appointment_confirmed':
@@ -62,9 +62,9 @@ export default function NotificationBell() {
       default:
         return <Info size={18} className="text-gray-400" />
     }
-  }
+  }, [])
 
-  const getPriorityColor = (priority: Notification['priority']) => {
+  const getPriorityColor = useCallback((priority: Notification['priority']) => {
     switch (priority) {
       case 'urgent':
         return 'border-l-4 border-l-red-500 bg-red-500/5'
@@ -75,7 +75,7 @@ export default function NotificationBell() {
       default:
         return 'border-l-4 border-l-gray-600 bg-gray-800/50'
     }
-  }
+  }, [])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -215,3 +215,6 @@ export default function NotificationBell() {
     </div>
   )
 }
+
+// Export memoized component for performance optimization
+export default memo(NotificationBell)
