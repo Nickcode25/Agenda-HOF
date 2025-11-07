@@ -110,12 +110,15 @@ export default function SubscriptionsMain() {
 
       const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
+      // Usar valor personalizado ou valor padrão do plano
+      const subscriptionPrice = parseFloat(paidAmount || selectedPlan.price.toString())
+
       const subscriptionData = {
         patientId: selectedPatient.id,
         patientName: selectedPatient.name,
         planId: selectedPlan.id,
         planName: selectedPlan.name,
-        price: selectedPlan.price,
+        price: subscriptionPrice,
         startDate: paymentDate,
         nextBillingDate: nextBillingDateStr,
         status: 'active' as const,
@@ -131,7 +134,7 @@ export default function SubscriptionsMain() {
       if (newSubscription) {
         // Criar e confirmar primeiro pagamento
         await addPayment(newSubscription.id, {
-          amount: parseFloat(paidAmount || selectedPlan.price.toString()),
+          amount: subscriptionPrice,
           dueDate: paymentDate,
           status: 'pending',
         })

@@ -122,12 +122,16 @@ export default function PlanDetail() {
 
     const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
+    // Usar valor personalizado ou valor padrão do plano
+    const paymentAmount = parseCurrency(paidAmount)
+    const subscriptionPrice = paymentAmount > 0 ? paymentAmount : plan.price
+
     const subscriptionData = {
       patientId: selectedPatient.id,
       patientName: selectedPatient.name,
       planId: plan.id,
       planName: plan.name,
-      price: plan.price,
+      price: subscriptionPrice,
       startDate: paymentDate,
       nextBillingDate: nextBillingDateStr,
       status: 'active' as const,
@@ -139,9 +143,8 @@ export default function PlanDetail() {
     const subscriptions = useSubscriptionStore.getState().subscriptions
     const newSubscription = subscriptions[subscriptions.length - 1]
 
-    const paymentAmount = parseCurrency(paidAmount)
     addPayment(newSubscription.id, {
-      amount: paymentAmount > 0 ? paymentAmount : plan.price,
+      amount: subscriptionPrice,
       dueDate: paymentDate,
       status: 'pending',
     })
