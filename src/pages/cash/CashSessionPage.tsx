@@ -364,12 +364,20 @@ export default function CashSessionPage() {
                 type="text"
                 value={closingBalance}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '')
-                  const formatted = formatCurrency(parseFloat(value) / 100)
+                  let value = e.target.value
+                  // Permitir sinal negativo no início
+                  const isNegative = value.startsWith('-')
+                  // Remover tudo exceto números
+                  value = value.replace(/\D/g, '')
+                  // Converter para número e dividir por 100 para centavos
+                  const numericValue = parseFloat(value || '0') / 100
+                  // Aplicar sinal negativo se necessário
+                  const finalValue = isNegative ? -numericValue : numericValue
+                  const formatted = formatCurrency(finalValue)
                   setClosingBalance(formatted)
                 }}
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 mb-2"
-                placeholder="R$ 0,00"
+                placeholder="R$ 0,00 (use - para valores negativos)"
               />
               <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
                 <AlertCircle size={16} />
