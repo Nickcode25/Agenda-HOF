@@ -75,7 +75,6 @@ COMMENT ON COLUMN patient_subscriptions.status IS 'Status da assinatura (active,
 
 CREATE TABLE IF NOT EXISTS subscription_payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   subscription_id UUID NOT NULL REFERENCES patient_subscriptions(id) ON DELETE CASCADE,
   amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
   due_date DATE NOT NULL,
@@ -87,7 +86,6 @@ CREATE TABLE IF NOT EXISTS subscription_payments (
 );
 
 -- Índices
-CREATE INDEX idx_subscription_payments_user_id ON subscription_payments(user_id);
 CREATE INDEX idx_subscription_payments_subscription_id ON subscription_payments(subscription_id);
 CREATE INDEX idx_subscription_payments_status ON subscription_payments(status);
 CREATE INDEX idx_subscription_payments_due_date ON subscription_payments(due_date);
@@ -184,20 +182,50 @@ ALTER TABLE subscription_payments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Usuários podem ver seus próprios pagamentos"
   ON subscription_payments FOR SELECT
   TO authenticated
-  USING (user_id = auth.uid());
+  USING (
+    EXISTS (
+      SELECT 1 FROM patient_subscriptions
+      WHERE patient_subscriptions.id = subscription_payments.subscription_id
+      AND patient_subscriptions.user_id = auth.uid()
+    )
+  );
 
 CREATE POLICY "Usuários podem criar seus próprios pagamentos"
   ON subscription_payments FOR INSERT
   TO authenticated
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM patient_subscriptions
+      WHERE patient_subscriptions.id = subscription_payments.subscription_id
+      AND patient_subscriptions.user_id = auth.uid()
+    )
+  );
 
 CREATE POLICY "Usuários podem atualizar seus próprios pagamentos"
   ON subscription_payments FOR UPDATE
   TO authenticated
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+  USING (
+    EXISTS (
+      SELECT 1 FROM patient_subscriptions
+      WHERE patient_subscriptions.id = subscription_payments.subscription_id
+      AND patient_subscriptions.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM patient_subscriptions
+      WHERE patient_subscriptions.id = subscription_payments.subscription_id
+      AND patient_subscriptions.user_id = auth.uid()
+    )
+  );
 
 CREATE POLICY "Usuários podem deletar seus próprios pagamentos"
   ON subscription_payments FOR DELETE
   TO authenticated
-  USING (user_id = auth.uid());
+  USING (
+    EXISTS (
+      SELECT 1 FROM patient_subscriptions
+      WHERE patient_subscriptions.id = subscription_payments.subscription_id
+      AND patient_subscriptions.user_id = auth.uid()
+    )
+  );

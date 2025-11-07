@@ -336,7 +336,6 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       const { error } = await supabase
         .from('subscription_payments')
         .insert({
-          user_id: user.id,
           subscription_id: subscriptionId,
           amount: paymentData.amount,
           due_date: paymentData.dueDate,
@@ -372,7 +371,6 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
           payment_method: paymentMethod
         })
         .eq('id', paymentId)
-        .eq('user_id', user.id)
 
       if (error) throw error
 
