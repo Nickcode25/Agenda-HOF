@@ -93,7 +93,9 @@ export default function PlanDetail() {
 
   // Cálculos
   const totalSubscribers = planSubscriptions.filter(s => s.status === 'active').length
-  const monthlyRevenue = totalSubscribers * plan.price
+  const monthlyRevenue = planSubscriptions
+    .filter(s => s.status === 'active')
+    .reduce((total, sub) => total + sub.price, 0)
   const receivedRevenue = planSubscriptions.reduce((total, sub) => {
     const paidPayments = sub.payments.filter(p => p.status === 'paid')
     return total + paidPayments.reduce((sum, p) => sum + p.amount, 0)
@@ -143,14 +145,24 @@ export default function PlanDetail() {
       payments: [],
     }
 
-    await addSubscription(subscriptionData)
+    const newSubscriptionId = await addSubscription(subscriptionData)
 
-    const subscriptions = useSubscriptionStore.getState().subscriptions
-    const newSubscription = subscriptions[subscriptions.length - 1]
+    if (!newSubscriptionId) {
+      alert('Erro ao criar assinatura. Tente novamente.')
+      return
+    }
 
-    await addPayment(newSubscription.id, {
+    // 1. Adicionar o primeiro pagamento como PENDENTE (aguardando confirmação)
+    await addPayment(newSubscriptionId, {
       amount: subscriptionPrice,
       dueDate: paymentDate,
+      status: 'pending',
+    })
+
+    // 2. Adicionar a próxima cobrança como PENDENTE (para o mês seguinte)
+    await addPayment(newSubscriptionId, {
+      amount: subscriptionPrice,
+      dueDate: nextBillingDateStr,
       status: 'pending',
     })
 
@@ -173,11 +185,17 @@ export default function PlanDetail() {
     setShowPaymentModal(true)
   }
 
-  const handleConfirmPayment = (e: React.FormEvent) => {
+  const handleConfirmPayment = async (e: React.FormEvent) => {
     e.preventDefault()
-    confirmPayment(selectedSubscriptionId, selectedPaymentId, confirmPaymentMethod)
-    setShowPaymentModal(false)
-    setToast({ message: 'Pagamento confirmado com sucesso!', type: 'success' })
+    try {
+      await confirmPayment(selectedSubscriptionId, selectedPaymentId, confirmPaymentMethod)
+      await generateNextPayment(selectedSubscriptionId)
+      setShowPaymentModal(false)
+      setToast({ message: 'Pagamento confirmado com sucesso!', type: 'success' })
+    } catch (error) {
+      console.error('Erro ao confirmar pagamento:', error)
+      setToast({ message: 'Erro ao confirmar pagamento', type: 'error' })
+    }
   }
 
   const handleRemoveSubscriber = async (subscriptionId: string, patientName: string) => {
@@ -201,6 +219,34 @@ export default function PlanDetail() {
 
   const getPendingPayment = (sub: any) => {
     return sub.payments.find((p: any) => p.status === 'pending' || p.status === 'overdue')
+  }
+
+  const getSubscriberStatus = (sub: any) => {
+    // Busca o pagamento mais recente que não está pago
+    const unpaidPayment = sub.payments.find((p: any) => p.status === 'pending' || p.status === 'overdue')
+
+    if (!unpaidPayment) {
+      // Não tem pagamento pendente = está em dia
+      return { label: 'Em dia', className: 'bg-green-500/20 text-green-400', icon: CheckCircle }
+    }
+
+    // Verifica se a data de vencimento já passou
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Parse da data corretamente (formato YYYY-MM-DD)
+    const dueDateStr = unpaidPayment.dueDate.split('T')[0] // Remove timezone se houver
+    const [year, month, day] = dueDateStr.split('-').map(Number)
+    const dueDate = new Date(year, month - 1, day) // month - 1 porque Date usa 0-11 para meses
+    dueDate.setHours(0, 0, 0, 0)
+
+    if (dueDate < today) {
+      // Data passou = atrasado
+      return { label: 'Atrasado', className: 'bg-red-500/20 text-red-400', icon: AlertCircle }
+    } else {
+      // Data não passou = em dia (mesmo tendo pagamento pendente)
+      return { label: 'Em dia', className: 'bg-green-500/20 text-green-400', icon: CheckCircle }
+    }
   }
 
   const getPaymentStatusConfig = (status: string) => {
@@ -298,9 +344,7 @@ export default function PlanDetail() {
               <tbody>
                 {planSubscriptions.map((sub) => {
                   const pendingPayment = getPendingPayment(sub)
-                  const statusConfig = pendingPayment
-                    ? getPaymentStatusConfig(pendingPayment.status)
-                    : { label: 'Em dia', className: 'bg-green-500/20 text-green-400', icon: CheckCircle }
+                  const statusConfig = getSubscriberStatus(sub)
                   const StatusIcon = statusConfig.icon
 
                   return (

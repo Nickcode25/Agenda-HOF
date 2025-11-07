@@ -20,7 +20,7 @@ type SubscriptionStore = {
   getPlanById: (id: string) => SubscriptionPlan | undefined
 
   // Subscriptions
-  addSubscription: (subscription: Omit<Subscription, 'id'>) => Promise<void>
+  addSubscription: (subscription: Omit<Subscription, 'id'>) => Promise<string>
   updateSubscription: (id: string, subscription: Partial<Subscription>) => Promise<void>
   cancelSubscription: (id: string) => Promise<void>
   removeSubscription: (id: string) => Promise<void>
@@ -109,7 +109,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
         const payments: SubscriptionPayment[] = (paymentsData || []).map(p => ({
           id: p.id,
           subscriptionId: p.subscription_id,
-          amount: parseFloat(p.amount),
+          amount: parseFloat(p.amount) || 0,
           dueDate: p.due_date,
           paidAt: p.paid_at,
           paymentMethod: p.payment_method,
@@ -236,7 +236,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('patient_subscriptions')
         .insert({
           user_id: user.id,
@@ -249,11 +249,15 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
           next_billing_date: subscriptionData.nextBillingDate,
           status: subscriptionData.status
         })
+        .select()
+        .single()
 
       if (error) throw error
 
       await get().fetchSubscriptions()
       set({ loading: false })
+
+      return data?.id
     } catch (error: any) {
       set({ error: error.message, loading: false })
       console.error('Erro ao adicionar assinatura:', error)
@@ -333,14 +337,20 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      const insertData: any = {
+        subscription_id: subscriptionId,
+        amount: paymentData.amount,
+        due_date: paymentData.dueDate,
+        status: paymentData.status || 'pending'
+      }
+
+      // Adicionar campos opcionais se fornecidos
+      if (paymentData.paidAt) insertData.paid_at = paymentData.paidAt
+      if (paymentData.paymentMethod) insertData.payment_method = paymentData.paymentMethod
+
       const { error } = await supabase
         .from('subscription_payments')
-        .insert({
-          subscription_id: subscriptionId,
-          amount: paymentData.amount,
-          due_date: paymentData.dueDate,
-          status: paymentData.status || 'pending'
-        })
+        .insert(insertData)
 
       if (error) throw error
 

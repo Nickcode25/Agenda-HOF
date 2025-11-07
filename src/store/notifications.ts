@@ -90,9 +90,13 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') throw error
+      // Ignora erros de "não encontrado" (PGRST116) ou "não aceitável" (406)
+      if (error && error.code !== 'PGRST116') {
+        console.warn('⚠️ Erro ao buscar preferências (será ignorado):', error)
+        return
+      }
 
       if (data) {
         const preferences: NotificationPreferences = {
@@ -107,7 +111,8 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
         set({ preferences })
       }
     } catch (error: any) {
-      console.error('Erro ao buscar preferências:', error)
+      // Silenciosamente ignora erros de preferências para não poluir o console
+      console.warn('⚠️ Não foi possível carregar preferências de notificação')
     }
   },
 
