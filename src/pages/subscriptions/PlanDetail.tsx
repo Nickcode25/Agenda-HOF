@@ -148,11 +148,6 @@ export default function PlanDetail() {
       status: 'pending',
     })
 
-    const payments = useSubscriptionStore.getState().subscriptions.find(s => s.id === newSubscription.id)?.payments
-    if (payments && payments.length > 0) {
-      confirmPayment(newSubscription.id, payments[payments.length - 1].id, paymentMethod)
-    }
-
     setShowAddSubscriberModal(false)
     resetForm()
   }

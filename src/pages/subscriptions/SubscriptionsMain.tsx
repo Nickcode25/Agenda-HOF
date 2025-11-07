@@ -130,19 +130,12 @@ export default function SubscriptionsMain() {
       const newSubscription = subscriptions[subscriptions.length - 1]
 
       if (newSubscription) {
-        // Criar e confirmar primeiro pagamento
+        // Criar primeiro pagamento como pendente
         await addPayment(newSubscription.id, {
           amount: subscriptionPrice,
           dueDate: paymentDate,
           status: 'pending',
         })
-
-        // Confirmar pagamento imediatamente
-        const updatedSub = useSubscriptionStore.getState().subscriptions.find(s => s.id === newSubscription.id)
-        const payments = updatedSub?.payments
-        if (payments && payments.length > 0) {
-          await confirmPayment(newSubscription.id, payments[payments.length - 1].id, paymentMethod)
-        }
       }
 
       setShowSubscriberModal(false)
