@@ -121,10 +121,10 @@ export default function App() {
             }
           }
 
-          // Planos de mensalidade
+          // Planos de mensalidade (criados pelos usuários)
           else if (path === 'planos') {
             const result = await supabase
-              .from('subscription_plans')
+              .from('user_monthly_plans')
               .select('name')
               .eq('id', id)
               .single()
