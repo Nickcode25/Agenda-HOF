@@ -37,6 +37,18 @@ export default function NewLandingPage() {
   const navigate = useNavigate()
   const { signIn, signUp } = useAuth()
 
+  // Redirecionar para reset-password se houver token de recuperação na URL
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const accessToken = hashParams.get('access_token')
+    const type = hashParams.get('type')
+
+    if (accessToken && type === 'recovery') {
+      // Redirecionar para página de reset de senha com o hash preservado
+      navigate('/reset-password' + window.location.hash)
+    }
+  }, [navigate])
+
   // Carregar apenas email salvo ao abrir o modal de login
   useEffect(() => {
     if (loginModal.isOpen) {
@@ -81,17 +93,27 @@ export default function NewLandingPage() {
     setError('')
     setSuccessMessage('')
 
-    // TODO: Implementar envio de email de recuperação via Supabase
-    // Por enquanto, apenas simular sucesso
-    setTimeout(() => {
-      setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.')
+    try {
+      const { resetPassword } = useAuth.getState()
+      const result = await resetPassword(email)
+
+      if (result) {
+        setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.')
+        setLoading(false)
+        setTimeout(() => {
+          forgotPasswordModal.close()
+          loginModal.open()
+          setSuccessMessage('')
+        }, 3000)
+      } else {
+        setError('Erro ao enviar email de recuperação. Tente novamente.')
+        setLoading(false)
+      }
+    } catch (err: any) {
+      console.error('Erro ao enviar email:', err)
+      setError(err.message || 'Erro ao enviar email de recuperação. Tente novamente.')
       setLoading(false)
-      setTimeout(() => {
-        forgotPasswordModal.close()
-        loginModal.open()
-        setSuccessMessage('')
-      }, 3000)
-    }, 1500)
+    }
   }
 
   const handleRegister = async (e: React.FormEvent) => {

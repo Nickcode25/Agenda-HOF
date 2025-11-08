@@ -181,8 +181,12 @@ export const useAuth = create<AuthState>()(
       resetPassword: async (email: string) => {
         set({ loading: true, error: null })
         try {
-          const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
+          // Usar VITE_SITE_URL se configurado, senão usar window.location.origin
+          const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
+          const redirectUrl = `${siteUrl}/reset-password`
+
+          const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectUrl,
           })
 
           if (error) throw error

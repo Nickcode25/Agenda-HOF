@@ -52,7 +52,6 @@ export function validateEmail(email: string): {
     'hotmial.com': 'hotmail.com',
     'hotnail.com': 'hotmail.com',
     'outlok.com': 'outlook.com',
-    'outlok.com': 'outlook.com',
   }
 
   const domain = email.split('@')[1]?.toLowerCase()
