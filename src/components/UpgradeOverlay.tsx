@@ -96,11 +96,11 @@ export default function UpgradeOverlay({
 
             {/* Botão de Upgrade */}
             <button
-              onClick={() => navigate('/checkout')}
+              onClick={() => navigate('/planos')}
               className="w-full bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 hover:from-orange-600 hover:via-pink-600 hover:to-purple-600 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2"
             >
               <Sparkles className="w-5 h-5" />
-              <span>Fazer Upgrade Agora</span>
+              <span>Ver Planos</span>
             </button>
 
             {/* Info adicional */}

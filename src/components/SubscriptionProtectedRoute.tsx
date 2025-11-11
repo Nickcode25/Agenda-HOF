@@ -110,6 +110,14 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             setHasPaidSubscription(false)  // Mas NÃO é assinatura paga
             setLoading(false)
             return
+          } else {
+            // Trial expirou - usuário precisa assinar
+            console.log('⏰ Trial expirado para usuário:', user.email)
+            setIsInTrial(false)
+            setTrialDaysRemaining(0)
+            setHasActiveSubscription(false)
+            setHasPaidSubscription(false)
+            // Não retornar aqui - continuar verificando cortesia
           }
         }
 
@@ -169,8 +177,19 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
     return <Navigate to="/" replace />
   }
 
-  // Usuário autenticado - permitir acesso (com ou sem assinatura)
-  // Se não tem assinatura, o conteúdo mostrará overlay de bloqueio
+  // Se não tem assinatura ativa, mostrar overlay de bloqueio
+  if (!hasActiveSubscription) {
+    return (
+      <SubscriptionContext.Provider value={{ hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription }}>
+        <UpgradeOverlay
+          message="Seu período de teste expirou"
+          feature="todas as funcionalidades premium"
+        />
+      </SubscriptionContext.Provider>
+    )
+  }
+
+  // Usuário com assinatura ativa - permitir acesso completo
   return (
     <SubscriptionContext.Provider value={{ hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription }}>
       {children}
