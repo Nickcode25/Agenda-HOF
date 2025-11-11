@@ -68,28 +68,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Landing page de fundo */}
-      <div className="absolute inset-0 overflow-auto">
-        <NewLandingPage />
+    <div className="fixed inset-0 z-50 overflow-auto">
+      {/* Landing page de fundo com overlay */}
+      <div className="min-h-screen relative">
+        <div className="absolute inset-0">
+          <NewLandingPage />
+        </div>
+
+        {/* Overlay escuro com blur - cobre toda a landing page */}
+        <div className="absolute inset-0 min-h-full bg-black/70 backdrop-blur-sm pointer-events-none" />
       </div>
 
-      {/* Overlay escuro com blur - cobre toda a área */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none" />
+      {/* Botão Voltar - Fixo no canto superior esquerdo */}
+      <Link
+        to="/"
+        className="fixed top-8 left-8 z-20 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Voltar</span>
+      </Link>
 
-      {/* Container do modal */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        {/* Botão Voltar - Fixo no canto superior esquerdo */}
-        <Link
-          to="/"
-          className="fixed top-8 left-8 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Voltar</span>
-        </Link>
-
+      {/* Container do modal - fixo sobre tudo */}
+      <div className="fixed inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
         {/* Card de Login */}
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md pointer-events-auto">
           <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-2">Bem-vindo de volta!</h2>
