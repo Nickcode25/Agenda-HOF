@@ -412,7 +412,7 @@ export default function Checkout() {
         {/* Header Compacto */}
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/planos')}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
           >
             <div className="p-2 group-hover:bg-gray-800 rounded-lg transition-colors">
