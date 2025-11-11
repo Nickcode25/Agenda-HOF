@@ -240,11 +240,12 @@ export default function PlanDetail() {
     const dueDate = new Date(year, month - 1, day) // month - 1 porque Date usa 0-11 para meses
     dueDate.setHours(0, 0, 0, 0)
 
+    // Só marcar como atrasado se a data passou E já se passaram pelo menos 1 dia
     if (dueDate < today) {
       // Data passou = atrasado
       return { label: 'Atrasado', className: 'bg-red-500/20 text-red-400', icon: AlertCircle }
     } else {
-      // Data não passou = em dia (mesmo tendo pagamento pendente)
+      // Data ainda não passou ou é hoje = em dia
       return { label: 'Em dia', className: 'bg-green-500/20 text-green-400', icon: CheckCircle }
     }
   }
