@@ -4,6 +4,7 @@ import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff, AlertCircle } from 'lucide-r
 import { useAuth } from '@/store/auth'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator'
 import { validatePasswordStrength } from '@/utils/validation'
+import NewLandingPage from './landing/NewLandingPage'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -26,9 +27,15 @@ export default function ResetPasswordPage() {
     const hashParams = new URLSearchParams(window.location.hash.substring(1))
     const accessToken = hashParams.get('access_token')
     const type = hashParams.get('type')
+    const errorCode = hashParams.get('error_code')
+    const errorDescription = hashParams.get('error_description')
 
-    // Se não houver token de acesso ou tipo não for recovery, redirecionar
-    if (!accessToken || type !== 'recovery') {
+    // Verificar se há erro na URL
+    if (errorCode === 'otp_expired') {
+      setError('Link de recuperação expirado. Por favor, solicite um novo email de recuperação.')
+    } else if (errorCode) {
+      setError(`Erro: ${errorDescription || 'Link inválido'}`)
+    } else if (!accessToken || type !== 'recovery') {
       setError('Link de recuperação inválido ou expirado.')
     }
   }, [])
@@ -79,15 +86,20 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          {/* Card de Sucesso */}
-          <div className="relative group">
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-3xl blur-2xl opacity-25 group-hover:opacity-40 transition duration-1000" />
+      <div className="fixed inset-0 z-50">
+        {/* Landing page de fundo */}
+        <div className="absolute inset-0">
+          <NewLandingPage />
+        </div>
 
-            {/* Card */}
-            <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        {/* Overlay escuro com blur */}
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+        {/* Container do modal */}
+        <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+          <div className="w-full max-w-md">
+            {/* Card de Sucesso */}
+            <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-green-500 p-8 shadow-2xl">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-green-400" />
@@ -119,24 +131,29 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Botão Voltar */}
+    <div className="fixed inset-0 z-50">
+      {/* Landing page de fundo */}
+      <div className="absolute inset-0">
+        <NewLandingPage />
+      </div>
+
+      {/* Overlay escuro com blur */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Container do modal */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+        {/* Botão Voltar - Fixo no canto superior esquerdo */}
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+          className="fixed top-8 left-8 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
           <span>Voltar para login</span>
         </Link>
 
         {/* Card Principal */}
-        <div className="relative group">
-          {/* Glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-25 group-hover:opacity-40 transition duration-1000" />
-
-          {/* Card */}
-          <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        <div className="w-full max-w-md">
+          <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
             {/* Header */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -156,7 +173,17 @@ export default function ResetPasswordPage() {
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-400 text-sm">{error}</p>
+                    <div className="flex-1">
+                      <p className="text-red-400 text-sm mb-2">{error}</p>
+                      {error.includes('expirado') && (
+                        <Link
+                          to="/forgot-password"
+                          className="inline-block text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                        >
+                          Solicitar novo link →
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
