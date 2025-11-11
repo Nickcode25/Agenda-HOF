@@ -14,7 +14,7 @@ import {
   Droplet,
   Syringe
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/store/auth'
 import { useModal } from '@/hooks/useModal'
 import LoginModal from './components/LoginModal'
@@ -182,13 +182,13 @@ export default function NewLandingPage() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => loginModal.toggle()}
+              <Link
+                to="/login"
                 className="px-6 py-2.5 text-gray-300 hover:text-white transition-colors font-medium"
                 aria-label="Entrar"
               >
                 Entrar
-              </button>
+              </Link>
               <button
                 onClick={openRegisterModal}
                 className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30"
