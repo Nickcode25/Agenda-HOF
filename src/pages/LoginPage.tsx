@@ -68,14 +68,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Landing page de fundo */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 overflow-auto">
         <NewLandingPage />
       </div>
 
-      {/* Overlay escuro com blur */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      {/* Overlay escuro com blur - cobre toda a área */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none" />
 
       {/* Container do modal */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
