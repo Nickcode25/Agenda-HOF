@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Mail, Lock, User, Phone, ArrowLeft, CheckCircle, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, User, Phone, ArrowLeft, CheckCircle, Eye, EyeOff, X } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator'
 import { validateEmail, validatePhone, validatePasswordStrength } from '@/utils/validation'
+import NewLandingPage from './landing/NewLandingPage'
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -112,196 +113,219 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Botão Voltar */}
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Voltar</span>
-        </Link>
+    <div className="fixed inset-0 z-50">
+      {/* Landing page de fundo */}
+      <div className="absolute inset-0 overflow-auto -z-10">
+        <NewLandingPage />
+      </div>
 
-        {/* Card Principal */}
-        <div className="relative group">
-          {/* Glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-25 group-hover:opacity-40 transition duration-1000" />
+      {/* Overlay escuro com blur - fixo sobre toda a tela */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-0" />
 
-          {/* Card */}
-          <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+      {/* Container scrollável para o conteúdo */}
+      <div className="relative h-full overflow-auto z-10">
+
+      {/* Botão Voltar - Fixo no canto superior esquerdo */}
+      <Link
+        to="/"
+        className="fixed top-8 left-8 z-20 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Voltar</span>
+      </Link>
+
+      {/* Container do modal - fixo sobre tudo */}
+      <div className="fixed inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
+        {/* Card de Cadastro */}
+        <div className="w-full max-w-2xl pointer-events-auto">
+          <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
+            {/* Botão Fechar */}
+            <Link
+              to="/"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-lg"
+              aria-label="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </Link>
+
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <User className="w-8 h-8 text-blue-400" />
-              </div>
               <h1 className="text-3xl font-bold text-white mb-2">
-                Criar Conta
+                Comece sua transformação
               </h1>
               <p className="text-gray-400">
-                Crie sua conta para começar
+                Preencha seus dados para continuar
               </p>
             </div>
 
             {/* Formulário */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 col-span-2">
                   <p className="text-red-400 text-sm">{error}</p>
                 </div>
               )}
 
-              {/* Nome */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Nome Completo
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    placeholder="Seu nome completo"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                      emailValidation === null
-                        ? 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
-                        : emailValidation.isValid
-                        ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
-                        : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                    }`}
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </div>
-                {emailValidation && !emailValidation.isValid && (
-                  <p className="text-xs text-red-400 mt-1">{emailValidation.message}</p>
-                )}
-                {emailValidation && emailValidation.isValid && (
-                  <p className="text-xs text-green-400 mt-1">✓ Email válido</p>
-                )}
-              </div>
-
-              {/* Telefone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Telefone
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
-                    className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                      phoneValidation === null
-                        ? 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
-                        : phoneValidation.isValid
-                        ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
-                        : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                    }`}
-                    placeholder="(00) 00000-0000"
-                    required
-                  />
-                </div>
-                {phoneValidation && !phoneValidation.isValid && (
-                  <p className="text-xs text-red-400 mt-1">{phoneValidation.message}</p>
-                )}
-                {phoneValidation && phoneValidation.isValid && (
-                  <p className="text-xs text-green-400 mt-1">✓ Telefone válido</p>
-                )}
-              </div>
-
-              {/* Senha */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Senha
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    onFocus={() => setPasswordTouched(true)}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    placeholder="Crie uma senha forte"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {passwordTouched && (
-                  <div className="mt-3">
-                    <PasswordStrengthIndicator password={formData.password} />
+              {/* Grid de 2 colunas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Coluna Esquerda */}
+                <div className="space-y-4">
+                  {/* Nome */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Nome Completo *
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                        placeholder="Seu nome completo"
+                        required
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Confirmar Senha */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Confirmar Senha
-                </label>
-                <div className="relative">
-                  <CheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
-                      !formData.confirmPassword
-                        ? 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
-                        : formData.password === formData.confirmPassword
-                        ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
-                        : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                    }`}
-                    placeholder="Confirme sua senha"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Email *
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                          emailValidation === null
+                            ? 'border-gray-600 focus:border-orange-500 focus:ring-orange-500/20'
+                            : emailValidation.isValid
+                            ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
+                            : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                        }`}
+                        placeholder="seu@email.com"
+                        required
+                      />
+                    </div>
+                    {emailValidation && !emailValidation.isValid && (
+                      <p className="text-xs text-red-400 mt-1">{emailValidation.message}</p>
+                    )}
+                    {emailValidation && emailValidation.isValid && (
+                      <p className="text-xs text-green-400 mt-1">✓ Email válido</p>
+                    )}
+                  </div>
+
+                  {/* Telefone */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Telefone *
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
+                        className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                          phoneValidation === null
+                            ? 'border-gray-600 focus:border-orange-500 focus:ring-orange-500/20'
+                            : phoneValidation.isValid
+                            ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
+                            : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                        }`}
+                        placeholder="(00) 00000-0000"
+                        required
+                      />
+                    </div>
+                    {phoneValidation && !phoneValidation.isValid && (
+                      <p className="text-xs text-red-400 mt-1">{phoneValidation.message}</p>
+                    )}
+                    {phoneValidation && phoneValidation.isValid && (
+                      <p className="text-xs text-green-400 mt-1">✓ Telefone válido</p>
+                    )}
+                  </div>
                 </div>
-                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p className="text-xs text-red-400 mt-1">As senhas não coincidem</p>
-                )}
-                {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                  <p className="text-xs text-green-400 mt-1">✓ Senhas coincidem</p>
-                )}
+
+                {/* Coluna Direita */}
+                <div className="space-y-4">
+                  {/* Senha */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Senha *
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onFocus={() => setPasswordTouched(true)}
+                        className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                        placeholder="Crie uma senha forte"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {passwordTouched && (
+                      <div className="mt-3">
+                        <PasswordStrengthIndicator password={formData.password} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Confirmar Senha */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Confirmar Senha *
+                    </label>
+                    <div className="relative">
+                      <CheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                          !formData.confirmPassword
+                            ? 'border-gray-600 focus:border-orange-500 focus:ring-orange-500/20'
+                            : formData.password === formData.confirmPassword
+                            ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
+                            : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                        }`}
+                        placeholder="Confirme sua senha"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                      <p className="text-xs text-red-400 mt-1">As senhas não coincidem</p>
+                    )}
+                    {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                      <p className="text-xs text-green-400 mt-1">✓ Senhas coincidem</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Botão */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-blue-500/30"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Criando conta...' : 'Criar Conta'}
               </button>
@@ -310,7 +334,7 @@ export default function SignupPage() {
               <div className="text-center">
                 <p className="text-sm text-gray-400">
                   Já tem uma conta?{' '}
-                  <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                  <Link to="/login" className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
                     Fazer login
                   </Link>
                 </p>
@@ -325,6 +349,8 @@ export default function SignupPage() {
             </div>
           </div>
         </div>
+      </div>
+      {/* Fim do container scrollável */}
       </div>
     </div>
   )

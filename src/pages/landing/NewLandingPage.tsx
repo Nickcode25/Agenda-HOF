@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import {
   Calendar,
   Users,
@@ -15,27 +15,9 @@ import {
   Syringe
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '@/store/auth'
-import { useModal } from '@/hooks/useModal'
-import LoginModal from './components/LoginModal'
-import RegisterModal from './components/RegisterModal'
-import ForgotPasswordModal from './components/ForgotPasswordModal'
 
 export default function NewLandingPage() {
-  const loginModal = useModal(false)
-  const registerModal = useModal(false)
-  const forgotPasswordModal = useModal(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [rememberMe, setRememberMe] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
   const navigate = useNavigate()
-  const { signIn, signUp } = useAuth()
 
   // Redirecionar para reset-password se houver token de recuperação na URL
   useEffect(() => {
@@ -48,126 +30,6 @@ export default function NewLandingPage() {
       navigate('/reset-password' + window.location.hash)
     }
   }, [navigate])
-
-  // Carregar apenas email salvo ao abrir o modal de login
-  useEffect(() => {
-    if (loginModal.isOpen) {
-      const savedEmail = localStorage.getItem('savedEmail')
-      const savedRememberMe = localStorage.getItem('rememberMe') === 'true'
-
-      if (savedRememberMe && savedEmail) {
-        setEmail(savedEmail)
-        setRememberMe(true)
-      }
-    }
-  }, [loginModal.isOpen])
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    const success = await signIn(email, password)
-
-    if (success) {
-      // Salvar apenas email se "Lembrar de mim" estiver marcado
-      if (rememberMe) {
-        localStorage.setItem('savedEmail', email)
-        localStorage.setItem('rememberMe', 'true')
-      } else {
-        // Remover email salvo se não marcar "Lembrar de mim"
-        localStorage.removeItem('savedEmail')
-        localStorage.removeItem('rememberMe')
-      }
-
-      navigate('/app/agenda')
-    } else {
-      setError('Email ou senha incorretos')
-      setLoading(false)
-    }
-  }
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    setSuccessMessage('')
-
-    try {
-      const { resetPassword } = useAuth.getState()
-      const result = await resetPassword(email)
-
-      if (result) {
-        setSuccessMessage('Email de recuperação enviado! Verifique sua caixa de entrada.')
-        setLoading(false)
-        setTimeout(() => {
-          forgotPasswordModal.close()
-          loginModal.open()
-          setSuccessMessage('')
-        }, 3000)
-      } else {
-        setError('Erro ao enviar email de recuperação. Tente novamente.')
-        setLoading(false)
-      }
-    } catch (err: any) {
-      console.error('Erro ao enviar email:', err)
-      setError(err.message || 'Erro ao enviar email de recuperação. Tente novamente.')
-      setLoading(false)
-    }
-  }
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    // Validar senhas
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
-      setLoading(false)
-      return
-    }
-
-    // Validar campos obrigatórios
-    if (!fullName || !email || !phone || !password) {
-      setError('Preencha todos os campos obrigatórios')
-      setLoading(false)
-      return
-    }
-
-    // Validar tamanho da senha
-    if (password.length < 6) {
-      setError('A senha deve ter no mínimo 6 caracteres')
-      setLoading(false)
-      return
-    }
-
-    try {
-      // Criar conta diretamente
-      const success = await signUp(email, password, fullName)
-
-      if (success) {
-        // Redirecionar para dentro do app - usuário tem 7 dias de trial
-        navigate('/app/agenda')
-      } else {
-        setError('Erro ao criar conta. Este email pode já estar cadastrado.')
-        setLoading(false)
-      }
-    } catch (err: any) {
-      console.error('Erro no cadastro:', err)
-      setError(err.message || 'Erro ao criar conta. Tente novamente.')
-      setLoading(false)
-    }
-  }
-
-  const openRegisterModal = () => {
-    registerModal.open()
-    loginModal.close()
-  }
-
-  const closeRegisterModal = () => {
-    registerModal.close()
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black">
@@ -189,13 +51,13 @@ export default function NewLandingPage() {
               >
                 Entrar
               </Link>
-              <button
-                onClick={openRegisterModal}
+              <Link
+                to="/signup"
                 className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30"
                 aria-label="Começar Agora"
               >
                 Começar Agora
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -227,14 +89,14 @@ export default function NewLandingPage() {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={openRegisterModal}
+                <Link
+                  to="/signup"
                   className="group px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 flex items-center gap-2"
                   aria-label="Começar Gratuitamente"
                 >
                   Começar Gratuitamente
                   <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
-                </button>
+                </Link>
                 <button
                   onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                   className="group px-8 py-4 bg-gray-800/50 backdrop-blur-sm border border-gray-700 text-white font-semibold rounded-xl hover:bg-gray-700/50 transition-all flex items-center gap-2"
@@ -590,79 +452,18 @@ export default function NewLandingPage() {
                 Junte-se a centenas de profissionais que já revolucionaram a gestão de suas clínicas
               </p>
 
-              <button
-                onClick={openRegisterModal}
+              <Link
+                to="/signup"
                 className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-2xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-2xl shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105 text-lg group"
                 aria-label="Começar Agora - É Grátis"
               >
                 Começar Agora - É Grátis
                 <ArrowRight className="group-hover:translate-x-1 transition-transform" size={24} />
-              </button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
-
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={loginModal.isOpen}
-        email={email}
-        password={password}
-        rememberMe={rememberMe}
-        loading={loading}
-        error={error}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onRememberMeChange={setRememberMe}
-        onSubmit={handleLogin}
-        onClose={loginModal.close}
-        onForgotPassword={() => {
-          loginModal.close()
-          forgotPasswordModal.open()
-        }}
-        onSwitchToRegister={openRegisterModal}
-      />
-
-      {/* Register Modal */}
-      <RegisterModal
-        isOpen={registerModal.isOpen}
-        fullName={fullName}
-        email={email}
-        phone={phone}
-        password={password}
-        confirmPassword={confirmPassword}
-        loading={loading}
-        onFullNameChange={setFullName}
-        onEmailChange={setEmail}
-        onPhoneChange={setPhone}
-        onPasswordChange={setPassword}
-        onConfirmPasswordChange={setConfirmPassword}
-        onSubmit={handleRegister}
-        onClose={closeRegisterModal}
-        onSwitchToLogin={() => {
-          registerModal.close()
-          loginModal.open()
-        }}
-      />
-
-      {/* Forgot Password Modal */}
-      <ForgotPasswordModal
-        isOpen={forgotPasswordModal.isOpen}
-        email={email}
-        loading={loading}
-        error={error}
-        successMessage={successMessage}
-        onEmailChange={setEmail}
-        onSubmit={handleForgotPassword}
-        onClose={() => {
-          forgotPasswordModal.close()
-          loginModal.open()
-        }}
-        onBackToLogin={() => {
-          forgotPasswordModal.close()
-          loginModal.open()
-        }}
-      />
 
       {/* Footer */}
       <footer className="border-t border-gray-800 py-12 px-4">

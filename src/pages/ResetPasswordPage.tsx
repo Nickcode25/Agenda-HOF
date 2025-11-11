@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff, AlertCircle, X } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator'
 import { validatePasswordStrength } from '@/utils/validation'
@@ -86,16 +86,17 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="fixed inset-0 z-50 overflow-auto">
-        {/* Landing page de fundo com overlay */}
-        <div className="min-h-screen relative">
-          <div className="absolute inset-0">
-            <NewLandingPage />
-          </div>
-
-          {/* Overlay escuro com blur - cobre toda a landing page */}
-          <div className="absolute inset-0 min-h-full bg-black/70 backdrop-blur-sm pointer-events-none" />
+      <div className="fixed inset-0 z-50">
+        {/* Landing page de fundo */}
+        <div className="absolute inset-0 overflow-auto -z-10">
+          <NewLandingPage />
         </div>
+
+        {/* Overlay escuro com blur - fixo sobre toda a tela */}
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-0" />
+
+        {/* Container scrollável para o conteúdo */}
+        <div className="relative h-full overflow-auto z-10">
 
         {/* Container do modal - fixo sobre tudo */}
         <div className="fixed inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
@@ -128,21 +129,24 @@ export default function ResetPasswordPage() {
             </div>
           </div>
         </div>
+        {/* Fim do container scrollável */}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-auto">
-      {/* Landing page de fundo com overlay */}
-      <div className="min-h-screen relative">
-        <div className="absolute inset-0">
-          <NewLandingPage />
-        </div>
-
-        {/* Overlay escuro com blur - cobre toda a landing page */}
-        <div className="absolute inset-0 min-h-full bg-black/70 backdrop-blur-sm pointer-events-none" />
+    <div className="fixed inset-0 z-50">
+      {/* Landing page de fundo */}
+      <div className="absolute inset-0 overflow-auto -z-10">
+        <NewLandingPage />
       </div>
+
+      {/* Overlay escuro com blur - fixo sobre toda a tela */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-0" />
+
+      {/* Container scrollável para o conteúdo */}
+      <div className="relative h-full overflow-auto z-10">
 
       {/* Botão Voltar - Fixo no canto superior esquerdo */}
       <Link
@@ -158,6 +162,15 @@ export default function ResetPasswordPage() {
         {/* Card Principal */}
         <div className="w-full max-w-md pointer-events-auto">
           <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
+            {/* Botão Fechar */}
+            <Link
+              to="/login"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-lg"
+              aria-label="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </Link>
+
             {/* Header */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -281,6 +294,8 @@ export default function ResetPasswordPage() {
             </form>
           </div>
         </div>
+      </div>
+      {/* Fim do container scrollável */}
       </div>
     </div>
   )

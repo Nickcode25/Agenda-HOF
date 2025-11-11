@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Mail, ArrowLeft, Send, CheckCircle } from 'lucide-react'
+import { Mail, ArrowLeft, Send, CheckCircle, X } from 'lucide-react'
 import { useAuth } from '@/store/auth'
+import NewLandingPage from './landing/NewLandingPage'
 
 export default function ForgotPasswordPage() {
   const { resetPassword } = useAuth()
@@ -40,24 +41,23 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          {/* Botão Voltar */}
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Voltar para login</span>
-          </Link>
+      <div className="fixed inset-0 z-50">
+        {/* Landing page de fundo */}
+        <div className="absolute inset-0 overflow-auto -z-10">
+          <NewLandingPage />
+        </div>
 
-          {/* Card de Sucesso */}
-          <div className="relative group">
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-3xl blur-2xl opacity-25 group-hover:opacity-40 transition duration-1000" />
+        {/* Overlay escuro com blur - fixo sobre toda a tela */}
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-0" />
 
-            {/* Card */}
-            <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
+        {/* Container scrollável para o conteúdo */}
+        <div className="relative h-full overflow-auto z-10">
+
+        {/* Container do modal - fixo sobre tudo */}
+        <div className="fixed inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
+          <div className="w-full max-w-md pointer-events-auto">
+            {/* Card de Sucesso */}
+            <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-green-500 p-8 shadow-2xl">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-green-400" />
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                  className="inline-flex items-center gap-2 text-orange-400 hover:text-orange-300 font-medium transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Voltar para login
@@ -84,33 +84,52 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
         </div>
+        {/* Fim do container scrollável */}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Botão Voltar */}
-        <Link
-          to="/login"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Voltar para login</span>
-        </Link>
+    <div className="fixed inset-0 z-50">
+      {/* Landing page de fundo */}
+      <div className="absolute inset-0 overflow-auto -z-10">
+        <NewLandingPage />
+      </div>
 
+      {/* Overlay escuro com blur - fixo sobre toda a tela */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-0" />
+
+      {/* Container scrollável para o conteúdo */}
+      <div className="relative h-full overflow-auto z-10">
+
+      {/* Botão Voltar - Fixo no canto superior esquerdo */}
+      <Link
+        to="/login"
+        className="fixed top-8 left-8 z-20 inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Voltar para login</span>
+      </Link>
+
+      {/* Container do modal - fixo sobre tudo */}
+      <div className="fixed inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
         {/* Card Principal */}
-        <div className="relative group">
-          {/* Glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-25 group-hover:opacity-40 transition duration-1000" />
+        <div className="w-full max-w-md pointer-events-auto">
+          <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
+            {/* Botão Fechar */}
+            <Link
+              to="/login"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-lg"
+              aria-label="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </Link>
 
-          {/* Card */}
-          <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Send className="w-8 h-8 text-blue-400" />
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-orange-400" />
               </div>
               <h1 className="text-3xl font-bold text-white mb-2">
                 Esqueceu a senha?
@@ -139,7 +158,7 @@ export default function ForgotPasswordPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     placeholder="seu@email.com"
                     required
                   />
@@ -150,7 +169,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-blue-500/30"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Enviando...' : 'Enviar link de recuperação'}
               </button>
@@ -159,7 +178,7 @@ export default function ForgotPasswordPage() {
               <div className="text-center">
                 <p className="text-sm text-gray-400">
                   Lembrou sua senha?{' '}
-                  <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                  <Link to="/login" className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
                     Fazer login
                   </Link>
                 </p>
@@ -167,6 +186,8 @@ export default function ForgotPasswordPage() {
             </form>
           </div>
         </div>
+      </div>
+      {/* Fim do container scrollável */}
       </div>
     </div>
   )

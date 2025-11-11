@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import NewLandingPage from './landing/NewLandingPage'
 
@@ -68,16 +68,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-auto">
-      {/* Landing page de fundo com overlay */}
-      <div className="min-h-screen relative">
-        <div className="absolute inset-0">
-          <NewLandingPage />
-        </div>
-
-        {/* Overlay escuro com blur - cobre toda a landing page */}
-        <div className="absolute inset-0 min-h-full bg-black/70 backdrop-blur-sm pointer-events-none" />
+    <div className="fixed inset-0 z-50">
+      {/* Landing page de fundo */}
+      <div className="absolute inset-0 overflow-auto -z-10">
+        <NewLandingPage />
       </div>
+
+      {/* Overlay escuro com blur - fixo sobre toda a tela */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none z-0" />
+
+      {/* Container scrollável para o conteúdo */}
+      <div className="relative h-full overflow-auto z-10">
 
       {/* Botão Voltar - Fixo no canto superior esquerdo */}
       <Link
@@ -93,6 +94,15 @@ export default function LoginPage() {
         {/* Card de Login */}
         <div className="w-full max-w-md pointer-events-auto">
           <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
+          {/* Botão Fechar */}
+          <Link
+            to="/"
+            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700/50 rounded-lg"
+            aria-label="Fechar"
+          >
+            <X className="w-5 h-5" />
+          </Link>
+
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-2">Bem-vindo de volta!</h2>
             <p className="text-gray-400">Faça login para acessar sua conta</p>
@@ -196,6 +206,8 @@ export default function LoginPage() {
           </div>
           </div>
         </div>
+      </div>
+      {/* Fim do container scrollável */}
       </div>
     </div>
   )
