@@ -14,6 +14,7 @@ import PaymentsManager from '@/components/admin/PaymentsManager'
 import CourtesyManager from '@/components/admin/CourtesyManager'
 import AdminSidebar from './components/AdminSidebar'
 import AdminStatsGrid from './components/AdminStatsGrid'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 interface Stats {
   totalClinics: number
@@ -76,8 +77,8 @@ export default function AdminDashboard() {
   // Filtrar clínicas
   const filteredClinics = clinics.filter(clinic => {
     const matchesSearch =
-      clinic.owner_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      clinic.owner_email.toLowerCase().includes(searchQuery.toLowerCase())
+      containsIgnoringAccents(clinic.owner_name, searchQuery) ||
+      containsIgnoringAccents(clinic.owner_email, searchQuery)
 
     const matchesStatus = statusFilter === 'all' || clinic.subscription_status === statusFilter
 

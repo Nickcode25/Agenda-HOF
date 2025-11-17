@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Search, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, Edit, ArrowLeft, ShoppingCart, FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
 
@@ -64,11 +65,10 @@ export default function SalesHistory() {
     console.log('[SALES HISTORY] Vendas:', sales.map(s => ({ id: s.id, createdAt: s.createdAt, professional: s.professionalName })))
 
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
       result = result.filter(sale =>
-        sale.professionalName.toLowerCase().includes(query) ||
-        sale.id.toLowerCase().includes(query) ||
-        sale.items.some(item => item.stockItemName.toLowerCase().includes(query))
+        containsIgnoringAccents(sale.professionalName, searchQuery) ||
+        containsIgnoringAccents(sale.id, searchQuery) ||
+        sale.items.some(item => containsIgnoringAccents(item.stockItemName, searchQuery))
       )
     }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Gift, Search, Check, X, AlertCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 interface User {
   id: string
@@ -215,8 +216,8 @@ export default function CourtesyManager() {
   }
 
   const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.name.toLowerCase().includes(searchQuery.toLowerCase())
+    containsIgnoringAccents(user.email, searchQuery) ||
+    containsIgnoringAccents(user.name, searchQuery)
   )
 
   if (loading) {

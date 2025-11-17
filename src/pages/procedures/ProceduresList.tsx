@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Diamond, Gem, Flower2, Palette, Triangle, Tag } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 export default function ProceduresList() {
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
@@ -16,11 +17,10 @@ export default function ProceduresList() {
   }, [])
 
   const filtered = useMemo(() => {
-    const query = q.trim().toLowerCase()
-    if (!query) return procedures
+    if (!q.trim()) return procedures
     return procedures.filter(p =>
-      p.name.toLowerCase().includes(query) ||
-      p.description?.toLowerCase().includes(query)
+      containsIgnoringAccents(p.name, q) ||
+      containsIgnoringAccents(p.description || '', q)
     )
   }, [q, procedures])
 

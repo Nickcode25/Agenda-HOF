@@ -4,6 +4,7 @@ import { Search, Filter, Phone, Activity } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../store/auth'
 import AdminSidebar from './components/AdminSidebar'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 interface Clinic {
   id: string
@@ -95,8 +96,8 @@ export default function UsersPage() {
 
   const filteredClinics = clinics.filter(clinic => {
     const matchesSearch =
-      clinic.owner_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      clinic.owner_email.toLowerCase().includes(searchQuery.toLowerCase())
+      containsIgnoringAccents(clinic.owner_name, searchQuery) ||
+      containsIgnoringAccents(clinic.owner_email, searchQuery)
 
     const matchesStatus =
       statusFilter === 'all' || clinic.subscription_status === statusFilter

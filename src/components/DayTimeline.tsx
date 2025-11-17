@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities'
 import type { Appointment } from '@/types/schedule'
 import { useConfirm } from '@/hooks/useConfirm'
+import { formatTimeBR, formatFullDateBR } from '@/utils/timezone'
 
 interface DayTimelineProps {
   date: Date
@@ -86,15 +87,8 @@ function SortableAppointment({
     opacity: isDragging ? 0.5 : 1,
   }
 
-  const startTime = new Date(appointment.start).toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-
-  const endTime = new Date(appointment.end).toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const startTime = formatTimeBR(appointment.start)
+  const endTime = formatTimeBR(appointment.end)
 
   const colors = getStatusColors(appointment.status)
 
@@ -235,12 +229,7 @@ export default function DayTimeline({
     await onUpdateAppointment(id, { status })
   }
 
-  const dateStr = date.toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  const dateStr = formatFullDateBR(date)
 
   return (
     <>

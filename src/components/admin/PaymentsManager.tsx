@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Filter, Download, RefreshCw, DollarSign, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 interface Payment {
   id: string
@@ -95,8 +96,8 @@ export default function PaymentsManager() {
 
   const filteredPayments = payments.filter(payment => {
     const matchesSearch =
-      payment.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.user_email.toLowerCase().includes(searchQuery.toLowerCase())
+      containsIgnoringAccents(payment.user_name, searchQuery) ||
+      containsIgnoringAccents(payment.user_email, searchQuery)
 
     const matchesStatus = statusFilter === 'all' || payment.status === statusFilter
 

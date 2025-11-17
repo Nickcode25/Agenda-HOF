@@ -21,6 +21,7 @@ import {
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
+import { toSaoPauloTime, formatInSaoPaulo, isSameDayInSaoPaulo } from '@/utils/timezone'
 
 // Cores por tipo de procedimento
 const getProcedureColor = (procedure: string) => {
@@ -109,8 +110,9 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
 
   const getAppointmentsForDay = (date: Date) => {
     return appointments.filter(apt => {
-      const aptDate = parseISO(apt.start)
-      return isSameDay(aptDate, date)
+      // Converte o horário UTC do agendamento para horário de São Paulo
+      const aptDateInSaoPaulo = toSaoPauloTime(parseISO(apt.start))
+      return isSameDay(aptDateInSaoPaulo, date)
     }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
   }
 
@@ -144,8 +146,9 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
 
   const getAppointmentsForDayAndHour = (date: Date, hour: number) => {
     return appointments.filter(apt => {
-      const aptDate = parseISO(apt.start)
-      return isSameDay(aptDate, date) && aptDate.getHours() === hour
+      // Converte o horário UTC do agendamento para horário de São Paulo
+      const aptDateInSaoPaulo = toSaoPauloTime(parseISO(apt.start))
+      return isSameDay(aptDateInSaoPaulo, date) && aptDateInSaoPaulo.getHours() === hour
     })
   }
 
@@ -202,7 +205,7 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                         <div className="flex items-center gap-2 mb-1">
                           <Clock size={14} className={colors.icon} />
                           <span className={`${colors.text} font-medium text-sm`}>
-                            {format(parseISO(apt.start), 'HH:mm')} - {format(parseISO(apt.end), 'HH:mm')}
+                            {formatInSaoPaulo(apt.start, 'HH:mm')} - {formatInSaoPaulo(apt.end, 'HH:mm')}
                           </span>
                         </div>
                         <div className="text-white font-medium">{apt.patientName}</div>
@@ -284,7 +287,7 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                               className={`w-full text-left p-1 rounded ${colors.bg} border ${colors.border} transition-all mb-1`}
                             >
                               <div className={`text-xs ${colors.text} font-medium`}>
-                                {format(parseISO(apt.start), 'HH:mm')} - {format(parseISO(apt.end), 'HH:mm')}
+                                {formatInSaoPaulo(apt.start, 'HH:mm')} - {formatInSaoPaulo(apt.end, 'HH:mm')}
                               </div>
                               <div className="text-xs text-white truncate">{apt.patientName}</div>
                             </button>
@@ -390,7 +393,7 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                             <div className="flex items-center gap-1 text-xs">
                               <Clock size={10} className={colors.icon} />
                               <span className={`${colors.text} font-medium`}>
-                                {format(parseISO(apt.start), 'HH:mm')}
+                                {formatInSaoPaulo(apt.start, 'HH:mm')}
                               </span>
                             </div>
                             <div className="text-xs text-white truncate mt-0.5">

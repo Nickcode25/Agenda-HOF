@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
+import { autoRegisterCashMovement } from '../../store/cash'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
@@ -12,6 +13,8 @@ import AddSubscriberModal from './components/AddSubscriberModal'
 import ConfirmPaymentModal from './components/ConfirmPaymentModal'
 import { parseCurrency, formatCurrency } from '@/utils/currency'
 import { normalizeDateString } from '@/utils/dateHelpers'
+import { getTodayInSaoPaulo } from '@/utils/timezone'
+import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
 
 export default function PlanDetail() {
   const { id } = useParams()
@@ -43,25 +46,17 @@ export default function PlanDetail() {
   const plan = plans.find(p => p.id === id)
   const planSubscriptions = subscriptions.filter(s => s.planId === id)
 
-  // Função para remover acentos
-  const removeAccents = (str: string) => {
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  }
-
   // Filtrar pacientes que ainda não são assinantes deste plano
   const subscribedPatientIds = planSubscriptions.map(s => s.patientId)
   const allAvailablePatients = patients.filter(p => !subscribedPatientIds.includes(p.id))
 
-  // Filtrar pacientes conforme a busca
+  // Filtrar pacientes conforme a busca (usando função centralizada para ignorar acentos)
   const availablePatients = searchPatient.trim().length > 0
     ? allAvailablePatients.filter(p => {
-        const search = removeAccents(searchPatient.toLowerCase().trim())
-        const normalizedName = removeAccents(p.name.toLowerCase())
+        const search = normalizeForSearch(searchPatient)
 
-        // Dividir o nome em palavras para buscar no início de cada palavra
-        const nameWords = normalizedName.split(' ')
-        const matchesNameWord = nameWords.some(word => word.startsWith(search))
-        const matchName = matchesNameWord || normalizedName.startsWith(search)
+        // Buscar no nome (início de qualquer palavra)
+        const matchName = anyWordStartsWithIgnoringAccents(p.name, searchPatient)
 
         // Buscar em CPF e telefone se houver números
         const normalizedSearchCpf = search.replace(/\D/g, '')
@@ -145,29 +140,51 @@ export default function PlanDetail() {
       payments: [],
     }
 
+    const patientName = selectedPatient.name
+
+    // Fechar o modal imediatamente para melhor UX
+    setShowAddSubscriberModal(false)
+    resetForm()
+    setToast({ message: `Adicionando ${patientName} ao plano...`, type: 'success' })
+
     const newSubscriptionId = await addSubscription(subscriptionData)
 
     if (!newSubscriptionId) {
-      alert('Erro ao criar assinatura. Tente novamente.')
+      setToast({ message: 'Erro ao criar assinatura. Tente novamente.', type: 'error' })
       return
     }
 
-    // 1. Adicionar o primeiro pagamento como PENDENTE (aguardando confirmação)
-    await addPayment(newSubscriptionId, {
+    // Executar operações em paralelo para maior velocidade
+    await Promise.all([
+      // 1. Adicionar o primeiro pagamento como PAGO
+      addPayment(newSubscriptionId, {
+        amount: subscriptionPrice,
+        dueDate: paymentDate,
+        status: 'paid',
+        paidAt: new Date().toISOString(),
+        paymentMethod: paymentMethod,
+      }),
+      // 2. Adicionar a próxima cobrança como PENDENTE
+      addPayment(newSubscriptionId, {
+        amount: subscriptionPrice,
+        dueDate: nextBillingDateStr,
+        status: 'pending',
+      })
+    ])
+
+    // 3. Registrar movimentação no caixa (não bloqueia)
+    autoRegisterCashMovement({
+      type: 'income',
+      category: 'subscription',
       amount: subscriptionPrice,
-      dueDate: paymentDate,
-      status: 'pending',
+      paymentMethod: paymentMethod.toLowerCase() as 'cash' | 'card' | 'pix' | 'transfer' | 'check',
+      referenceId: newSubscriptionId,
+      description: `Mensalidade - ${patientName} - ${plan.name}`
+    }).catch(() => {
+      // Silenciosamente ignora se não houver sessão de caixa
     })
 
-    // 2. Adicionar a próxima cobrança como PENDENTE (para o mês seguinte)
-    await addPayment(newSubscriptionId, {
-      amount: subscriptionPrice,
-      dueDate: nextBillingDateStr,
-      status: 'pending',
-    })
-
-    setShowAddSubscriberModal(false)
-    resetForm()
+    setToast({ message: `${patientName} adicionado ao plano com sucesso!`, type: 'success' })
   }
 
   const resetForm = () => {
@@ -218,12 +235,28 @@ export default function PlanDetail() {
   }
 
   const getPendingPayment = (sub: any) => {
-    return sub.payments.find((p: any) => p.status === 'pending' || p.status === 'overdue')
+    // Retorna o pagamento pendente mais próximo (ordenado por data)
+    const unpaidPayments = sub.payments
+      .filter((p: any) => p.status === 'pending' || p.status === 'overdue')
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.dueDate.split('T')[0])
+        const dateB = new Date(b.dueDate.split('T')[0])
+        return dateA.getTime() - dateB.getTime()
+      })
+    return unpaidPayments[0]
   }
 
   const getSubscriberStatus = (sub: any) => {
-    // Busca o pagamento mais recente que não está pago
-    const unpaidPayment = sub.payments.find((p: any) => p.status === 'pending' || p.status === 'overdue')
+    // Busca o pagamento pendente mais PRÓXIMO (ordenado por data)
+    const unpaidPayments = sub.payments
+      .filter((p: any) => p.status === 'pending' || p.status === 'overdue')
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.dueDate.split('T')[0])
+        const dateB = new Date(b.dueDate.split('T')[0])
+        return dateA.getTime() - dateB.getTime()
+      })
+
+    const unpaidPayment = unpaidPayments[0]
 
     if (!unpaidPayment) {
       // Não tem pagamento pendente = está em dia
@@ -231,17 +264,14 @@ export default function PlanDetail() {
     }
 
     // Verifica se a data de vencimento já passou
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Usa o timezone de São Paulo para comparação correta
+    const todayStr = getTodayInSaoPaulo()
 
     // Parse da data corretamente (formato YYYY-MM-DD)
     const dueDateStr = unpaidPayment.dueDate.split('T')[0] // Remove timezone se houver
-    const [year, month, day] = dueDateStr.split('-').map(Number)
-    const dueDate = new Date(year, month - 1, day) // month - 1 porque Date usa 0-11 para meses
-    dueDate.setHours(0, 0, 0, 0)
 
-    // Só marcar como atrasado se a data passou E já se passaram pelo menos 1 dia
-    if (dueDate < today) {
+    // Comparação direta de strings YYYY-MM-DD
+    if (dueDateStr < todayStr) {
       // Data passou = atrasado
       return { label: 'Atrasado', className: 'bg-red-500/20 text-red-400', icon: AlertCircle }
     } else {

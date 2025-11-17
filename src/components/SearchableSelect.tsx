@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Search, ChevronDown, X } from 'lucide-react'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 interface Option {
   value: string
@@ -31,9 +32,9 @@ export default function SearchableSelect({
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Filtrar opções baseado no termo de busca
+  // Filtrar opções baseado no termo de busca (ignorando acentos)
   const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    containsIgnoringAccents(option.label, searchTerm)
   )
 
   // Encontrar label da opção selecionada

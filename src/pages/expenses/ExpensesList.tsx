@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 export default function ExpensesList() {
   const { hasActiveSubscription } = useSubscription()
@@ -42,10 +43,9 @@ export default function ExpensesList() {
     let result = expenses
 
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
       result = result.filter(expense =>
-        expense.description.toLowerCase().includes(query) ||
-        expense.categoryName.toLowerCase().includes(query)
+        containsIgnoringAccents(expense.description, searchQuery) ||
+        containsIgnoringAccents(expense.categoryName, searchQuery)
       )
     }
 

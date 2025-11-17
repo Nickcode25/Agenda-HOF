@@ -6,6 +6,7 @@ import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clo
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 export default function SalesList() {
   const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale } = useSales()
@@ -22,20 +23,19 @@ export default function SalesList() {
 
   const filtered = useMemo(() => {
     let result = sales
-    
+
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
       result = result.filter(sale =>
-        sale.professionalName.toLowerCase().includes(query) ||
-        sale.id.toLowerCase().includes(query) ||
-        sale.items.some(item => item.stockItemName.toLowerCase().includes(query))
+        containsIgnoringAccents(sale.professionalName, searchQuery) ||
+        containsIgnoringAccents(sale.id, searchQuery) ||
+        sale.items.some(item => containsIgnoringAccents(item.stockItemName, searchQuery))
       )
     }
-    
+
     if (statusFilter) {
       result = result.filter(sale => sale.paymentStatus === statusFilter)
     }
-    
+
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [sales, searchQuery, statusFilter])
 

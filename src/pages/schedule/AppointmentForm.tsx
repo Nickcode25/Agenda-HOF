@@ -12,6 +12,8 @@ import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/currency'
 import { useToast } from '@/hooks/useToast'
 import { useUserProfile } from '@/store/userProfile'
+import { createISOFromDateTimeBR } from '@/utils/timezone'
+import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
 
 export default function AppointmentForm() {
   const patients = usePatients(s => s.patients)
@@ -52,13 +54,9 @@ export default function AppointmentForm() {
     ? professionals.find(p => p.id === selectedProfessional)?.name || ''
     : ''
 
-  // Patient search filter
-  const removeAccents = (str: string) => {
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  }
-
+  // Patient search filter (usando função centralizada para ignorar acentos)
   const filteredPatients = useMemo(() => {
-    const query = patientSearch.trim().toLowerCase()
+    const query = patientSearch.trim()
 
     // Ordenar todos os pacientes alfabeticamente
     const sortedPatients = [...patients].sort((a, b) =>
@@ -69,15 +67,13 @@ export default function AppointmentForm() {
       return sortedPatients.slice(0, 10) // Show first 10 when empty
     }
 
-    const normalizedQuery = removeAccents(query)
+    const normalizedQuery = normalizeForSearch(query)
 
     const result = sortedPatients.filter(p => {
-      const normalizedName = removeAccents(p.name.toLowerCase())
-      const nameWords = normalizedName.split(' ')
-      const matchesNameWord = nameWords.some(word => word.startsWith(normalizedQuery))
-      const matchName = matchesNameWord || normalizedName.startsWith(normalizedQuery)
+      // Buscar no nome (início de qualquer palavra)
+      const matchName = anyWordStartsWithIgnoringAccents(p.name, query)
 
-      const normalizedQueryCpf = query.replace(/\D/g, '')
+      const normalizedQueryCpf = normalizedQuery.replace(/\D/g, '')
       let matchCpf = false
       let matchPhone = false
 
@@ -173,16 +169,9 @@ export default function AppointmentForm() {
     const professionalId = String(data.get('professional')||'')
     const professional = professionals.find(p => p.id === professionalId)
 
-    // Converter data do formato dd/mm/aaaa para aaaa-mm-dd
-    const dateParts = appointmentDate.split('/')
-    const dateISO = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : ''
-
-    // Criar objetos Date e converter para ISO string (UTC)
-    const startDateTime = new Date(`${dateISO}T${startTime}:00`)
-    const endDateTime = new Date(`${dateISO}T${endTime}:00`)
-
-    const start = startDateTime.toISOString()
-    const end = endDateTime.toISOString()
+    // Criar ISO strings usando o fuso horário de São Paulo
+    const start = createISOFromDateTimeBR(appointmentDate, startTime)
+    const end = createISOFromDateTimeBR(appointmentDate, endTime)
 
     // Adicionar agendamento
     const appointmentId = await add({

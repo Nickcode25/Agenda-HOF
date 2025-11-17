@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { useMemo, useState, useEffect } from 'react'
 import { Search, User, Plus, Edit, ArrowLeft, Mail, Phone, MapPin } from 'lucide-react'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 export default function SalesProfessionalsList() {
   const { professionals, fetchProfessionals } = useSales()
@@ -15,12 +16,11 @@ export default function SalesProfessionalsList() {
     let result = professionals
 
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
       result = result.filter(prof =>
-        prof.name.toLowerCase().includes(query) ||
-        prof.specialty?.toLowerCase().includes(query) ||
-        prof.email?.toLowerCase().includes(query) ||
-        prof.phone?.toLowerCase().includes(query)
+        containsIgnoringAccents(prof.name, searchQuery) ||
+        containsIgnoringAccents(prof.specialty || '', searchQuery) ||
+        containsIgnoringAccents(prof.email || '', searchQuery) ||
+        containsIgnoringAccents(prof.phone || '', searchQuery)
       )
     }
 

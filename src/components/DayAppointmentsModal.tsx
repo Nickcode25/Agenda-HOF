@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { X, Clock, User, Stethoscope, Calendar as CalendarIcon } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
+import { formatInSaoPaulo } from '@/utils/timezone'
 
 type DayAppointmentsModalProps = {
   date: Date | null
@@ -81,10 +82,10 @@ export default function DayAppointmentsModal({
                     <div className="flex flex-col items-center justify-center bg-orange-500/10 rounded-lg px-3 py-2 min-w-[80px]">
                       <Clock size={18} className="text-orange-500 mb-1" />
                       <span className="text-orange-400 font-bold text-sm">
-                        {format(new Date(apt.start), 'HH:mm')}
+                        {formatInSaoPaulo(apt.start, 'HH:mm')}
                       </span>
                       <span className="text-gray-400 text-xs">
-                        {format(new Date(apt.end), 'HH:mm')}
+                        {formatInSaoPaulo(apt.end, 'HH:mm')}
                       </span>
                     </div>
 

@@ -4,6 +4,7 @@ import { useNotifications } from '@/store/notifications'
 import { useNavigate } from 'react-router-dom'
 import type { Notification, NotificationType } from '@/types/notification'
 import { useConfirm } from '@/hooks/useConfirm'
+import { formatDateTimeBR } from '@/utils/timezone'
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
@@ -71,13 +72,7 @@ export default function NotificationsPage() {
   }
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    return formatDateTimeBR(dateString, true)
   }
 
   const typeLabels: Record<NotificationType, string> = {

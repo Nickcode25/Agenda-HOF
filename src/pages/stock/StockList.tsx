@@ -6,6 +6,7 @@ import { Search, Plus, Package, AlertTriangle, Calendar, TrendingDown, TrendingU
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 
 export default function StockList() {
@@ -36,20 +37,19 @@ export default function StockList() {
 
   const filtered = useMemo(() => {
     let result = items
-    
+
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
       result = result.filter(item =>
-        item.name.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query) ||
-        item.notes?.toLowerCase().includes(query)
+        containsIgnoringAccents(item.name, searchQuery) ||
+        containsIgnoringAccents(item.category, searchQuery) ||
+        containsIgnoringAccents(item.notes || '', searchQuery)
       )
     }
-    
+
     if (categoryFilter) {
       result = result.filter(item => item.category === categoryFilter)
     }
-    
+
     return result
   }, [items, searchQuery, categoryFilter])
 

@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Search, UserPlus, Stethoscope, Phone, Mail, Award, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 export default function ProfessionalsList() {
   const { professionals, toggleActive, fetchAll, loading } = useProfessionals(s => ({
@@ -20,12 +21,11 @@ export default function ProfessionalsList() {
   }, [])
 
   const filtered = useMemo(() => {
-    const query = q.trim().toLowerCase()
-    if (!query) return professionals
+    if (!q.trim()) return professionals
     return professionals.filter(p =>
-      p.name.toLowerCase().includes(query) ||
-      p.specialty.toLowerCase().includes(query) ||
-      p.registrationNumber.toLowerCase().includes(query)
+      containsIgnoringAccents(p.name, q) ||
+      containsIgnoringAccents(p.specialty, q) ||
+      containsIgnoringAccents(p.registrationNumber, q)
     )
   }, [q, professionals])
 

@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
 import { normalizeDateString } from '@/utils/dateHelpers'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 type ToastState = {
   show: boolean
@@ -20,7 +21,7 @@ export default function SubscribersList() {
   const [processingPayment, setProcessingPayment] = useState<string | null>(null)
 
   const filteredSubscriptions = subscriptions.filter((sub) =>
-    sub.patientName.toLowerCase().includes(searchTerm.toLowerCase())
+    containsIgnoringAccents(sub.patientName, searchTerm)
   )
 
   const getStatusConfig = (status: string) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Filter, Eye, XCircle, Mail, Users, DollarSign, TrendingDown, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { containsIgnoringAccents } from '@/utils/textSearch'
 
 interface Subscription {
   id: string
@@ -102,8 +103,8 @@ export default function ActiveSubscriptions() {
 
   const filteredSubscriptions = subscriptions.filter(sub => {
     const matchesSearch =
-      sub.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.user_email.toLowerCase().includes(searchQuery.toLowerCase())
+      containsIgnoringAccents(sub.user_name, searchQuery) ||
+      containsIgnoringAccents(sub.user_email, searchQuery)
 
     const matchesStatus = statusFilter === 'all' || sub.status === statusFilter
 
