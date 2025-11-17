@@ -70,6 +70,24 @@ export default function MentorshipModal({
 
         <div className="p-6 overflow-y-auto flex-1">
           <div className="space-y-4">
+            {mentorshipType === 'mentorship' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Mentoria</label>
+                <select
+                  value={selectedMentorship}
+                  onChange={(e) => setSelectedMentorship(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                >
+                  <option value="">Selecione uma mentoria</option>
+                  {mentorships.map((mentorship) => (
+                    <option key={mentorship.id} value={mentorship.name}>
+                      {mentorship.name} - {formatCurrency(mentorship.price)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
@@ -168,10 +186,10 @@ export default function MentorshipModal({
           </button>
           <button
             onClick={onSubmit}
-            disabled={!selectedMentorship}
+            disabled={mentorshipType === 'mentorship' && !selectedMentorship}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40"
           >
-            Adicionar Mentoria
+            {mentorshipType === 'enrollment' ? 'Adicionar Inscrição' : 'Adicionar Mentoria'}
           </button>
         </div>
       </div>

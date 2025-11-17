@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, UserPlus, Stethoscope, Phone, Mail, Award, ToggleLeft, ToggleRight } from 'lucide-react'
+import { UserPlus, Stethoscope, Phone, Mail, Award, ToggleLeft, ToggleRight, Users, CheckCircle } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
 
 export default function ProfessionalsList() {
   const { professionals, toggleActive, fetchAll, loading } = useProfessionals(s => ({
@@ -29,103 +30,103 @@ export default function ProfessionalsList() {
     )
   }, [q, professionals])
 
+  // Stats calculations
+  const stats = useMemo(() => {
+    const total = professionals.length
+    const active = professionals.filter(p => p.active).length
+    return { total, active }
+  }, [professionals])
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
+  }
+
   return (
-    <div className="space-y-6 relative">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
       {/* Overlay de bloqueio se não tiver assinatura */}
       {!hasActiveSubscription && <UpgradeOverlay message="Profissionais bloqueados" feature="o cadastro e gestão de profissionais" />}
-      {/* Header Premium */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-cyan-500/20 rounded-xl">
-                <Stethoscope size={32} className="text-cyan-400" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Profissionais</h1>
-                <p className="text-gray-400">Gerencie os profissionais do consultório</p>
-              </div>
-            </div>
-            <Link
-              to="/app/profissionais/novo"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
-            >
-              <UserPlus size={20} />
-              Novo Profissional
-            </Link>
-          </div>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              value={q}
-              onChange={e=>setQ(e.target.value)}
-              placeholder="Buscar por nome, especialidade ou registro..."
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-          </div>
-        </div>
+
+      {/* Header */}
+      <PageHeader
+        icon={Stethoscope}
+        title="Profissionais"
+        subtitle="Gerencie os profissionais do consultório"
+        stats={[
+          { label: 'Total', value: stats.total, icon: Users, color: 'text-blue-500' },
+          { label: 'Ativos', value: stats.active, icon: CheckCircle, color: 'text-green-500' },
+        ]}
+        primaryAction={{
+          label: 'Novo Profissional',
+          icon: UserPlus,
+          href: '/app/profissionais/novo'
+        }}
+      />
+
+      {/* Search */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Buscar por nome, especialidade ou registro..."
+        />
       </div>
 
-      {/* Professionals Grid */}
+      {/* Professionals List */}
       {filtered.length === 0 ? (
-        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10">
-            <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/20">
-              <Stethoscope size={40} className="text-cyan-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Nenhum profissional encontrado</h3>
-            <p className="text-gray-400 mb-6">Cadastre os profissionais que trabalham no consultório</p>
-            <Link
-              to="/app/profissionais/novo"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-            >
-              <UserPlus size={18} />
-              Cadastrar Profissional
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          icon={Stethoscope}
+          title="Nenhum profissional encontrado"
+          description="Cadastre os profissionais que trabalham no consultório"
+          action={{
+            label: 'Cadastrar Profissional',
+            icon: UserPlus,
+            href: '/app/profissionais/novo'
+          }}
+        />
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-4">
+          <div className="text-sm text-gray-500 px-1">
+            {filtered.length} profissional{filtered.length !== 1 ? 'is' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
+          </div>
+
           {filtered.map(prof => (
             <Link
               key={prof.id}
               to={`/app/profissionais/${prof.id}`}
-              className="block bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-cyan-500/50 transition-all hover:shadow-xl hover:shadow-cyan-500/10 cursor-pointer"
+              className="block bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-4">
-                {/* Photo */}
+                {/* Avatar */}
                 {prof.photoUrl ? (
-                  <img src={prof.photoUrl} className="h-16 w-16 rounded-xl object-cover border-2 border-gray-700" alt={prof.name} />
+                  <img src={prof.photoUrl} className="h-14 w-14 rounded-lg object-cover border border-gray-100" alt={prof.name} />
                 ) : (
-                  <div className="h-16 w-16 rounded-xl bg-gray-700 flex items-center justify-center border-2 border-gray-700">
-                    <Stethoscope size={28} className="text-gray-500" />
+                  <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">{getInitials(prof.name)}</span>
                   </div>
                 )}
-                
+
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-semibold text-white">{prof.name}</h3>
-                    {!prof.active && (
-                      <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">
-                        Inativo
-                      </span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-base font-semibold text-gray-900">{prof.name}</h3>
+                    {prof.active ? (
+                      <StatusBadge label="Ativo" variant="success" dot />
+                    ) : (
+                      <StatusBadge label="Inativo" variant="error" dot />
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-400">
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-1.5">
                       <Award size={14} className="text-orange-500" />
                       <span>{prof.specialty}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Award size={14} className="text-orange-500" />
+                      <Award size={14} className="text-cyan-500" />
                       <span>{prof.registrationNumber}</span>
                     </div>
                     {prof.phone && (
@@ -151,7 +152,7 @@ export default function ProfessionalsList() {
                       e.stopPropagation()
                       toggleActive(prof.id)
                     }}
-                    className={`p-2 rounded-lg transition-all ${prof.active ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
+                    className={`p-2 rounded-lg transition-all ${prof.active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
                     title={prof.active ? 'Desativar' : 'Ativar'}
                   >
                     {prof.active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}

@@ -159,11 +159,11 @@ export default function CashSessionPage() {
 
   const getMovementIcon = (type: string) => {
     switch (type) {
-      case 'income': return <TrendingUp className="text-green-400" size={20} />
-      case 'expense': return <TrendingDown className="text-red-400" size={20} />
-      case 'withdrawal': return <Minus className="text-yellow-400" size={20} />
-      case 'deposit': return <Plus className="text-blue-400" size={20} />
-      default: return <Receipt className="text-gray-400" size={20} />
+      case 'income': return <TrendingUp className="text-green-600" size={20} />
+      case 'expense': return <TrendingDown className="text-red-600" size={20} />
+      case 'withdrawal': return <Minus className="text-yellow-600" size={20} />
+      case 'deposit': return <Plus className="text-amber-600" size={20} />
+      default: return <Receipt className="text-gray-600" size={20} />
     }
   }
 
@@ -190,291 +190,293 @@ export default function CashSessionPage() {
 
   return (
     <>
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <Link
-            to="/app/caixa"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            Voltar para Caixas
-          </Link>
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header com breadcrumb */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Link
+              to="/app/caixa"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 mb-2 transition-colors"
+            >
+              <ArrowLeft size={16} />
+              Voltar para Caixas
+            </Link>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-500/20 rounded-xl">
-                <DollarSign size={32} className="text-green-400" />
+              <div className="p-2.5 bg-green-50 rounded-xl border border-green-200">
+                <DollarSign size={24} className="text-green-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{register.name}</h1>
-                <p className="text-gray-400">
+                <h1 className="text-2xl font-bold text-gray-900">{register.name}</h1>
+                <p className="text-sm text-gray-500">
                   {currentSession ? 'Caixa aberto' : 'Caixa fechado'}
                 </p>
               </div>
             </div>
-            {currentSession && (
-              <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 px-4 py-2 rounded-lg">
-                <Unlock size={20} className="text-green-400" />
-                <span className="text-green-400 font-medium">Aberto</span>
-              </div>
-            )}
           </div>
+          {currentSession && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 px-4 py-2 rounded-lg">
+              <Unlock size={18} className="text-green-600" />
+              <span className="text-green-600 font-medium">Aberto</span>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Session Info or Open Form */}
-      {!currentSession ? (
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 border border-gray-700/50 rounded-2xl p-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Abrir Caixa</h2>
-          <div className="max-w-md">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Saldo Inicial
-            </label>
-            <input
-              type="text"
-              value={openingBalance}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, '')
-                const formatted = formatCurrency(parseFloat(value) / 100)
-                setOpeningBalance(formatted)
-              }}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 mb-4"
-              placeholder="R$ 0,00"
-            />
-            <button
-              onClick={handleOpenSession}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-green-500/30 transition-all disabled:opacity-50"
-            >
-              <Unlock size={18} className="inline mr-2" />
-              {loading ? 'Abrindo...' : 'Abrir Caixa'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Totals Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Plus size={16} className="text-green-400" />
-                <span className="text-xs text-gray-400">Entradas</span>
-              </div>
-              <div className="text-2xl font-bold text-green-400">
-                {formatCurrency(totals?.income || 0)}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Minus size={16} className="text-red-400" />
-                <span className="text-xs text-gray-400">Saídas</span>
-              </div>
-              <div className="text-2xl font-bold text-red-400">
-                {formatCurrency(totals?.expense || 0)}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign size={16} className="text-blue-400" />
-                <span className="text-xs text-gray-400">Saldo</span>
-              </div>
-              <div className="text-2xl font-bold text-blue-400">
-                {formatCurrency(totals?.balance || 0)}
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => { setMovementType('income'); setIsMovementModalOpen(true) }}
-              className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 hover:border-green-500/50 rounded-xl p-4 text-left transition-all group"
-            >
-              <TrendingUp size={24} className="text-green-400 mb-2" />
-              <div className="font-medium text-white group-hover:text-green-400 transition-colors">Entrada</div>
-            </button>
-
-            <button
-              onClick={() => { setMovementType('expense'); setIsMovementModalOpen(true) }}
-              className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 hover:border-red-500/50 rounded-xl p-4 text-left transition-all group"
-            >
-              <TrendingDown size={24} className="text-red-400 mb-2" />
-              <div className="font-medium text-white group-hover:text-red-400 transition-colors">Saída</div>
-            </button>
-
-            <button
-              onClick={() => { setMovementType('deposit'); setIsMovementModalOpen(true) }}
-              className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 hover:border-blue-500/50 rounded-xl p-4 text-left transition-all group"
-            >
-              <Plus size={24} className="text-blue-400 mb-2" />
-              <div className="font-medium text-white group-hover:text-blue-400 transition-colors">Reforço</div>
-            </button>
-          </div>
-
-          {/* Movements List */}
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 border border-gray-700/50 rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Movimentações do Dia</h2>
-            {movements.length === 0 ? (
-              <p className="text-gray-400 text-center py-8">Nenhuma movimentação registrada</p>
-            ) : (
-              <div className="space-y-3">
-                {movements.map(movement => (
-                  <div key={movement.id} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700/30 hover:border-gray-600/50 transition-all group">
-                    <div className="flex items-center gap-3 flex-1">
-                      {getMovementIcon(movement.type)}
-                      <div className="flex-1">
-                        <div className="font-medium text-white">{movement.description}</div>
-                        <div className="text-sm text-gray-400">
-                          {getMovementLabel(movement.type)} • {movement.paymentMethod.toUpperCase()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="font-bold text-lg text-white">
-                        {formatCurrency(movement.amount)}
-                      </div>
-                      <button
-                        onClick={() => handleDeleteMovement(movement.id, movement.description)}
-                        className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 rounded-lg transition-all"
-                        title="Excluir movimentação"
-                      >
-                        <Trash2 size={18} className="text-red-400 hover:text-red-300" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Close Session */}
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 border border-gray-700/50 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold text-white mb-6">Fechar Caixa</h2>
+        {/* Session Info or Open Form */}
+        {!currentSession ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Abrir Caixa</h2>
             <div className="max-w-md">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Saldo Final (contado)
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Saldo Inicial
               </label>
               <input
                 type="text"
-                value={closingBalance}
+                value={openingBalance}
                 onChange={(e) => {
-                  let value = e.target.value
-                  // Permitir sinal negativo no início
-                  const isNegative = value.startsWith('-')
-                  // Remover tudo exceto números
-                  value = value.replace(/\D/g, '')
-                  // Converter para número e dividir por 100 para centavos
-                  const numericValue = parseFloat(value || '0') / 100
-                  // Aplicar sinal negativo se necessário
-                  const finalValue = isNegative ? -numericValue : numericValue
-                  const formatted = formatCurrency(finalValue)
-                  setClosingBalance(formatted)
+                  const value = e.target.value.replace(/\D/g, '')
+                  const formatted = formatCurrency(parseFloat(value) / 100)
+                  setOpeningBalance(formatted)
                 }}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 mb-2"
-                placeholder="R$ 0,00 (use - para valores negativos)"
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 mb-4"
+                placeholder="R$ 0,00"
               />
-              <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
-                <AlertCircle size={16} />
-                <span>Saldo esperado: {formatCurrency(totals?.balance || 0)}</span>
-              </div>
               <button
-                onClick={handleCloseSession}
+                onClick={handleOpenSession}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-red-500/30 transition-all disabled:opacity-50"
+                className="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition-all disabled:opacity-50"
               >
-                <Lock size={18} className="inline mr-2" />
-                {loading ? 'Fechando...' : 'Fechar Caixa'}
+                <Unlock size={18} className="inline mr-2" />
+                {loading ? 'Abrindo...' : 'Abrir Caixa'}
               </button>
             </div>
           </div>
-        </>
-      )}
+        ) : (
+          <>
+            {/* Totals Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Entradas */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-green-600">Entradas</span>
+                  <TrendingUp size={18} className="text-green-500" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {formatCurrency(totals?.income || 0)}
+                </div>
+                <div className="text-sm text-gray-500">Receitas do dia</div>
+              </div>
 
-      {/* Movement Modal */}
-      {isMovementModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-lg">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Registrar {getMovementLabel(movementType)}
-            </h2>
+              {/* Saídas */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-red-600">Saídas</span>
+                  <TrendingDown size={18} className="text-red-500" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {formatCurrency(totals?.expense || 0)}
+                </div>
+                <div className="text-sm text-gray-500">Despesas do dia</div>
+              </div>
 
-            <form onSubmit={handleAddMovement} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Valor *
+              {/* Saldo */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-blue-600">Saldo</span>
+                  <DollarSign size={18} className="text-blue-500" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {formatCurrency(totals?.balance || 0)}
+                </div>
+                <div className="text-sm text-gray-500">Saldo atual</div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => { setMovementType('income'); setIsMovementModalOpen(true) }}
+                className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-6 text-left transition-all shadow-sm group"
+              >
+                <TrendingUp size={32} className="mb-3" />
+                <div className="text-lg font-semibold">Entrada</div>
+                <div className="text-sm opacity-90">Registrar receita</div>
+              </button>
+
+              <button
+                onClick={() => { setMovementType('expense'); setIsMovementModalOpen(true) }}
+                className="bg-red-500 hover:bg-red-600 text-white rounded-lg p-6 text-left transition-all shadow-sm group"
+              >
+                <TrendingDown size={32} className="mb-3" />
+                <div className="text-lg font-semibold">Saída</div>
+                <div className="text-sm opacity-90">Registrar despesa</div>
+              </button>
+
+              <button
+                onClick={() => { setMovementType('deposit'); setIsMovementModalOpen(true) }}
+                className="bg-amber-500 hover:bg-amber-600 text-white rounded-lg p-6 text-left transition-all shadow-sm group"
+              >
+                <Plus size={32} className="mb-3" />
+                <div className="text-lg font-semibold">Reforço</div>
+                <div className="text-sm opacity-90">Adicionar dinheiro</div>
+              </button>
+            </div>
+
+            {/* Movements List */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Movimentações do Dia</h2>
+              {movements.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nenhuma movimentação registrada</p>
+              ) : (
+                <div className="space-y-3">
+                  {movements.map(movement => (
+                    <div key={movement.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-300 transition-all group">
+                      <div className="flex items-center gap-3 flex-1">
+                        {getMovementIcon(movement.type)}
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{movement.description}</div>
+                          <div className="text-sm text-gray-600">
+                            {getMovementLabel(movement.type)} • {movement.paymentMethod.toUpperCase()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className={`font-bold text-lg ${movement.type === 'income' || movement.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(movement.amount)}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteMovement(movement.id, movement.description)}
+                          className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 rounded-lg transition-all"
+                          title="Excluir movimentação"
+                        >
+                          <Trash2 size={18} className="text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Close Session */}
+            <div className="bg-white rounded-xl border border-gray-200 p-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Fechar Caixa</h2>
+              <div className="max-w-md">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Saldo Final (contado)
                 </label>
                 <input
                   type="text"
-                  value={movementData.amount}
+                  value={closingBalance}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '')
-                    const formatted = formatCurrency(parseFloat(value) / 100)
-                    setMovementData({ ...movementData, amount: formatted })
+                    let value = e.target.value
+                    const isNegative = value.startsWith('-')
+                    value = value.replace(/\D/g, '')
+                    const numericValue = parseFloat(value || '0') / 100
+                    const finalValue = isNegative ? -numericValue : numericValue
+                    const formatted = formatCurrency(finalValue)
+                    setClosingBalance(formatted)
                   }}
-                  required
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 mb-2"
                   placeholder="R$ 0,00"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Descrição *
-                </label>
-                <input
-                  type="text"
-                  value={movementData.description}
-                  onChange={(e) => setMovementData({ ...movementData, description: e.target.value })}
-                  required
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
-                  placeholder="Descrição da movimentação"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Método de Pagamento
-                </label>
-                <select
-                  value={movementData.paymentMethod}
-                  onChange={(e) => setMovementData({ ...movementData, paymentMethod: e.target.value as any })}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
-                >
-                  <option value="cash">Dinheiro</option>
-                  <option value="card">Cartão</option>
-                  <option value="pix">PIX</option>
-                  <option value="transfer">Transferência</option>
-                  <option value="check">Cheque</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <AlertCircle size={16} className="text-blue-600" />
+                  <span>Saldo esperado: <strong>{formatCurrency(totals?.balance || 0)}</strong></span>
+                </div>
                 <button
-                  type="button"
-                  onClick={() => setIsMovementModalOpen(false)}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
+                  onClick={handleCloseSession}
                   disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-lg shadow-green-500/30 transition-all disabled:opacity-50"
+                  className="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition-all disabled:opacity-50"
                 >
-                  {loading ? 'Salvando...' : 'Registrar'}
+                  <Lock size={18} className="inline mr-2" />
+                  {loading ? 'Fechando...' : 'Fechar Caixa'}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
+
+    {/* Movement Modal */}
+    {isMovementModalOpen && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Registrar {getMovementLabel(movementType)}
+          </h2>
+
+          <form onSubmit={handleAddMovement} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Valor *
+              </label>
+              <input
+                type="text"
+                value={movementData.amount}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '')
+                  const formatted = formatCurrency(parseFloat(value) / 100)
+                  setMovementData({ ...movementData, amount: formatted })
+                }}
+                required
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
+                placeholder="R$ 0,00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descrição *
+              </label>
+              <input
+                type="text"
+                value={movementData.description}
+                onChange={(e) => setMovementData({ ...movementData, description: e.target.value })}
+                required
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
+                placeholder="Descrição da movimentação"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Método de Pagamento
+              </label>
+              <select
+                value={movementData.paymentMethod}
+                onChange={(e) => setMovementData({ ...movementData, paymentMethod: e.target.value as any })}
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
+              >
+                <option value="cash">Dinheiro</option>
+                <option value="card">Cartão</option>
+                <option value="pix">PIX</option>
+                <option value="transfer">Transferência</option>
+                <option value="check">Cheque</option>
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setIsMovementModalOpen(false)}
+                className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg font-medium shadow-sm transition-all disabled:opacity-50"
+              >
+                {loading ? 'Salvando...' : 'Registrar'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
 
     {/* Modal de Confirmação */}
     <ConfirmDialog />

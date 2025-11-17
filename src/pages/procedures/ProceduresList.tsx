@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Plus, Scissors, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Diamond, Gem, Flower2, Palette, Triangle, Tag } from 'lucide-react'
+import { Plus, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Gem, Flower2, Palette, Triangle, Tag, CheckCircle } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
 
 export default function ProceduresList() {
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
@@ -23,6 +24,17 @@ export default function ProceduresList() {
       containsIgnoringAccents(p.description || '', q)
     )
   }, [q, procedures])
+
+  // Stats calculations
+  const stats = useMemo(() => {
+    const total = procedures.length
+    const active = procedures.filter(p => p.isActive).length
+    const avgPrice = procedures.length > 0
+      ? procedures.reduce((sum, p) => sum + p.price, 0) / procedures.length
+      : 0
+
+    return { total, active, avgPrice }
+  }, [procedures])
 
 
   const getProcedureIcon = (procedureName: string) => {
@@ -93,78 +105,59 @@ export default function ProceduresList() {
   }
 
   return (
-    <div className="space-y-6 relative">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
       {/* Overlay de bloqueio se não tiver assinatura */}
       {!hasActiveSubscription && <UpgradeOverlay message="Procedimentos bloqueados" feature="o cadastro e gestão de procedimentos" />}
-      {/* Header Premium */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-purple-500/20 rounded-xl">
-                <Sparkles size={32} className="text-purple-400" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Procedimentos</h1>
-                <p className="text-gray-400">Gerencie os procedimentos do consultório</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                to="/app/procedimentos/categorias"
-                className="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-5 py-3 rounded-xl font-medium transition-all whitespace-nowrap border border-gray-600"
-              >
-                <Tag size={18} />
-                Categorias
-              </Link>
-              <Link
-                to="/app/procedimentos/novo"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
-              >
-                <Plus size={20} />
-                Novo Procedimento
-              </Link>
-            </div>
-          </div>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              value={q}
-              onChange={e=>setQ(e.target.value)}
-              placeholder="Buscar procedimento..."
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-          </div>
-        </div>
+
+      {/* Header */}
+      <PageHeader
+        icon={Sparkles}
+        title="Procedimentos"
+        subtitle="Gerencie os procedimentos do consultório"
+        stats={[
+          { label: 'Total', value: stats.total, icon: Sparkles, color: 'text-purple-500' },
+          { label: 'Ativos', value: stats.active, icon: CheckCircle, color: 'text-green-500' },
+          { label: 'Preço médio', value: formatCurrency(stats.avgPrice), icon: DollarSign, color: 'text-green-500' }
+        ]}
+        secondaryAction={{
+          label: 'Categorias',
+          icon: Tag,
+          href: '/app/procedimentos/categorias'
+        }}
+        primaryAction={{
+          label: 'Novo Procedimento',
+          icon: Plus,
+          href: '/app/procedimentos/novo'
+        }}
+      />
+
+      {/* Search */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Buscar procedimento..."
+        />
       </div>
 
-      {/* Procedures Grid */}
+      {/* Procedures List */}
       {filtered.length === 0 ? (
-        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10">
-            <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/20">
-              <Sparkles size={40} className="text-purple-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Nenhum procedimento encontrado</h3>
-            <p className="text-gray-400 mb-6">Cadastre os procedimentos oferecidos pelo consultório</p>
-            <Link
-              to="/app/procedimentos/novo"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-            >
-              <Plus size={18} />
-              Cadastrar Procedimento
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          icon={Sparkles}
+          title="Nenhum procedimento encontrado"
+          description="Cadastre os procedimentos oferecidos pelo consultório"
+          action={{
+            label: 'Cadastrar Procedimento',
+            icon: Plus,
+            href: '/app/procedimentos/novo'
+          }}
+        />
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-4">
+          <div className="text-sm text-gray-500 px-1">
+            {filtered.length} procedimento{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
+          </div>
+
           {filtered.map(proc => {
             const iconConfig = getProcedureIcon(proc.name)
             const IconComponent = iconConfig.icon
@@ -173,66 +166,66 @@ export default function ProceduresList() {
               <Link
                 key={proc.id}
                 to={`/app/procedimentos/${proc.id}`}
-                className="group relative block bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-gray-600/80 transition-all duration-300 hover:shadow-xl cursor-pointer"
+                className="block bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-gray-200 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   {/* Icon */}
-                  <div className={`h-16 w-16 rounded-xl ${iconConfig.bgColor} flex items-center justify-center border-2 ${iconConfig.borderColor}`}>
-                    <IconComponent size={28} className={iconConfig.color} />
-                  </div>
-                
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-semibold text-white">{proc.name}</h3>
-                    {!proc.isActive && (
-                      <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">
-                        Inativo
-                      </span>
-                    )}
+                  <div className={`h-14 w-14 rounded-lg ${iconConfig.bgColor.replace('/10', '-50')} flex items-center justify-center border ${iconConfig.borderColor.replace('/30', '-200')}`}>
+                    <IconComponent size={24} className={iconConfig.color.replace('-400', '-500')} />
                   </div>
 
-                  {proc.description && (
-                    <p className="text-sm text-gray-400 mb-2">{proc.description}</p>
-                  )}
-
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-1.5 text-gray-300">
-                      <DollarSign size={16} className="text-green-500" />
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400">Valor Padrão:</span>
-                          <span className="font-semibold text-green-400">{formatCurrency(proc.price)}</span>
-                        </div>
-                        {proc.cashValue && (
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-gray-400">À vista c/ desconto:</span>
-                            <span className="text-xs text-blue-400">{formatCurrency(proc.cashValue)}</span>
-                          </div>
-                        )}
-                        {proc.cardValue && (
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-gray-400">Parcelado:</span>
-                            <span className="text-xs text-purple-400">{formatCurrency(proc.cardValue)}</span>
-                          </div>
-                        )}
-                      </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-base font-semibold text-gray-900">{proc.name}</h3>
+                      {proc.isActive ? (
+                        <StatusBadge label="Ativo" variant="success" dot />
+                      ) : (
+                        <StatusBadge label="Inativo" variant="error" dot />
+                      )}
                     </div>
-                    {proc.durationMinutes && (
-                      <div className="flex items-center gap-1.5 text-gray-400">
-                        <Clock size={16} className="text-orange-500" />
-                        <span>{proc.durationMinutes} min</span>
-                      </div>
+
+                    {proc.description && (
+                      <p className="text-sm text-gray-500 mb-2">{proc.description}</p>
                     )}
+
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <div className="flex items-center gap-1.5 text-gray-700">
+                        <DollarSign size={16} className="text-green-500" />
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Valor Padrão:</span>
+                            <span className="font-semibold text-green-600">{formatCurrency(proc.price)}</span>
+                          </div>
+                          {proc.cashValue && (
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-gray-500">À vista c/ desconto:</span>
+                              <span className="text-xs text-blue-600">{formatCurrency(proc.cashValue)}</span>
+                            </div>
+                          )}
+                          {proc.cardValue && (
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-gray-500">Parcelado:</span>
+                              <span className="text-xs text-purple-600">{formatCurrency(proc.cardValue)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {proc.durationMinutes && (
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <Clock size={16} className="text-orange-500" />
+                          <span>{proc.durationMinutes} min</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
                     <Link
                       to={`/app/procedimentos/${proc.id}/editar`}
                       onClick={(e) => e.stopPropagation()}
-                      className="p-2 text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-all border border-transparent hover:border-orange-500/30"
+                      className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
                       title="Editar procedimento"
                     >
                       <Edit size={18} />
@@ -244,7 +237,7 @@ export default function ProceduresList() {
                         e.stopPropagation()
                         update(proc.id, { isActive: !proc.isActive })
                       }}
-                      className={`p-2 rounded-lg transition-all ${proc.isActive ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-700'}`}
+                      className={`p-2 rounded-lg transition-all ${proc.isActive ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
                       title={proc.isActive ? 'Desativar' : 'Ativar'}
                     >
                       {proc.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}

@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useStudents } from '@/store/students'
-import { GraduationCap, ArrowLeft, Save } from 'lucide-react'
+import { Save, User, Phone as PhoneIcon, FileText } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 
 // Mask functions
@@ -32,38 +32,74 @@ function maskPhone(value: string) {
   return value
 }
 
-function maskCEP(value: string) {
-  const numbers = value.replace(/\D/g, '')
-  if (numbers.length <= 8) {
-    return numbers.replace(/(\d{5})(\d)/, '$1-$2')
-  }
-  return value
-}
-
 export default function StudentForm() {
   const navigate = useNavigate()
-  const { add, loading } = useStudents()
+  const { add, loading, students } = useStudents()
   const { show: showToast } = useToast()
 
-  const [formData, setFormData] = useState({
-    name: '',
-    cpf: '',
-    birth_date: '',
-    phone: '',
-    cep: '',
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    notes: ''
-  })
+  const [name, setName] = useState('')
+  const [cpf, setCpf] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [gender, setGender] = useState('')
+  const [profession, setProfession] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [useWhatsApp, setUseWhatsApp] = useState(true)
+  const [notes, setNotes] = useState('')
+
+  // Verificação de duplicação
+  const duplicateNameWarning = name.trim().length > 0 && students.some(
+    s => s.name.toLowerCase().trim() === name.toLowerCase().trim()
+  )
+
+  const duplicateCpfWarning = cpf.replace(/\D/g, '').length > 0 && students.some(
+    s => s.cpf?.replace(/\D/g, '') === cpf.replace(/\D/g, '')
+  )
+
+  const duplicateEmailWarning = email.trim().length > 0 && students.some(
+    s => s.email?.toLowerCase().trim() === email.toLowerCase().trim()
+  )
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
-    const id = await add(formData)
+    const trimmedName = name.trim()
+    const cleanCpf = cpf.replace(/\D/g, '')
+
+    // Validações
+    if (duplicateNameWarning) {
+      showToast(`Já existe um aluno cadastrado com o nome "${trimmedName}"`, 'error')
+      return
+    }
+
+    if (cleanCpf.length > 0 && duplicateCpfWarning) {
+      showToast(`Já existe um aluno cadastrado com o CPF ${cpf}`, 'error')
+      return
+    }
+
+    if (email.trim() && duplicateEmailWarning) {
+      showToast(`Já existe um aluno cadastrado com o email ${email}`, 'error')
+      return
+    }
+
+    const id = await add({
+      name: trimmedName,
+      cpf,
+      birth_date: birthDate,
+      phone,
+      email,
+      gender,
+      profession,
+      notes,
+      cep: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: ''
+    })
+
     if (id) {
       showToast('Aluno cadastrado com sucesso!', 'success')
       navigate(`/app/alunos/${id}`)
@@ -72,229 +108,243 @@ export default function StudentForm() {
     }
   }
 
-  const handleCEPBlur = async () => {
-    const cep = formData.cep.replace(/\D/g, '')
-    if (cep.length !== 8) return
-
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
-      const data = await response.json()
-
-      if (!data.erro) {
-        setFormData(prev => ({
-          ...prev,
-          street: data.logradouro || '',
-          neighborhood: data.bairro || '',
-          city: data.localidade || '',
-          state: data.uf || ''
-        }))
-      }
-    } catch (error) {
-      console.error('Erro ao buscar CEP:', error)
-    }
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <button
-            onClick={() => navigate('/app/alunos')}
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            Voltar para Alunos
-          </button>
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Novo Aluno</h1>
+            <p className="text-sm text-gray-500 mt-1">Cadastre um novo aluno de mentoria</p>
+          </div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-500/20 rounded-xl">
-              <GraduationCap size={32} className="text-purple-400" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Novo Aluno</h1>
-              <p className="text-gray-400">Cadastre um novo aluno de mentoria</p>
-            </div>
+            <Link
+              to="/app/alunos"
+              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              form="student-form"
+              disabled={loading || !name.trim() || duplicateNameWarning || duplicateCpfWarning || duplicateEmailWarning}
+              className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all ${
+                loading || !name.trim() || duplicateNameWarning || duplicateCpfWarning || duplicateEmailWarning
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
+              }`}
+            >
+              <Save size={18} />
+              {loading ? 'Salvando...' : 'Salvar Aluno'}
+            </button>
           </div>
         </div>
+
+        {/* Form */}
+        <form id="student-form" onSubmit={handleSubmit} className="space-y-4">
+          {/* Seção: Dados Pessoais */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <User size={18} className="text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Dados Pessoais</h3>
+                <p className="text-xs text-gray-500">Informações do aluno</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome Completo <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Digite o nome completo"
+                  required
+                  className={`w-full bg-gray-50 border ${
+                    duplicateNameWarning
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/20'
+                  } text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 text-sm`}
+                />
+                {duplicateNameWarning ? (
+                  <p className="text-xs text-red-500 mt-0.5">Já existe um aluno com este nome</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-0.5">Ex: João Silva Santos</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                <input
+                  value={cpf}
+                  onChange={(e) => setCpf(maskCPF(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  className={`w-full bg-gray-50 border ${
+                    duplicateCpfWarning
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/20'
+                  } text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 text-sm`}
+                />
+                {duplicateCpfWarning ? (
+                  <p className="text-xs text-red-500 mt-0.5">CPF já cadastrado</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-0.5">Opcional - apenas números</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Opcional</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gênero</label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                >
+                  <option value="">Selecione...</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="feminino">Feminino</option>
+                  <option value="outro">Outro</option>
+                  <option value="prefiro_nao_dizer">Prefiro não dizer</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Profissão/Ocupação</label>
+                <input
+                  value={profession}
+                  onChange={(e) => setProfession(e.target.value)}
+                  placeholder="Ex: Estudante, Profissional"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Opcional</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção: Contato */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <PhoneIcon size={18} className="text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Contato</h3>
+                <p className="text-xs text-gray-500">Formas de comunicação</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className={`w-full bg-gray-50 border ${
+                    duplicateEmailWarning
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-gray-200 focus:border-orange-500 focus:ring-orange-500/20'
+                  } text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 text-sm`}
+                />
+                {duplicateEmailWarning ? (
+                  <p className="text-xs text-red-500 mt-0.5">Email já cadastrado</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-0.5">Opcional - para notificações</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(maskPhone(e.target.value))}
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Opcional - celular ou fixo</p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useWhatsApp}
+                    onChange={(e) => setUseWhatsApp(e.target.checked)}
+                    className="w-4 h-4 text-orange-500 bg-gray-50 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                  />
+                  <span className="text-sm text-gray-700">Usar mesmo telefone para WhatsApp</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção: Observações */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <FileText size={18} className="text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Observações</h3>
+                <p className="text-xs text-gray-500">Informações adicionais</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Anotações</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Adicione observações sobre o aluno..."
+                rows={4}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-0.5">Opcional - informações relevantes sobre o aluno</p>
+            </div>
+          </div>
+
+          {/* Sticky Footer */}
+          <div className="sticky bottom-0 bg-gray-50 pt-4 pb-2 -mx-8 px-8 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 max-w-5xl mx-auto">
+              <Link
+                to="/app/alunos"
+                className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={loading || !name.trim() || duplicateNameWarning || duplicateCpfWarning || duplicateEmailWarning}
+                className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all ${
+                  loading || !name.trim() || duplicateNameWarning || duplicateCpfWarning || duplicateEmailWarning
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
+                }`}
+              >
+                <Save size={18} />
+                {loading ? 'Salvando...' : 'Salvar Aluno'}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
-
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 space-y-6">
-        {/* Dados Pessoais */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <GraduationCap size={20} className="text-purple-400" />
-            Dados Pessoais
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Nome Completo *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="Digite o nome completo do aluno"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">CPF</label>
-              <input
-                type="text"
-                value={formData.cpf}
-                onChange={(e) => setFormData({ ...formData, cpf: maskCPF(e.target.value) })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="000.000.000-00"
-                maxLength={14}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data de Nascimento</label>
-              <input
-                type="date"
-                value={formData.birth_date}
-                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
-              <input
-                type="text"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: maskPhone(e.target.value) })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="(00) 00000-0000"
-                maxLength={15}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Endereço */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4">Endereço</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">CEP</label>
-              <input
-                type="text"
-                value={formData.cep}
-                onChange={(e) => setFormData({ ...formData, cep: maskCEP(e.target.value) })}
-                onBlur={handleCEPBlur}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="00000-000"
-                maxLength={9}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Rua</label>
-              <input
-                type="text"
-                value={formData.street}
-                onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="Nome da rua"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Número</label>
-              <input
-                type="text"
-                value={formData.number}
-                onChange={(e) => setFormData({ ...formData, number: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="Nº"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Complemento</label>
-              <input
-                type="text"
-                value={formData.complement}
-                onChange={(e) => setFormData({ ...formData, complement: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="Apto, Bloco, etc"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Bairro</label>
-              <input
-                type="text"
-                value={formData.neighborhood}
-                onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="Nome do bairro"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Cidade</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="Nome da cidade"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Estado</label>
-              <input
-                type="text"
-                value={formData.state}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                placeholder="UF"
-                maxLength={2}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Observações */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4">Observações</h2>
-          <textarea
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            rows={4}
-            className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
-            placeholder="Observações adicionais sobre o aluno..."
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-4 pt-4">
-          <button
-            type="button"
-            onClick={() => navigate('/app/alunos')}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-medium transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading || !formData.name}
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all"
-          >
-            <Save size={18} />
-            {loading ? 'Salvando...' : 'Salvar Aluno'}
-          </button>
-        </div>
-      </form>
     </div>
   )
 }

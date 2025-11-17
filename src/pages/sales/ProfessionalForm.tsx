@@ -1,16 +1,31 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
-import { Save } from 'lucide-react'
+import { Save, User, Home, FileText } from 'lucide-react'
+import { useToast } from '@/hooks/useToast'
 
 export default function ProfessionalForm() {
   const { addProfessional } = useSales()
   const navigate = useNavigate()
+  const { show: showToast } = useToast()
 
-  const [cep, setCep] = useState('')
+  const [name, setName] = useState('')
   const [cpf, setCpf] = useState('')
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [specialty, setSpecialty] = useState('')
+  const [registrationNumber, setRegistrationNumber] = useState('')
+  const [cep, setCep] = useState('')
+  const [street, setStreet] = useState('')
+  const [number, setNumber] = useState('')
+  const [complement, setComplement] = useState('')
+  const [neighborhood, setNeighborhood] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [notes, setNotes] = useState('')
   const [isLoadingCep, setIsLoadingCep] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // Função para formatar CEP
   const formatCep = (value: string) => {
@@ -60,29 +75,25 @@ export default function ProfessionalForm() {
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
       const data = await response.json()
-      
+
       if (!data.erro) {
-        // Preencher campos automaticamente
-        const form = document.querySelector('form') as HTMLFormElement
-        if (form) {
-          (form.querySelector('[name="street"]') as HTMLInputElement).value = data.logradouro || ''
-          ;(form.querySelector('[name="neighborhood"]') as HTMLInputElement).value = data.bairro || ''
-          ;(form.querySelector('[name="city"]') as HTMLInputElement).value = data.localidade || ''
-          ;(form.querySelector('[name="state"]') as HTMLInputElement).value = data.uf || ''
-        }
+        setStreet(data.logradouro || '')
+        setNeighborhood(data.bairro || '')
+        setCity(data.localidade || '')
+        setState(data.uf || '')
       } else {
-        alert('CEP não encontrado')
+        showToast('CEP não encontrado', 'error')
       }
     } catch (error) {
       console.error('Erro ao buscar CEP:', error)
-      alert('Erro ao buscar endereço')
+      showToast('Erro ao buscar endereço', 'error')
     } finally {
       setIsLoadingCep(false)
     }
   }
 
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCep(e.target.value)
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value)
     setCep(formatted)
 
     // Buscar automaticamente quando CEP estiver completo
@@ -91,261 +102,373 @@ export default function ProfessionalForm() {
     }
   }
 
-  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCpf(e.target.value)
-    setCpf(formatted)
-  }
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value)
-    setPhone(formatted)
-  }
-
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const data = new FormData(e.currentTarget)
 
+    if (!name.trim()) {
+      showToast('Nome é obrigatório', 'error')
+      return
+    }
+
+    if (!cpf.trim()) {
+      showToast('CPF é obrigatório', 'error')
+      return
+    }
+
+    if (!phone.trim()) {
+      showToast('Telefone é obrigatório', 'error')
+      return
+    }
+
+    if (!specialty) {
+      showToast('Especialidade é obrigatória', 'error')
+      return
+    }
+
+    setLoading(true)
     try {
       const professionalData = {
-        name: String(data.get('name') || ''),
+        name: name.trim(),
         cpf: cpf || undefined,
         phone: phone || undefined,
-        email: String(data.get('email') || '') || undefined,
-        birthDate: String(data.get('birthDate') || '') || undefined,
-        specialty: String(data.get('specialty') || '') || undefined,
-        registrationNumber: String(data.get('registrationNumber') || '') || undefined,
-        clinic: String(data.get('clinic') || '') || undefined,
+        email: email || undefined,
+        birthDate: birthDate || undefined,
+        specialty: specialty || undefined,
+        registrationNumber: registrationNumber || undefined,
         cep: cep || undefined,
-        street: String(data.get('street') || '') || undefined,
-        number: String(data.get('number') || '') || undefined,
-        complement: String(data.get('complement') || '') || undefined,
-        neighborhood: String(data.get('neighborhood') || '') || undefined,
-        city: String(data.get('city') || '') || undefined,
-        state: String(data.get('state') || '') || undefined,
-        notes: String(data.get('notes') || '') || undefined,
+        street: street || undefined,
+        number: number || undefined,
+        complement: complement || undefined,
+        neighborhood: neighborhood || undefined,
+        city: city || undefined,
+        state: state || undefined,
+        notes: notes || undefined,
       }
 
       const id = await addProfessional(professionalData)
 
       if (id) {
-        navigate('/app/vendas')
+        showToast('Profissional cadastrado com sucesso!', 'success')
+        navigate('/app/vendas/profissionais')
       } else {
-        console.error('❌ Erro ao salvar profissional')
-        alert('Erro ao cadastrar profissional. Verifique o console.')
+        showToast('Erro ao cadastrar profissional. Tente novamente.', 'error')
       }
     } catch (error) {
-      console.error('❌ Erro ao cadastrar profissional:', error)
-      alert('Erro ao cadastrar profissional. Verifique o console.')
+      console.error('Erro ao cadastrar profissional:', error)
+      showToast('Erro ao cadastrar profissional. Tente novamente.', 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
+  const canSubmit = name.trim() && cpf.trim() && phone.trim() && specialty
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Form */}
-      <form onSubmit={onSubmit} className="space-y-6">
-        {/* Basic Info */}
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Informações Básicas</h3>
-          
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Nome Completo *</label>
-              <input 
-                name="name" 
-                required 
-                placeholder="Ex: Dr. João Silva"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              />
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <Link to="/app" className="hover:text-amber-600 transition-colors">Início</Link>
+              <span>›</span>
+              <Link to="/app/vendas" className="hover:text-amber-600 transition-colors">Vendas</Link>
+              <span>›</span>
+              <Link to="/app/vendas/profissionais" className="hover:text-amber-600 transition-colors">Profissionais</Link>
+              <span>›</span>
+              <span className="text-gray-900">Novo</span>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">CPF</label>
-              <input
-                value={cpf}
-                onChange={handleCpfChange}
-                placeholder="000.000.000-00"
-                maxLength={14}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
-              <input
-                value={phone}
-                onChange={handlePhoneChange}
-                placeholder="(11) 99999-9999"
-                maxLength={15}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data de Nascimento</label>
-              <input
-                name="birthDate"
-                type="date"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Especialidade</label>
-              <select
-                name="specialty"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="">Selecione a especialidade</option>
-                <option value="Biomédico(a)">Biomédico(a)</option>
-                <option value="Biólogo(a)">Biólogo(a)</option>
-                <option value="Dentista">Dentista</option>
-                <option value="Enfermeiro(a)">Enfermeiro(a)</option>
-                <option value="Esteticista">Esteticista</option>
-                <option value="Farmacêutico(a)">Farmacêutico(a)</option>
-                <option value="Fisioterapeuta">Fisioterapeuta</option>
-                <option value="Médico(a)">Médico(a)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Registro Profissional</label>
-              <input
-                name="registrationNumber"
-                placeholder="CRO, CRM, COREN, etc"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Clínica/Consultório</label>
-              <input
-                name="clinic"
-                placeholder="Nome da clínica ou consultório"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">E-mail</label>
-              <input
-                name="email"
-                type="email"
-                placeholder="joao@exemplo.com"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Novo Profissional</h1>
+            <p className="text-sm text-gray-500 mt-1">Preencha os dados do profissional de vendas</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/app/vendas/profissionais"
+              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </Link>
+            <button
+              type="submit"
+              form="professional-form"
+              disabled={!canSubmit || loading}
+              className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all ${
+                !canSubmit || loading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
+              }`}
+            >
+              <Save size={18} />
+              {loading ? 'Salvando...' : 'Salvar Profissional'}
+            </button>
           </div>
         </div>
 
-        {/* Address */}
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Endereço</h3>
-          
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">CEP</label>
-              <div className="relative">
-                <input 
-                  value={cep}
-                  onChange={handleCepChange}
-                  placeholder="00000-000"
-                  maxLength={9}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-                />
-                {isLoadingCep && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-400 text-sm">
-                    Buscando...
-                  </div>
-                )}
+        {/* Form */}
+        <form id="professional-form" onSubmit={onSubmit} className="space-y-4">
+          {/* Seção: Informações Básicas */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-amber-50 rounded-lg">
+                <User size={18} className="text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Informações Básicas</h3>
+                <p className="text-xs text-gray-500">Dados do profissional</p>
               </div>
             </div>
-            
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Logradouro</label>
-              <input 
-                name="street" 
-                placeholder="Rua, Avenida, etc."
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Número</label>
-              <input 
-                name="number" 
-                placeholder="123"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Complemento</label>
-              <input 
-                name="complement" 
-                placeholder="Apto, Sala, etc."
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Bairro</label>
-              <input 
-                name="neighborhood" 
-                placeholder="Centro, Jardins, etc."
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Cidade</label>
-              <input 
-                name="city" 
-                placeholder="São Paulo"
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Estado</label>
-              <input 
-                name="state" 
-                placeholder="SP"
-                maxLength={2}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              />
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome Completo <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Dr. João Silva"
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Digite o nome completo do profissional</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CPF <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={cpf}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Apenas números</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  maxLength={15}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Celular ou fixo</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Opcional</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Especialidade <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={specialty}
+                  onChange={(e) => setSpecialty(e.target.value)}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
+                >
+                  <option value="">Selecione a especialidade</option>
+                  <option value="Biomédica">Biomédica</option>
+                  <option value="Cirurgiã">Cirurgiã</option>
+                  <option value="Dentista">Dentista</option>
+                  <option value="Dermatologista">Dermatologista</option>
+                  <option value="Enfermeiro(a)">Enfermeiro(a)</option>
+                  <option value="Esteticista">Esteticista</option>
+                  <option value="Farmacêutico(a)">Farmacêutico(a)</option>
+                  <option value="Fisioterapeuta">Fisioterapeuta</option>
+                  <option value="Médico(a)">Médico(a)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Registro Profissional</label>
+                <input
+                  value={registrationNumber}
+                  onChange={(e) => setRegistrationNumber(e.target.value)}
+                  placeholder="CRO, CRM, COREN, etc"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Ex: CRO 12345</p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Será usado para notificações</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Notes */}
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Observações</h3>
-          
-          <textarea 
-            name="notes" 
-            placeholder="Informações adicionais sobre o profissional..."
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            rows={4}
-          />
-        </div>
-        
-        {/* Actions */}
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-          >
-            <Save size={18} />
-            Cadastrar Profissional
-          </button>
-          <Link
-            to="/app/vendas"
-            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
-          >
-            Cancelar
-          </Link>
-        </div>
-      </form>
+          {/* Seção: Endereço */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <Home size={18} className="text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Endereço</h3>
+                <p className="text-xs text-gray-500">Localização do profissional</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CEP <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    value={cep}
+                    onChange={(e) => handleCepChange(e.target.value)}
+                    placeholder="00000-000"
+                    maxLength={9}
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  />
+                  {isLoadingCep && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-amber-600 text-xs">
+                      Buscando...
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">Preencherá automaticamente os dados</p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Logradouro</label>
+                <input
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  placeholder="Rua, Avenida, etc."
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                <input
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder="123"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                <input
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                  placeholder="Apto, Sala, etc."
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                <input
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                  placeholder="Centro, Jardins, etc."
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                <input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="São Paulo"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <input
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  placeholder="SP"
+                  maxLength={2}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Seção: Observações */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <FileText size={18} className="text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Observações</h3>
+                <p className="text-xs text-gray-500">Informações adicionais</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Anotações</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Adicione observações sobre o profissional..."
+                rows={4}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-0.5">Opcional - informações relevantes sobre o profissional</p>
+            </div>
+          </div>
+
+          {/* Sticky Footer */}
+          <div className="sticky bottom-0 bg-gray-50 pt-4 pb-2 -mx-8 px-8 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 max-w-5xl mx-auto">
+              <Link
+                to="/app/vendas/profissionais"
+                className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </Link>
+              <button
+                type="submit"
+                disabled={!canSubmit || loading}
+                className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all ${
+                  !canSubmit || loading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
+                }`}
+              >
+                <Save size={18} />
+                {loading ? 'Salvando...' : 'Salvar Profissional'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

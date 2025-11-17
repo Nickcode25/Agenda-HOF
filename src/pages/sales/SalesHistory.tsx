@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, Edit, ArrowLeft, ShoppingCart, FileDown } from 'lucide-react'
+import { Search, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, BarChart3, ShoppingCart, FileDown } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { containsIgnoringAccents } from '@/utils/textSearch'
@@ -43,7 +43,6 @@ export default function SalesHistory() {
         setEndDate(`${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`)
         break
       case 'month':
-        const monthStart = new Date(year, month, 1)
         const monthEnd = new Date(year, month + 1, 0)
         setStartDate(`${year}-${String(month + 1).padStart(2, '0')}-01`)
         setEndDate(`${year}-${String(month + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`)
@@ -53,16 +52,12 @@ export default function SalesHistory() {
         setEndDate(`${year}-12-31`)
         break
       case 'custom':
-        // Não fazer nada, usuário vai definir as datas manualmente
         break
     }
   }, [periodFilter])
 
   const filtered = useMemo(() => {
     let result = sales
-
-    console.log('[SALES HISTORY] Total vendas:', sales.length)
-    console.log('[SALES HISTORY] Vendas:', sales.map(s => ({ id: s.id, createdAt: s.createdAt, professional: s.professionalName })))
 
     if (searchQuery.trim()) {
       result = result.filter(sale =>
@@ -76,35 +71,16 @@ export default function SalesHistory() {
       result = result.filter(sale => sale.paymentStatus === statusFilter)
     }
 
-    // Filtrar por data
     if (startDate && endDate) {
-      console.log('[SALES HISTORY] Filtro de data:', { startDate, endDate })
-
       result = result.filter(sale => {
-        // Extrair apenas a parte da data (YYYY-MM-DD) do ISO string
-        const saleDateStr = sale.createdAt.split('T')[0] // Pega apenas YYYY-MM-DD
-
-        const matches = saleDateStr >= startDate && saleDateStr <= endDate
-
-        console.log('[SALES HISTORY] Venda:', {
-          id: sale.id,
-          createdAt: sale.createdAt,
-          saleDateStr,
-          startDate,
-          endDate,
-          matches
-        })
-
-        return matches
+        const saleDateStr = sale.createdAt.split('T')[0]
+        return saleDateStr >= startDate && saleDateStr <= endDate
       })
-
-      console.log('[SALES HISTORY] Vendas após filtro de data:', result.length)
     }
 
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [sales, searchQuery, statusFilter, startDate, endDate])
 
-  // Calcular totais do período
   const periodTotals = useMemo(() => {
     const total = filtered.reduce((sum, sale) => sum + sale.totalAmount, 0)
     const profit = filtered.reduce((sum, sale) => sum + sale.totalProfit, 0)
@@ -115,13 +91,13 @@ export default function SalesHistory() {
   const getPaymentStatusConfig = (status: string) => {
     switch (status) {
       case 'paid':
-        return { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/30', label: 'Pago' }
+        return { icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', label: 'Pago', dot: 'bg-green-500' }
       case 'pending':
-        return { icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', label: 'Pendente' }
+        return { icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', label: 'Pendente', dot: 'bg-yellow-500' }
       case 'overdue':
-        return { icon: AlertCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', label: 'Vencido' }
+        return { icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', label: 'Vencido', dot: 'bg-red-500' }
       default:
-        return { icon: Clock, color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/30', label: 'Pendente' }
+        return { icon: Clock, color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', label: 'Pendente', dot: 'bg-gray-500' }
     }
   }
 
@@ -139,18 +115,15 @@ export default function SalesHistory() {
   const exportToPDF = () => {
     const doc = new jsPDF()
 
-    // Configurar título
     doc.setFontSize(20)
-    doc.setTextColor(255, 120, 40) // Cor laranja
+    doc.setTextColor(245, 158, 11) // Amber
     doc.text('Relatório de Vendas', 14, 20)
 
-    // Período do relatório
     doc.setFontSize(10)
     doc.setTextColor(100, 100, 100)
     const periodText = `Período: ${new Date(startDate).toLocaleDateString('pt-BR')} até ${new Date(endDate).toLocaleDateString('pt-BR')}`
     doc.text(periodText, 14, 28)
 
-    // Totais do período
     doc.setFontSize(12)
     doc.setTextColor(0, 0, 0)
     doc.text('Resumo do Período', 14, 38)
@@ -161,9 +134,7 @@ export default function SalesHistory() {
     doc.text(`Faturamento Total: ${formatCurrency(periodTotals.total)}`, 14, 51)
     doc.text(`Lucro Total: ${formatCurrency(periodTotals.profit)}`, 14, 57)
 
-    // Preparar dados da tabela
     const tableData = filtered.map(sale => {
-      // Formatar produtos com quantidade: "2 Belinelo, 1 Rennova Lift Lido, 3 Mesofiller"
       const products = sale.items
         .map(item => `${item.quantity} ${item.stockItemName}`)
         .join(', ')
@@ -180,14 +151,13 @@ export default function SalesHistory() {
       ]
     })
 
-    // Criar tabela
     autoTable(doc, {
       startY: 65,
       head: [['Data', 'Profissional', 'Produtos', 'Pagamento', 'Status', 'Total', 'Lucro']],
       body: tableData,
       theme: 'striped',
       headStyles: {
-        fillColor: [255, 120, 40], // Cor laranja
+        fillColor: [245, 158, 11],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 9
@@ -200,18 +170,17 @@ export default function SalesHistory() {
         fillColor: [245, 245, 245]
       },
       columnStyles: {
-        0: { cellWidth: 22 },  // Data
-        1: { cellWidth: 35 },  // Profissional
-        2: { cellWidth: 45 },  // Produtos
-        3: { cellWidth: 25 },  // Pagamento
-        4: { cellWidth: 20 },  // Status
-        5: { cellWidth: 23 },  // Total
-        6: { cellWidth: 23 }   // Lucro
+        0: { cellWidth: 22 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 23 },
+        6: { cellWidth: 23 }
       },
       margin: { left: 14, right: 14 }
     })
 
-    // Adicionar rodapé
     const pageCount = doc.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
@@ -229,145 +198,185 @@ export default function SalesHistory() {
       )
     }
 
-    // Salvar PDF
     const fileName = `relatorio-vendas-${startDate}-${endDate}.pdf`
     doc.save(fileName)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Premium */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-6">
-            <Link to="/app/vendas" className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors">
-              <ArrowLeft size={24} className="text-gray-400 hover:text-white" />
-            </Link>
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <Link to="/app" className="hover:text-amber-600 transition-colors">Início</Link>
+              <span>›</span>
+              <Link to="/app/vendas" className="hover:text-amber-600 transition-colors">Vendas</Link>
+              <span>›</span>
+              <span className="text-gray-900">Histórico</span>
+            </div>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-orange-500/20 rounded-xl">
-                <ShoppingCart size={32} className="text-orange-400" />
+              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200">
+                <BarChart3 size={24} className="text-amber-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Histórico de Vendas</h1>
-                <p className="text-gray-400">Visualize todas as vendas realizadas</p>
+                <h1 className="text-2xl font-bold text-gray-900">Histórico de Vendas</h1>
+                <p className="text-sm text-gray-500">Visualize todas as vendas realizadas</p>
               </div>
             </div>
           </div>
-          {/* Filtros de Período */}
-          <div className="flex flex-wrap gap-2 mb-4 items-center justify-between">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setPeriodFilter('day')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'day'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Hoje
-              </button>
-              <button
-                onClick={() => setPeriodFilter('week')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'week'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Semana
-              </button>
-              <button
-                onClick={() => setPeriodFilter('month')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'month'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Mês
-              </button>
-              <button
-                onClick={() => setPeriodFilter('year')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'year'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Ano
-              </button>
-              <button
-                onClick={() => setPeriodFilter('custom')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'custom'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Personalizado
-              </button>
-            </div>
+          <button
+            onClick={exportToPDF}
+            disabled={filtered.length === 0}
+            className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
+          >
+            <FileDown size={18} />
+            Exportar PDF
+          </button>
+        </div>
 
-            {/* Botão Exportar PDF */}
+        {/* Period Filter Tabs */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             <button
-              onClick={exportToPDF}
-              disabled={filtered.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all"
-              title="Exportar relatório em PDF"
+              onClick={() => setPeriodFilter('day')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                periodFilter === 'day'
+                  ? 'bg-amber-500 text-white'
+                  : 'text-amber-600 hover:bg-amber-50'
+              }`}
             >
-              <FileDown size={18} />
-              Exportar PDF
+              Hoje
+            </button>
+            <button
+              onClick={() => setPeriodFilter('week')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                periodFilter === 'week'
+                  ? 'bg-amber-500 text-white'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => setPeriodFilter('month')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                periodFilter === 'month'
+                  ? 'bg-amber-500 text-white'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Mês
+            </button>
+            <button
+              onClick={() => setPeriodFilter('year')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                periodFilter === 'year'
+                  ? 'bg-amber-500 text-white'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Ano
+            </button>
+            <button
+              onClick={() => setPeriodFilter('custom')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                periodFilter === 'custom'
+                  ? 'bg-amber-500 text-white'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Personalizado
             </button>
           </div>
 
-          {/* Campos de Data */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data Inicial</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value)
-                  if (periodFilter !== 'custom') setPeriodFilter('custom')
-                }}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data Final</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value)
-                  if (periodFilter !== 'custom') setPeriodFilter('custom')
-                }}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
+          {/* Date Fields */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Data Inicial</label>
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value)
+                      if (periodFilter !== 'custom') setPeriodFilter('custom')
+                    }}
+                    className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Data Final</label>
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value)
+                      if (periodFilter !== 'custom') setPeriodFilter('custom')
+                    }}
+                    className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => {}}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-medium transition-all text-sm"
+              >
+                Aplicar
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Busca e Filtros */}
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-amber-600">Faturamento Total</span>
+              <DollarSign size={18} className="text-amber-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{formatCurrency(periodTotals.total)}</div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-blue-600">Lucro Total</span>
+              <BarChart3 size={18} className="text-blue-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{formatCurrency(periodTotals.profit)}</div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-purple-600">Total de Vendas</span>
+              <ShoppingCart size={18} className="text-purple-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{periodTotals.count}</div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar por profissional, produto ou ID da venda..."
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm min-w-[160px]"
             >
               <option value="">Todos os status</option>
               <option value="paid">Pago</option>
@@ -376,136 +385,78 @@ export default function SalesHistory() {
             </select>
           </div>
         </div>
-      </div>
 
-      {/* Totais do Período */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign size={24} className="text-green-400" />
-            <span className="text-sm text-gray-400">Faturamento Total</span>
-          </div>
-          <div className="text-3xl font-bold text-green-400">{formatCurrency(periodTotals.total)}</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign size={24} className="text-blue-400" />
-            <span className="text-sm text-gray-400">Lucro Total</span>
-          </div>
-          <div className="text-3xl font-bold text-blue-400">{formatCurrency(periodTotals.profit)}</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/30 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <ShoppingCart size={24} className="text-purple-400" />
-            <span className="text-sm text-gray-400">Total de Vendas</span>
-          </div>
-          <div className="text-3xl font-bold text-purple-400">{periodTotals.count}</div>
-        </div>
-      </div>
-
-      {/* Sales List */}
-      {filtered.length === 0 ? (
-        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10">
-            <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-500/20">
-              <ShoppingCart size={40} className="text-orange-400" />
+        {/* Sales List */}
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-200">
+              <ShoppingCart size={32} className="text-amber-500" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Nenhuma venda encontrada</h3>
-            <p className="text-gray-400">
-              {searchQuery || statusFilter ? 'Tente ajustar os filtros de busca' : 'Ainda não há vendas registradas'}
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma venda encontrada</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Ainda não há vendas registradas para este período
             </p>
           </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map(sale => {
-            const statusConfig = getPaymentStatusConfig(sale.paymentStatus)
-            const StatusIcon = statusConfig.icon
+        ) : (
+          <div className="space-y-4">
+            {filtered.map(sale => {
+              const statusConfig = getPaymentStatusConfig(sale.paymentStatus)
 
-            return (
-              <div key={sale.id} className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-all">
-                {/* Header da venda */}
-                <div className="bg-gray-750 px-4 py-3 border-b border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-white text-lg">{sale.professionalName}</h3>
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.border} border`}>
-                        <StatusIcon size={12} className={statusConfig.color} />
-                        <span className={statusConfig.color}>{statusConfig.label}</span>
+              return (
+                <div key={sale.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all">
+                  {/* Header */}
+                  <div className="px-6 py-4 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <ShoppingCart size={18} className="text-amber-500" />
+                        <span className="font-medium text-gray-900">Vendedor: {sale.professionalName}</span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
                           <Calendar size={14} />
-                          <span>{new Date(sale.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                          <span>{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
                         </div>
-                        <div className="hidden sm:flex items-center gap-1.5 bg-gray-700/50 px-2 py-1 rounded">
-                          <DollarSign size={14} />
-                          <span>{getPaymentMethodLabel(sale.paymentMethod)}</span>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <DollarSign size={14} className="text-green-500" />
+                          <span className="font-semibold text-gray-900">{formatCurrency(sale.totalAmount)}</span>
                         </div>
                       </div>
-                      <Link
-                        to={`/app/vendas/editar/${sale.id}`}
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                      >
-                        <Edit size={18} className="text-gray-400 hover:text-orange-400" />
-                      </Link>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></div>
+                        <span className={`text-sm font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Produtos */}
-                <div className="px-4 py-3">
-                  <div className="space-y-2">
-                    {sale.items.map((item, index) => (
-                      <div key={item.id} className={`flex items-center justify-between py-2 ${index !== sale.items.length - 1 ? 'border-b border-gray-700/50' : ''}`}>
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
-                            <ShoppingCart size={14} className="text-orange-400" />
-                          </div>
-                          <div>
-                            <p className="text-white font-medium">{item.stockItemName}</p>
-                            <p className="text-xs text-gray-400">Quantidade: {item.quantity}</p>
-                          </div>
+                  {/* Items */}
+                  <div className="px-6 py-4 bg-gray-50">
+                    <div className="text-sm text-gray-700 mb-2">Items:</div>
+                    <div className="space-y-1">
+                      {sale.items.map(item => (
+                        <div key={item.id} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">├─ {item.stockItemName} - {formatCurrency(item.totalPrice)}</span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-white font-semibold">{formatCurrency(item.totalPrice)}</p>
-                          <p className="text-xs text-green-400">+{formatCurrency(item.profit)}</p>
-                        </div>
+                      ))}
+                      <div className="text-sm text-gray-600">
+                        └─ Quantidade: {sale.items.reduce((sum, item) => sum + item.quantity, 0)}
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Footer com totais */}
-                <div className="bg-gray-750 px-4 py-3 border-t border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-400">
-                      {sale.items.length} {sale.items.length === 1 ? 'item' : 'itens'}
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400 mb-0.5">Total</p>
-                        <p className="text-lg font-bold text-green-400">{formatCurrency(sale.totalAmount)}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400 mb-0.5">Lucro</p>
-                        <p className="text-lg font-bold text-blue-400">{formatCurrency(sale.totalProfit)}</p>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="text-sm">
+                        <span className="text-gray-600">Lucro: </span>
+                        <span className="font-semibold text-green-600">{formatCurrency(sale.totalProfit)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

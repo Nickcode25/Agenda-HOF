@@ -5,8 +5,9 @@ import { useStock } from '@/store/stock'
 import { autoRegisterCashMovement } from '@/store/cash'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import { SaleItem } from '@/types/sales'
-import { Save, Plus, Trash2, User, ArrowLeft, CreditCard, DollarSign } from 'lucide-react'
+import { Save, Plus, Trash2, User, ShoppingCart, CreditCard, Package } from 'lucide-react'
 import SearchableSelect from '@/components/SearchableSelect'
+import { useToast } from '@/hooks/useToast'
 
 export default function SaleForm() {
   const { id } = useParams<{ id: string }>()
@@ -14,6 +15,7 @@ export default function SaleForm() {
   const { items: stockItems, removeStock, fetchItems } = useStock()
   const navigate = useNavigate()
   const isEditing = !!id
+  const { show } = useToast()
 
   useEffect(() => {
     fetchProfessionals()
@@ -109,14 +111,14 @@ export default function SaleForm() {
     e.preventDefault()
 
     if (!selectedProfessional) {
-      alert('Selecione um profissional')
+      show('Selecione um profissional', 'error')
       return
     }
 
     // Verificar estoque disponível
     for (const item of calculatedItems) {
       if (item.stockItem!.quantity < item.quantity) {
-        alert(`Estoque insuficiente de ${item.stockItem!.name}. Disponível: ${item.stockItem!.quantity} ${item.stockItem!.unit}`)
+        show(`Estoque insuficiente de ${item.stockItem!.name}. Disponível: ${item.stockItem!.quantity} ${item.stockItem!.unit}`, 'error')
         return
       }
     }
@@ -152,7 +154,7 @@ export default function SaleForm() {
           notes: notes || undefined
         })
 
-        alert('Venda atualizada com sucesso!')
+        show('Venda atualizada com sucesso!', 'success')
       } else {
         // Criar nova venda no Supabase
         const saleId = await createSale({
@@ -171,7 +173,7 @@ export default function SaleForm() {
         })
 
         if (!saleId) {
-          alert('Erro ao registrar venda')
+          show('Erro ao registrar venda', 'error')
           return
         }
 
@@ -208,259 +210,280 @@ export default function SaleForm() {
       navigate('/app/vendas')
     } catch (error) {
       console.error('❌ Erro ao processar venda:', error)
-      alert(`Erro ao ${isEditing ? 'atualizar' : 'registrar'} venda`)
+      show(`Erro ao ${isEditing ? 'atualizar' : 'registrar'} venda`, 'error')
     }
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Form com Header Integrado */}
-      <form onSubmit={onSubmit} className="space-y-6">
-        {/* Header Premium */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-6">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header com breadcrumb */}
+        <div>
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <Link to="/app" className="hover:text-amber-600 transition-colors">Início</Link>
+            <span>›</span>
+            <Link to="/app/vendas" className="hover:text-amber-600 transition-colors">Vendas</Link>
+            <span>›</span>
+            <span className="text-gray-900">{isEditing ? 'Editar' : 'Nova Venda'}</span>
           </div>
-
-          <div className="relative z-10 flex items-center gap-4">
-            <Link
-              to="/app/vendas"
-              className="p-3 hover:bg-gray-700/50 rounded-xl transition-colors border border-gray-600/50 hover:border-orange-500/50"
-              title="Voltar"
-            >
-              <ArrowLeft size={24} className="text-gray-400 hover:text-orange-400" />
-            </Link>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200">
+              <ShoppingCart size={24} className="text-amber-600" />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">{isEditing ? 'Editar Venda' : 'Nova Venda'}</h1>
-              <p className="text-sm text-gray-400 mt-1">Preencha os dados da venda</p>
+              <h1 className="text-2xl font-bold text-gray-900">{isEditing ? 'Editar Venda' : 'Nova Venda'}</h1>
+              <p className="text-sm text-gray-500">Preencha os dados da venda</p>
             </div>
           </div>
         </div>
 
-        {/* Professional Selection */}
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-orange-400 mb-4 flex items-center gap-2">
-            <User size={20} />
-            Profissional
-          </h3>
+        {/* Form */}
+        <form onSubmit={onSubmit} className="space-y-6" id="sale-form">
 
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Selecionar Profissional *</label>
-              <SearchableSelect
-                value={selectedProfessional}
-                onChange={setSelectedProfessional}
-                options={[
-                  { value: '', label: 'Selecione um profissional', disabled: true },
-                  ...professionals.map(prof => ({
-                    value: prof.id,
-                    label: `${prof.name}${prof.specialty ? ` - ${prof.specialty}` : ''}`
-                  }))
-                ]}
-                placeholder="Selecione um profissional"
-              />
+          {/* Seção 1: Profissional */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-amber-50 px-6 py-4 border-b border-amber-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-500 rounded-lg">
+                  <User size={18} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Profissional</h3>
+              </div>
             </div>
-            <Link
-              to="../profissionais/novo"
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-xl font-medium transition-colors h-fit mt-7 shadow-lg shadow-orange-500/20"
-            >
-              <User size={16} />
-              Novo
-            </Link>
+            <div className="p-6">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Profissional *</label>
+                  <SearchableSelect
+                    value={selectedProfessional}
+                    onChange={setSelectedProfessional}
+                    options={[
+                      { value: '', label: 'Selecione um profissional', disabled: true },
+                      ...professionals.map(prof => ({
+                        value: prof.id,
+                        label: `${prof.name}${prof.specialty ? ` - ${prof.specialty}` : ''}`
+                      }))
+                    ]}
+                    placeholder="Selecione um profissional"
+                  />
+                </div>
+                <Link
+                  to="../profissionais/novo"
+                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors h-fit mt-7 shadow-sm"
+                >
+                  <User size={16} />
+                  Novo
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Products */}
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-orange-400 flex items-center gap-2">
-              <Plus size={20} />
-              Produtos
-            </h3>
-            <button
-              type="button"
-              onClick={addItem}
-              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-lg shadow-orange-500/20"
-            >
-              <Plus size={16} />
-              Adicionar Produto
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {saleItems.map((item, index) => (
-              <div key={index} className="bg-gray-700/40 border border-gray-600/50 rounded-xl p-5 hover:border-gray-600 transition-colors">
-                <div className="grid gap-4 md:grid-cols-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Produto</label>
-                    <SearchableSelect
-                      value={item.stockItemId}
-                      onChange={(value) => updateItem(index, 'stockItemId', value)}
-                      options={[
-                        { value: '', label: 'Selecione um produto', disabled: true },
-                        ...stockItems
-                          .filter(s => s.quantity > 0)
-                          .map(stock => ({
-                            value: stock.id,
-                            label: `${stock.name} (Estoque: ${stock.quantity} ${stock.unit})`
-                          }))
-                      ]}
-                      placeholder="Selecione um produto"
-                    />
+          {/* Seção 2: Produtos */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-orange-50 px-6 py-4 border-b border-orange-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <Package size={18} className="text-white" />
                   </div>
+                  <h3 className="text-lg font-semibold text-gray-900">Produtos</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                >
+                  <Plus size={16} />
+                  Adicionar Produto
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                    />
+              <div className="space-y-4">
+                {saleItems.map((item, index) => (
+                  <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-amber-300 transition-colors">
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Produto</label>
+                        <SearchableSelect
+                          value={item.stockItemId}
+                          onChange={(value) => updateItem(index, 'stockItemId', value)}
+                          options={[
+                            { value: '', label: 'Selecione um produto', disabled: true },
+                            ...stockItems
+                              .filter(s => s.quantity > 0)
+                              .map(stock => ({
+                                value: stock.id,
+                                label: `${stock.name} (Estoque: ${stock.quantity} ${stock.unit})`
+                              }))
+                          ]}
+                          placeholder="Selecione um produto"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade</label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
+                          onFocus={(e) => e.target.select()}
+                          className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Preço de Venda</label>
+                        <input
+                          type="text"
+                          value={item.salePrice}
+                          onChange={(e) => updateItem(index, 'salePrice', e.target.value)}
+                          placeholder="R$ 0,00"
+                          className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Item Summary */}
+                    {calculatedItems[index] && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center text-sm">
+                        <div className="text-gray-600">
+                          Custo unitário: <span className="font-medium text-gray-900">{formatCurrency(calculatedItems[index].unitCost)}</span>
+                        </div>
+                        <div className="flex gap-6">
+                          <span className="text-gray-900 font-medium">
+                            Total: {formatCurrency(calculatedItems[index].totalPrice)}
+                          </span>
+                          <span className="text-green-600 font-medium">
+                            Lucro: {formatCurrency(calculatedItems[index].profit)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {saleItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        className="mt-3 flex items-center gap-2 text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
+                      >
+                        <Trash2 size={16} />
+                        Remover item
+                      </button>
+                    )}
                   </div>
+                ))}
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Preço de Venda</label>
-                    <input
-                      type="text"
-                      value={item.salePrice}
-                      onChange={(e) => updateItem(index, 'salePrice', e.target.value)}
-                      placeholder="R$ 0,00"
-                      className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                    />
+              {/* Total */}
+              {calculatedItems.length > 0 && (
+                <div className="mt-6 p-5 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold text-gray-900">Total da Venda:</span>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-amber-600">
+                        {formatCurrency(totalAmount)}
+                      </div>
+                      <div className="text-sm text-green-600 font-medium mt-1">
+                        Lucro Total: {formatCurrency(totalProfit)}
+                      </div>
+                    </div>
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
 
-                {/* Item Summary */}
-                {calculatedItems[index] && (
-                  <div className="mt-4 pt-4 border-t border-gray-600/50 flex justify-between items-center text-sm">
-                    <div className="text-gray-400">
-                      Custo unitário: <span className="font-medium">{formatCurrency(calculatedItems[index].unitCost)}</span>
-                    </div>
-                    <div className="flex gap-6">
-                      <span className="text-white font-medium">
-                        Total: {formatCurrency(calculatedItems[index].totalPrice)}
-                      </span>
-                      <span className="text-green-400 font-medium">
-                        Lucro: {formatCurrency(calculatedItems[index].profit)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {saleItems.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(index)}
-                    className="mt-3 flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
+          {/* Seção 3: Pagamento */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-green-50 px-6 py-4 border-b border-green-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-green-500 rounded-lg">
+                  <CreditCard size={18} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Pagamento</h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
                   >
-                    <Trash2 size={16} />
-                    Remover item
-                  </button>
+                    <option value="cash">Dinheiro</option>
+                    <option value="card">Cartão</option>
+                    <option value="pix">PIX</option>
+                    <option value="transfer">Transferência</option>
+                    <option value="check">Cheque</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status do Pagamento</label>
+                  <select
+                    value={paymentStatus}
+                    onChange={(e) => setPaymentStatus(e.target.value as any)}
+                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                  >
+                    <option value="pending">Pendente</option>
+                    <option value="paid">Pago</option>
+                  </select>
+                </div>
+
+                {paymentStatus === 'pending' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Data de Vencimento</label>
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                    />
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
 
-          {/* Total */}
-          {calculatedItems.length > 0 && (
-            <div className="mt-6 p-5 bg-gradient-to-br from-gray-700/50 to-gray-800/50 rounded-xl border border-gray-600/50">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-300">Total da Venda:</span>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-green-400">
-                    {formatCurrency(totalAmount)}
-                  </div>
-                  <div className="text-sm text-blue-400 font-medium mt-1">
-                    Lucro Total: {formatCurrency(totalProfit)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Payment Details */}
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-orange-400 mb-6 flex items-center gap-2">
-            <CreditCard size={20} />
-            Pagamento
-          </h3>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="cash">Dinheiro</option>
-                <option value="card">Cartão</option>
-                <option value="pix">PIX</option>
-                <option value="transfer">Transferência</option>
-                <option value="check">Cheque</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Status do Pagamento</label>
-              <select
-                value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value as any)}
-                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="pending">Pendente</option>
-                <option value="paid">Pago</option>
-              </select>
-            </div>
-
-            {paymentStatus === 'pending' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Data de Vencimento</label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Observações sobre a venda..."
+                  className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all resize-none"
+                  rows={3}
                 />
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Observações</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Observações sobre a venda..."
-              className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
-              rows={3}
-            />
+        </form>
+
+        {/* Sticky Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 -mx-8 mt-6 shadow-lg">
+          <div className="max-w-5xl mx-auto flex gap-4">
+            <button
+              type="submit"
+              form="sale-form"
+              className="flex-1 inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold shadow-sm transition-all"
+            >
+              <Save size={20} />
+              {isEditing ? 'Atualizar Venda' : 'Registrar Venda'}
+            </button>
+            <Link
+              to="/app/vendas"
+              className="px-8 py-3 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-lg font-medium transition-all"
+            >
+              Cancelar
+            </Link>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex gap-4 pb-8">
-          <button
-            type="submit"
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-4 rounded-xl font-semibold shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:scale-105"
-          >
-            <Save size={20} />
-            {isEditing ? 'Atualizar Venda' : 'Registrar Venda'}
-          </button>
-          <Link
-            to=".."
-            className="px-8 py-4 bg-gray-700/50 hover:bg-gray-600/50 border border-gray-600 text-white rounded-xl font-medium transition-all hover:border-gray-500"
-          >
-            Cancelar
-          </Link>
-        </div>
-      </form>
+      </div>
     </div>
   )
 }

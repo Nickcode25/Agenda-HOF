@@ -4,11 +4,12 @@ import { useProcedures } from '@/store/procedures'
 import { PlannedProcedure } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Search, Plus, Phone, CheckCircle, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText, MessageCircle } from 'lucide-react'
+import { Plus, Phone, Circle, Clock, ChevronDown, ChevronUp, UserPlus, Users, FileText, MessageCircle, Calendar, TrendingUp } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import AddProcedureInlineForm from './components/AddProcedureInlineForm'
+import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
 
 export default function PatientsList() {
   const patients = usePatients(s => s.patients)
@@ -162,122 +163,119 @@ export default function PatientsList() {
     window.open(whatsappUrl, '_blank')
   }
 
+  // Stats calculations
+  const stats = useMemo(() => {
+    const total = patients.length
+    const withProcedures = patients.filter(p => (p.plannedProcedures?.length || 0) > 0).length
+    const activeThisMonth = patients.filter(p => {
+      const hasRecent = p.plannedProcedures?.some(proc => {
+        if (!proc.createdAt) return false
+        const date = new Date(proc.createdAt)
+        const now = new Date()
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+      })
+      return hasRecent
+    }).length
+
+    return { total, withProcedures, activeThisMonth }
+  }, [patients])
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
+  }
+
   return (
     <>
-    <div className="space-y-6 relative">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
       {/* Overlay de bloqueio se não tiver assinatura */}
       {!hasActiveSubscription && <UpgradeOverlay message="Pacientes bloqueados" feature="o cadastro e gestão completa de pacientes" />}
-      {/* Header Premium */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-500/20 rounded-xl">
-                <Users size={32} className="text-blue-400" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white">Pacientes</h1>
-                <p className="text-gray-400">Gerencie seus pacientes e planejamentos</p>
-              </div>
-            </div>
-            <Link
-              to="/app/pacientes/novo"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 whitespace-nowrap"
-            >
-              <UserPlus size={20} />
-              Novo Paciente
-            </Link>
-          </div>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              value={q}
-              onChange={e=>setQ(e.target.value)}
-              placeholder="Buscar por nome ou CPF..."
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-          </div>
-        </div>
+
+      {/* Header */}
+      <PageHeader
+        icon={Users}
+        title="Pacientes"
+        subtitle="Gerencie seus pacientes e planejamentos"
+        stats={[
+          { label: 'Total', value: stats.total, icon: Users, color: 'text-blue-500' },
+          { label: 'Com procedimentos', value: stats.withProcedures, icon: Calendar, color: 'text-green-500' },
+          { label: 'Ativos este mês', value: stats.activeThisMonth, icon: TrendingUp, color: 'text-orange-500' }
+        ]}
+        primaryAction={{
+          label: 'Novo Paciente',
+          icon: UserPlus,
+          href: '/app/pacientes/novo'
+        }}
+      />
+
+      {/* Search */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Buscar por nome, CPF ou telefone..."
+        />
       </div>
 
-      {/* Patients Grid */}
+      {/* Patients List */}
       {filtered.length === 0 ? (
-        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10">
-            <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-              <Users size={40} className="text-blue-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Nenhum paciente encontrado</h3>
-            <p className="text-gray-400 mb-6">Tente ajustar sua busca ou cadastre um novo paciente</p>
-            <Link
-              to="/app/pacientes/novo"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-            >
-              <UserPlus size={18} />
-              Cadastrar Paciente
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="Nenhum paciente encontrado"
+          description="Tente ajustar sua busca ou cadastre um novo paciente"
+          action={{
+            label: 'Cadastrar Paciente',
+            icon: UserPlus,
+            href: '/app/pacientes/novo'
+          }}
+        />
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-4">
+          <div className="text-sm text-gray-500 px-1">
+            {filtered.length} paciente{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
+          </div>
+
           {filtered.map(p => {
             const isExpanded = expandedPatients.has(p.id)
-            const plannedCount = p.plannedProcedures?.filter(proc => proc.status !== 'completed').length || 0
             const pendingCount = p.plannedProcedures?.filter(proc => proc.status === 'pending').length || 0
             const inProgressCount = p.plannedProcedures?.filter(proc => proc.status === 'in_progress').length || 0
             const completedCount = p.plannedProcedures?.filter(proc => proc.status === 'completed').length || 0
 
             return (
-              <div key={p.id} className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl overflow-hidden hover:border-gray-600/80 transition-all duration-300">
+              <div key={p.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all">
                 {/* Main Card */}
-                <Link to={`/app/pacientes/${p.id}`} className="block p-6 cursor-pointer hover:bg-gray-800/30 transition-colors">
+                <Link to={`/app/pacientes/${p.id}`} className="block p-5 cursor-pointer hover:bg-gray-50/50 transition-colors">
                   <div className="flex items-center gap-4">
-                    {/* Photo */}
+                    {/* Avatar */}
                     {p.photoUrl ? (
-                      <img src={p.photoUrl} className="h-16 w-16 rounded-xl object-cover border-2 border-gray-700" alt={p.name} />
+                      <img src={p.photoUrl} className="h-14 w-14 rounded-lg object-cover border border-gray-100" alt={p.name} />
                     ) : (
-                      <div className="h-16 w-16 rounded-xl bg-gray-700 flex items-center justify-center border-2 border-gray-700">
-                        <Users size={28} className="text-gray-500" />
+                      <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">{getInitials(p.name)}</span>
                       </div>
                     )}
-                    
+
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-lg font-semibold text-white">
-                          {p.name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs">
-                          {plannedCount > 0 && (
-                            <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full">
-                              {plannedCount} planejado{plannedCount > 1 ? 's' : ''}
-                            </span>
-                          )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-base font-semibold text-gray-900">{p.name}</h3>
+                        <div className="flex items-center gap-1.5">
                           {pendingCount > 0 && (
-                            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full">
-                              {pendingCount} pendente{pendingCount > 1 ? 's' : ''}
-                            </span>
+                            <StatusBadge label={`${pendingCount} pendente${pendingCount > 1 ? 's' : ''}`} variant="warning" />
                           )}
                           {inProgressCount > 0 && (
-                            <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">
-                              {inProgressCount} em andamento
-                            </span>
+                            <StatusBadge label={`${inProgressCount} em andamento`} variant="info" />
                           )}
                           {completedCount > 0 && (
-                            <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full">
-                              {completedCount} realizado{completedCount > 1 ? 's' : ''}
-                            </span>
+                            <StatusBadge label={`${completedCount} realizado${completedCount > 1 ? 's' : ''}`} variant="success" />
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-400">
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1.5">
                           <FileText size={14} className="text-orange-500" />
                           <span>{p.cpf}</span>
@@ -300,7 +298,7 @@ export default function PatientsList() {
                             e.stopPropagation()
                             handleWhatsApp(p.name, p.phone)
                           }}
-                          className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors border border-green-500/30"
+                          className="p-2 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg transition-colors"
                           title="Enviar mensagem no WhatsApp"
                         >
                           <MessageCircle size={18} />
@@ -313,7 +311,7 @@ export default function PatientsList() {
                           e.stopPropagation()
                           setShowAddProcedure(showAddProcedure === p.id ? null : p.id)
                         }}
-                        className="p-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 rounded-lg transition-colors border border-orange-500/30"
+                        className="p-2 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-lg transition-colors"
                         title="Adicionar procedimento"
                       >
                         <Plus size={18} />
@@ -325,7 +323,7 @@ export default function PatientsList() {
                           e.stopPropagation()
                           toggleExpanded(p.id)
                         }}
-                        className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+                        className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-700 rounded-lg transition-colors"
                         title={isExpanded ? "Recolher planejamento" : "Expandir planejamento"}
                       >
                         {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -336,66 +334,68 @@ export default function PatientsList() {
 
                 {/* Add Procedure Form */}
                 {showAddProcedure === p.id && (
-                  <AddProcedureInlineForm
-                    selectedProcedure={selectedProcedure}
-                    procedureNotes={procedureNotes}
-                    procedureQuantity={procedureQuantity}
-                    paymentType={paymentType}
-                    procedures={procedures}
-                    onProcedureChange={setSelectedProcedure}
-                    onNotesChange={setProcedureNotes}
-                    onQuantityChange={setProcedureQuantity}
-                    onPaymentTypeChange={(type) => {
-                      setPaymentType(type)
-                      if (type === 'cash') {
+                  <div className="border-t border-gray-100 bg-gray-50 p-5">
+                    <AddProcedureInlineForm
+                      selectedProcedure={selectedProcedure}
+                      procedureNotes={procedureNotes}
+                      procedureQuantity={procedureQuantity}
+                      paymentType={paymentType}
+                      procedures={procedures}
+                      onProcedureChange={setSelectedProcedure}
+                      onNotesChange={setProcedureNotes}
+                      onQuantityChange={setProcedureQuantity}
+                      onPaymentTypeChange={(type) => {
+                        setPaymentType(type)
+                        if (type === 'cash') {
+                          setPaymentMethod('cash')
+                          setInstallments(1)
+                        } else {
+                          setPaymentMethod('card')
+                        }
+                      }}
+                      onSubmit={() => handleAddProcedure(p.id)}
+                      onCancel={() => {
+                        setShowAddProcedure(null)
+                        setSelectedProcedure('')
+                        setProcedureNotes('')
+                        setProcedureQuantity(1)
+                        setPaymentType('cash')
                         setPaymentMethod('cash')
                         setInstallments(1)
-                      } else {
-                        setPaymentMethod('card')
-                      }
-                    }}
-                    onSubmit={() => handleAddProcedure(p.id)}
-                    onCancel={() => {
-                      setShowAddProcedure(null)
-                      setSelectedProcedure('')
-                      setProcedureNotes('')
-                      setProcedureQuantity(1)
-                      setPaymentType('cash')
-                      setPaymentMethod('cash')
-                      setInstallments(1)
-                    }}
-                  />
+                      }}
+                    />
+                  </div>
                 )}
 
                 {/* Expanded Planning Section */}
                 {isExpanded && (
-                  <div className="px-6 pb-6 border-t border-gray-700">
+                  <div className="px-5 pb-5 border-t border-gray-100 bg-gray-50/50">
                     <div className="pt-4">
-                      <h4 className="text-sm font-medium text-orange-400 mb-3">Planejamento de Procedimentos</h4>
-                      
+                      <h4 className="text-sm font-semibold text-orange-600 mb-3">Planejamento de Procedimentos</h4>
+
                       {p.plannedProcedures && p.plannedProcedures.filter(proc => proc.status !== 'completed').length > 0 ? (
                         <div className="space-y-3">
                           {p.plannedProcedures
                             .filter(proc => proc.status !== 'completed')
                             .map(proc => (
-                            <div key={proc.id} className="p-3 bg-gray-700/30 rounded-lg border border-gray-600">
+                            <div key={proc.id} className="p-4 bg-white rounded-lg border border-gray-200">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex items-start gap-3 flex-1">
-                                  {proc.status === 'in_progress' && <Clock size={16} className="text-yellow-400 mt-0.5" />}
+                                  {proc.status === 'in_progress' && <Clock size={16} className="text-blue-500 mt-0.5" />}
                                   {proc.status === 'pending' && <Circle size={16} className="text-gray-400 mt-0.5" />}
-                                  
+
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm font-medium text-white">{proc.procedureName}</p>
-                                      <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded-full">
+                                      <p className="text-sm font-medium text-gray-900">{proc.procedureName}</p>
+                                      <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs rounded-full font-medium">
                                         {proc.quantity}x
                                       </span>
                                     </div>
-                                    
-                                    <div className="flex items-center gap-4 text-xs text-gray-400 mb-1">
+
+                                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-1">
                                       <span>Unit: {formatCurrency(proc.unitValue)}</span>
-                                      <span className="text-green-400 font-medium">Total: {formatCurrency(proc.totalValue)}</span>
-                                      <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
+                                      <span className="text-green-600 font-medium">Total: {formatCurrency(proc.totalValue)}</span>
+                                      <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">
                                         {proc.paymentType === 'cash'
                                           ? proc.paymentMethod === 'cash'
                                             ? 'Dinheiro'
@@ -407,9 +407,9 @@ export default function PatientsList() {
                                           : 'Cartão à Vista'}
                                       </span>
                                     </div>
-                                    
+
                                     {proc.notes && (
-                                      <p className="text-xs text-gray-400">{proc.notes}</p>
+                                      <p className="text-xs text-gray-500">{proc.notes}</p>
                                     )}
                                   </div>
                                 </div>
@@ -418,16 +418,16 @@ export default function PatientsList() {
                                   <select
                                     value={proc.status}
                                     onChange={(e) => handleUpdateProcedureStatus(p.id, proc.id, e.target.value as PlannedProcedure['status'])}
-                                    className="px-2 py-1 text-xs bg-gray-800 border border-gray-600 rounded text-white focus:outline-none focus:border-orange-500"
+                                    className="px-2 py-1 text-xs bg-white border border-gray-200 rounded text-gray-900 focus:outline-none focus:border-orange-500"
                                   >
                                     <option value="pending">Pendente</option>
                                     <option value="in_progress">Em Andamento</option>
                                     <option value="completed">Concluído</option>
                                   </select>
-                                  
+
                                   <button
                                     onClick={() => handleRemoveProcedure(p.id, proc.id)}
-                                    className="px-2 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded border border-red-500/30 transition-colors"
+                                    className="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded border border-red-200 transition-colors"
                                   >
                                     Remover
                                   </button>
@@ -435,12 +435,12 @@ export default function PatientsList() {
                               </div>
                             </div>
                           ))}
-                          
+
                           {/* Total do Planejamento */}
-                          <div className="mt-3 pt-3 border-t border-gray-600">
+                          <div className="mt-3 pt-3 border-t border-gray-200">
                             <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-300">Total do Planejamento:</span>
-                              <span className="text-lg font-bold text-green-400">
+                              <span className="text-sm font-medium text-gray-700">Total do Planejamento:</span>
+                              <span className="text-lg font-bold text-green-600">
                                 {formatCurrency(
                                   p.plannedProcedures
                                     .filter(proc => proc.status !== 'completed')
@@ -451,7 +451,7 @@ export default function PatientsList() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-400 text-center py-4">Nenhum procedimento planejado</p>
+                        <p className="text-sm text-gray-500 text-center py-4">Nenhum procedimento planejado</p>
                       )}
                     </div>
                   </div>

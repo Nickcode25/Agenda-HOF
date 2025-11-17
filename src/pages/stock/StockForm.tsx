@@ -1,11 +1,10 @@
-import { FormEvent, useState, useEffect } from 'react'
+import { FormEvent, useState, useEffect, useMemo } from 'react'
 import { useNavigate, Link, useParams, useSearchParams } from 'react-router-dom'
 import { useStock } from '@/store/stock'
 import { useCategories } from '@/store/categories'
-import { parseCurrency } from '@/utils/currency'
-import { Save, ArrowLeft, Plus } from 'lucide-react'
+import { parseCurrency, formatCurrency as formatCurrencyUtil } from '@/utils/currency'
+import { Save, Package, BarChart3, DollarSign, FileText, Plus } from 'lucide-react'
 import CreateCategoryModal from '@/components/CreateCategoryModal'
-import SearchableSelect from '@/components/SearchableSelect'
 
 // Produtos pré-cadastrados por categoria e marca (em ordem alfabética)
 const PREDEFINED_PRODUCTS: Record<string, Record<string, string[]>> = {
@@ -125,6 +124,7 @@ export default function StockForm() {
   const [minQuantity, setMinQuantity] = useState('')
   const [unit, setUnit] = useState('')
   const [dosesPerUnit, setDosesPerUnit] = useState('')
+  const [notes, setNotes] = useState('')
   const [showCategoryModal, setShowCategoryModal] = useState(false)
 
   // Carregar categorias ao montar o componente
@@ -171,6 +171,7 @@ export default function StockForm() {
       setMinQuantity(item.minQuantity.toString())
       setUnit(item.unit)
       setDosesPerUnit(item.dosesPerUnit ? item.dosesPerUnit.toString() : '')
+      setNotes(item.notes || '')
       setCost(new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL'
@@ -193,6 +194,13 @@ export default function StockForm() {
     setCost(formatted)
   }
 
+  // Calcular valor total automaticamente
+  const totalValue = useMemo(() => {
+    const qty = quantity ? Number(quantity) : 0
+    const unitCost = cost ? parseCurrency(cost) : 0
+    return qty * unitCost
+  }, [quantity, cost])
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
@@ -214,6 +222,7 @@ export default function StockForm() {
       unit: unit || 'unidade',
       dosesPerUnit: dosesPerUnit ? Number(dosesPerUnit) : undefined,
       costPrice: cost ? parseCurrency(cost) : 0,
+      notes: notes || ''
     }
 
     if (isEditMode && id) {
@@ -234,229 +243,330 @@ export default function StockForm() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Form com Header Integrado */}
-      <form onSubmit={onSubmit} className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-3xl shadow-2xl overflow-hidden">
-        {/* Header Premium */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-gray-800 to-gray-900 px-8 py-6 border-b border-gray-700/50">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{isEditMode ? 'Editar Produto' : 'Novo Produto'}</h1>
+            <p className="text-sm text-gray-500 mt-1">Preencha os dados do produto no estoque</p>
           </div>
-          <div className="relative z-10 flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
               to={returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque'}
-              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
-              title="Voltar"
+              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+              Cancelar
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-white">{isEditMode ? 'Editar Produto' : 'Novo Produto'}</h1>
-              <p className="text-sm text-gray-400">Preencha os dados do produto no estoque</p>
-            </div>
+            <button
+              type="submit"
+              form="stock-form"
+              disabled={!category}
+              className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all ${
+                !category
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm'
+              }`}
+            >
+              <Save size={18} />
+              {isEditMode ? 'Salvar Alterações' : 'Adicionar Produto'}
+            </button>
           </div>
         </div>
 
-        {/* Form Content */}
-        <div className="p-8 lg:p-10">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Categoria - Ocupa 2 colunas para evitar sobreposição */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Categoria *</label>
-            <div className="flex gap-3">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-                className="flex-1 bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+        {/* Form */}
+        <form id="stock-form" onSubmit={onSubmit} className="space-y-4">
+          {/* Seção: Informações do Produto */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-emerald-50 rounded-lg">
+                <Package size={18} className="text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Informações do Produto</h3>
+                <p className="text-xs text-gray-500">Dados básicos do produto</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Categoria <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-3">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    required
+                    className="flex-1 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
+                  >
+                    <option value="">Selecione uma categoria</option>
+                    {stockCategories.map(cat => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryModal(true)}
+                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-all shadow-sm flex items-center gap-2 whitespace-nowrap text-sm"
+                  >
+                    <Plus size={16} />
+                    Nova
+                  </button>
+                </div>
+              </div>
+
+              {/* Marca */}
+              {category !== 'Insumos' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Marca <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
+                    >
+                      <option value="">Selecione uma marca</option>
+                      <option value="Allergan Aesthetics">Allergan Aesthetics</option>
+                      <option value="Galderma">Galderma</option>
+                      <option value="Merz Aesthetics">Merz Aesthetics</option>
+                      <option value="Mesoestetic">Mesoestetic</option>
+                      <option value="Pharmaesthetics">Pharmaesthetics</option>
+                      <option value="Rennova">Rennova</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                  </div>
+
+                  {brand === 'Outro' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Digite a Marca</label>
+                      <input
+                        value={customBrand}
+                        onChange={(e) => setCustomBrand(e.target.value)}
+                        placeholder="Ex: Azzalure, Bocouture, etc..."
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Produto */}
+              <div className={category !== 'Insumos' && brand !== 'Outro' ? '' : 'md:col-span-2'}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Produto <span className="text-red-500">*</span>
+                </label>
+                {category === 'Insumos' ? (
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex: Cânula, Agulha, Seringa..."
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  />
+                ) : availableProducts.length > 0 ? (
+                  <select
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
+                  >
+                    <option value="">Selecione um produto</option>
+                    {availableProducts.map((product) => (
+                      <option key={product} value={product}>
+                        {product}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Digite o nome do produto..."
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  />
+                )}
+                {category && brand && availableProducts.length === 0 && category !== 'Insumos' && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Nenhum produto pré-cadastrado para esta combinação
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-0.5">Ex: Ácido Hialurônico Premium 1ml</p>
+              </div>
+
+              {/* Dosificações/Aplicações */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dosificações/Aplicações</label>
+                <input
+                  value={dosesPerUnit}
+                  onChange={(e) => setDosesPerUnit(e.target.value)}
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Ex: 4 para toxinas botulínicas"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Descreva as aplicações e dosificações recomendadas</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção: Quantidade */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <BarChart3 size={18} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Quantidade</h3>
+                <p className="text-xs text-gray-500">Controle de estoque</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantidade <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Ex: 100"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Quantidade inicial em estoque</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade Mínima</label>
+                <input
+                  value={minQuantity}
+                  onChange={(e) => setMinQuantity(e.target.value)}
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="0"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Quantidade para alertar estoque baixo</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Unidade <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
+                >
+                  <option value="">Selecione a unidade</option>
+                  <option value="ml">ml (mililitros)</option>
+                  <option value="g">g (gramas)</option>
+                  <option value="mg">mg (miligramas)</option>
+                  <option value="unidade">unidade</option>
+                  <option value="caixa">caixa</option>
+                  <option value="frasco">frasco</option>
+                  <option value="ampola">ampola</option>
+                  <option value="seringa">seringa</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção: Valores */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <DollarSign size={18} className="text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Valores</h3>
+                <p className="text-xs text-gray-500">Preço e custos</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custo Unitário <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={cost}
+                  onChange={handleCostChange}
+                  placeholder="R$ 0,00"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Calcule o preço das vendas</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
+                <input
+                  value={formatCurrencyUtil(totalValue)}
+                  disabled
+                  className="w-full bg-gray-100 border border-gray-200 text-gray-600 rounded-lg px-3 py-2 text-sm cursor-not-allowed"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Calculado automaticamente (Qty × Custo)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção: Descrição */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <FileText size={18} className="text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Descrição</h3>
+                <p className="text-xs text-gray-500">Informações adicionais</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Anotações</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Adicione observações sobre o produto..."
+                rows={4}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-0.5">Opcional - informações relevantes sobre o produto</p>
+            </div>
+          </div>
+
+          {/* Sticky Footer */}
+          <div className="sticky bottom-0 bg-gray-50 pt-4 pb-2 -mx-8 px-8 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 max-w-5xl mx-auto">
+              <Link
+                to={returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque'}
+                className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
               >
-                <option value="">Selecione uma categoria</option>
-                {stockCategories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                Cancelar
+              </Link>
               <button
-                type="button"
-                onClick={() => setShowCategoryModal(true)}
-                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 flex items-center gap-2 whitespace-nowrap"
+                type="submit"
+                disabled={!category}
+                className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all ${
+                  !category
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm'
+                }`}
               >
-                <Plus size={18} />
-                Nova
+                <Save size={18} />
+                {isEditMode ? 'Salvar Alterações' : 'Adicionar Produto'}
               </button>
             </div>
           </div>
-
-          {/* Marca */}
-          {category !== 'Insumos' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Marca</label>
-                <select
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                >
-                  <option value="">Selecione uma marca</option>
-                  <option value="Allergan Aesthetics">Allergan Aesthetics</option>
-                  <option value="Galderma">Galderma</option>
-                  <option value="Merz Aesthetics">Merz Aesthetics</option>
-                  <option value="Mesoestetic">Mesoestetic</option>
-                  <option value="Pharmaesthetics">Pharmaesthetics</option>
-                  <option value="Rennova">Rennova</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-
-              {brand === 'Outro' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Digite a Marca</label>
-                  <input
-                    value={customBrand}
-                    onChange={(e) => setCustomBrand(e.target.value)}
-                    placeholder="Ex: Azzalure, Bocouture, etc..."
-                    className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                  />
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Produto */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Produto</label>
-            {category === 'Insumos' ? (
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Cânula, Agulha, Seringa..."
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            ) : availableProducts.length > 0 ? (
-              <select
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="">Selecione um produto</option>
-                {availableProducts.map((product) => (
-                  <option key={product} value={product}>
-                    {product}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Digite o nome do produto..."
-                className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            )}
-            {category && brand && availableProducts.length === 0 && category !== 'Insumos' && (
-              <p className="text-xs text-gray-400 mt-1">
-                Nenhum produto pré-cadastrado para esta combinação. Digite manualmente.
-              </p>
-            )}
-          </div>
-
-          {/* Quantidade */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
-            <input
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              type="number"
-              min="0"
-              step="1"
-              placeholder="Ex: 100"
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade Mínima</label>
-            <input
-              value={minQuantity}
-              onChange={(e) => setMinQuantity(e.target.value)}
-              type="number"
-              min="0"
-              step="1"
-              placeholder="0"
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-            <p className="text-xs text-gray-400 mt-1">Quantidade para alerta de estoque baixo</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Unidade</label>
-            <select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            >
-              <option value="">Selecione a unidade</option>
-              <option value="ml">ml (mililitros)</option>
-              <option value="g">g (gramas)</option>
-              <option value="mg">mg (miligramas)</option>
-              <option value="unidade">unidade</option>
-              <option value="caixa">caixa</option>
-              <option value="frasco">frasco</option>
-              <option value="ampola">ampola</option>
-              <option value="seringa">seringa</option>
-            </select>
-          </div>
-
-          {/* Doses por Unidade */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Doses/Aplicações por Unidade</label>
-            <input
-              value={dosesPerUnit}
-              onChange={(e) => setDosesPerUnit(e.target.value)}
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Ex: 4 (para toxinas botulínicas)"
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Quantas aplicações rendem cada unidade? Ex: 1 frasco de Nabota = 4 aplicações.
-              <br />
-              <span className="text-orange-400">Se deixar em branco, 1 aplicação = 1 unidade de estoque.</span>
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Custo Unitário</label>
-            <input
-              value={cost}
-              onChange={handleCostChange}
-              placeholder="R$ 0,00"
-              className="w-full bg-gray-700/50 border border-gray-600/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-            <p className="text-xs text-gray-400 mt-1">Custo por unidade do produto (opcional)</p>
-          </div>
-        </div>
-        
-        <div className="flex gap-4 mt-8">
-          <button
-            type="submit"
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-          >
-            <Save size={18} />
-            {isEditMode ? 'Salvar Alterações' : 'Adicionar Produto'}
-          </button>
-          <Link
-            to={returnCategory ? `/app/estoque?categoria=${encodeURIComponent(returnCategory)}` : '/app/estoque'}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
-          >
-            Cancelar
-          </Link>
-        </div>
-        </div>
-      </form>
+        </form>
+      </div>
 
       {/* Modal de Criar Categoria */}
       <CreateCategoryModal

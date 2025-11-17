@@ -28,6 +28,13 @@ export type Student = {
   cpf: string
   birth_date?: string
   phone?: string
+  email?: string
+  gender?: string
+  profession?: string
+  interest_area?: string
+  objectives?: string
+  availability?: string
+  mentorship_duration?: string
   cep?: string
   street?: string
   number?: string
