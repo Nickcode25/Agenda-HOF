@@ -323,502 +323,473 @@ export default function FinancialReport() {
   }
 
   return (
-    <div className="space-y-6 relative">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8 relative">
       {!hasActiveSubscription && <UpgradeOverlay message="Relatório Financeiro bloqueado" feature="relatórios financeiros completos e detalhados" />}
-      {/* Header Premium */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
+
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header com breadcrumb */}
+        <div>
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <Link to="/app" className="hover:text-green-600 transition-colors">Início</Link>
+            <span>›</span>
+            <span className="text-gray-900">Relatório Financeiro</span>
+          </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-500/20 rounded-xl">
-                <TrendingUp size={32} className="text-green-400" />
+              <div className="p-2.5 bg-green-50 rounded-xl border border-green-200">
+                <TrendingUp size={24} className="text-green-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Relatório Financeiro</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Relatório Financeiro</h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <Calendar size={16} className="text-orange-400" />
-                  <span className="text-lg font-semibold text-orange-400">{getPeriodLabel()}</span>
+                  <Calendar size={16} className="text-orange-600" />
+                  <span className="text-sm font-medium text-orange-600">{getPeriodLabel()}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Filtros */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Filter size={20} className="text-orange-400" />
-          <h3 className="text-lg font-semibold text-white">Filtros</h3>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Período</label>
-            <div className="grid grid-cols-4 gap-2">
-              <button
-                onClick={() => setPeriodFilter('day')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'day'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Dia
-              </button>
-              <button
-                onClick={() => setPeriodFilter('week')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'week'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Semana
-              </button>
-              <button
-                onClick={() => setPeriodFilter('month')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'month'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Mês
-              </button>
-              <button
-                onClick={() => setPeriodFilter('year')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  periodFilter === 'year'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Ano
-              </button>
-            </div>
+        {/* Filtros */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Filter size={20} className="text-orange-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Filtros</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data Inicial</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Período</label>
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  onClick={() => setPeriodFilter('day')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'day'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Dia
+                </button>
+                <button
+                  onClick={() => setPeriodFilter('week')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'week'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Semana
+                </button>
+                <button
+                  onClick={() => setPeriodFilter('month')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'month'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Mês
+                </button>
+                <button
+                  onClick={() => setPeriodFilter('year')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'year'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Ano
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data Final</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data Inicial</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data Final</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Resumo Total */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <Link
-          to={`/app/financeiro/detalhes/total/${startDate}/${endDate}`}
-          className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-xl p-6 hover:scale-105 hover:border-green-500/50 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-green-500/20 rounded-lg">
-              <TrendingUp size={20} className="text-green-400" />
+        {/* KPI Cards */}
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {/* Receita Total */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500 hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-green-600">Receita Total</span>
+              <TrendingUp size={18} className="text-green-500" />
             </div>
-            <h3 className="text-sm font-medium text-gray-300">Receita Total</h3>
-            <ArrowRight size={16} className="text-green-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(totalRevenue)}</div>
+            <div className="text-sm text-gray-500">{totalTransactions} lançamentos</div>
           </div>
-          <p className="text-2xl font-bold text-green-400">{formatCurrency(totalRevenue)}</p>
-          <p className="text-xs text-gray-400 mt-1">{totalTransactions} transações</p>
-        </Link>
 
-        <Link
-          to={`/app/financeiro/detalhes/procedures/${startDate}/${endDate}`}
-          className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-xl p-6 hover:scale-105 hover:border-blue-500/50 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Activity size={20} className="text-blue-400" />
-            </div>
-            <h3 className="text-sm font-medium text-gray-300">Procedimentos</h3>
-            <ArrowRight size={16} className="text-blue-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <p className="text-2xl font-bold text-blue-400">{formatCurrency(procedureRevenue.total)}</p>
-          <p className="text-xs text-gray-400 mt-1">{procedureRevenue.count} realizados</p>
-        </Link>
-
-        <Link
-          to={`/app/financeiro/detalhes/sales/${startDate}/${endDate}`}
-          className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/30 rounded-xl p-6 hover:scale-105 hover:border-orange-500/50 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-orange-500/20 rounded-lg">
-              <ShoppingCart size={20} className="text-orange-400" />
-            </div>
-            <h3 className="text-sm font-medium text-gray-300">Vendas</h3>
-            <ArrowRight size={16} className="text-orange-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <p className="text-2xl font-bold text-orange-400">{formatCurrency(salesRevenue.total)}</p>
-          <p className="text-xs text-gray-400 mt-1">{salesRevenue.count} vendas</p>
-        </Link>
-
-        <Link
-          to={`/app/financeiro/detalhes/subscriptions/${startDate}/${endDate}`}
-          className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/30 rounded-xl p-6 hover:scale-105 hover:border-purple-500/50 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-purple-500/20 rounded-lg">
-              <CreditCard size={20} className="text-purple-400" />
-            </div>
-            <h3 className="text-sm font-medium text-gray-300">Mensalidades</h3>
-            <ArrowRight size={16} className="text-purple-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <p className="text-2xl font-bold text-purple-400">{formatCurrency(subscriptionRevenue.total)}</p>
-          <p className="text-xs text-gray-400 mt-1">{subscriptionRevenue.count} pagamentos</p>
-        </Link>
-
-        <Link
-          to={`/app/financeiro/detalhes/other/${startDate}/${endDate}`}
-          className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/30 rounded-xl p-6 hover:scale-105 hover:border-cyan-500/50 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-cyan-500/20 rounded-lg">
-              <Receipt size={20} className="text-cyan-400" />
-            </div>
-            <h3 className="text-sm font-medium text-gray-300">Outras Receitas</h3>
-            <ArrowRight size={16} className="text-cyan-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <p className="text-2xl font-bold text-cyan-400">{formatCurrency(otherRevenue.total)}</p>
-          <p className="text-xs text-gray-400 mt-1">{otherRevenue.count} lançamentos</p>
-        </Link>
-
-        <Link
-          to={`/app/financeiro/detalhes/expenses/${startDate}/${endDate}`}
-          className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/30 rounded-xl p-6 hover:scale-105 hover:border-red-500/50 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-red-500/20 rounded-lg">
-              <TrendingDown size={20} className="text-red-400" />
-            </div>
-            <h3 className="text-sm font-medium text-gray-300">Despesas</h3>
-            <ArrowRight size={16} className="text-red-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <p className="text-2xl font-bold text-red-400">{formatCurrency(expensesTotal)}</p>
-          <p className="text-xs text-gray-400 mt-1">Custos</p>
-        </Link>
-
-        <div className={`bg-gradient-to-br ${netProfit >= 0 ? 'from-emerald-500/10 to-emerald-600/5 border-emerald-500/30' : 'from-red-500/10 to-red-600/5 border-red-500/30'} border rounded-xl p-6`}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className={`p-2 ${netProfit >= 0 ? 'bg-emerald-500/20' : 'bg-red-500/20'} rounded-lg`}>
-              <DollarSign size={20} className={netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'} />
-            </div>
-            <h3 className="text-sm font-medium text-gray-300">Lucro Líquido</h3>
-          </div>
-          <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {formatCurrency(netProfit)}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            {netProfit >= 0 ? 'Positivo' : 'Negativo'}
-          </p>
-        </div>
-      </div>
-
-      {/* Distribuição de Receitas */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <TrendingUp size={20} className="text-green-400" />
-          <h3 className="text-lg font-semibold text-white">Distribuição de Receitas</h3>
-        </div>
-        <div className="space-y-4">
           {/* Procedimentos */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Activity size={16} className="text-blue-400" />
-                <span className="text-white font-medium">Procedimentos</span>
-              </div>
-              <div className="text-right">
-                <span className="text-blue-400 font-bold">{formatCurrency(procedureRevenue.total)}</span>
-                <span className="text-gray-400 text-sm ml-2">({procedurePercentage.toFixed(1)}%)</span>
-              </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500 hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-blue-600">Procedimentos</span>
+              <Activity size={18} className="text-blue-500" />
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-3">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${procedurePercentage}%` }}
-              ></div>
-            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(procedureRevenue.total)}</div>
+            <div className="text-sm text-gray-500">{procedureRevenue.count} realizados</div>
           </div>
 
           {/* Vendas */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <ShoppingCart size={16} className="text-orange-400" />
-                <span className="text-white font-medium">Vendas de Produtos</span>
-              </div>
-              <div className="text-right">
-                <span className="text-orange-400 font-bold">{formatCurrency(salesRevenue.total)}</span>
-                <span className="text-gray-400 text-sm ml-2">({salesPercentage.toFixed(1)}%)</span>
-              </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500 hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-amber-600">Vendas</span>
+              <ShoppingCart size={18} className="text-amber-500" />
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-3">
-              <div
-                className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${salesPercentage}%` }}
-              ></div>
-            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(salesRevenue.total)}</div>
+            <div className="text-sm text-gray-500">{salesRevenue.count} realizadas</div>
           </div>
 
           {/* Mensalidades */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <CreditCard size={16} className="text-purple-400" />
-                <span className="text-white font-medium">Mensalidades</span>
-              </div>
-              <div className="text-right">
-                <span className="text-purple-400 font-bold">{formatCurrency(subscriptionRevenue.total)}</span>
-                <span className="text-gray-400 text-sm ml-2">({subscriptionPercentage.toFixed(1)}%)</span>
-              </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-purple-600">Mensalidades</span>
+              <CreditCard size={18} className="text-purple-500" />
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-3">
-              <div
-                className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${subscriptionPercentage}%` }}
-              ></div>
-            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(subscriptionRevenue.total)}</div>
+            <div className="text-sm text-gray-500">{subscriptionRevenue.count} pagamentos</div>
           </div>
 
           {/* Outras Receitas */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Receipt size={16} className="text-cyan-400" />
-                <span className="text-white font-medium">Outras Receitas</span>
-              </div>
-              <div className="text-right">
-                <span className="text-cyan-400 font-bold">{formatCurrency(otherRevenue.total)}</span>
-                <span className="text-gray-400 text-sm ml-2">({otherPercentage.toFixed(1)}%)</span>
-              </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-cyan-500 hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-cyan-600">Outras Receitas</span>
+              <Receipt size={18} className="text-cyan-500" />
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-3">
-              <div
-                className="bg-gradient-to-r from-cyan-500 to-cyan-600 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${otherPercentage}%` }}
-              ></div>
-            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(otherRevenue.total)}</div>
+            <div className="text-sm text-gray-500">{otherRevenue.count} lançamentos</div>
           </div>
-        </div>
-      </div>
 
-      {/* Detalhes */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Top Procedimentos */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Activity size={20} className="text-blue-400" />
-            <h3 className="text-lg font-semibold text-white">Procedimentos Realizados</h3>
-          </div>
-          <div className="space-y-2">
-            {procedureRevenue.items.length > 0 ? (
-              procedureRevenue.items
-                .sort((a, b) => b.amount - a.amount)
-                .slice(0, 5)
-                .map((movement, index) => (
-                  <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xs font-bold">
-                        {index + 1}
-                      </span>
-                      <span className="text-white font-medium">{movement.description}</span>
-                    </div>
-                    <span className="text-blue-400 font-bold">{formatCurrency(movement.amount)}</span>
-                  </div>
-                ))
-            ) : (
-              <p className="text-gray-400 text-center py-8">Nenhum procedimento no período</p>
-            )}
+          {/* Despesas */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500 hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-red-600">Despesas</span>
+              <TrendingDown size={18} className="text-red-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(expensesTotal)}</div>
+            <div className="text-sm text-gray-500">Gastos</div>
           </div>
         </div>
 
-        {/* Top Vendas */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <ShoppingCart size={20} className="text-orange-400" />
-            <h3 className="text-lg font-semibold text-white">Maiores Vendas</h3>
+        {/* Lucro Líquido (Card especial) */}
+        <div className={`bg-white rounded-xl border border-gray-200 p-5 border-l-4 ${netProfit >= 0 ? 'border-l-green-500' : 'border-l-red-500'} hover:shadow-md transition-all`}>
+          <div className="flex items-center justify-between mb-3">
+            <span className={`text-sm font-medium ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>Lucro Líquido</span>
+            <DollarSign size={18} className={netProfit >= 0 ? 'text-green-500' : 'text-red-500'} />
           </div>
-          <div className="space-y-2">
-            {salesRevenue.items.length > 0 ? (
-              salesRevenue.items
-                .sort((a, b) => b.amount - a.amount)
-                .slice(0, 5)
-                .map((movement, index) => {
-                  const saleDetails = getSaleDetails(movement.referenceId)
-                  return (
-                    <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="w-6 h-6 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+          <div className={`text-2xl font-bold mb-1 ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {formatCurrency(netProfit)}
+          </div>
+          <div className={`text-sm ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {netProfit >= 0 ? '✓ Positivo' : '✗ Negativo'}
+          </div>
+        </div>
+
+        {/* Distribuição de Receitas */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <TrendingUp size={20} className="text-green-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Distribuição de Receitas</h3>
+          </div>
+          <div className="space-y-4">
+            {/* Procedimentos */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Activity size={16} className="text-blue-600" />
+                  <span className="text-gray-900 font-medium">Procedimentos</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-blue-600 font-bold">{formatCurrency(procedureRevenue.total)}</span>
+                  <span className="text-gray-500 text-sm ml-2">({procedurePercentage.toFixed(1)}%)</span>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-blue-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${procedurePercentage}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Vendas */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart size={16} className="text-amber-600" />
+                  <span className="text-gray-900 font-medium">Vendas de Produtos</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-amber-600 font-bold">{formatCurrency(salesRevenue.total)}</span>
+                  <span className="text-gray-500 text-sm ml-2">({salesPercentage.toFixed(1)}%)</span>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-amber-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${salesPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Mensalidades */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CreditCard size={16} className="text-purple-600" />
+                  <span className="text-gray-900 font-medium">Mensalidades</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-purple-600 font-bold">{formatCurrency(subscriptionRevenue.total)}</span>
+                  <span className="text-gray-500 text-sm ml-2">({subscriptionPercentage.toFixed(1)}%)</span>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-purple-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${subscriptionPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Outras Receitas */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Receipt size={16} className="text-cyan-600" />
+                  <span className="text-gray-900 font-medium">Outras Receitas</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-cyan-600 font-bold">{formatCurrency(otherRevenue.total)}</span>
+                  <span className="text-gray-500 text-sm ml-2">({otherPercentage.toFixed(1)}%)</span>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-cyan-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${otherPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detalhes */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Top Procedimentos */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Activity size={20} className="text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Procedimentos Realizados</h3>
+            </div>
+            <div className="space-y-2">
+              {procedureRevenue.items.length > 0 ? (
+                procedureRevenue.items
+                  .sort((a, b) => b.amount - a.amount)
+                  .slice(0, 5)
+                  .map((movement, index) => (
+                    <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
                           {index + 1}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-white font-medium block">{movement.description}</span>
-                          {saleDetails && saleDetails.items.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1 flex-wrap">
-                              <Package size={12} className="text-orange-400 shrink-0" />
-                              <span className="text-xs text-gray-400">
-                                {saleDetails.items.map((item, idx) => (
-                                  <span key={item.id}>
-                                    {item.quantity}x {item.stockItemName}
-                                    {idx < saleDetails.items.length - 1 && ', '}
-                                  </span>
-                                ))}
-                              </span>
-                            </div>
-                          )}
-                          <span className="text-xs text-gray-400 mt-1 inline-block">
-                            {movement.paymentMethod === 'card' ? 'cartão' :
-                             movement.paymentMethod === 'pix' ? 'pix' :
-                             movement.paymentMethod === 'cash' ? 'dinheiro' :
-                             movement.paymentMethod}
+                        <span className="text-gray-900 font-medium">{movement.description}</span>
+                      </div>
+                      <span className="text-blue-600 font-bold">{formatCurrency(movement.amount)}</span>
+                    </div>
+                  ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">Nenhum procedimento no período</p>
+              )}
+            </div>
+          </div>
+
+          {/* Top Vendas */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <ShoppingCart size={20} className="text-amber-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Maiores Vendas</h3>
+            </div>
+            <div className="space-y-2">
+              {salesRevenue.items.length > 0 ? (
+                salesRevenue.items
+                  .sort((a, b) => b.amount - a.amount)
+                  .slice(0, 5)
+                  .map((movement, index) => {
+                    const saleDetails = getSaleDetails(movement.referenceId)
+                    return (
+                      <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-all">
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="w-6 h-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+                            {index + 1}
                           </span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-gray-900 font-medium block">{movement.description}</span>
+                            {saleDetails && saleDetails.items.length > 0 && (
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                <Package size={12} className="text-amber-600 shrink-0" />
+                                <span className="text-xs text-gray-600">
+                                  {saleDetails.items.map((item, idx) => (
+                                    <span key={item.id}>
+                                      {item.quantity}x {item.stockItemName}
+                                      {idx < saleDetails.items.length - 1 && ', '}
+                                    </span>
+                                  ))}
+                                </span>
+                              </div>
+                            )}
+                            <span className="text-xs text-gray-500 mt-1 inline-block">
+                              {movement.paymentMethod === 'card' ? 'Cartão' :
+                               movement.paymentMethod === 'pix' ? 'PIX' :
+                               movement.paymentMethod === 'cash' ? 'Dinheiro' :
+                               movement.paymentMethod}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <span className="text-amber-600 font-bold block">{formatCurrency(movement.amount)}</span>
                         </div>
                       </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <span className="text-orange-400 font-bold block">{formatCurrency(movement.amount)}</span>
+                    )
+                  })
+              ) : (
+                <p className="text-gray-500 text-center py-8">Nenhuma venda no período</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Lista Completa de Movimentações */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Receipt size={24} className="text-green-600" />
+            <h3 className="text-xl font-semibold text-gray-900">Todas as Transações do Período</h3>
+          </div>
+
+          {totalTransactions > 0 || expenseItems.length > 0 ? (
+            <div className="space-y-3">
+              {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items, ...expenseItems]
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((movement) => {
+                  const categoryColors = {
+                    procedure: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
+                    sale: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
+                    subscription: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
+                    expense: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' },
+                    other: { bg: 'bg-cyan-50', text: 'text-cyan-600', border: 'border-cyan-200' }
+                  }
+                  const colorScheme = categoryColors[movement.category as keyof typeof categoryColors] || { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' }
+
+                  const categoryLabels = {
+                    procedure: 'Procedimento',
+                    sale: 'Venda',
+                    subscription: 'Mensalidade',
+                    expense: 'Despesa',
+                    other: 'Outra Receita'
+                  }
+
+                  const saleDetails = movement.category === 'sale' ? getSaleDetails(movement.referenceId) : null
+
+                  return (
+                    <div key={movement.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50/30 transition-all">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h4 className="text-gray-900 font-medium">{movement.description}</h4>
+                            <span className={`px-2 py-1 ${colorScheme.bg} ${colorScheme.text} text-xs rounded-full border ${colorScheme.border} font-medium`}>
+                              {categoryLabels[movement.category as keyof typeof categoryLabels] || movement.category}
+                            </span>
+                          </div>
+
+                          {/* Mostrar produtos da venda */}
+                          {saleDetails && saleDetails.items.length > 0 && (
+                            <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Package size={14} className="text-amber-600" />
+                                <span className="text-xs font-semibold text-amber-600">Produtos:</span>
+                              </div>
+                              <div className="grid grid-cols-1 gap-1">
+                                {saleDetails.items.map((item) => (
+                                  <div key={item.id} className="flex items-center justify-between text-xs text-gray-700">
+                                    <span>• {item.quantity}x {item.stockItemName}</span>
+                                    <span className="text-gray-600 font-medium">{formatCurrency(item.totalPrice)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="font-medium">Pagamento: {
+                              movement.paymentMethod === 'card' ? 'Cartão' :
+                              movement.paymentMethod === 'pix' ? 'PIX' :
+                              movement.paymentMethod === 'cash' ? 'Dinheiro' :
+                              movement.paymentMethod
+                            }</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={14} />
+                              {new Date(movement.createdAt).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 mb-1">Valor</p>
+                          <p className={`text-xl font-bold ${colorScheme.text}`}>{formatCurrency(movement.amount)}</p>
+                        </div>
+                        {'isExpense' in movement ? (
+                          <div className="w-[44px]"></div>
+                        ) : (
+                          <button
+                            onClick={() => handleEditClick(movement as CashMovement)}
+                            className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-200"
+                            title="Editar transação"
+                          >
+                            <Edit size={20} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
-                })
-            ) : (
-              <p className="text-gray-400 text-center py-8">Nenhuma venda no período</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Lista Completa de Movimentações */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Receipt size={24} className="text-green-400" />
-          <h3 className="text-xl font-semibold text-white">Todas as Transações do Período</h3>
+                })}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">Nenhuma transação no período</p>
+          )}
         </div>
 
-        {totalTransactions > 0 || expenseItems.length > 0 ? (
-          <div className="space-y-3">
-            {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items, ...expenseItems]
-              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-              .map((movement) => {
-                const categoryColors = {
-                  procedure: 'blue',
-                  sale: 'orange',
-                  subscription: 'purple',
-                  expense: 'red',
-                  other: 'cyan'
-                }
-                const color = categoryColors[movement.category as keyof typeof categoryColors] || 'gray'
-
-                const categoryLabels = {
-                  procedure: 'procedimento',
-                  sale: 'venda',
-                  subscription: 'mensalidade',
-                  expense: 'despesa',
-                  other: 'outra receita'
-                }
-
-                const saleDetails = movement.category === 'sale' ? getSaleDetails(movement.referenceId) : null
-
-                return (
-                  <div key={movement.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="text-white font-medium">{movement.description}</h4>
-                          <span className={`px-2 py-1 bg-${color}-500/20 text-${color}-400 text-xs rounded-full border border-${color}-500/30`}>
-                            {categoryLabels[movement.category as keyof typeof categoryLabels] || movement.category}
-                          </span>
-                        </div>
-
-                        {/* Mostrar produtos da venda */}
-                        {saleDetails && saleDetails.items.length > 0 && (
-                          <div className="mb-2 p-2 bg-gray-800/50 rounded-lg border border-gray-600/30">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Package size={14} className="text-orange-400" />
-                              <span className="text-xs font-semibold text-orange-400">Produtos:</span>
-                            </div>
-                            <div className="grid grid-cols-1 gap-1">
-                              {saleDetails.items.map((item) => (
-                                <div key={item.id} className="flex items-center justify-between text-xs text-gray-300">
-                                  <span>• {item.quantity}x {item.stockItemName}</span>
-                                  <span className="text-gray-400">{formatCurrency(item.totalPrice)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-4 text-sm text-gray-400">
-                          <span>Pagamento: {
-                            movement.paymentMethod === 'card' ? 'cartão' :
-                            movement.paymentMethod === 'pix' ? 'pix' :
-                            movement.paymentMethod === 'cash' ? 'dinheiro' :
-                            movement.paymentMethod
-                          }</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar size={14} />
-                            {new Date(movement.createdAt).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400 mb-1">Valor</p>
-                        <p className={`text-xl font-bold text-${color}-400`}>{formatCurrency(movement.amount)}</p>
-                      </div>
-                      {'isExpense' in movement ? (
-                        <div className="w-[44px]"></div>
-                      ) : (
-                        <button
-                          onClick={() => handleEditClick(movement as CashMovement)}
-                          className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
-                          title="Editar transação"
-                        >
-                          <Edit size={20} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-        ) : (
-          <p className="text-gray-400 text-center py-8">Nenhuma transação no período</p>
+        {/* Modal de Edição */}
+        {editingMovement && (
+          <EditTransactionModal
+            editForm={editForm}
+            onDescriptionChange={(value) => setEditForm({ ...editForm, description: value })}
+            onAmountChange={(value) => setEditForm({ ...editForm, amount: value })}
+            onPaymentMethodChange={(value) => setEditForm({ ...editForm, paymentMethod: value })}
+            onCancel={handleCancelEdit}
+            onSave={handleSaveEdit}
+            onDelete={handleDeleteMovement}
+          />
         )}
+
+        {/* Modal de Confirmação */}
+        <ConfirmDialog />
       </div>
-
-      {/* Modal de Edição */}
-      {editingMovement && (
-        <EditTransactionModal
-          editForm={editForm}
-          onDescriptionChange={(value) => setEditForm({ ...editForm, description: value })}
-          onAmountChange={(value) => setEditForm({ ...editForm, amount: value })}
-          onPaymentMethodChange={(value) => setEditForm({ ...editForm, paymentMethod: value })}
-          onCancel={handleCancelEdit}
-          onSave={handleSaveEdit}
-          onDelete={handleDeleteMovement}
-        />
-      )}
-
-      {/* Modal de Confirmação */}
-      <ConfirmDialog />
     </div>
   )
 }
