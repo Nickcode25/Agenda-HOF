@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useExpenses } from '@/store/expenses'
 import { parseCurrency, formatCurrency } from '@/utils/currency'
 import { normalizeDateString, getTodayString } from '@/utils/dateHelpers'
-import { Receipt, ArrowLeft, Save, Calendar, DollarSign, Tag, Repeat } from 'lucide-react'
+import { Receipt, Save, Calendar, DollarSign, Tag, Repeat } from 'lucide-react'
 import type { RecurringFrequency } from '@/types/cash'
 import { useToast } from '@/hooks/useToast'
 
@@ -111,41 +111,37 @@ export default function ExpenseForm() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <button
-            onClick={() => navigate('/app/despesas')}
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            Voltar para Despesas
-          </button>
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header com breadcrumb */}
+        <div>
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <Link to="/app" className="hover:text-red-600 transition-colors">Início</Link>
+            <span>›</span>
+            <Link to="/app/despesas" className="hover:text-red-600 transition-colors">Despesas</Link>
+            <span>›</span>
+            <span className="text-gray-900">{isEditing ? 'Editar' : 'Nova Despesa'}</span>
+          </div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-red-500/20 rounded-xl">
-              <Receipt size={32} className="text-red-400" />
+            <div className="p-2.5 bg-red-50 rounded-xl border border-red-200">
+              <Receipt size={24} className="text-red-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">
+              <h1 className="text-2xl font-bold text-gray-900">
                 {isEditing ? 'Editar Despesa' : 'Nova Despesa'}
               </h1>
-              <p className="text-gray-400">
+              <p className="text-sm text-gray-500">
                 {isEditing ? 'Atualize as informações da despesa' : 'Registre uma nova despesa'}
               </p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 border border-gray-700/50 rounded-2xl p-8 space-y-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
         {/* Categoria */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             <Tag size={16} className="inline mr-2" />
             Categoria *
           </label>
@@ -153,7 +149,7 @@ export default function ExpenseForm() {
             value={formData.categoryId}
             onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
             required
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
           >
             <option value="">Selecione uma categoria</option>
             {categories.filter(c => c.isActive).map(category => (
@@ -164,7 +160,7 @@ export default function ExpenseForm() {
 
         {/* Descrição */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Descrição *
           </label>
           <input
@@ -173,13 +169,13 @@ export default function ExpenseForm() {
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             required
             placeholder="Ex: Aluguel Janeiro 2025, Conta de Luz"
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
           />
         </div>
 
         {/* Valor */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             <DollarSign size={16} className="inline mr-2" />
             Valor *
           </label>
@@ -193,20 +189,20 @@ export default function ExpenseForm() {
             }}
             required
             placeholder="R$ 0,00"
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
           />
         </div>
 
         {/* Método de Pagamento */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Método de Pagamento *
           </label>
           <select
             value={formData.paymentMethod}
             onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })}
             required
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
           >
             <option value="cash">Dinheiro</option>
             <option value="card">Cartão</option>
@@ -218,14 +214,14 @@ export default function ExpenseForm() {
 
         {/* Status de Pagamento */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Status de Pagamento *
           </label>
           <select
             value={formData.paymentStatus}
             onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as any })}
             required
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
           >
             <option value="pending">Pendente</option>
             <option value="paid">Pago</option>
@@ -236,7 +232,7 @@ export default function ExpenseForm() {
         {/* Datas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               <Calendar size={16} className="inline mr-2" />
               Data de Vencimento
             </label>
@@ -244,12 +240,12 @@ export default function ExpenseForm() {
               type="date"
               value={formData.dueDate}
               onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+              className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               <Calendar size={16} className="inline mr-2" />
               Data de Pagamento {formData.paymentStatus === 'paid' && '*'}
             </label>
@@ -258,38 +254,38 @@ export default function ExpenseForm() {
               value={formData.paidAt}
               onChange={(e) => setFormData({ ...formData, paidAt: e.target.value })}
               required={formData.paymentStatus === 'paid'}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+              className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
             />
           </div>
         </div>
 
         {/* Despesa Recorrente */}
-        <div className="border-t border-gray-700 pt-6">
+        <div className="border-t border-gray-200 pt-6">
           <div className="flex items-center gap-2 mb-4">
             <input
               type="checkbox"
               id="isRecurring"
               checked={formData.isRecurring}
               onChange={(e) => setFormData({ ...formData, isRecurring: e.target.checked })}
-              className="w-4 h-4 rounded border-gray-600 text-red-500 focus:ring-red-500"
+              className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
             />
-            <label htmlFor="isRecurring" className="text-sm font-medium text-gray-300">
+            <label htmlFor="isRecurring" className="text-sm font-medium text-gray-700">
               <Repeat size={16} className="inline mr-2" />
               Despesa Recorrente
             </label>
           </div>
 
           {formData.isRecurring && (
-            <div className="space-y-4 pl-6 border-l-2 border-red-500/30">
+            <div className="space-y-4 pl-6 border-l-2 border-red-200">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Frequência
                   </label>
                   <select
                     value={formData.recurringFrequency}
                     onChange={(e) => setFormData({ ...formData, recurringFrequency: e.target.value as RecurringFrequency })}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
                   >
                     <option value="daily">Diário</option>
                     <option value="weekly">Semanal</option>
@@ -299,7 +295,7 @@ export default function ExpenseForm() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dia
                   </label>
                   <input
@@ -308,23 +304,23 @@ export default function ExpenseForm() {
                     max={formData.recurringFrequency === 'monthly' ? 31 : 7}
                     value={formData.recurringDay}
                     onChange={(e) => setFormData({ ...formData, recurringDay: parseInt(e.target.value) })}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
                   />
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     {formData.recurringFrequency === 'monthly' ? 'Dia do mês (1-31)' : 'Dia da semana (0-6)'}
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Data de Término (opcional)
                 </label>
                 <input
                   type="date"
                   value={formData.recurringEndDate}
                   onChange={(e) => setFormData({ ...formData, recurringEndDate: e.target.value })}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
                 />
               </div>
             </div>
@@ -333,7 +329,7 @@ export default function ExpenseForm() {
 
         {/* Notas */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Notas
           </label>
           <textarea
@@ -341,29 +337,30 @@ export default function ExpenseForm() {
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={3}
             placeholder="Observações adicionais sobre esta despesa"
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all resize-none"
           />
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4 pt-6 border-t border-gray-700">
+        <div className="flex gap-4 pt-6 border-t border-gray-200">
           <button
             type="button"
             onClick={() => navigate('/app/despesas')}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+            className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-red-500/30 transition-all hover:shadow-xl hover:shadow-red-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={18} className="inline mr-2" />
             {loading ? 'Salvando...' : isEditing ? 'Atualizar Despesa' : 'Registrar Despesa'}
           </button>
         </div>
       </form>
+      </div>
     </div>
   )
 }
