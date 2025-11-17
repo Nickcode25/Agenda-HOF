@@ -57,14 +57,14 @@ export default function MentorshipModal({
   if (!show) return null
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-2xl font-bold text-white">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white border border-gray-200 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">
             {mentorshipType === 'enrollment' ? 'Inscrição Mentoria' : 'Adicionar Mentoria'}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
-            <X size={24} className="text-gray-400" />
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <X size={24} className="text-gray-600" />
           </button>
         </div>
 
@@ -72,7 +72,7 @@ export default function MentorshipModal({
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
                 <select
                   value={paymentType}
                   onChange={(e) => {
@@ -85,7 +85,7 @@ export default function MentorshipModal({
                       setPaymentMethod('card')
                     }
                   }}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 >
                   <option value="cash">Valor à Vista</option>
                   <option value="installment">Parcelado</option>
@@ -95,11 +95,11 @@ export default function MentorshipModal({
 
             {paymentType === 'cash' && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Método de Pagamento</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'pix' | 'card')}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 >
                   <option value="cash">Dinheiro</option>
                   <option value="pix">PIX</option>
@@ -109,11 +109,11 @@ export default function MentorshipModal({
 
             {paymentType === 'installment' && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Parcelas (Cartão de Crédito)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Parcelas (Cartão de Crédito)</label>
                 <select
                   value={installments}
                   onChange={(e) => setInstallments(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
                     <option key={num} value={num}>{num}x {num === 1 ? '(à vista)' : ''}</option>
@@ -123,7 +123,7 @@ export default function MentorshipModal({
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Valor Total</label>
               <input
                 type="text"
                 value={isEditingValue ? customValue : (() => {
@@ -141,28 +141,28 @@ export default function MentorshipModal({
                 }}
                 onChange={handleCustomValueChange}
                 placeholder="R$ 0,00"
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-green-400 font-bold text-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-green-600 font-bold text-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
               />
-              <p className="text-xs text-gray-400 mt-1">Edite para aplicar desconto ou ajuste manual</p>
+              <p className="text-xs text-gray-500 mt-1">Edite para aplicar desconto ou ajuste manual</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Observações (opcional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Observações (opcional)</label>
               <textarea
                 value={mentorshipNotes}
                 onChange={(e) => setMentorshipNotes(e.target.value)}
                 placeholder="Ex: modalidade, cronograma..."
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
                 rows={3}
               />
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3 p-6 border-t border-gray-700">
+        <div className="flex gap-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+            className="flex-1 px-6 py-3 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-xl font-medium transition-colors"
           >
             Cancelar
           </button>
