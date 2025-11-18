@@ -106,7 +106,7 @@ export default function SalesList() {
               to="profissionais"
               className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              Cadastrar Profissional
+              Profissionais
             </Link>
             <Link
               to="nova"
