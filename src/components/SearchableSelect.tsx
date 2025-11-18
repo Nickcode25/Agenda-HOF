@@ -127,10 +127,10 @@ export default function SearchableSelect({
         width: `${dropdownPosition.width}px`,
         zIndex: 99999
       }}
-      className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden"
+      className="bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden"
     >
       {/* Search Input */}
-      <div className="p-3 border-b border-gray-700 bg-gray-800/95 backdrop-blur-sm sticky top-0">
+      <div className="p-3 border-b border-gray-100 bg-white sticky top-0">
         <div className="relative">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -139,7 +139,7 @@ export default function SearchableSelect({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar..."
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
           />
         </div>
       </div>
@@ -164,10 +164,10 @@ export default function SearchableSelect({
               disabled={option.disabled}
               className={`w-full text-left px-4 py-3 transition-colors ${
                 option.value === value
-                  ? 'bg-orange-600 text-white font-medium'
+                  ? 'bg-amber-500 text-white font-medium'
                   : option.disabled
-                  ? 'bg-gray-750 text-gray-500 cursor-not-allowed'
-                  : 'text-gray-200 hover:bg-gray-700 hover:text-white'
+                  ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               {option.label}
@@ -197,18 +197,18 @@ export default function SearchableSelect({
             }
           }}
           disabled={disabled}
-          className={`w-full bg-gray-700/50 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-left flex items-center justify-between ${
-            disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-500'
+          className={`w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-left flex items-center justify-between ${
+            disabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:border-gray-400'
           }`}
         >
-          <span className={selectedLabel ? 'text-white' : 'text-gray-400'}>
+          <span className={selectedLabel ? 'text-gray-900' : 'text-gray-400'}>
             {selectedLabel || placeholder}
           </span>
           <div className="flex items-center gap-2">
             {value && !disabled && (
               <X
                 size={16}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
                 onClick={handleClear}
               />
             )}
