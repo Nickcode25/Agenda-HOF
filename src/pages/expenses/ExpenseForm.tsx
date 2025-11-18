@@ -6,6 +6,7 @@ import { normalizeDateString, getTodayString } from '@/utils/dateHelpers'
 import { Receipt, Save, Calendar, DollarSign, Tag, Repeat } from 'lucide-react'
 import type { RecurringFrequency } from '@/types/cash'
 import { useToast } from '@/hooks/useToast'
+import SearchableSelect from '@/components/SearchableSelect'
 
 export default function ExpenseForm() {
   const navigate = useNavigate()
@@ -145,17 +146,15 @@ export default function ExpenseForm() {
             <Tag size={16} className="inline mr-2" />
             Categoria *
           </label>
-          <select
+          <SearchableSelect
+            options={categories.filter(c => c.isActive).map(category => ({
+              value: category.id,
+              label: category.name
+            }))}
             value={formData.categoryId}
-            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-            required
-            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
-          >
-            <option value="">Selecione uma categoria</option>
-            {categories.filter(c => c.isActive).map(category => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
+            onChange={(value) => setFormData({ ...formData, categoryId: value })}
+            placeholder="Selecione uma categoria"
+          />
         </div>
 
         {/* Descrição */}
@@ -198,18 +197,18 @@ export default function ExpenseForm() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Método de Pagamento *
           </label>
-          <select
+          <SearchableSelect
+            options={[
+              { value: 'cash', label: 'Dinheiro' },
+              { value: 'card', label: 'Cartão' },
+              { value: 'pix', label: 'PIX' },
+              { value: 'transfer', label: 'Transferência' },
+              { value: 'check', label: 'Cheque' }
+            ]}
             value={formData.paymentMethod}
-            onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })}
-            required
-            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
-          >
-            <option value="cash">Dinheiro</option>
-            <option value="card">Cartão</option>
-            <option value="pix">PIX</option>
-            <option value="transfer">Transferência</option>
-            <option value="check">Cheque</option>
-          </select>
+            onChange={(value) => setFormData({ ...formData, paymentMethod: value as any })}
+            placeholder="Selecione o método"
+          />
         </div>
 
         {/* Status de Pagamento */}
@@ -217,16 +216,16 @@ export default function ExpenseForm() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Status de Pagamento *
           </label>
-          <select
+          <SearchableSelect
+            options={[
+              { value: 'pending', label: 'Pendente' },
+              { value: 'paid', label: 'Pago' },
+              { value: 'overdue', label: 'Vencido' }
+            ]}
             value={formData.paymentStatus}
-            onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as any })}
-            required
-            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
-          >
-            <option value="pending">Pendente</option>
-            <option value="paid">Pago</option>
-            <option value="overdue">Vencido</option>
-          </select>
+            onChange={(value) => setFormData({ ...formData, paymentStatus: value as any })}
+            placeholder="Selecione o status"
+          />
         </div>
 
         {/* Datas */}
@@ -282,16 +281,17 @@ export default function ExpenseForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Frequência
                   </label>
-                  <select
+                  <SearchableSelect
+                    options={[
+                      { value: 'daily', label: 'Diário' },
+                      { value: 'weekly', label: 'Semanal' },
+                      { value: 'monthly', label: 'Mensal' },
+                      { value: 'yearly', label: 'Anual' }
+                    ]}
                     value={formData.recurringFrequency}
-                    onChange={(e) => setFormData({ ...formData, recurringFrequency: e.target.value as RecurringFrequency })}
-                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
-                  >
-                    <option value="daily">Diário</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="monthly">Mensal</option>
-                    <option value="yearly">Anual</option>
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, recurringFrequency: value as RecurringFrequency })}
+                    placeholder="Selecione a frequência"
+                  />
                 </div>
 
                 <div>

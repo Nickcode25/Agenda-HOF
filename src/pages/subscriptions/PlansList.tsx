@@ -1,10 +1,11 @@
-import { Plus, Edit, Trash2, Check, X } from 'lucide-react'
+import { Plus, Edit, Trash2, Check, X, CreditCard, Users, DollarSign, Calendar, Crown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { useConfirm } from '@/hooks/useConfirm'
+import { formatCurrency } from '@/utils/currency'
 
 export default function PlansList() {
-  const { plans, deletePlan, updatePlan } = useSubscriptionStore()
+  const { plans, subscriptions, deletePlan, updatePlan } = useSubscriptionStore()
   const { confirm, ConfirmDialog } = useConfirm()
 
   const handleToggleActive = (planId: string, currentStatus: boolean) => {
@@ -17,107 +18,201 @@ export default function PlansList() {
     }
   }
 
+  // Calcular estatísticas gerais
+  const activePlans = plans.filter(p => p.active).length
+  const totalSubscribers = subscriptions.filter(s => s.status === 'active').length
+  const monthlyRevenue = subscriptions
+    .filter(s => s.status === 'active')
+    .reduce((total, sub) => total + sub.price, 0)
+  const receivedRevenue = subscriptions.reduce((total, sub) => {
+    const paidPayments = sub.payments.filter(p => p.status === 'paid')
+    return total + paidPayments.reduce((sum, p) => sum + p.amount, 0)
+  }, 0)
+
+  // Contar assinantes por plano
+  const getSubscribersCount = (planId: string) => {
+    return subscriptions.filter(s => s.planId === planId && s.status === 'active').length
+  }
+
   return (
     <>
-    <div className="p-8">
-      <div className="flex items-center justify-end mb-8">
-        <Link
-          to="/app/mensalidades/planos/novo"
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors"
-        >
-          <Plus size={20} />
-          Novo Plano
-        </Link>
-      </div>
-
-      {plans.length === 0 ? (
-        <div className="bg-gray-800 rounded-xl border border-gray-700 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Plus className="text-gray-500" size={32} />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-300 mb-2">
-            Nenhum plano cadastrado
-          </h3>
-          <p className="text-gray-500 mb-6">
-            Comece criando seu primeiro plano de mensalidade
-          </p>
-          <Link
-            to="/app/mensalidades/planos/novo"
-            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors"
-          >
-            <Plus size={20} />
-            Criar Primeiro Plano
-          </Link>
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`bg-gray-800 rounded-xl border ${
-                plan.active ? 'border-orange-500/50' : 'border-gray-700'
-              } p-6 hover:border-orange-500 transition-all`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-white mb-1">{plan.name}</h3>
-                  <p className="text-gray-400 text-sm">{plan.description}</p>
-                </div>
-                <button
-                  onClick={() => handleToggleActive(plan.id, plan.active)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    plan.active
-                      ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                      : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                  }`}
-                  title={plan.active ? 'Ativo' : 'Inativo'}
-                >
-                  {plan.active ? <Check size={16} /> : <X size={16} />}
-                </button>
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header com breadcrumb */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <Link to="/app" className="hover:text-purple-600 transition-colors">Início</Link>
+              <span>›</span>
+              <span className="text-gray-900">Planos de Mensalidade</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-purple-50 rounded-xl border border-purple-200">
+                <CreditCard size={24} className="text-purple-600" />
               </div>
-
-              <div className="mb-4">
-                <p className="text-sm text-gray-400">
-                  Valor definido por paciente
-                </p>
-              </div>
-
-              {plan.benefits.length > 0 && (
-                <div className="mb-6 space-y-2">
-                  {plan.benefits.slice(0, 3).map((benefit, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <Check className="text-orange-500 mt-0.5 flex-shrink-0" size={16} />
-                      <span className="text-sm text-gray-300">{benefit}</span>
-                    </div>
-                  ))}
-                  {plan.benefits.length > 3 && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      +{plan.benefits.length - 3} benefícios
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-4 border-t border-gray-700">
-                <Link
-                  to={`/app/mensalidades/planos/${plan.id}/editar`}
-                  className="flex-1 flex items-center justify-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg transition-colors font-medium"
-                >
-                  <Edit size={16} />
-                  Editar
-                </Link>
-                <button
-                  onClick={() => handleDelete(plan.id, plan.name)}
-                  className="flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg transition-colors"
-                  title="Excluir plano"
-                >
-                  <Trash2 size={16} />
-                </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Planos de Mensalidade</h1>
+                <p className="text-sm text-gray-500">Gerencie os planos de assinatura</p>
               </div>
             </div>
-          ))}
+          </div>
+          <Link
+            to="/app/mensalidades/planos/novo"
+            className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
+          >
+            <Plus size={18} />
+            Novo Plano
+          </Link>
         </div>
-      )}
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          {/* Planos Ativos */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-purple-600">Planos Ativos</span>
+              <Crown size={18} className="text-purple-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{activePlans}</div>
+            <div className="text-sm text-gray-500">Disponíveis</div>
+          </div>
+
+          {/* Total de Assinantes */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-blue-600">Total de Assinantes</span>
+              <Users size={18} className="text-blue-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{totalSubscribers}</div>
+            <div className="text-sm text-gray-500">Ativos</div>
+          </div>
+
+          {/* Receita Mensal */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-green-600">Receita Mensal</span>
+              <DollarSign size={18} className="text-green-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(monthlyRevenue)}</div>
+            <div className="text-sm text-gray-500">Prevista</div>
+          </div>
+
+          {/* Total Recebido */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-emerald-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-emerald-600">Total Recebido</span>
+              <Calendar size={18} className="text-emerald-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(receivedRevenue)}</div>
+            <div className="text-sm text-gray-500">Histórico</div>
+          </div>
+        </div>
+
+        {/* Lista de Planos */}
+        {plans.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
+              <CreditCard size={32} className="text-purple-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Nenhum plano cadastrado
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              Comece criando seu primeiro plano de mensalidade
+            </p>
+            <Link
+              to="/app/mensalidades/planos/novo"
+              className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+            >
+              <Plus size={18} />
+              Criar Primeiro Plano
+            </Link>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map((plan) => {
+              const subscribersCount = getSubscribersCount(plan.id)
+
+              return (
+                <Link
+                  key={plan.id}
+                  to={`/app/mensalidades/planos/${plan.id}`}
+                  className={`bg-white rounded-xl border ${
+                    plan.active ? 'border-purple-200 hover:border-purple-400' : 'border-gray-200 hover:border-gray-300'
+                  } p-6 transition-all hover:shadow-md cursor-pointer block`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
+                      <p className="text-gray-500 text-sm line-clamp-2">{plan.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleToggleActive(plan.id, plan.active)
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        plan.active
+                          ? 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200'
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 border border-gray-200'
+                      }`}
+                      title={plan.active ? 'Ativo' : 'Inativo'}
+                    >
+                      {plan.active ? <Check size={16} /> : <X size={16} />}
+                    </button>
+                  </div>
+
+                  <div className="mb-4 flex items-center gap-2">
+                    <Users size={16} className="text-gray-400" />
+                    <span className="text-sm text-gray-600">
+                      {subscribersCount} {subscribersCount === 1 ? 'assinante' : 'assinantes'}
+                    </span>
+                  </div>
+
+                  {plan.benefits.length > 0 && (
+                    <div className="mb-6 space-y-2">
+                      {plan.benefits.slice(0, 3).map((benefit, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <Check className="text-purple-500 mt-0.5 flex-shrink-0" size={16} />
+                          <span className="text-sm text-gray-600">{benefit}</span>
+                        </div>
+                      ))}
+                      {plan.benefits.length > 3 && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          +{plan.benefits.length - 3} benefícios
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-4 border-t border-gray-100">
+                    <Link
+                      to={`/app/mensalidades/planos/${plan.id}/editar`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg transition-colors font-medium text-sm"
+                    >
+                      <Edit size={16} />
+                      Editar
+                    </Link>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleDelete(plan.id, plan.name)
+                      }}
+                      className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg transition-colors"
+                      title="Excluir plano"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
 
     {/* Modal de Confirmação */}

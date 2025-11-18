@@ -3,6 +3,7 @@ import { X, Package, AlertTriangle } from 'lucide-react'
 import { Procedure } from '@/store/procedures'
 import { StockItem } from '@/types/stock'
 import { formatCurrency } from '@/utils/currency'
+import SearchableSelect from '@/components/SearchableSelect'
 
 interface AddProcedureModalProps {
   isOpen: boolean
@@ -89,18 +90,15 @@ export default function AddProcedureModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento *</label>
-                <select
+                <SearchableSelect
+                  options={procedures.filter(p => p.isActive).map(proc => ({
+                    value: proc.name,
+                    label: proc.name
+                  }))}
                   value={selectedProcedure}
-                  onChange={(e) => onProcedureChange(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                >
-                  <option value="">Selecione um procedimento</option>
-                  {procedures.filter(p => p.isActive).map(proc => (
-                    <option key={proc.id} value={proc.name}>
-                      {proc.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={onProcedureChange}
+                  placeholder="Selecione um procedimento"
+                />
               </div>
 
               <div>
@@ -117,44 +115,44 @@ export default function AddProcedureModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: 'cash', label: 'Valor à Vista' },
+                    { value: 'installment', label: 'Parcelado' }
+                  ]}
                   value={paymentType}
-                  onChange={(e) => onPaymentTypeChange(e.target.value as 'cash' | 'installment')}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                >
-                  <option value="cash">Valor à Vista</option>
-                  <option value="installment">Parcelado</option>
-                </select>
+                  onChange={(value) => onPaymentTypeChange(value as 'cash' | 'installment')}
+                  placeholder="Selecione a forma"
+                />
               </div>
 
               {paymentType === 'cash' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Método de Pagamento</label>
-                  <select
+                  <SearchableSelect
+                    options={[
+                      { value: 'cash', label: 'Dinheiro' },
+                      { value: 'pix', label: 'PIX' }
+                    ]}
                     value={paymentMethod}
-                    onChange={(e) => onPaymentMethodChange(e.target.value as 'cash' | 'pix' | 'card')}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                  >
-                    <option value="cash">Dinheiro</option>
-                    <option value="pix">PIX</option>
-                  </select>
+                    onChange={(value) => onPaymentMethodChange(value as 'cash' | 'pix' | 'card')}
+                    placeholder="Selecione o método"
+                  />
                 </div>
               )}
 
               {paymentType === 'installment' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Parcelas (Cartão de Crédito)</label>
-                  <select
-                    value={installments}
-                    onChange={(e) => onInstallmentsChange(Number(e.target.value))}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-                      <option key={num} value={num}>
-                        {num}x {num === 1 ? '(à vista)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => ({
+                      value: num.toString(),
+                      label: `${num}x ${num === 1 ? '(à vista)' : ''}`
+                    }))}
+                    value={installments.toString()}
+                    onChange={(value) => onInstallmentsChange(Number(value))}
+                    placeholder="Selecione as parcelas"
+                  />
                 </div>
               )}
 

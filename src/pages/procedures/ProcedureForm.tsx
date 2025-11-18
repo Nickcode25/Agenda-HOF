@@ -5,6 +5,7 @@ import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
 import { Save, Tag, DollarSign, FileText, Clock } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import SearchableSelect from '@/components/SearchableSelect'
 
 export default function ProcedureForm() {
   const add = useProcedures(s => s.add)
@@ -172,18 +173,15 @@ export default function ProcedureForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                <select
+                <SearchableSelect
+                  options={procedureCategories.map(cat => ({
+                    value: cat,
+                    label: cat
+                  }))}
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {procedureCategories.map(cat => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setCategory}
+                  placeholder="Selecione uma categoria"
+                />
                 <p className="text-xs text-gray-500 mt-0.5">Selecione a categoria do procedimento</p>
               </div>
 

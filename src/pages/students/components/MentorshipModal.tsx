@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { formatCurrency } from '@/utils/currency'
+import SearchableSelect from '@/components/SearchableSelect'
 
 interface MentorshipModalProps {
   show: boolean
@@ -61,10 +62,14 @@ export default function MentorshipModal({
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: 'cash', label: 'Valor à Vista' },
+                    { value: 'installment', label: 'Parcelado' }
+                  ]}
                   value={paymentType}
-                  onChange={(e) => {
-                    const newType = e.target.value as 'cash' | 'installment'
+                  onChange={(value) => {
+                    const newType = value as 'cash' | 'installment'
                     setPaymentType(newType)
                     if (newType === 'cash') {
                       setPaymentMethod('cash')
@@ -73,40 +78,38 @@ export default function MentorshipModal({
                       setPaymentMethod('card')
                     }
                   }}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                >
-                  <option value="cash">Valor à Vista</option>
-                  <option value="installment">Parcelado</option>
-                </select>
+                  placeholder="Selecione a forma"
+                />
               </div>
             </div>
 
             {paymentType === 'cash' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: 'cash', label: 'Dinheiro' },
+                    { value: 'pix', label: 'PIX' }
+                  ]}
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'pix' | 'card')}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                >
-                  <option value="cash">Dinheiro</option>
-                  <option value="pix">PIX</option>
-                </select>
+                  onChange={(value) => setPaymentMethod(value as 'cash' | 'pix' | 'card')}
+                  placeholder="Selecione o método"
+                />
               </div>
             )}
 
             {paymentType === 'installment' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Parcelas (Cartão de Crédito)</label>
-                <select
-                  value={installments}
-                  onChange={(e) => setInstallments(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-                    <option key={num} value={num}>{num}x {num === 1 ? '(à vista)' : ''}</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => ({
+                    value: num.toString(),
+                    label: `${num}x ${num === 1 ? '(à vista)' : ''}`
+                  }))}
+                  value={installments.toString()}
+                  onChange={(value) => setInstallments(Number(value))}
+                  placeholder="Selecione as parcelas"
+                />
               </div>
             )}
 

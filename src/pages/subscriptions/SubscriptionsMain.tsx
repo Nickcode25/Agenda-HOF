@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Plus, X, Check, Calendar, Sparkles, CreditCard, Users } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
@@ -215,432 +215,432 @@ export default function SubscriptionsMain() {
   const activePlans = plans.filter(p => p.active)
 
   return (
-    <div className="space-y-6">
-      {/* Header com gradiente */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-purple-500/20 rounded-xl">
-              <CreditCard size={32} className="text-purple-400" />
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header com breadcrumb */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <Link to="/app" className="hover:text-purple-600 transition-colors">Início</Link>
+              <span>›</span>
+              <span className="text-gray-900">Mensalidades</span>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Planos de Mensalidade</h1>
-              <p className="text-gray-400">Gerencie planos e assinaturas recorrentes</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <StatsOverview
-        mrr={mrr}
-        receivedRevenue={receivedRevenue}
-        overdueRevenue={overdueRevenue}
-        activeCount={activeCount}
-      />
-
-      <TabsNav
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      {/* Plans Tab */}
-      {activeTab === 'plans' && (
-        <div>
-          <div className="flex justify-end mb-6">
-            <button
-              onClick={() => setShowPlanModal(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
-            >
-              <Plus size={20} />
-              Criar Plano
-            </button>
-          </div>
-
-          {plans.length === 0 ? (
-            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/30 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-16 text-center">
-              <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Sparkles className="text-purple-400" size={40} />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-purple-50 rounded-xl border border-purple-200">
+                <CreditCard size={24} className="text-purple-600" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Nenhum plano cadastrado</h3>
-              <p className="text-gray-400 mb-8 text-lg">Comece criando seu primeiro plano de mensalidade</p>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Planos de Mensalidade</h1>
+                <p className="text-sm text-gray-500">Gerencie planos e assinaturas recorrentes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <StatsOverview
+          mrr={mrr}
+          receivedRevenue={receivedRevenue}
+          overdueRevenue={overdueRevenue}
+          activeCount={activeCount}
+        />
+
+        <TabsNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        {/* Plans Tab */}
+        {activeTab === 'plans' && (
+          <div>
+            <div className="flex justify-end mb-6">
               <button
                 onClick={() => setShowPlanModal(true)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
+                className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
               >
-                <Plus size={20} />
-                Criar Primeiro Plano
+                <Plus size={18} />
+                Criar Plano
               </button>
             </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plans.map((plan) => (
+
+            {plans.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
+                  <Sparkles className="text-purple-500" size={32} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum plano cadastrado</h3>
+                <p className="text-gray-500 mb-6 max-w-md mx-auto">Comece criando seu primeiro plano de mensalidade</p>
                 <button
-                  key={plan.id}
-                  onClick={() => navigate(`/app/mensalidades/planos/${plan.id}`)}
-                  className={`group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl rounded-3xl border ${
-                    plan.active ? 'border-purple-500/50 hover:border-purple-500' : 'border-gray-700 hover:border-gray-600'
-                  } p-8 text-left transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20`}
+                  onClick={() => setShowPlanModal(true)}
+                  className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
                 >
-                  {/* Badge de destaque */}
-                  {plan.active && (
-                    <div className="absolute top-4 right-4 px-3 py-1 bg-purple-500/20 border border-purple-500/50 rounded-full text-xs font-medium text-purple-400">
-                      Ativo
-                    </div>
-                  )}
-
-                  {/* Gradiente de fundo no hover */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true"></div>
-
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-purple-500/20 rounded-xl group-hover:scale-110 transition-transform duration-500">
-                        <Sparkles className="text-purple-400" size={24} />
-                      </div>
-                      <h3 className="text-2xl font-bold text-white group-hover:text-purple-400 transition-colors">{plan.name}</h3>
-                    </div>
-
-                    <p className="text-gray-400 text-sm mb-6 line-clamp-2">{plan.description}</p>
-
-                    <div className="mb-6">
-                      <span className="text-sm text-gray-400">Valor definido por paciente</span>
-                    </div>
-
-                    {plan.benefits.length > 0 && (
-                      <div className="space-y-2 pt-4 border-t border-gray-700/50">
-                        {plan.benefits.slice(0, 3).map((benefit, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <Check className="text-purple-500 mt-0.5 flex-shrink-0" size={16} />
-                            <span className="text-sm text-gray-300">{benefit}</span>
-                          </div>
-                        ))}
-                        {plan.benefits.length > 3 && (
-                          <p className="text-xs text-purple-400 mt-2">+{plan.benefits.length - 3} benefícios</p>
-                        )}
+                  <Plus size={18} />
+                  Criar Primeiro Plano
+                </button>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {plans.map((plan) => (
+                  <button
+                    key={plan.id}
+                    onClick={() => navigate(`/app/mensalidades/planos/${plan.id}`)}
+                    className={`group relative bg-white rounded-xl border ${
+                      plan.active ? 'border-purple-200 hover:border-purple-400' : 'border-gray-200 hover:border-gray-300'
+                    } p-6 text-left transition-all hover:shadow-md cursor-pointer block`}
+                  >
+                    {/* Badge de destaque */}
+                    {plan.active && (
+                      <div className="absolute top-4 right-4 px-3 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs font-medium text-purple-600">
+                        Ativo
                       </div>
                     )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Subscribers Tab */}
-      {activeTab === 'subscribers' && (
-        <div>
-          <div className="flex justify-end mb-6">
-            <button
-              onClick={() => setShowSubscriberModal(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
-            >
-              <Plus size={20} />
-              Adicionar Assinante
-            </button>
-          </div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2.5 bg-purple-50 rounded-xl border border-purple-200">
+                          <Sparkles className="text-purple-500" size={20} />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                      </div>
 
-          {subscriptions.length === 0 ? (
-            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/30 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-16 text-center">
-              <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="text-purple-400" size={40} />
+                      <p className="text-gray-500 text-sm mb-4 line-clamp-2">{plan.description}</p>
+
+                      <div className="mb-4">
+                        <span className="text-sm text-gray-500">Valor definido por paciente</span>
+                      </div>
+
+                      {plan.benefits.length > 0 && (
+                        <div className="space-y-2 pt-4 border-t border-gray-100">
+                          {plan.benefits.slice(0, 3).map((benefit, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <Check className="text-purple-500 mt-0.5 flex-shrink-0" size={16} />
+                              <span className="text-sm text-gray-600">{benefit}</span>
+                            </div>
+                          ))}
+                          {plan.benefits.length > 3 && (
+                            <p className="text-xs text-purple-600 mt-2">+{plan.benefits.length - 3} benefícios</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Nenhum assinante</h3>
-              <p className="text-gray-400 mb-8 text-lg">Adicione pacientes aos planos de mensalidade</p>
+            )}
+          </div>
+        )}
+
+        {/* Subscribers Tab */}
+        {activeTab === 'subscribers' && (
+          <div>
+            <div className="flex justify-end mb-6">
               <button
                 onClick={() => setShowSubscriberModal(true)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
+                className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
               >
-                <Plus size={20} />
-                Adicionar Primeiro Assinante
-              </button>
-            </div>
-          ) : (
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-800/50 border-b border-gray-700">
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Paciente</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Plano</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Valor</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Próxima Cobrança</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Status</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subscriptions.map((sub) => {
-                      const currentPayment = getCurrentPayment(sub)
-                      return (
-                        <SubscriptionCard
-                          key={sub.id}
-                          subscription={sub}
-                          currentPayment={currentPayment}
-                          processingPayment={processingPayment}
-                          onMarkAsPaid={handleMarkAsPaid}
-                          onSimulatePixPayment={handleSimulatePixPayment}
-                        />
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Modal Criar Plano */}
-      {showPlanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800/95 backdrop-blur-xl rounded-2xl border border-gray-700 p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Criar Novo Plano</h2>
-              <button onClick={() => setShowPlanModal(false)} className="text-gray-400 hover:text-white transition-colors">
-                <X size={24} />
+                <Plus size={18} />
+                Adicionar Assinante
               </button>
             </div>
 
-            <form onSubmit={handleCreatePlan} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Plano *</label>
-                <input
-                  type="text"
-                  required
-                  value={planName}
-                  onChange={(e) => setPlanName(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                  placeholder="Ex: Clube do Botox"
-                />
+            {subscriptions.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
+                  <Users className="text-purple-500" size={32} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum assinante</h3>
+                <p className="text-gray-500 mb-6 max-w-md mx-auto">Adicione pacientes aos planos de mensalidade</p>
+                <button
+                  onClick={() => setShowSubscriberModal(true)}
+                  className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+                >
+                  <Plus size={18} />
+                  Adicionar Primeiro Assinante
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Paciente</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Plano</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Valor</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Próxima Cobrança</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {subscriptions.map((sub) => {
+                        const currentPayment = getCurrentPayment(sub)
+                        return (
+                          <SubscriptionCard
+                            key={sub.id}
+                            subscription={sub}
+                            currentPayment={currentPayment}
+                            processingPayment={processingPayment}
+                            onMarkAsPaid={handleMarkAsPaid}
+                            onSimulatePixPayment={handleSimulatePixPayment}
+                          />
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modal Criar Plano */}
+        {showPlanModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Criar Novo Plano</h2>
+                <button onClick={() => setShowPlanModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <X size={24} />
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
-                <textarea
-                  value={planDescription}
-                  onChange={(e) => setPlanDescription(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all h-20 resize-none"
-                  placeholder="Descreva o plano (opcional)"
-                />
-              </div>
-
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-4">
-                <p className="text-sm text-blue-300">
-                  💡 Dica: O valor e detalhes específicos serão definidos ao adicionar cada paciente ao plano.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Benefícios</label>
-                <div className="flex gap-2 mb-3">
+              <form onSubmit={handleCreatePlan} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Plano *</label>
                   <input
                     type="text"
-                    value={newBenefit}
-                    onChange={(e) => setNewBenefit(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBenefit())}
-                    className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                    placeholder="Digite um benefício"
+                    required
+                    value={planName}
+                    onChange={(e) => setPlanName(e.target.value)}
+                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    placeholder="Ex: Clube do Botox"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                  <textarea
+                    value={planDescription}
+                    onChange={(e) => setPlanDescription(e.target.value)}
+                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all h-20 resize-none"
+                    placeholder="Descreva o plano (opcional)"
+                  />
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-blue-600">
+                    O valor e detalhes específicos serão definidos ao adicionar cada paciente ao plano.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Benefícios</label>
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      value={newBenefit}
+                      onChange={(e) => setNewBenefit(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBenefit())}
+                      className="flex-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                      placeholder="Digite um benefício"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddBenefit}
+                      className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2.5 rounded-lg transition-colors"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  </div>
+                  {planBenefits.length > 0 && (
+                    <div className="space-y-2">
+                      {planBenefits.map((benefit, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <Check className="text-purple-500" size={16} />
+                            <span className="text-gray-900 text-sm">{benefit}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBenefit(index)}
+                            className="text-red-500 hover:text-red-600 transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+                  >
+                    Criar Plano
+                  </button>
                   <button
                     type="button"
-                    onClick={handleAddBenefit}
-                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-xl transition-colors"
+                    onClick={() => setShowPlanModal(false)}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-6 py-2.5 rounded-lg transition-colors"
                   >
-                    <Plus size={20} />
+                    Cancelar
                   </button>
                 </div>
-                {planBenefits.length > 0 && (
-                  <div className="space-y-2">
-                    {planBenefits.map((benefit, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-700/50 rounded-xl px-4 py-3 border border-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Check className="text-purple-400" size={16} />
-                          <span className="text-white text-sm">{benefit}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveBenefit(index)}
-                          className="text-red-400 hover:text-red-300 transition-colors"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Adicionar Assinante */}
+        {showSubscriberModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Adicionar Assinante ao Plano</h2>
+                <button onClick={() => setShowSubscriberModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateSubscription} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Paciente *</label>
+                  <select
+                    required
+                    value={selectedPatientId}
+                    onChange={(e) => setSelectedPatientId(e.target.value)}
+                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  >
+                    <option value="">Selecione um paciente</option>
+                    {patients.map((patient) => (
+                      <option key={patient.id} value={patient.id}>
+                        {patient.name} - {patient.cpf}
+                      </option>
                     ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Plano *</label>
+                  <select
+                    required
+                    value={selectedPlanId}
+                    onChange={(e) => {
+                      setSelectedPlanId(e.target.value)
+                    }}
+                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  >
+                    <option value="">Selecione um plano</option>
+                    {activePlans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Data do Pagamento *</label>
+                    <input
+                      type="date"
+                      required
+                      value={paymentDate}
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                      className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Valor Pago (R$) *</label>
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      value={paidAmount}
+                      onChange={(e) => setPaidAmount(e.target.value)}
+                      className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                      placeholder="225.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento *</label>
+                  <select
+                    required
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  >
+                    <option value="PIX">PIX</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Transferência">Transferência</option>
+                  </select>
+                </div>
+
+                {selectedPlanId && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <h3 className="text-gray-900 font-medium mb-2 flex items-center gap-2">
+                      <Sparkles size={16} className="text-purple-500" />
+                      Resumo da Assinatura
+                    </h3>
+                    <div className="space-y-1 text-sm">
+                      <p className="text-gray-600">
+                        <span className="text-gray-500">Plano:</span>{' '}
+                        <span className="font-medium">{activePlans.find((p) => p.id === selectedPlanId)?.name}</span>
+                      </p>
+                      <p className="text-gray-600">
+                        <span className="text-gray-500">Próxima cobrança:</span>{' '}
+                        <span className="font-medium">{(() => {
+                          const [year, month, day] = paymentDate.split('-').map(Number)
+                          let nextMonth = month + 1
+                          let nextYear = year
+                          if (nextMonth > 12) {
+                            nextMonth = 1
+                            nextYear += 1
+                          }
+                          const nextDate = new Date(nextYear, nextMonth - 1, day)
+                          return nextDate.toLocaleDateString('pt-BR')
+                        })()}</span>
+                      </p>
+                    </div>
                   </div>
                 )}
-              </div>
 
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all"
-                >
-                  Criar Plano
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPlanModal(false)}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-xl transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Adicionar Assinante */}
-      {showSubscriberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-800/95 backdrop-blur-xl rounded-2xl border border-gray-700 p-8 w-full max-w-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Adicionar Assinante ao Plano</h2>
-              <button onClick={() => setShowSubscriberModal(false)} className="text-gray-400 hover:text-white transition-colors">
-                <X size={24} />
-              </button>
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="submit"
+                    disabled={activePlans.length === 0}
+                    className="flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+                  >
+                    Adicionar Assinante
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowSubscriberModal(false)}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-6 py-2.5 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleCreateSubscription} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Paciente *</label>
-                <select
-                  required
-                  value={selectedPatientId}
-                  onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                >
-                  <option value="">Selecione um paciente</option>
-                  {patients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.name} - {patient.cpf}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Plano *</label>
-                <select
-                  required
-                  value={selectedPlanId}
-                  onChange={(e) => {
-                    setSelectedPlanId(e.target.value)
-                  }}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                >
-                  <option value="">Selecione um plano</option>
-                  {activePlans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Data do Pagamento *</label>
-                  <input
-                    type="date"
-                    required
-                    value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Valor Pago (R$) *</label>
-                  <input
-                    type="number"
-                    required
-                    step="0.01"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                    placeholder="225.00"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Método de Pagamento *</label>
-                <select
-                  required
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                >
-                  <option value="PIX">PIX</option>
-                  <option value="Cartão de Crédito">Cartão de Crédito</option>
-                  <option value="Cartão de Débito">Cartão de Débito</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Transferência">Transferência</option>
-                </select>
-              </div>
-
-              {selectedPlanId && (
-                <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
-                  <h3 className="text-white font-medium mb-2 flex items-center gap-2">
-                    <Sparkles size={16} className="text-purple-400" />
-                    Resumo da Assinatura
-                  </h3>
-                  <div className="space-y-1 text-sm">
-                    <p className="text-gray-300">
-                      <span className="text-gray-400">Plano:</span>{' '}
-                      <span className="font-medium">{activePlans.find((p) => p.id === selectedPlanId)?.name}</span>
-                    </p>
-                    <p className="text-gray-300">
-                      <span className="text-gray-400">Próxima cobrança:</span>{' '}
-                      <span className="font-medium">{(() => {
-                        const [year, month, day] = paymentDate.split('-').map(Number)
-                        let nextMonth = month + 1
-                        let nextYear = year
-                        if (nextMonth > 12) {
-                          nextMonth = 1
-                          nextYear += 1
-                        }
-                        const nextDate = new Date(nextYear, nextMonth - 1, day)
-                        return nextDate.toLocaleDateString('pt-BR')
-                      })()}</span>
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  disabled={activePlans.length === 0}
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all"
-                >
-                  Adicionar Assinante
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowSubscriberModal(false)}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-xl transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
 
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
-      )}
+        {toast.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast({ ...toast, show: false })}
+          />
+        )}
+      </div>
     </div>
   )
 }

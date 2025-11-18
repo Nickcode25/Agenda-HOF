@@ -37,18 +37,44 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
 
 export const useSubscription = () => useContext(SubscriptionContext)
 
+// Cache global para evitar verificações repetidas durante navegação
+let subscriptionCache: {
+  userId: string | null
+  hasActiveSubscription: boolean
+  hasPaidSubscription: boolean
+  isInTrial: boolean
+  trialDaysRemaining: number
+  subscription: Subscription | null
+  timestamp: number
+} | null = null
+
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
+
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
   const { user } = useAuth()
-  const [loading, setLoading] = useState(true)
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
-  const [hasPaidSubscription, setHasPaidSubscription] = useState(false)
-  const [isInTrial, setIsInTrial] = useState(false)
-  const [trialDaysRemaining, setTrialDaysRemaining] = useState(0)
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
+
+  // Verificar se temos cache válido para evitar loading desnecessário
+  const hasCachedData = subscriptionCache &&
+    subscriptionCache.userId === user?.id &&
+    (Date.now() - subscriptionCache.timestamp) < CACHE_TTL
+
+  const [loading, setLoading] = useState(!hasCachedData)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(hasCachedData ? subscriptionCache!.hasActiveSubscription : false)
+  const [hasPaidSubscription, setHasPaidSubscription] = useState(hasCachedData ? subscriptionCache!.hasPaidSubscription : false)
+  const [isInTrial, setIsInTrial] = useState(hasCachedData ? subscriptionCache!.isInTrial : false)
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState(hasCachedData ? subscriptionCache!.trialDaysRemaining : 0)
+  const [subscription, setSubscription] = useState<Subscription | null>(hasCachedData ? subscriptionCache!.subscription : null)
 
   useEffect(() => {
     async function checkSubscription() {
       if (!user) {
+        setLoading(false)
+        subscriptionCache = null
+        return
+      }
+
+      // Se temos cache válido, usar os dados em cache e não fazer requisição
+      if (hasCachedData) {
         setLoading(false)
         return
       }
@@ -152,13 +178,29 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
       } catch (error) {
         console.error('Erro ao verificar assinatura:', error)
         setHasActiveSubscription(false)
+        setHasPaidSubscription(false)
       } finally {
         setLoading(false)
       }
     }
 
     checkSubscription()
-  }, [user])
+  }, [user, hasCachedData])
+
+  // Atualizar cache sempre que os valores mudarem
+  useEffect(() => {
+    if (!loading && user) {
+      subscriptionCache = {
+        userId: user.id,
+        hasActiveSubscription,
+        hasPaidSubscription,
+        isInTrial,
+        trialDaysRemaining,
+        subscription,
+        timestamp: Date.now()
+      }
+    }
+  }, [loading, user, hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription])
 
   // Enquanto carrega, mostrar loading
   if (loading) {

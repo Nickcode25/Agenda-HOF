@@ -5,6 +5,7 @@ import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
 import { Save, ArrowLeft, Plus } from 'lucide-react'
 import CreateCategoryModal from '@/components/CreateCategoryModal'
+import SearchableSelect from '@/components/SearchableSelect'
 
 export default function ProcedureEdit() {
   const { id } = useParams()
@@ -154,18 +155,17 @@ export default function ProcedureEdit() {
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-2">Categoria do Procedimento</label>
             <div className="flex gap-2">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option value="">Selecione uma categoria</option>
-                {procedureCategories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1">
+                <SearchableSelect
+                  options={procedureCategories.map(cat => ({
+                    value: cat,
+                    label: cat
+                  }))}
+                  value={category}
+                  onChange={setCategory}
+                  placeholder="Selecione uma categoria"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setShowCategoryModal(true)}

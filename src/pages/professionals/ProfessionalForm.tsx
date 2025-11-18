@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
 import { Save, Upload, X, User, Phone as PhoneIcon, Home, FileText, Briefcase } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import SearchableSelect from '@/components/SearchableSelect'
 
 export default function ProfessionalForm() {
   const add = useProfessionals(s => s.add)
@@ -274,22 +275,21 @@ export default function ProfessionalForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Especialidade <span className="text-red-500">*</span>
                 </label>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: 'Biomédico(a)', label: 'Biomédico(a)' },
+                    { value: 'Biólogo(a)', label: 'Biólogo(a)' },
+                    { value: 'Dentista', label: 'Dentista' },
+                    { value: 'Enfermeiro(a)', label: 'Enfermeiro(a)' },
+                    { value: 'Esteticista', label: 'Esteticista' },
+                    { value: 'Farmacêutico(a)', label: 'Farmacêutico(a)' },
+                    { value: 'Fisioterapeuta', label: 'Fisioterapeuta' },
+                    { value: 'Médico(a)', label: 'Médico(a)' }
+                  ]}
                   value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
-                >
-                  <option value="">Selecione...</option>
-                  <option value="Biomédico(a)">Biomédico(a)</option>
-                  <option value="Biólogo(a)">Biólogo(a)</option>
-                  <option value="Dentista">Dentista</option>
-                  <option value="Enfermeiro(a)">Enfermeiro(a)</option>
-                  <option value="Esteticista">Esteticista</option>
-                  <option value="Farmacêutico(a)">Farmacêutico(a)</option>
-                  <option value="Fisioterapeuta">Fisioterapeuta</option>
-                  <option value="Médico(a)">Médico(a)</option>
-                </select>
+                  onChange={setSpecialty}
+                  placeholder="Selecione a especialidade"
+                />
               </div>
 
               <div>

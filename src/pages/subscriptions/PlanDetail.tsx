@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users } from 'lucide-react'
+import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
 import { autoRegisterCashMovement } from '../../store/cash'
@@ -8,7 +8,6 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
 import { useConfirm } from '@/hooks/useConfirm'
-import PlanStatsGrid from './components/PlanStatsGrid'
 import AddSubscriberModal from './components/AddSubscriberModal'
 import ConfirmPaymentModal from './components/ConfirmPaymentModal'
 import { parseCurrency, formatCurrency } from '@/utils/currency'
@@ -75,12 +74,17 @@ export default function PlanDetail() {
 
   if (!plan) {
     return (
-      <div className="p-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Plano não encontrado</h2>
-          <Link to="/app/mensalidades" className="text-orange-500 hover:text-orange-400">
-            Voltar para Mensalidades
-          </Link>
+      <div className="min-h-screen bg-gray-50 -m-8 p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
+              <CreditCard size={32} className="text-purple-500" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Plano não encontrado</h2>
+            <Link to="/app/mensalidades" className="text-purple-600 hover:text-purple-700 font-medium">
+              Voltar para Mensalidades
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -260,7 +264,7 @@ export default function PlanDetail() {
 
     if (!unpaidPayment) {
       // Não tem pagamento pendente = está em dia
-      return { label: 'Em dia', className: 'bg-green-500/20 text-green-400', icon: CheckCircle }
+      return { label: 'Em dia', className: 'bg-green-50 text-green-600 border-green-200', icon: CheckCircle }
     }
 
     // Verifica se a data de vencimento já passou
@@ -273,227 +277,270 @@ export default function PlanDetail() {
     // Comparação direta de strings YYYY-MM-DD
     if (dueDateStr < todayStr) {
       // Data passou = atrasado
-      return { label: 'Atrasado', className: 'bg-red-500/20 text-red-400', icon: AlertCircle }
+      return { label: 'Atrasado', className: 'bg-red-50 text-red-600 border-red-200', icon: AlertCircle }
     } else {
       // Data ainda não passou ou é hoje = em dia
-      return { label: 'Em dia', className: 'bg-green-500/20 text-green-400', icon: CheckCircle }
+      return { label: 'Em dia', className: 'bg-green-50 text-green-600 border-green-200', icon: CheckCircle }
     }
   }
 
   const getPaymentStatusConfig = (status: string) => {
     switch (status) {
       case 'paid':
-        return { label: 'Pago', className: 'bg-green-500/20 text-green-400', icon: CheckCircle }
+        return { label: 'Pago', className: 'bg-green-50 text-green-600 border-green-200', icon: CheckCircle }
       case 'pending':
-        return { label: 'Pendente', className: 'bg-yellow-500/20 text-yellow-400', icon: Clock }
+        return { label: 'Pendente', className: 'bg-yellow-50 text-yellow-600 border-yellow-200', icon: Clock }
       case 'overdue':
-        return { label: 'Atrasado', className: 'bg-red-500/20 text-red-400', icon: AlertCircle }
+        return { label: 'Atrasado', className: 'bg-red-50 text-red-600 border-red-200', icon: AlertCircle }
       default:
-        return { label: status, className: 'bg-gray-500/20 text-gray-400', icon: Clock }
+        return { label: status, className: 'bg-gray-50 text-gray-600 border-gray-200', icon: Clock }
     }
   }
 
   return (
     <>
-    <div className="p-8">
-      <button
-        onClick={() => navigate('/app/mensalidades')}
-        className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
-      >
-        <ArrowLeft size={20} />
-        Voltar
-      </button>
-
-      {/* Header do Plano */}
-      <div className="bg-gray-800 rounded-xl border border-orange-500/50 p-6 mb-8">
-        <div className="flex items-start justify-between mb-4">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header com breadcrumb */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">{plan.name}</h1>
-            {plan.description && <p className="text-gray-400">{plan.description}</p>}
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <Link to="/app" className="hover:text-purple-600 transition-colors">Início</Link>
+              <span>›</span>
+              <Link to="/app/mensalidades" className="hover:text-purple-600 transition-colors">Mensalidades</Link>
+              <span>›</span>
+              <span className="text-gray-900">{plan.name}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-purple-50 rounded-xl border border-purple-200">
+                <CreditCard size={24} className="text-purple-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{plan.name}</h1>
+                {plan.description && <p className="text-sm text-gray-500">{plan.description}</p>}
+              </div>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-400">
-              Valor definido por paciente
-            </p>
-          </div>
+          <button
+            onClick={() => setShowAddSubscriberModal(true)}
+            className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
+          >
+            <Plus size={18} />
+            Adicionar Assinante
+          </button>
         </div>
 
+        {/* Benefícios do Plano */}
         {plan.benefits.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {plan.benefits.map((benefit, i) => (
-              <span key={i} className="px-3 py-1 bg-gray-700 rounded-full text-sm text-gray-300">
-                {benefit}
-              </span>
-            ))}
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex flex-wrap gap-2">
+              {plan.benefits.map((benefit, i) => (
+                <span key={i} className="px-3 py-1.5 bg-purple-50 rounded-lg text-sm text-purple-700 border border-purple-200">
+                  {benefit}
+                </span>
+              ))}
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Stats */}
-      <PlanStatsGrid
-        totalSubscribers={totalSubscribers}
-        monthlyRevenue={monthlyRevenue}
-        receivedRevenue={receivedRevenue}
-        overdueRevenue={overdueRevenue}
-      />
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          {/* Total de Assinantes */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-purple-600">Assinantes</span>
+              <Users size={18} className="text-purple-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{totalSubscribers}</div>
+            <div className="text-sm text-gray-500">Ativos</div>
+          </div>
 
-      {/* Ações */}
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setShowAddSubscriberModal(true)}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors"
-        >
-          <Plus size={20} />
-          Adicionar Assinante
-        </button>
-      </div>
+          {/* Receita Mensal */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-blue-600">Receita Mensal</span>
+              <DollarSign size={18} className="text-blue-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(monthlyRevenue)}</div>
+            <div className="text-sm text-gray-500">Prevista</div>
+          </div>
 
-      {/* Lista de Assinantes */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700">
-        <div className="p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">Assinantes do Plano</h2>
+          {/* Total Recebido */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-green-600">Total Recebido</span>
+              <TrendingUp size={18} className="text-green-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(receivedRevenue)}</div>
+            <div className="text-sm text-gray-500">Histórico</div>
+          </div>
+
+          {/* Valor em Atraso */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-red-600">Em Atraso</span>
+              <AlertTriangle size={18} className="text-red-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(overdueRevenue)}</div>
+            <div className="text-sm text-gray-500">A receber</div>
+          </div>
         </div>
 
-        {planSubscriptions.length === 0 ? (
-          <div className="p-12 text-center">
-            <Users className="mx-auto mb-4 text-gray-500" size={48} />
-            <h3 className="text-xl font-semibold text-gray-300 mb-2">Nenhum assinante</h3>
-            <p className="text-gray-500 mb-6">Adicione pacientes a este plano</p>
+        {/* Lista de Assinantes */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Assinantes do Plano</h2>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Paciente</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Status Pagamento</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Próxima Cobrança</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Valor</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-gray-400">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {planSubscriptions.map((sub) => {
-                  const pendingPayment = getPendingPayment(sub)
-                  const statusConfig = getSubscriberStatus(sub)
-                  const StatusIcon = statusConfig.icon
 
-                  return (
-                    <tr key={sub.id} className="border-b border-gray-700 hover:bg-gray-750 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="text-white font-medium">{sub.patientName}</div>
-                        <div className="text-sm text-gray-400">
-                          Desde {(() => {
-                            const dateStr = sub.startDate.split('T')[0]
-                            const [year, month, day] = dateStr.split('-').map(Number)
-                            const date = new Date(year, month - 1, day)
-                            return format(date, 'dd/MM/yyyy', { locale: ptBR })
-                          })()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${statusConfig.className}`}>
-                          <StatusIcon size={14} />
-                          <span className="text-sm font-medium">{statusConfig.label}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-gray-300">
-                          <Calendar size={16} />
-                          {(() => {
-                            if (!sub.nextBillingDate) return '-'
-                            const dateStr = sub.nextBillingDate.split('T')[0]
-                            const [year, month, day] = dateStr.split('-').map(Number)
-                            if (!year || !month || !day) return '-'
-                            const date = new Date(year, month - 1, day)
-                            if (isNaN(date.getTime())) return '-'
-                            return format(date, "dd 'de' MMMM", { locale: ptBR })
-                          })()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-white font-medium">
-                          R$ {pendingPayment?.amount.toFixed(2).replace('.', ',') || plan.price.toFixed(2).replace('.', ',')}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {pendingPayment && pendingPayment.status !== 'paid' ? (
+          {planSubscriptions.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
+                <Users size={32} className="text-purple-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum assinante</h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">Adicione pacientes a este plano</p>
+              <button
+                onClick={() => setShowAddSubscriberModal(true)}
+                className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+              >
+                <Plus size={18} />
+                Adicionar Assinante
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Paciente</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Status</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Próxima Cobrança</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Valor</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {planSubscriptions.map((sub) => {
+                    const pendingPayment = getPendingPayment(sub)
+                    const statusConfig = getSubscriberStatus(sub)
+                    const StatusIcon = statusConfig.icon
+
+                    return (
+                      <tr key={sub.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="text-gray-900 font-medium">{sub.patientName}</div>
+                          <div className="text-sm text-gray-500">
+                            Desde {(() => {
+                              const dateStr = sub.startDate.split('T')[0]
+                              const [year, month, day] = dateStr.split('-').map(Number)
+                              const date = new Date(year, month - 1, day)
+                              return format(date, 'dd/MM/yyyy', { locale: ptBR })
+                            })()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${statusConfig.className}`}>
+                            <StatusIcon size={12} />
+                            <span>{statusConfig.label}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Calendar size={16} />
+                            {(() => {
+                              if (!sub.nextBillingDate) return '-'
+                              const dateStr = sub.nextBillingDate.split('T')[0]
+                              const [year, month, day] = dateStr.split('-').map(Number)
+                              if (!year || !month || !day) return '-'
+                              const date = new Date(year, month - 1, day)
+                              if (isNaN(date.getTime())) return '-'
+                              return format(date, "dd 'de' MMMM", { locale: ptBR })
+                            })()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-gray-900 font-medium">
+                            {formatCurrency(pendingPayment?.amount || sub.price)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {pendingPayment && pendingPayment.status !== 'paid' ? (
+                              <button
+                                onClick={() => handleOpenPaymentModal(sub.id, pendingPayment.id)}
+                                className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-600 border border-green-200 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
+                              >
+                                <DollarSign size={14} />
+                                Confirmar
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleGenerateNextPayment(sub.id)}
+                                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
+                                title="Gerar próxima cobrança"
+                              >
+                                <FileText size={14} />
+                                Gerar
+                              </button>
+                            )}
                             <button
-                              onClick={() => handleOpenPaymentModal(sub.id, pendingPayment.id)}
-                              className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 px-4 py-2 rounded-lg transition-colors text-sm"
+                              onClick={() => handleRemoveSubscriber(sub.id, sub.patientName)}
+                              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg transition-colors text-sm"
+                              title="Remover assinante"
                             >
-                              <DollarSign size={16} />
-                              Confirmar
+                              <Trash2 size={14} />
                             </button>
-                          ) : (
-                            <button
-                              onClick={() => handleGenerateNextPayment(sub.id)}
-                              className="flex items-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-2 rounded-lg transition-colors text-sm"
-                              title="Gerar próxima cobrança"
-                            >
-                              <FileText size={16} />
-                              Gerar Cobrança
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleRemoveSubscriber(sub.id, sub.patientName)}
-                            className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-lg transition-colors text-sm"
-                            title="Remover assinante"
-                          >
-                            <Trash2 size={16} />
-                            Remover
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Confirmar Pagamento */}
+        <ConfirmPaymentModal
+          isOpen={showPaymentModal}
+          confirmPaymentMethod={confirmPaymentMethod}
+          onConfirmPaymentMethodChange={setConfirmPaymentMethod}
+          onSubmit={handleConfirmPayment}
+          onClose={() => setShowPaymentModal(false)}
+        />
+
+        {/* Modal Adicionar Assinante */}
+        <AddSubscriberModal
+          isOpen={showAddSubscriberModal}
+          planName={plan.name}
+          planPrice={plan.price}
+          availablePatients={availablePatients}
+          allAvailablePatients={allAvailablePatients}
+          selectedPatientId={selectedPatientId}
+          searchPatient={searchPatient}
+          paymentDate={paymentDate}
+          paidAmount={paidAmount}
+          paymentMethod={paymentMethod}
+          onPatientSelect={setSelectedPatientId}
+          onSearchChange={setSearchPatient}
+          onPaymentDateChange={setPaymentDate}
+          onPaidAmountChange={setPaidAmount}
+          onPaymentMethodChange={setPaymentMethod}
+          onSubmit={handleAddSubscriber}
+          onClose={() => setShowAddSubscriberModal(false)}
+          onNavigateToNewPatient={() => navigate('/app/pacientes/novo')}
+        />
+
+        {/* Toast */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
         )}
       </div>
-
-      {/* Modal Confirmar Pagamento */}
-      <ConfirmPaymentModal
-        isOpen={showPaymentModal}
-        confirmPaymentMethod={confirmPaymentMethod}
-        onConfirmPaymentMethodChange={setConfirmPaymentMethod}
-        onSubmit={handleConfirmPayment}
-        onClose={() => setShowPaymentModal(false)}
-      />
-
-      {/* Modal Adicionar Assinante */}
-      <AddSubscriberModal
-        isOpen={showAddSubscriberModal}
-        planName={plan.name}
-        planPrice={plan.price}
-        availablePatients={availablePatients}
-        allAvailablePatients={allAvailablePatients}
-        selectedPatientId={selectedPatientId}
-        searchPatient={searchPatient}
-        paymentDate={paymentDate}
-        paidAmount={paidAmount}
-        paymentMethod={paymentMethod}
-        onPatientSelect={setSelectedPatientId}
-        onSearchChange={setSearchPatient}
-        onPaymentDateChange={setPaymentDate}
-        onPaidAmountChange={setPaidAmount}
-        onPaymentMethodChange={setPaymentMethod}
-        onSubmit={handleAddSubscriber}
-        onClose={() => setShowAddSubscriberModal(false)}
-        onNavigateToNewPatient={() => navigate('/app/pacientes/novo')}
-      />
-
-      {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
 
     {/* Modal de Confirmação */}

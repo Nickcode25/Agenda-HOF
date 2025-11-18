@@ -16,13 +16,16 @@ import {
   Receipt,
   Edit,
   Package,
-  ArrowRight
+  ArrowRight,
+  X
 } from 'lucide-react'
 import { CashMovement, PaymentMethod } from '@/types/cash'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import EditTransactionModal from './components/EditTransactionModal'
+
+type DetailModalType = 'procedures' | 'sales' | 'subscriptions' | 'other' | 'expenses' | 'total' | null
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
@@ -55,6 +58,7 @@ export default function FinancialReport() {
     amount: 0,
     paymentMethod: 'pix' as PaymentMethod
   })
+  const [detailModal, setDetailModal] = useState<DetailModalType>(null)
 
   // Atualizar datas quando o período mudar
   useEffect(() => {
@@ -100,13 +104,23 @@ export default function FinancialReport() {
   }, [])
 
   // Função para filtrar por período (sempre usa startDate e endDate)
-  const filterByPeriod = (_dateString: string, itemDate: Date): boolean => {
-    const item = new Date(itemDate)
-    const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
-    const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
-    const start = new Date(startYear, startMonth - 1, startDay, 0, 0, 0)
-    const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59)
-    return item >= start && item <= end
+  const filterByPeriod = (_dateString: string, itemDate: Date | string): boolean => {
+    let itemDateStr: string
+
+    // Se for string, extrair apenas a parte da data
+    if (typeof itemDate === 'string') {
+      itemDateStr = itemDate.split('T')[0]
+    } else {
+      // Se for Date, usar data local
+      const item = new Date(itemDate)
+      const year = item.getFullYear()
+      const month = String(item.getMonth() + 1).padStart(2, '0')
+      const day = String(item.getDate()).padStart(2, '0')
+      itemDateStr = `${year}-${month}-${day}`
+    }
+
+    // Comparar strings de data diretamente (formato YYYY-MM-DD)
+    return itemDateStr >= startDate && itemDateStr <= endDate
   }
 
   // Receitas de procedimentos (do caixa fechado)
@@ -214,7 +228,7 @@ export default function FinancialReport() {
       const dateToCheck = expense.paidAt || expense.dueDate
       if (!dateToCheck) return false
 
-      return filterByPeriod('', new Date(dateToCheck))
+      return filterByPeriod('', dateToCheck)
     }).map(expense => ({
       id: expense.id,
       amount: -expense.amount, // Negativo para despesas
@@ -428,64 +442,82 @@ export default function FinancialReport() {
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
           {/* Receita Total */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500 hover:shadow-md transition-all">
+          <button
+            onClick={() => setDetailModal('total')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500 hover:shadow-md hover:border-green-300 transition-all text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-green-600">Receita Total</span>
               <TrendingUp size={18} className="text-green-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(totalRevenue)}</div>
             <div className="text-sm text-gray-500">{totalTransactions} lançamentos</div>
-          </div>
+          </button>
 
           {/* Procedimentos */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500 hover:shadow-md transition-all">
+          <button
+            onClick={() => setDetailModal('procedures')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500 hover:shadow-md hover:border-blue-300 transition-all text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-blue-600">Procedimentos</span>
               <Activity size={18} className="text-blue-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(procedureRevenue.total)}</div>
             <div className="text-sm text-gray-500">{procedureRevenue.count} realizados</div>
-          </div>
+          </button>
 
           {/* Vendas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500 hover:shadow-md transition-all">
+          <button
+            onClick={() => setDetailModal('sales')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500 hover:shadow-md hover:border-amber-300 transition-all text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-amber-600">Vendas</span>
               <ShoppingCart size={18} className="text-amber-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(salesRevenue.total)}</div>
             <div className="text-sm text-gray-500">{salesRevenue.count} realizadas</div>
-          </div>
+          </button>
 
           {/* Mensalidades */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 hover:shadow-md transition-all">
+          <button
+            onClick={() => setDetailModal('subscriptions')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 hover:shadow-md hover:border-purple-300 transition-all text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-purple-600">Mensalidades</span>
               <CreditCard size={18} className="text-purple-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(subscriptionRevenue.total)}</div>
             <div className="text-sm text-gray-500">{subscriptionRevenue.count} pagamentos</div>
-          </div>
+          </button>
 
           {/* Outras Receitas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-cyan-500 hover:shadow-md transition-all">
+          <button
+            onClick={() => setDetailModal('other')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-cyan-500 hover:shadow-md hover:border-cyan-300 transition-all text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-cyan-600">Outras Receitas</span>
               <Receipt size={18} className="text-cyan-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(otherRevenue.total)}</div>
             <div className="text-sm text-gray-500">{otherRevenue.count} lançamentos</div>
-          </div>
+          </button>
 
           {/* Despesas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500 hover:shadow-md transition-all">
+          <button
+            onClick={() => setDetailModal('expenses')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500 hover:shadow-md hover:border-red-300 transition-all text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-red-600">Despesas</span>
               <TrendingDown size={18} className="text-red-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(expensesTotal)}</div>
             <div className="text-sm text-gray-500">Gastos</div>
-          </div>
+          </button>
         </div>
 
         {/* Lucro Líquido (Card especial) */}
@@ -773,6 +805,145 @@ export default function FinancialReport() {
             <p className="text-gray-500 text-center py-8">Nenhuma transação no período</p>
           )}
         </div>
+
+        {/* Modal de Detalhes */}
+        {detailModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setDetailModal(null)}>
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  {detailModal === 'total' && <TrendingUp size={24} className="text-green-600" />}
+                  {detailModal === 'procedures' && <Activity size={24} className="text-blue-600" />}
+                  {detailModal === 'sales' && <ShoppingCart size={24} className="text-amber-600" />}
+                  {detailModal === 'subscriptions' && <CreditCard size={24} className="text-purple-600" />}
+                  {detailModal === 'other' && <Receipt size={24} className="text-cyan-600" />}
+                  {detailModal === 'expenses' && <TrendingDown size={24} className="text-red-600" />}
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {detailModal === 'total' && 'Receita Total'}
+                      {detailModal === 'procedures' && 'Procedimentos'}
+                      {detailModal === 'sales' && 'Vendas'}
+                      {detailModal === 'subscriptions' && 'Mensalidades'}
+                      {detailModal === 'other' && 'Outras Receitas'}
+                      {detailModal === 'expenses' && 'Despesas'}
+                    </h2>
+                    <p className="text-sm text-gray-500">{getPeriodLabel()}</p>
+                  </div>
+                </div>
+                <button onClick={() => setDetailModal(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X size={24} className="text-gray-600" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 overflow-y-auto flex-1">
+                {(() => {
+                  let items: any[] = []
+                  let colorScheme = { text: 'text-gray-600', bg: 'bg-gray-50' }
+
+                  if (detailModal === 'total') {
+                    items = [...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items]
+                    colorScheme = { text: 'text-green-600', bg: 'bg-green-50' }
+                  } else if (detailModal === 'procedures') {
+                    items = procedureRevenue.items
+                    colorScheme = { text: 'text-blue-600', bg: 'bg-blue-50' }
+                  } else if (detailModal === 'sales') {
+                    items = salesRevenue.items
+                    colorScheme = { text: 'text-amber-600', bg: 'bg-amber-50' }
+                  } else if (detailModal === 'subscriptions') {
+                    items = subscriptionRevenue.items
+                    colorScheme = { text: 'text-purple-600', bg: 'bg-purple-50' }
+                  } else if (detailModal === 'other') {
+                    items = otherRevenue.items
+                    colorScheme = { text: 'text-cyan-600', bg: 'bg-cyan-50' }
+                  } else if (detailModal === 'expenses') {
+                    items = expenseItems
+                    colorScheme = { text: 'text-red-600', bg: 'bg-red-50' }
+                  }
+
+                  const total = items.reduce((sum, item) => sum + Math.abs(item.amount), 0)
+
+                  if (items.length === 0) {
+                    return (
+                      <p className="text-gray-500 text-center py-8">Nenhuma movimentação no período</p>
+                    )
+                  }
+
+                  return (
+                    <>
+                      <div className={`${colorScheme.bg} rounded-lg p-4 mb-4`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-700 font-medium">Total do período:</span>
+                          <span className={`text-2xl font-bold ${colorScheme.text}`}>{formatCurrency(total)}</span>
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">{items.length} {items.length === 1 ? 'lançamento' : 'lançamentos'}</div>
+                      </div>
+                      <div className="space-y-3">
+                        {items
+                          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                          .map((item) => {
+                            const saleDetails = item.category === 'sale' ? getSaleDetails(item.referenceId) : null
+                            return (
+                              <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="flex-1">
+                                    <h4 className="text-gray-900 font-medium mb-1">{item.description}</h4>
+                                    {saleDetails && saleDetails.items.length > 0 && (
+                                      <div className="mb-2">
+                                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                                          <Package size={12} className="text-amber-600" />
+                                          {saleDetails.items.map((saleItem: any, idx: number) => (
+                                            <span key={saleItem.id}>
+                                              {saleItem.quantity}x {saleItem.stockItemName}
+                                              {idx < saleDetails.items.length - 1 && ', '}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                                      <span>
+                                        {item.paymentMethod === 'card' ? 'Cartão' :
+                                         item.paymentMethod === 'pix' ? 'PIX' :
+                                         item.paymentMethod === 'cash' ? 'Dinheiro' :
+                                         item.paymentMethod === 'transfer' ? 'Transferência' :
+                                         item.paymentMethod === 'check' ? 'Cheque' :
+                                         item.paymentMethod}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Calendar size={14} />
+                                        {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className={`text-xl font-bold ${colorScheme.text}`}>
+                                      {formatCurrency(Math.abs(item.amount))}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setDetailModal(null)}
+                  className="w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal de Edição */}
         {editingMovement && (

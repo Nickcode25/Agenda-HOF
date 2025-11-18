@@ -12,6 +12,7 @@ import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import SearchableSelect from '@/components/SearchableSelect'
 
 export default function ExpensesList() {
   const { hasActiveSubscription } = useSubscription()
@@ -59,14 +60,14 @@ export default function ExpensesList() {
 
     if (startDate) {
       result = result.filter(expense => {
-        const expenseDate = expense.paidAt || expense.dueDate
+        const expenseDate = (expense.paidAt || expense.dueDate)?.split('T')[0]
         return expenseDate && expenseDate >= startDate
       })
     }
 
     if (endDate) {
       result = result.filter(expense => {
-        const expenseDate = expense.paidAt || expense.dueDate
+        const expenseDate = (expense.paidAt || expense.dueDate)?.split('T')[0]
         return expenseDate && expenseDate <= endDate
       })
     }
@@ -202,27 +203,30 @@ export default function ExpensesList() {
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <select
+              <SearchableSelect
+                options={[
+                  { value: '', label: 'Todas as categorias' },
+                  ...categories.filter(c => c.isActive).map(category => ({
+                    value: category.id,
+                    label: category.name
+                  }))
+                ]}
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm"
-              >
-                <option value="">Todas as categorias</option>
-                {categories.filter(c => c.isActive).map(category => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
+                onChange={setCategoryFilter}
+                placeholder="Todas as categorias"
+              />
 
-              <select
+              <SearchableSelect
+                options={[
+                  { value: '', label: 'Todos os status' },
+                  { value: 'paid', label: 'Pago' },
+                  { value: 'pending', label: 'Pendente' },
+                  { value: 'overdue', label: 'Vencido' }
+                ]}
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm"
-              >
-                <option value="">Todos os status</option>
-                <option value="paid">Pago</option>
-                <option value="pending">Pendente</option>
-                <option value="overdue">Vencido</option>
-              </select>
+                onChange={setStatusFilter}
+                placeholder="Todos os status"
+              />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

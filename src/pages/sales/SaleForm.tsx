@@ -411,29 +411,31 @@ export default function SaleForm() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-                  <select
+                  <SearchableSelect
+                    options={[
+                      { value: 'cash', label: 'Dinheiro' },
+                      { value: 'card', label: 'Cartão' },
+                      { value: 'pix', label: 'PIX' },
+                      { value: 'transfer', label: 'Transferência' },
+                      { value: 'check', label: 'Cheque' }
+                    ]}
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
-                  >
-                    <option value="cash">Dinheiro</option>
-                    <option value="card">Cartão</option>
-                    <option value="pix">PIX</option>
-                    <option value="transfer">Transferência</option>
-                    <option value="check">Cheque</option>
-                  </select>
+                    onChange={(value) => setPaymentMethod(value as any)}
+                    placeholder="Selecione a forma"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status do Pagamento</label>
-                  <select
+                  <SearchableSelect
+                    options={[
+                      { value: 'pending', label: 'Pendente' },
+                      { value: 'paid', label: 'Pago' }
+                    ]}
                     value={paymentStatus}
-                    onChange={(e) => setPaymentStatus(e.target.value as any)}
-                    className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
-                  >
-                    <option value="pending">Pendente</option>
-                    <option value="paid">Pago</option>
-                  </select>
+                    onChange={(value) => setPaymentStatus(value as any)}
+                    placeholder="Selecione o status"
+                  />
                 </div>
 
                 {paymentStatus === 'pending' && (

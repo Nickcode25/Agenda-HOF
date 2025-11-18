@@ -5,6 +5,7 @@ import { useCategories } from '@/store/categories'
 import { parseCurrency, formatCurrency as formatCurrencyUtil } from '@/utils/currency'
 import { Save, Package, BarChart3, DollarSign, FileText, Plus } from 'lucide-react'
 import CreateCategoryModal from '@/components/CreateCategoryModal'
+import SearchableSelect from '@/components/SearchableSelect'
 
 // Produtos pré-cadastrados por categoria e marca (em ordem alfabética)
 const PREDEFINED_PRODUCTS: Record<string, Record<string, string[]>> = {
@@ -294,19 +295,17 @@ export default function StockForm() {
                   Categoria <span className="text-red-500">*</span>
                 </label>
                 <div className="flex gap-3">
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    required
-                    className="flex-1 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
-                  >
-                    <option value="">Selecione uma categoria</option>
-                    {stockCategories.map(cat => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex-1">
+                    <SearchableSelect
+                      options={stockCategories.map(cat => ({
+                        value: cat,
+                        label: cat
+                      }))}
+                      value={category}
+                      onChange={setCategory}
+                      placeholder="Selecione uma categoria"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowCategoryModal(true)}
@@ -325,20 +324,20 @@ export default function StockForm() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Marca <span className="text-red-500">*</span>
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={[
+                        { value: 'Allergan Aesthetics', label: 'Allergan Aesthetics' },
+                        { value: 'Galderma', label: 'Galderma' },
+                        { value: 'Merz Aesthetics', label: 'Merz Aesthetics' },
+                        { value: 'Mesoestetic', label: 'Mesoestetic' },
+                        { value: 'Pharmaesthetics', label: 'Pharmaesthetics' },
+                        { value: 'Rennova', label: 'Rennova' },
+                        { value: 'Outro', label: 'Outro' }
+                      ]}
                       value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
-                    >
-                      <option value="">Selecione uma marca</option>
-                      <option value="Allergan Aesthetics">Allergan Aesthetics</option>
-                      <option value="Galderma">Galderma</option>
-                      <option value="Merz Aesthetics">Merz Aesthetics</option>
-                      <option value="Mesoestetic">Mesoestetic</option>
-                      <option value="Pharmaesthetics">Pharmaesthetics</option>
-                      <option value="Rennova">Rennova</option>
-                      <option value="Outro">Outro</option>
-                    </select>
+                      onChange={setBrand}
+                      placeholder="Selecione uma marca"
+                    />
                   </div>
 
                   {brand === 'Outro' && (
@@ -368,18 +367,15 @@ export default function StockForm() {
                     className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
                   />
                 ) : availableProducts.length > 0 ? (
-                  <select
+                  <SearchableSelect
+                    options={availableProducts.map(product => ({
+                      value: product,
+                      label: product
+                    }))}
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
-                  >
-                    <option value="">Selecione um produto</option>
-                    {availableProducts.map((product) => (
-                      <option key={product} value={product}>
-                        {product}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setName}
+                    placeholder="Selecione um produto"
+                  />
                 ) : (
                   <input
                     value={name}
@@ -460,21 +456,21 @@ export default function StockForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Unidade
                 </label>
-                <select
+                <SearchableSelect
+                  options={[
+                    { value: 'ml', label: 'ml (mililitros)' },
+                    { value: 'g', label: 'g (gramas)' },
+                    { value: 'mg', label: 'mg (miligramas)' },
+                    { value: 'unidade', label: 'unidade' },
+                    { value: 'caixa', label: 'caixa' },
+                    { value: 'frasco', label: 'frasco' },
+                    { value: 'ampola', label: 'ampola' },
+                    { value: 'seringa', label: 'seringa' }
+                  ]}
                   value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
-                >
-                  <option value="">Selecione a unidade</option>
-                  <option value="ml">ml (mililitros)</option>
-                  <option value="g">g (gramas)</option>
-                  <option value="mg">mg (miligramas)</option>
-                  <option value="unidade">unidade</option>
-                  <option value="caixa">caixa</option>
-                  <option value="frasco">frasco</option>
-                  <option value="ampola">ampola</option>
-                  <option value="seringa">seringa</option>
-                </select>
+                  onChange={setUnit}
+                  placeholder="Selecione a unidade"
+                />
               </div>
             </div>
           </div>
