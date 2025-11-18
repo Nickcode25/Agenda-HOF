@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useStudents } from '@/store/students'
-import { useMentorships } from '@/store/mentorships'
 import { autoRegisterCashMovement, removeCashMovementByReference } from '@/store/cash'
 import { PlannedMentorship } from '@/types/student'
 import { formatCurrency } from '@/utils/currency'
@@ -18,14 +17,12 @@ export default function StudentDetail() {
   const student = useStudents(s => s.students.find(st => st.id === id))
   const update = useStudents(s => s.update)
   const remove = useStudents(s => s.remove)
-  const { mentorships, fetchAll: fetchMentorships } = useMentorships()
   const { show: showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirm()
 
   const [showMentorshipModal, setShowMentorshipModal] = useState(false)
   const [showMentorshipMenu, setShowMentorshipMenu] = useState(false)
   const [mentorshipType, setMentorshipType] = useState<'enrollment' | 'mentorship'>('enrollment')
-  const [selectedMentorship, setSelectedMentorship] = useState('')
   const [mentorshipNotes, setMentorshipNotes] = useState('')
   const [mentorshipQuantity, setMentorshipQuantity] = useState(1)
   const [paymentType, setPaymentType] = useState<'cash' | 'installment'>('cash')
@@ -33,10 +30,6 @@ export default function StudentDetail() {
   const [installments, setInstallments] = useState(1)
   const [customValue, setCustomValue] = useState('')
   const [isEditingValue, setIsEditingValue] = useState(false)
-
-  useEffect(() => {
-    fetchMentorships()
-  }, [])
 
   if (!student) {
     return (
@@ -56,7 +49,6 @@ export default function StudentDetail() {
   }
 
   const resetMentorshipModal = () => {
-    setSelectedMentorship('')
     setMentorshipNotes('')
     setMentorshipQuantity(1)
     setPaymentType('cash')
@@ -70,25 +62,26 @@ export default function StudentDetail() {
   const handleAddMentorship = async () => {
     if (!student) return
 
-    // Para "Inscrição Mentoria", não precisa selecionar mentoria
-    if (mentorshipType === 'mentorship' && !selectedMentorship) return
-
-    const selectedMent = mentorships.find(m => m.name === selectedMentorship)
-    let unitValue = selectedMent?.price || 0
-
+    // Calcular o valor total a partir do customValue
     let totalValue: number
     if (customValue) {
       const cleanValue = customValue.replace(/[R$\s.]/g, '').replace(',', '.')
-      totalValue = parseFloat(cleanValue) || (mentorshipQuantity * unitValue)
+      totalValue = parseFloat(cleanValue) || 0
     } else {
-      totalValue = mentorshipQuantity * unitValue
+      totalValue = 0
+    }
+
+    // Validar se o valor foi informado
+    if (totalValue <= 0) {
+      showToast('Informe o valor da mentoria', 'error')
+      return
     }
 
     const newPlannedMentorship: PlannedMentorship = {
       id: crypto.randomUUID(),
-      mentorshipName: mentorshipType === 'enrollment' ? 'Inscrição Mentoria' : selectedMentorship,
+      mentorshipName: mentorshipType === 'enrollment' ? 'Inscrição Mentoria' : 'Mentoria',
       quantity: mentorshipQuantity,
-      unitValue,
+      unitValue: totalValue,
       totalValue,
       paymentType,
       paymentMethod,
@@ -325,9 +318,6 @@ export default function StudentDetail() {
       <MentorshipModal
         show={showMentorshipModal}
         mentorshipType={mentorshipType}
-        mentorships={mentorships}
-        selectedMentorship={selectedMentorship}
-        setSelectedMentorship={setSelectedMentorship}
         paymentType={paymentType}
         setPaymentType={setPaymentType}
         paymentMethod={paymentMethod}

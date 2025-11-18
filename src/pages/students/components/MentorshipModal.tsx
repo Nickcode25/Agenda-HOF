@@ -1,18 +1,9 @@
 import { X } from 'lucide-react'
 import { formatCurrency } from '@/utils/currency'
 
-interface Mentorship {
-  id: string
-  name: string
-  price: number
-}
-
 interface MentorshipModalProps {
   show: boolean
   mentorshipType: 'enrollment' | 'mentorship'
-  mentorships: Mentorship[]
-  selectedMentorship: string
-  setSelectedMentorship: (value: string) => void
   paymentType: 'cash' | 'installment'
   setPaymentType: (value: 'cash' | 'installment') => void
   paymentMethod: 'cash' | 'pix' | 'card'
@@ -34,9 +25,6 @@ interface MentorshipModalProps {
 export default function MentorshipModal({
   show,
   mentorshipType,
-  mentorships,
-  selectedMentorship,
-  setSelectedMentorship,
   paymentType,
   setPaymentType,
   paymentMethod,
@@ -70,24 +58,6 @@ export default function MentorshipModal({
 
         <div className="p-6 overflow-y-auto flex-1">
           <div className="space-y-4">
-            {mentorshipType === 'mentorship' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Selecione a Mentoria *</label>
-                <select
-                  value={selectedMentorship}
-                  onChange={(e) => setSelectedMentorship(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                >
-                  <option value="">Escolha uma mentoria</option>
-                  {mentorships.map(mentorship => (
-                    <option key={mentorship.id} value={mentorship.name}>
-                      {mentorship.name} - {formatCurrency(mentorship.price)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
@@ -144,24 +114,18 @@ export default function MentorshipModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">Valor Total</label>
               <input
                 type="text"
-                value={isEditingValue ? customValue : (() => {
-                  const selectedMent = mentorships.find(m => m.name === selectedMentorship)
-                  let unitValue = selectedMent?.price || 0
-                  return formatCurrency(mentorshipQuantity * unitValue)
-                })()}
+                value={customValue || formatCurrency(0)}
                 onFocus={() => {
-                  if (!isEditingValue) {
-                    const selectedMent = mentorships.find(m => m.name === selectedMentorship)
-                    let unitValue = selectedMent?.price || 0
-                    setCustomValue(formatCurrency(mentorshipQuantity * unitValue))
-                    setIsEditingValue(true)
+                  if (!customValue) {
+                    setCustomValue(formatCurrency(0))
                   }
+                  setIsEditingValue(true)
                 }}
                 onChange={handleCustomValueChange}
                 placeholder="R$ 0,00"
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-green-600 font-bold text-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
               />
-              <p className="text-xs text-gray-500 mt-1">Edite para aplicar desconto ou ajuste manual</p>
+              <p className="text-xs text-gray-500 mt-1">Digite o valor da mentoria</p>
             </div>
 
             <div>
