@@ -2,7 +2,6 @@ import { FormEvent, useState, useMemo, useEffect } from 'react'
 import { useNavigate, Link, useParams } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { useStock } from '@/store/stock'
-import { autoRegisterCashMovement } from '@/store/cash'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import { SaleItem } from '@/types/sales'
 import { Save, Plus, Trash2, User, ShoppingCart, CreditCard, Package } from 'lucide-react'
@@ -191,17 +190,6 @@ export default function SaleForm() {
           }
         }
 
-        // Registrar movimentação no caixa se o pagamento for à vista
-        if (paymentStatus === 'paid') {
-          await autoRegisterCashMovement({
-            type: 'income',
-            category: 'sale',
-            amount: totalAmount,
-            paymentMethod,
-            referenceId: saleId,
-            description: `Venda para ${professional.name} - ${calculatedItems.length} produto(s)`
-          })
-        }
       }
 
       // Atualizar lista de produtos do estoque

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useStudents } from '@/store/students'
-import { autoRegisterCashMovement, removeCashMovementByReference } from '@/store/cash'
 import { PlannedMentorship } from '@/types/student'
 import { formatCurrency } from '@/utils/currency'
 import { Edit, Trash2, Plus, CheckCircle, Clock, ArrowLeft, Phone, GraduationCap, ChevronDown } from 'lucide-react'
@@ -105,15 +104,6 @@ export default function StudentDetail() {
       }
     }
 
-    await autoRegisterCashMovement({
-      type: 'income',
-      category: 'other',
-      amount: totalValue,
-      paymentMethod: paymentMethod,
-      referenceId: newPlannedMentorship.id,
-      description: `Mentoria: ${newPlannedMentorship.mentorshipName} - Aluno: ${student.name} - ${paymentInfo}`
-    })
-
     const currentPlanned = student.plannedMentorships || []
     update(student.id, {
       plannedMentorships: [...currentPlanned, newPlannedMentorship]
@@ -147,15 +137,12 @@ export default function StudentDetail() {
 
     const confirmed = await confirm({
       title: 'Remover Mentoria',
-      message: 'Remover esta mentoria? A movimentação do caixa também será removida.',
+      message: 'Remover esta mentoria do planejamento?',
       confirmText: 'Remover',
       cancelText: 'Cancelar'
     })
 
     if (!confirmed) return
-
-    // Sempre remover a movimentação do caixa, já que agora é registrada ao adicionar
-    await removeCashMovementByReference(mentorship.id)
 
     const updated = (student.plannedMentorships || []).filter(m => m.id !== mentId)
     update(student.id, { plannedMentorships: updated })

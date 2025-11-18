@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useExpenses } from '@/store/expenses'
-import { useCash } from '@/store/cash'
+import { usePatients } from '@/store/patients'
 import { useSales } from '@/store/sales'
+import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/utils/currency'
 import {
   DollarSign,
@@ -14,51 +15,56 @@ import {
   Filter,
   TrendingDown,
   Receipt,
-  Edit,
   Package,
-  ArrowRight,
   X
 } from 'lucide-react'
-import { CashMovement, PaymentMethod } from '@/types/cash'
-import { useConfirm } from '@/hooks/useConfirm'
+import { PaymentMethod } from '@/types/cash'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
-import EditTransactionModal from './components/EditTransactionModal'
 
 type DetailModalType = 'procedures' | 'sales' | 'subscriptions' | 'other' | 'expenses' | 'total' | null
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
-type TransactionItem = CashMovement | {
+// Tipos para as transações do relatório
+type TransactionItem = {
   id: string
   amount: number
   description: string
-  category: 'expense'
+  category: 'procedure' | 'sale' | 'subscription' | 'expense' | 'other'
   createdAt: string
-  referenceId: null
-  professionalId: null
-  isExpense: true
-  expenseCategory?: string
   paymentMethod: PaymentMethod
+  patientName?: string
+  professionalName?: string
+  items?: Array<{ quantity: number; name: string; price: number }>
+}
+
+// Tipo para pagamentos de mensalidade
+type SubscriptionPayment = {
+  id: string
+  subscription_id: string
+  amount: number
+  due_date: string
+  paid_at: string | null
+  payment_method: string
+  status: string
+  created_at: string
+  // Dados do join
+  patient_name?: string
+  plan_name?: string
 }
 
 export default function FinancialReport() {
-  const { sessions, movements, fetchSessions, fetchMovements, updateMovement, deleteMovement } = useCash()
   const { expenses, fetchExpenses } = useExpenses()
+  const { patients, fetchAll: fetchPatients } = usePatients()
   const { sales, fetchSales } = useSales()
   const { hasActiveSubscription } = useSubscription()
-  const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const today = new Date().toISOString().split('T')[0]
   const [startDate, setStartDate] = useState(today)
   const [endDate, setEndDate] = useState(today)
-  const [editingMovement, setEditingMovement] = useState<CashMovement | null>(null)
-  const [editForm, setEditForm] = useState({
-    description: '',
-    amount: 0,
-    paymentMethod: 'pix' as PaymentMethod
-  })
   const [detailModal, setDetailModal] = useState<DetailModalType>(null)
+  const [subscriptionPayments, setSubscriptionPayments] = useState<SubscriptionPayment[]>([])
 
   // Atualizar datas quando o período mudar
   useEffect(() => {
@@ -96,22 +102,55 @@ export default function FinancialReport() {
     }
   }, [periodFilter])
 
+  // Buscar pagamentos de mensalidades
+  const fetchSubscriptionPayments = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('subscription_payments')
+        .select(`
+          *,
+          user_subscriptions (
+            patient_name,
+            plan_name
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'paid')
+
+      if (error) {
+        console.error('Erro ao buscar pagamentos de mensalidades:', error)
+        return
+      }
+
+      const payments = (data || []).map(p => ({
+        ...p,
+        patient_name: p.user_subscriptions?.patient_name,
+        plan_name: p.user_subscriptions?.plan_name
+      }))
+
+      setSubscriptionPayments(payments)
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error)
+    }
+  }
+
   useEffect(() => {
     fetchExpenses()
-    fetchSessions()
-    fetchMovements()
+    fetchPatients()
     fetchSales()
+    fetchSubscriptionPayments()
   }, [])
 
-  // Função para filtrar por período (sempre usa startDate e endDate)
-  const filterByPeriod = (_dateString: string, itemDate: Date | string): boolean => {
+  // Função para filtrar por período
+  const filterByPeriod = (itemDate: Date | string): boolean => {
     let itemDateStr: string
 
-    // Se for string, extrair apenas a parte da data
     if (typeof itemDate === 'string') {
       itemDateStr = itemDate.split('T')[0]
     } else {
-      // Se for Date, usar data local
       const item = new Date(itemDate)
       const year = item.getFullYear()
       const month = String(item.getMonth() + 1).padStart(2, '0')
@@ -119,102 +158,84 @@ export default function FinancialReport() {
       itemDateStr = `${year}-${month}-${day}`
     }
 
-    // Comparar strings de data diretamente (formato YYYY-MM-DD)
     return itemDateStr >= startDate && itemDateStr <= endDate
   }
 
-  // Receitas de procedimentos (do caixa fechado)
+  // Receitas de procedimentos (direto dos pacientes)
   const procedureRevenue = useMemo(() => {
-    console.log('[FINANCIAL] Total de sessões:', sessions.length)
-    console.log('[FINANCIAL] Sessões fechadas:', sessions.filter(s => s.status === 'closed').length)
-    console.log('[FINANCIAL] Data inicial:', startDate, 'Data final:', endDate)
-    console.log('[FINANCIAL] Período:', periodFilter)
+    const items: TransactionItem[] = []
 
-    const closedSessions = sessions.filter(s => {
-      const isClosed = s.status === 'closed'
-      const hasClosedAt = !!s.closedAt
-      const matchesPeriod = s.closedAt && filterByPeriod('', new Date(s.closedAt))
+    patients.forEach(patient => {
+      const completedProcedures = (patient.plannedProcedures || []).filter(
+        proc => proc.status === 'completed' && proc.completedAt && filterByPeriod(proc.completedAt)
+      )
 
-      console.log('[FINANCIAL] Sessão:', s.id, 'Status:', s.status, 'ClosedAt:', s.closedAt, 'Matches:', isClosed && hasClosedAt && matchesPeriod)
-
-      return isClosed && hasClosedAt && matchesPeriod
+      completedProcedures.forEach(proc => {
+        items.push({
+          id: proc.id,
+          amount: proc.totalValue,
+          description: `${proc.procedureName} - ${patient.name}`,
+          category: 'procedure',
+          createdAt: proc.completedAt!,
+          paymentMethod: proc.paymentMethod as PaymentMethod,
+          patientName: patient.name
+        })
+      })
     })
 
-    console.log('[FINANCIAL] Sessões fechadas no período:', closedSessions.length)
+    const total = items.reduce((sum, item) => sum + item.amount, 0)
+    return { total, count: items.length, items }
+  }, [patients, startDate, endDate])
 
-    const procedureMovements = movements.filter(m =>
-      m.category === 'procedure' &&
-      m.type === 'income' &&
-      closedSessions.some(s => s.id === m.cashSessionId)
-    )
-
-    console.log('[FINANCIAL] Movimentos de procedimentos:', procedureMovements.length)
-
-    const total = procedureMovements.reduce((sum, m) => sum + m.amount, 0)
-    const count = procedureMovements.length
-
-    return { total, count, items: procedureMovements }
-  }, [sessions, movements, startDate, endDate])
-
-  // Receitas de vendas (do caixa fechado)
+  // Receitas de vendas (direto da tabela sales)
   const salesRevenue = useMemo(() => {
-    const closedSessions = sessions.filter(s =>
-      s.status === 'closed' &&
-      s.closedAt &&
-      filterByPeriod('', new Date(s.closedAt))
+    const paidSales = sales.filter(
+      sale => sale.paymentStatus === 'paid' && filterByPeriod(sale.createdAt)
     )
 
-    const saleMovements = movements.filter(m =>
-      m.category === 'sale' &&
-      m.type === 'income' &&
-      closedSessions.some(s => s.id === m.cashSessionId)
-    )
+    const items: TransactionItem[] = paidSales.map(sale => ({
+      id: sale.id,
+      amount: sale.totalAmount,
+      description: `Venda - ${sale.professionalName || 'Sem profissional'}`,
+      category: 'sale' as const,
+      createdAt: sale.createdAt,
+      paymentMethod: sale.paymentMethod as PaymentMethod,
+      professionalName: sale.professionalName,
+      items: sale.items.map(item => ({
+        quantity: item.quantity,
+        name: item.stockItemName,
+        price: item.totalPrice
+      }))
+    }))
 
-    const total = saleMovements.reduce((sum, m) => sum + m.amount, 0)
-    const count = saleMovements.length
+    const total = items.reduce((sum, item) => sum + item.amount, 0)
+    return { total, count: items.length, items }
+  }, [sales, startDate, endDate])
 
-    return { total, profit: 0, count, items: saleMovements }
-  }, [sessions, movements, startDate, endDate])
-
-  // Receitas de mensalidades (do caixa fechado)
+  // Receitas de mensalidades (direto da tabela subscription_payments)
   const subscriptionRevenue = useMemo(() => {
-    const closedSessions = sessions.filter(s =>
-      s.status === 'closed' &&
-      s.closedAt &&
-      filterByPeriod('', new Date(s.closedAt))
+    const paidPayments = subscriptionPayments.filter(
+      payment => payment.paid_at && filterByPeriod(payment.paid_at)
     )
 
-    const subscriptionMovements = movements.filter(m =>
-      m.category === 'subscription' &&
-      m.type === 'income' &&
-      closedSessions.some(s => s.id === m.cashSessionId)
-    )
+    const items: TransactionItem[] = paidPayments.map(payment => ({
+      id: payment.id,
+      amount: payment.amount,
+      description: `Mensalidade - ${payment.patient_name || 'Paciente'} (${payment.plan_name || 'Plano'})`,
+      category: 'subscription' as const,
+      createdAt: payment.paid_at!,
+      paymentMethod: (payment.payment_method || 'pix') as PaymentMethod,
+      patientName: payment.patient_name
+    }))
 
-    const total = subscriptionMovements.reduce((sum, m) => sum + m.amount, 0)
-    const count = subscriptionMovements.length
+    const total = items.reduce((sum, item) => sum + item.amount, 0)
+    return { total, count: items.length, items }
+  }, [subscriptionPayments, startDate, endDate])
 
-    return { total, count, items: subscriptionMovements }
-  }, [sessions, movements, startDate, endDate])
-
-  // Outras receitas (do caixa fechado) - parcelas, consultas, etc
+  // Outras receitas - por enquanto vazio (pode ser implementado futuramente)
   const otherRevenue = useMemo(() => {
-    const closedSessions = sessions.filter(s =>
-      s.status === 'closed' &&
-      s.closedAt &&
-      filterByPeriod('', new Date(s.closedAt))
-    )
-
-    const otherMovements = movements.filter(m =>
-      m.category === 'other' &&
-      m.type === 'income' &&
-      closedSessions.some(s => s.id === m.cashSessionId)
-    )
-
-    const total = otherMovements.reduce((sum, m) => sum + m.amount, 0)
-    const count = otherMovements.length
-
-    return { total, count, items: otherMovements }
-  }, [sessions, movements, startDate, endDate])
+    return { total: 0, count: 0, items: [] as TransactionItem[] }
+  }, [])
 
   const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total + otherRevenue.total
   const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count + otherRevenue.count
@@ -223,23 +244,17 @@ export default function FinancialReport() {
   const expenseItems = useMemo(() => {
     return expenses.filter(expense => {
       if (expense.paymentStatus !== 'paid') return false
-
-      // Usar paidAt se existir, senão usar dueDate
       const dateToCheck = expense.paidAt || expense.dueDate
       if (!dateToCheck) return false
-
-      return filterByPeriod('', dateToCheck)
+      return filterByPeriod(dateToCheck)
     }).map(expense => ({
       id: expense.id,
-      amount: -expense.amount, // Negativo para despesas
+      amount: -expense.amount,
       description: expense.description,
       category: 'expense' as const,
       createdAt: (expense.paidAt || expense.dueDate)!,
-      referenceId: null,
-      professionalId: null,
-      isExpense: true as const,
-      expenseCategory: expense.categoryId,
-      paymentMethod: expense.paymentMethod
+      paymentMethod: expense.paymentMethod,
+      expenseCategory: expense.categoryName
     }))
   }, [expenses, startDate, endDate])
 
@@ -262,78 +277,6 @@ export default function FinancialReport() {
     const start = new Date(startYear, startMonth - 1, startDay)
     const end = new Date(endYear, endMonth - 1, endDay)
     return `${start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${end.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
-  }
-
-  // Função para obter detalhes da venda
-  const getSaleDetails = (referenceId?: string) => {
-    if (!referenceId) return null
-    return sales.find(sale => sale.id === referenceId)
-  }
-
-  const handleEditClick = (movement: CashMovement) => {
-    setEditingMovement(movement)
-    setEditForm({
-      description: movement.description,
-      amount: movement.amount,
-      paymentMethod: movement.paymentMethod
-    })
-  }
-
-  const handleCancelEdit = () => {
-    setEditingMovement(null)
-    setEditForm({
-      description: '',
-      amount: 0,
-      paymentMethod: 'pix'
-    })
-  }
-
-  const handleSaveEdit = async () => {
-    if (!editingMovement) return
-
-    try {
-      await updateMovement(editingMovement.id, {
-        description: editForm.description,
-        amount: editForm.amount,
-        paymentMethod: editForm.paymentMethod
-      })
-
-      // Recarregar dados
-      await fetchMovements()
-      await fetchSessions()
-
-      handleCancelEdit()
-    } catch (error) {
-      console.error('Erro ao atualizar transação:', error)
-      alert('Erro ao atualizar transação')
-    }
-  }
-
-  const handleDeleteMovement = async () => {
-    if (!editingMovement) return
-
-    const confirmed = await confirm({
-      title: 'Excluir Transação',
-      message: 'Tem certeza que deseja excluir esta transação?',
-      confirmText: 'Excluir',
-      cancelText: 'Cancelar',
-      confirmButtonClass: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/30'
-    })
-
-    if (!confirmed) return
-
-    try {
-      await deleteMovement(editingMovement.id)
-
-      // Recarregar dados
-      await fetchMovements()
-      await fetchSessions()
-
-      handleCancelEdit()
-    } catch (error) {
-      console.error('Erro ao excluir transação:', error)
-      alert('Erro ao excluir transação')
-    }
   }
 
   return (
@@ -516,7 +459,7 @@ export default function FinancialReport() {
               <TrendingDown size={18} className="text-red-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(expensesTotal)}</div>
-            <div className="text-sm text-gray-500">Gastos</div>
+            <div className="text-sm text-gray-500">{expenseItems.length} gastos</div>
           </button>
         </div>
 
@@ -636,15 +579,15 @@ export default function FinancialReport() {
                 procedureRevenue.items
                   .sort((a, b) => b.amount - a.amount)
                   .slice(0, 5)
-                  .map((movement, index) => (
-                    <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all">
+                  .map((item, index) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all">
                       <div className="flex items-center gap-3">
                         <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
                           {index + 1}
                         </span>
-                        <span className="text-gray-900 font-medium">{movement.description}</span>
+                        <span className="text-gray-900 font-medium">{item.description}</span>
                       </div>
-                      <span className="text-blue-600 font-bold">{formatCurrency(movement.amount)}</span>
+                      <span className="text-blue-600 font-bold">{formatCurrency(item.amount)}</span>
                     </div>
                   ))
               ) : (
@@ -664,43 +607,40 @@ export default function FinancialReport() {
                 salesRevenue.items
                   .sort((a, b) => b.amount - a.amount)
                   .slice(0, 5)
-                  .map((movement, index) => {
-                    const saleDetails = getSaleDetails(movement.referenceId)
-                    return (
-                      <div key={movement.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-all">
-                        <div className="flex items-center gap-3 flex-1">
-                          <span className="w-6 h-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
-                            {index + 1}
+                  .map((item, index) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-all">
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="w-6 h-6 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-gray-900 font-medium block">{item.description}</span>
+                          {item.items && item.items.length > 0 && (
+                            <div className="flex items-center gap-1 mt-1 flex-wrap">
+                              <Package size={12} className="text-amber-600 shrink-0" />
+                              <span className="text-xs text-gray-600">
+                                {item.items.map((prod, idx) => (
+                                  <span key={idx}>
+                                    {prod.quantity}x {prod.name}
+                                    {idx < item.items!.length - 1 && ', '}
+                                  </span>
+                                ))}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-xs text-gray-500 mt-1 inline-block">
+                            {item.paymentMethod === 'card' ? 'Cartão' :
+                             item.paymentMethod === 'pix' ? 'PIX' :
+                             item.paymentMethod === 'cash' ? 'Dinheiro' :
+                             item.paymentMethod}
                           </span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-gray-900 font-medium block">{movement.description}</span>
-                            {saleDetails && saleDetails.items.length > 0 && (
-                              <div className="flex items-center gap-1 mt-1 flex-wrap">
-                                <Package size={12} className="text-amber-600 shrink-0" />
-                                <span className="text-xs text-gray-600">
-                                  {saleDetails.items.map((item, idx) => (
-                                    <span key={item.id}>
-                                      {item.quantity}x {item.stockItemName}
-                                      {idx < saleDetails.items.length - 1 && ', '}
-                                    </span>
-                                  ))}
-                                </span>
-                              </div>
-                            )}
-                            <span className="text-xs text-gray-500 mt-1 inline-block">
-                              {movement.paymentMethod === 'card' ? 'Cartão' :
-                               movement.paymentMethod === 'pix' ? 'PIX' :
-                               movement.paymentMethod === 'cash' ? 'Dinheiro' :
-                               movement.paymentMethod}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0 ml-3">
-                          <span className="text-amber-600 font-bold block">{formatCurrency(movement.amount)}</span>
                         </div>
                       </div>
-                    )
-                  })
+                      <div className="text-right shrink-0 ml-3">
+                        <span className="text-amber-600 font-bold block">{formatCurrency(item.amount)}</span>
+                      </div>
+                    </div>
+                  ))
               ) : (
                 <p className="text-gray-500 text-center py-8">Nenhuma venda no período</p>
               )}
@@ -719,7 +659,7 @@ export default function FinancialReport() {
             <div className="space-y-3">
               {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items, ...expenseItems]
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                .map((movement) => {
+                .map((item) => {
                   const categoryColors = {
                     procedure: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
                     sale: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
@@ -727,7 +667,7 @@ export default function FinancialReport() {
                     expense: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' },
                     other: { bg: 'bg-cyan-50', text: 'text-cyan-600', border: 'border-cyan-200' }
                   }
-                  const colorScheme = categoryColors[movement.category as keyof typeof categoryColors] || { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' }
+                  const colorScheme = categoryColors[item.category] || { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' }
 
                   const categoryLabels = {
                     procedure: 'Procedimento',
@@ -737,31 +677,29 @@ export default function FinancialReport() {
                     other: 'Outra Receita'
                   }
 
-                  const saleDetails = movement.category === 'sale' ? getSaleDetails(movement.referenceId) : null
-
                   return (
-                    <div key={movement.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50/30 transition-all">
+                    <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50/30 transition-all">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h4 className="text-gray-900 font-medium">{movement.description}</h4>
+                            <h4 className="text-gray-900 font-medium">{item.description}</h4>
                             <span className={`px-2 py-1 ${colorScheme.bg} ${colorScheme.text} text-xs rounded-full border ${colorScheme.border} font-medium`}>
-                              {categoryLabels[movement.category as keyof typeof categoryLabels] || movement.category}
+                              {categoryLabels[item.category]}
                             </span>
                           </div>
 
                           {/* Mostrar produtos da venda */}
-                          {saleDetails && saleDetails.items.length > 0 && (
+                          {'items' in item && item.items && item.items.length > 0 && (
                             <div className="mb-2 p-2 bg-white rounded-lg border border-gray-200">
                               <div className="flex items-center gap-2 mb-1">
                                 <Package size={14} className="text-amber-600" />
                                 <span className="text-xs font-semibold text-amber-600">Produtos:</span>
                               </div>
                               <div className="grid grid-cols-1 gap-1">
-                                {saleDetails.items.map((item) => (
-                                  <div key={item.id} className="flex items-center justify-between text-xs text-gray-700">
-                                    <span>• {item.quantity}x {item.stockItemName}</span>
-                                    <span className="text-gray-600 font-medium">{formatCurrency(item.totalPrice)}</span>
+                                {item.items.map((prod, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-xs text-gray-700">
+                                    <span>• {prod.quantity}x {prod.name}</span>
+                                    <span className="text-gray-600 font-medium">{formatCurrency(prod.price)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -770,32 +708,23 @@ export default function FinancialReport() {
 
                           <div className="flex items-center gap-4 text-sm text-gray-600">
                             <span className="font-medium">Pagamento: {
-                              movement.paymentMethod === 'card' ? 'Cartão' :
-                              movement.paymentMethod === 'pix' ? 'PIX' :
-                              movement.paymentMethod === 'cash' ? 'Dinheiro' :
-                              movement.paymentMethod
+                              item.paymentMethod === 'card' ? 'Cartão' :
+                              item.paymentMethod === 'pix' ? 'PIX' :
+                              item.paymentMethod === 'cash' ? 'Dinheiro' :
+                              item.paymentMethod === 'transfer' ? 'Transferência' :
+                              item.paymentMethod === 'check' ? 'Cheque' :
+                              item.paymentMethod
                             }</span>
                             <span className="flex items-center gap-1">
                               <Calendar size={14} />
-                              {new Date(movement.createdAt).toLocaleDateString('pt-BR')}
+                              {new Date(item.createdAt).toLocaleDateString('pt-BR')}
                             </span>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-gray-500 mb-1">Valor</p>
-                          <p className={`text-xl font-bold ${colorScheme.text}`}>{formatCurrency(movement.amount)}</p>
+                          <p className={`text-xl font-bold ${colorScheme.text}`}>{formatCurrency(Math.abs(item.amount))}</p>
                         </div>
-                        {'isExpense' in movement ? (
-                          <div className="w-[44px]"></div>
-                        ) : (
-                          <button
-                            onClick={() => handleEditClick(movement as CashMovement)}
-                            className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-200"
-                            title="Editar transação"
-                          >
-                            <Edit size={20} />
-                          </button>
-                        )}
                       </div>
                     </div>
                   )
@@ -839,7 +768,7 @@ export default function FinancialReport() {
               {/* Content */}
               <div className="p-6 overflow-y-auto flex-1">
                 {(() => {
-                  let items: any[] = []
+                  let items: TransactionItem[] = []
                   let colorScheme = { text: 'text-gray-600', bg: 'bg-gray-50' }
 
                   if (detailModal === 'total') {
@@ -858,7 +787,7 @@ export default function FinancialReport() {
                     items = otherRevenue.items
                     colorScheme = { text: 'text-cyan-600', bg: 'bg-cyan-50' }
                   } else if (detailModal === 'expenses') {
-                    items = expenseItems
+                    items = expenseItems as TransactionItem[]
                     colorScheme = { text: 'text-red-600', bg: 'bg-red-50' }
                   }
 
@@ -882,50 +811,47 @@ export default function FinancialReport() {
                       <div className="space-y-3">
                         {items
                           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                          .map((item) => {
-                            const saleDetails = item.category === 'sale' ? getSaleDetails(item.referenceId) : null
-                            return (
-                              <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
-                                <div className="flex items-center justify-between gap-4">
-                                  <div className="flex-1">
-                                    <h4 className="text-gray-900 font-medium mb-1">{item.description}</h4>
-                                    {saleDetails && saleDetails.items.length > 0 && (
-                                      <div className="mb-2">
-                                        <div className="flex items-center gap-1 text-xs text-gray-600">
-                                          <Package size={12} className="text-amber-600" />
-                                          {saleDetails.items.map((saleItem: any, idx: number) => (
-                                            <span key={saleItem.id}>
-                                              {saleItem.quantity}x {saleItem.stockItemName}
-                                              {idx < saleDetails.items.length - 1 && ', '}
-                                            </span>
-                                          ))}
-                                        </div>
+                          .map((item) => (
+                            <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <h4 className="text-gray-900 font-medium mb-1">{item.description}</h4>
+                                  {'items' in item && item.items && item.items.length > 0 && (
+                                    <div className="mb-2">
+                                      <div className="flex items-center gap-1 text-xs text-gray-600">
+                                        <Package size={12} className="text-amber-600" />
+                                        {item.items.map((prod, idx) => (
+                                          <span key={idx}>
+                                            {prod.quantity}x {prod.name}
+                                            {idx < item.items!.length - 1 && ', '}
+                                          </span>
+                                        ))}
                                       </div>
-                                    )}
-                                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                                      <span>
-                                        {item.paymentMethod === 'card' ? 'Cartão' :
-                                         item.paymentMethod === 'pix' ? 'PIX' :
-                                         item.paymentMethod === 'cash' ? 'Dinheiro' :
-                                         item.paymentMethod === 'transfer' ? 'Transferência' :
-                                         item.paymentMethod === 'check' ? 'Cheque' :
-                                         item.paymentMethod}
-                                      </span>
-                                      <span className="flex items-center gap-1">
-                                        <Calendar size={14} />
-                                        {new Date(item.createdAt).toLocaleDateString('pt-BR')}
-                                      </span>
                                     </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className={`text-xl font-bold ${colorScheme.text}`}>
-                                      {formatCurrency(Math.abs(item.amount))}
-                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                                    <span>
+                                      {item.paymentMethod === 'card' ? 'Cartão' :
+                                       item.paymentMethod === 'pix' ? 'PIX' :
+                                       item.paymentMethod === 'cash' ? 'Dinheiro' :
+                                       item.paymentMethod === 'transfer' ? 'Transferência' :
+                                       item.paymentMethod === 'check' ? 'Cheque' :
+                                       item.paymentMethod}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Calendar size={14} />
+                                      {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                                    </span>
                                   </div>
                                 </div>
+                                <div className="text-right">
+                                  <p className={`text-xl font-bold ${colorScheme.text}`}>
+                                    {formatCurrency(Math.abs(item.amount))}
+                                  </p>
+                                </div>
                               </div>
-                            )
-                          })}
+                            </div>
+                          ))}
                       </div>
                     </>
                   )
@@ -944,22 +870,6 @@ export default function FinancialReport() {
             </div>
           </div>
         )}
-
-        {/* Modal de Edição */}
-        {editingMovement && (
-          <EditTransactionModal
-            editForm={editForm}
-            onDescriptionChange={(value) => setEditForm({ ...editForm, description: value })}
-            onAmountChange={(value) => setEditForm({ ...editForm, amount: value })}
-            onPaymentMethodChange={(value) => setEditForm({ ...editForm, paymentMethod: value })}
-            onCancel={handleCancelEdit}
-            onSave={handleSaveEdit}
-            onDelete={handleDeleteMovement}
-          />
-        )}
-
-        {/* Modal de Confirmação */}
-        <ConfirmDialog />
       </div>
     </div>
   )

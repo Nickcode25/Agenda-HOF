@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
-import { autoRegisterCashMovement, removeCashMovementByReference, useCash } from '@/store/cash'
 import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, FileText, Image as ImageIcon, Phone, Calendar, Link as LinkIcon, MoreHorizontal } from 'lucide-react'
@@ -22,7 +21,6 @@ export default function PatientDetail() {
   const remove = usePatients(s => s.remove)
   const { procedures, fetchAll: fetchProcedures } = useProcedures()
   const { items: stockItems, fetchItems } = useStock()
-  const { movements, updateMovement, fetchMovements } = useCash()
   const { show: showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirm()
 
@@ -273,15 +271,6 @@ export default function PatientDetail() {
       }
     }
 
-    await autoRegisterCashMovement({
-      type: 'income',
-      category: 'procedure',
-      amount: completingProcedure.totalValue,
-      paymentMethod: completingProcedure.paymentMethod,
-      referenceId: completingProcedure.id,
-      description: `Procedimento: ${completingProcedure.procedureName} - Paciente: ${patient.name} - ${paymentInfo}`
-    })
-
     setShowCompleteModal(false)
     setCompletingProcedure(null)
     setSelectedProductId('')
@@ -319,12 +308,6 @@ export default function PatientDetail() {
       )
 
       await fetchItems(true)
-    }
-
-    if (procedure.status === 'completed') {
-      await removeCashMovementByReference(procedure.id)
-      const { fetchMovements } = useCash.getState()
-      await fetchMovements()
     }
 
     const updated = (patient.plannedProcedures || []).filter(p => p.id !== procId)
@@ -380,21 +363,6 @@ export default function PatientDetail() {
     )
 
     update(patient.id, { plannedProcedures: updated })
-
-    if (editingProcedure.status === 'completed') {
-      const relatedMovement = movements.find(mov =>
-        mov.referenceId === editingProcedure.id &&
-        mov.category === 'procedure'
-      )
-
-      if (relatedMovement) {
-        await updateMovement(relatedMovement.id, {
-          amount: parsedValue
-        })
-
-        await fetchMovements()
-      }
-    }
 
     setShowEditValueModal(false)
     setEditingProcedure(null)

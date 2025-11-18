@@ -64,16 +64,11 @@ const SalesProfessionalsList = lazy(() => import('./pages/sales/SalesProfessiona
 
 // Financial
 const FinancialReport = lazy(() => import('./pages/financial/FinancialReport'))
-const TransactionDetails = lazy(() => import('./pages/financial/TransactionDetails'))
 
 // Expenses
 const ExpensesList = lazy(() => import('./pages/expenses/ExpensesList'))
 const ExpenseForm = lazy(() => import('./pages/expenses/ExpenseForm'))
 const ExpenseCategories = lazy(() => import('./pages/expenses/ExpenseCategories'))
-
-// Cash
-const CashRegistersList = lazy(() => import('./pages/cash/CashRegistersList'))
-const CashSessionPage = lazy(() => import('./pages/cash/CashSessionPage'))
 
 // Subscriptions
 const PlansList = lazy(() => import('./pages/subscriptions/PlansList'))
@@ -284,14 +279,6 @@ const router = createBrowserRouter([
           </RoleGuard>
         )
       },
-      {
-        path: 'financeiro/detalhes/:category/:startDate/:endDate',
-        element: (
-          <RoleGuard requireOwner>
-            {withSuspense(TransactionDetails)}
-          </RoleGuard>
-        )
-      },
 
       {
         path: 'despesas',
@@ -322,31 +309,6 @@ const router = createBrowserRouter([
         element: (
           <RoleGuard requireOwner>
             {withSuspense(ExpenseCategories)}
-          </RoleGuard>
-        )
-      },
-
-      {
-        path: 'caixa',
-        element: (
-          <RoleGuard requireOwner>
-            {withSuspense(CashRegistersList)}
-          </RoleGuard>
-        )
-      },
-      {
-        path: 'caixa/sessao',
-        element: (
-          <RoleGuard requireOwner>
-            <Navigate to="/app/caixa" replace />
-          </RoleGuard>
-        )
-      },
-      {
-        path: 'caixa/sessao/:registerId',
-        element: (
-          <RoleGuard requireOwner>
-            {withSuspense(CashSessionPage)}
           </RoleGuard>
         )
       },

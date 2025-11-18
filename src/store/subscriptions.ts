@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { SubscriptionPlan, Subscription, SubscriptionPayment } from '../types/subscription'
-import { autoRegisterCashMovement, removeCashMovementByReference } from './cash'
 import { supabase } from '@/lib/supabase'
 
 type SubscriptionStore = {
@@ -303,14 +302,6 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      // Buscar pagamentos antes de remover
-      const subscription = get().subscriptions.find(sub => sub.id === id)
-      if (subscription) {
-        for (const payment of subscription.payments) {
-          await removeCashMovementByReference(payment.id)
-        }
-      }
-
       const { error } = await supabase
         .from('patient_subscriptions')
         .delete()
@@ -383,18 +374,6 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
         .eq('id', paymentId)
 
       if (error) throw error
-
-      // Registrar movimentação no caixa
-      if (subscription && payment) {
-        await autoRegisterCashMovement({
-          type: 'income',
-          category: 'subscription',
-          amount: payment.amount,
-          paymentMethod: paymentMethod.toLowerCase() as 'cash' | 'card' | 'pix' | 'transfer' | 'check',
-          referenceId: paymentId,
-          description: `Mensalidade - ${subscription.patientName} - ${subscription.planName}`
-        })
-      }
 
       await get().fetchSubscriptions()
       set({ loading: false })

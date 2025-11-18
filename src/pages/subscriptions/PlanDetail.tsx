@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
-import { autoRegisterCashMovement } from '../../store/cash'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Toast from '../../components/Toast'
@@ -175,18 +174,6 @@ export default function PlanDetail() {
         status: 'pending',
       })
     ])
-
-    // 3. Registrar movimentação no caixa (não bloqueia)
-    autoRegisterCashMovement({
-      type: 'income',
-      category: 'subscription',
-      amount: subscriptionPrice,
-      paymentMethod: paymentMethod.toLowerCase() as 'cash' | 'card' | 'pix' | 'transfer' | 'check',
-      referenceId: newSubscriptionId,
-      description: `Mensalidade - ${patientName} - ${plan.name}`
-    }).catch(() => {
-      // Silenciosamente ignora se não houver sessão de caixa
-    })
 
     setToast({ message: `${patientName} adicionado ao plano com sucesso!`, type: 'success' })
   }

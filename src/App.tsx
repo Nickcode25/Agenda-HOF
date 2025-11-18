@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, Wallet, Crown, GraduationCap } from 'lucide-react'
+import { Calendar, Users, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, Crown, GraduationCap } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -108,10 +108,10 @@ export default function App() {
             if (data) newEntityNames[id] = data.name
           }
 
-          // Sessões de caixa
-          else if (path === 'sessao') {
+          // Planos de mensalidades
+          else if (path === 'plano') {
             const result = await supabase
-              .from('cash_sessions')
+              .from('subscription_plans')
               .select('id, created_at')
               .eq('id', id)
               .single()
@@ -163,8 +163,6 @@ export default function App() {
       'estoque': 'Estoque',
       'vendas': 'Vendas',
       'despesas': 'Despesas',
-      'caixa': 'Controle de Caixa',
-      'sessao': 'Sessão de Caixa',
       'financeiro': 'Relatório Financeiro',
       'mensalidades': 'Mensalidades',
       'funcionarios': 'Funcionários',
@@ -304,10 +302,6 @@ export default function App() {
                 <NavLink to="/app/despesas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Despesas">
                   <Receipt size={22} className="flex-shrink-0"/>
                   <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
-                </NavLink>
-                <NavLink to="/app/caixa" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Controle de Caixa">
-                  <Wallet size={22} className="flex-shrink-0"/>
-                  <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Controle de Caixa</span>
                 </NavLink>
 
                 {isExpanded && <div className="pt-4 pb-2 px-4 transition-all duration-300"><p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Financeiro & Gestão</p></div>}
