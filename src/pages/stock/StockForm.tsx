@@ -428,7 +428,7 @@ export default function StockForm() {
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantidade <span className="text-red-500">*</span>
+                  Quantidade
                 </label>
                 <input
                   value={quantity}
@@ -458,7 +458,7 @@ export default function StockForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Unidade <span className="text-red-500">*</span>
+                  Unidade
                 </label>
                 <select
                   value={unit}
@@ -494,7 +494,7 @@ export default function StockForm() {
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Custo Unitário <span className="text-red-500">*</span>
+                  Custo Unitário
                 </label>
                 <input
                   value={cost}
