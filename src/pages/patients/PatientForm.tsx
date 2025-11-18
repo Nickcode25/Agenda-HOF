@@ -16,7 +16,6 @@ export default function PatientForm() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [birthDate, setBirthDate] = useState('')
-  const [profession, setProfession] = useState('')
   const [cep, setCep] = useState('')
   const [street, setStreet] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
@@ -258,7 +257,7 @@ export default function PatientForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CPF <span className="text-red-500">*</span>
+                  CPF
                 </label>
                 <input
                   value={cpf}
@@ -306,7 +305,7 @@ export default function PatientForm() {
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone <span className="text-red-500">*</span>
+                  Telefone
                 </label>
                 <input
                   value={phone}
@@ -375,7 +374,7 @@ export default function PatientForm() {
 
               <div className="lg:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rua <span className="text-red-500">*</span>
+                  Rua
                 </label>
                 <input
                   value={street}
@@ -387,7 +386,7 @@ export default function PatientForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número <span className="text-red-500">*</span>
+                  Número
                 </label>
                 <input
                   value={number}
@@ -409,7 +408,7 @@ export default function PatientForm() {
 
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bairro <span className="text-red-500">*</span>
+                  Bairro
                 </label>
                 <input
                   value={neighborhood}
@@ -421,7 +420,7 @@ export default function PatientForm() {
 
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cidade <span className="text-red-500">*</span>
+                  Cidade
                 </label>
                 <input
                   value={city}
@@ -433,7 +432,7 @@ export default function PatientForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado <span className="text-red-500">*</span>
+                  Estado
                 </label>
                 <input
                   value={state}
