@@ -66,21 +66,21 @@ export default function AddProcedureModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-gray-800 border border-gray-700 rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+        className="bg-white border border-gray-200 rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
-          <h2 className="text-2xl font-bold text-white">Adicionar Procedimento</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-2xl font-bold text-gray-900">Adicionar Procedimento</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X size={24} className="text-gray-400" />
+            <X size={24} className="text-gray-500" />
           </button>
         </div>
 
@@ -89,7 +89,7 @@ export default function AddProcedureModal({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Procedimento *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Procedimento *</label>
                 <SearchableSelect
                   options={procedures.filter(p => p.isActive).map(proc => ({
                     value: proc.name,
@@ -102,19 +102,19 @@ export default function AddProcedureModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Quantidade</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade</label>
                 <input
                   type="text"
                   inputMode="numeric"
                   value={quantityInput}
                   onChange={(e) => onQuantityChange(e.target.value)}
                   onBlur={onQuantityBlur}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Forma de Pagamento</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
                 <SearchableSelect
                   options={[
                     { value: 'cash', label: 'Valor à Vista' },
@@ -128,7 +128,7 @@ export default function AddProcedureModal({
 
               {paymentType === 'cash' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Método de Pagamento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
                   <SearchableSelect
                     options={[
                       { value: 'cash', label: 'Dinheiro' },
@@ -143,7 +143,7 @@ export default function AddProcedureModal({
 
               {paymentType === 'installment' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Parcelas (Cartão de Crédito)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Parcelas (Cartão de Crédito)</label>
                   <SearchableSelect
                     options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => ({
                       value: num.toString(),
@@ -157,7 +157,7 @@ export default function AddProcedureModal({
               )}
 
               <div className={paymentType === 'cash' ? 'md:col-span-2' : ''}>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Valor Total</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Valor Total</label>
                 <input
                   type="text"
                   value={isEditingValue ? customValue : (() => {
@@ -169,18 +169,18 @@ export default function AddProcedureModal({
                   onFocus={onCustomValueFocus}
                   onChange={onCustomValueChange}
                   placeholder="R$ 0,00"
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-green-400 font-bold text-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  className="w-full px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-green-600 font-bold text-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
-                <p className="text-xs text-gray-400 mt-1">Edite para aplicar desconto ou ajuste manual</p>
+                <p className="text-xs text-gray-500 mt-1">Edite para aplicar desconto ou ajuste manual</p>
               </div>
             </div>
 
             {/* Mostrar categoria e produtos disponíveis */}
             {selectedProcedureData && (
-              <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center gap-2 mb-3">
                   <Package size={18} className="text-orange-500" />
-                  <h4 className="font-medium text-white">
+                  <h4 className="font-medium text-gray-900">
                     Categoria: {selectedProcedureData.category || 'Não definida'}
                   </h4>
                 </div>
@@ -188,20 +188,20 @@ export default function AddProcedureModal({
                 {selectedProcedureData.category ? (
                   availableProducts.length > 0 ? (
                     <div>
-                      <p className="text-sm text-gray-400 mb-3">
+                      <p className="text-sm text-gray-600 mb-3">
                         Produtos disponíveis nesta categoria:
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                         {availableProducts.map(product => (
                           <div
                             key={product.id}
-                            className="flex items-center justify-between p-3 bg-gray-600/50 rounded-lg border border-gray-500"
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
                           >
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-white truncate">
+                              <p className="text-sm font-medium text-gray-900 truncate">
                                 {product.name}
                               </p>
-                              <p className="text-xs text-gray-400">
+                              <p className="text-xs text-gray-500">
                                 Estoque: {product.quantity} {product.unit}
                               </p>
                             </div>
@@ -229,24 +229,24 @@ export default function AddProcedureModal({
                       </p>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                      <AlertTriangle size={16} className="text-yellow-500" />
-                      <p className="text-sm text-yellow-500">
+                    <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <AlertTriangle size={16} className="text-yellow-600" />
+                      <p className="text-sm text-yellow-700">
                         Nenhum produto cadastrado na categoria "{selectedProcedureData.category}".{' '}
-                        <Link to="/app/estoque/novo" className="underline hover:text-yellow-400">
+                        <Link to="/app/estoque/novo" className="underline hover:text-yellow-600">
                           Cadastrar produto
                         </Link>
                       </p>
                     </div>
                   )
                 ) : (
-                  <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <AlertTriangle size={16} className="text-blue-400" />
-                    <p className="text-sm text-blue-400">
+                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <AlertTriangle size={16} className="text-blue-600" />
+                    <p className="text-sm text-blue-700">
                       Este procedimento não possui categoria definida.{' '}
                       <Link
                         to={`/app/procedimentos/${selectedProcedureData.id}/editar`}
-                        className="underline hover:text-blue-300"
+                        className="underline hover:text-blue-600"
                       >
                         Editar procedimento
                       </Link>
@@ -257,12 +257,12 @@ export default function AddProcedureModal({
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Observações (opcional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Observações (opcional)</label>
               <textarea
                 value={procedureNotes}
                 onChange={(e) => onNotesChange(e.target.value)}
                 placeholder="Ex: região frontal, aplicação suave..."
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
+                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
                 rows={3}
               />
             </div>
@@ -270,17 +270,17 @@ export default function AddProcedureModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 border-t border-gray-700 flex-shrink-0">
+        <div className="flex gap-3 p-6 border-t border-gray-200 flex-shrink-0">
           <button
             onClick={onClose}
-            className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+            className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors border border-gray-200"
           >
             Cancelar
           </button>
           <button
             onClick={onAdd}
             disabled={!selectedProcedure}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
+            className="flex-1 px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
           >
             Adicionar Procedimento
           </button>

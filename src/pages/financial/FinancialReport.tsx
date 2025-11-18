@@ -34,6 +34,8 @@ type TransactionItem = {
   category: 'procedure' | 'sale' | 'subscription' | 'expense' | 'other'
   createdAt: string
   paymentMethod: PaymentMethod
+  paymentType?: 'cash' | 'installment'
+  installments?: number
   patientName?: string
   professionalName?: string
   items?: Array<{ quantity: number; name: string; price: number }>
@@ -52,6 +54,31 @@ type SubscriptionPayment = {
   // Dados do join
   patient_name?: string
   plan_name?: string
+}
+
+// Helper para formatar descrição do pagamento
+function formatPaymentDescription(item: TransactionItem): string {
+  const methodLabels: Record<string, string> = {
+    card: 'Cartão',
+    pix: 'PIX',
+    cash: 'Dinheiro',
+    transfer: 'Transferência',
+    check: 'Cheque'
+  }
+
+  const methodLabel = methodLabels[item.paymentMethod] || item.paymentMethod
+
+  // Se é parcelado no cartão
+  if (item.paymentType === 'installment' && item.installments && item.installments > 1) {
+    return `Cartão de Crédito - ${item.installments}x`
+  }
+
+  // Se é cartão à vista
+  if (item.paymentMethod === 'card') {
+    return 'Cartão de Crédito - 1x'
+  }
+
+  return methodLabel
 }
 
 export default function FinancialReport() {
@@ -178,6 +205,8 @@ export default function FinancialReport() {
           category: 'procedure',
           createdAt: proc.completedAt!,
           paymentMethod: proc.paymentMethod as PaymentMethod,
+          paymentType: proc.paymentType,
+          installments: proc.installments,
           patientName: patient.name
         })
       })
@@ -581,13 +610,16 @@ export default function FinancialReport() {
                   .slice(0, 5)
                   .map((item, index) => (
                     <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                           {index + 1}
                         </span>
-                        <span className="text-gray-900 font-medium">{item.description}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-gray-900 font-medium block">{item.description}</span>
+                          <span className="text-xs text-gray-500">{formatPaymentDescription(item)}</span>
+                        </div>
                       </div>
-                      <span className="text-blue-600 font-bold">{formatCurrency(item.amount)}</span>
+                      <span className="text-blue-600 font-bold shrink-0 ml-3">{formatCurrency(item.amount)}</span>
                     </div>
                   ))
               ) : (
@@ -629,10 +661,7 @@ export default function FinancialReport() {
                             </div>
                           )}
                           <span className="text-xs text-gray-500 mt-1 inline-block">
-                            {item.paymentMethod === 'card' ? 'Cartão' :
-                             item.paymentMethod === 'pix' ? 'PIX' :
-                             item.paymentMethod === 'cash' ? 'Dinheiro' :
-                             item.paymentMethod}
+                            {formatPaymentDescription(item)}
                           </span>
                         </div>
                       </div>
@@ -707,14 +736,7 @@ export default function FinancialReport() {
                           )}
 
                           <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span className="font-medium">Pagamento: {
-                              item.paymentMethod === 'card' ? 'Cartão' :
-                              item.paymentMethod === 'pix' ? 'PIX' :
-                              item.paymentMethod === 'cash' ? 'Dinheiro' :
-                              item.paymentMethod === 'transfer' ? 'Transferência' :
-                              item.paymentMethod === 'check' ? 'Cheque' :
-                              item.paymentMethod
-                            }</span>
+                            <span className="font-medium">Pagamento: {formatPaymentDescription(item)}</span>
                             <span className="flex items-center gap-1">
                               <Calendar size={14} />
                               {new Date(item.createdAt).toLocaleDateString('pt-BR')}
@@ -830,14 +852,7 @@ export default function FinancialReport() {
                                     </div>
                                   )}
                                   <div className="flex items-center gap-4 text-sm text-gray-500">
-                                    <span>
-                                      {item.paymentMethod === 'card' ? 'Cartão' :
-                                       item.paymentMethod === 'pix' ? 'PIX' :
-                                       item.paymentMethod === 'cash' ? 'Dinheiro' :
-                                       item.paymentMethod === 'transfer' ? 'Transferência' :
-                                       item.paymentMethod === 'check' ? 'Cheque' :
-                                       item.paymentMethod}
-                                    </span>
+                                    <span>{formatPaymentDescription(item)}</span>
                                     <span className="flex items-center gap-1">
                                       <Calendar size={14} />
                                       {new Date(item.createdAt).toLocaleDateString('pt-BR')}

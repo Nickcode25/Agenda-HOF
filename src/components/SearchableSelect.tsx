@@ -69,7 +69,7 @@ export default function SearchableSelect({
   // Focar no input quando abrir e calcular posição
   useEffect(() => {
     if (isOpen && inputRef.current && containerRef.current) {
-      inputRef.current.focus()
+      inputRef.current.focus({ preventScroll: true })
 
       // Calcular posição do dropdown
       const rect = containerRef.current.getBoundingClientRect()

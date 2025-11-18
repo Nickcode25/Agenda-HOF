@@ -660,9 +660,9 @@ export default function PatientDetail() {
                           </button>
                           <button
                             onClick={() => handleRemoveProcedure(proc.id)}
-                            className="px-3 py-1.5 text-xs bg-white hover:bg-gray-100 text-gray-700 rounded border border-gray-200 transition-colors"
+                            className="px-3 py-1.5 text-xs bg-white hover:bg-red-50 text-red-600 rounded border border-gray-200 hover:border-red-200 transition-colors"
                           >
-                            Mais
+                            Excluir
                           </button>
                         </div>
                       </div>
