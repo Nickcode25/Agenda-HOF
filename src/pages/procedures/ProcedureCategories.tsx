@@ -141,49 +141,36 @@ export default function ProcedureCategories() {
   }
 
   return (
-    <>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-3 bg-orange-500/20 rounded-xl">
-                  <Tag size={32} className="text-orange-400" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white">Categorias</h1>
-                  <p className="text-gray-400">Categorias compartilhadas entre Procedimentos e Estoque</p>
-                </div>
-              </div>
-              <button
-                onClick={() => handleOpenModal()}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-              >
-                <Plus size={18} />
-                Nova Categoria
-              </button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-orange-50 rounded-xl border border-orange-100">
+              <Tag size={28} className="text-orange-500" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Categorias</h1>
+              <p className="text-sm text-gray-500">Categorias compartilhadas entre Procedimentos e Estoque</p>
             </div>
           </div>
+          <button
+            onClick={() => handleOpenModal()}
+            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+          >
+            <Plus size={18} />
+            Nova Categoria
+          </button>
         </div>
 
         {/* Categories Grid */}
         {procedureCategories.length === 0 ? (
-          <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700 rounded-3xl p-12 text-center">
-            <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-orange-500/5 rounded-full blur-3xl"></div>
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-100">
+              <Tag size={32} className="text-orange-400" />
             </div>
-            <div className="relative z-10">
-              <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-500/20">
-                <Tag size={40} className="text-orange-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Carregando categorias...</h3>
-              <p className="text-gray-400 mb-6">Aguarde enquanto as categorias são carregadas</p>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Carregando categorias...</h3>
+            <p className="text-gray-500">Aguarde enquanto as categorias são carregadas</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -194,35 +181,29 @@ export default function ProcedureCategories() {
               return (
                 <div
                   key={category.id}
-                  className="group relative bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 hover:border-gray-600/80 transition-all duration-300 hover:shadow-xl"
+                  className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div
-                        className="p-3 rounded-xl"
-                        style={{ backgroundColor: `${color}20`, border: `1px solid ${color}30` }}
+                        className="p-2.5 rounded-lg"
+                        style={{ backgroundColor: `${color}15`, border: `1px solid ${color}30` }}
                       >
-                        <div className="w-6 h-6" style={{ color }}>
-                          <Tag size={24} />
-                        </div>
+                        <Tag size={20} style={{ color }} />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-white text-lg">{category.name}</h3>
-                      </div>
+                      <h3 className="font-medium text-gray-900">{category.name}</h3>
                     </div>
-                  </div>
 
-                  {!isNative && (
-                    <div className="flex items-center gap-2 pt-4 border-t border-gray-700/50">
+                    {!isNative && (
                       <button
                         onClick={() => handleDelete(category)}
-                        className="flex-1 p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/30 text-sm font-medium"
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        title="Excluir categoria"
                       >
-                        <Trash2 size={16} className="inline mr-1" />
-                        Excluir
+                        <Trash2 size={16} />
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -231,15 +212,15 @@ export default function ProcedureCategories() {
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-lg">
-              <h2 className="text-2xl font-bold text-white mb-6">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsModalOpen(false)}>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">
                 {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nome da Categoria *
                   </label>
                   <input
@@ -247,7 +228,7 @@ export default function ProcedureCategories() {
                     value={categoryName}
                     onChange={(e) => setCategoryName(e.target.value)}
                     required
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                    className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     placeholder="Ex: Harmonização Facial, Depilação a Laser"
                   />
                 </div>
@@ -256,14 +237,14 @@ export default function ProcedureCategories() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-lg font-medium transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-lg font-medium shadow-lg shadow-orange-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-medium shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Salvando...' : editingCategory ? 'Atualizar' : 'Criar'}
                   </button>
@@ -273,6 +254,6 @@ export default function ProcedureCategories() {
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }
