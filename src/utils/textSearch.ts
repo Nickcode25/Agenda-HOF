@@ -29,7 +29,8 @@ export function normalizeForSearch(str: string): string {
  * @returns true se o texto contém o termo de busca
  */
 export function containsIgnoringAccents(text: string, search: string): boolean {
-  if (!text || !search) return false
+  if (!text) return false
+  if (!search) return true // Se não há termo de busca, mostrar tudo
   return normalizeForSearch(text).includes(normalizeForSearch(search))
 }
 
