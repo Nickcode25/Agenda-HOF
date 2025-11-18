@@ -70,6 +70,24 @@ export default function MentorshipModal({
 
         <div className="p-6 overflow-y-auto flex-1">
           <div className="space-y-4">
+            {mentorshipType === 'mentorship' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Selecione a Mentoria *</label>
+                <select
+                  value={selectedMentorship}
+                  onChange={(e) => setSelectedMentorship(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                >
+                  <option value="">Escolha uma mentoria</option>
+                  {mentorships.map(mentorship => (
+                    <option key={mentorship.id} value={mentorship.name}>
+                      {mentorship.name} - {formatCurrency(mentorship.price)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
