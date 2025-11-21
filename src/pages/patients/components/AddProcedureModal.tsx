@@ -62,6 +62,7 @@ export default function AddProcedureModal({
   const [paymentSplits, setPaymentSplits] = React.useState<PaymentSplit[]>([
     { method: 'pix', amount: 0 }
   ])
+  const [splitValues, setSplitValues] = React.useState<string[]>([''])
 
   if (!isOpen) return null
 
@@ -82,11 +83,13 @@ export default function AddProcedureModal({
 
   const addPaymentSplit = () => {
     setPaymentSplits([...paymentSplits, { method: 'pix', amount: 0 }])
+    setSplitValues([...splitValues, ''])
   }
 
   const removePaymentSplit = (index: number) => {
     if (paymentSplits.length > 1) {
       setPaymentSplits(paymentSplits.filter((_, i) => i !== index))
+      setSplitValues(splitValues.filter((_, i) => i !== index))
     }
   }
 
@@ -94,6 +97,17 @@ export default function AddProcedureModal({
     const updated = [...paymentSplits]
     updated[index] = { ...updated[index], [field]: value }
     setPaymentSplits(updated)
+  }
+
+  const handleSplitValueChange = (index: number, value: string) => {
+    // Atualizar o valor de exibição (mantém o que o usuário digita)
+    const newSplitValues = [...splitValues]
+    newSplitValues[index] = value
+    setSplitValues(newSplitValues)
+
+    // Parsear e atualizar o valor numérico para os cálculos
+    const numericValue = parseCurrency(value)
+    updatePaymentSplit(index, 'amount', numericValue)
   }
 
   const formatCurrencyInput = (value: string): string => {
@@ -257,13 +271,10 @@ export default function AddProcedureModal({
                           <label className="block text-xs font-medium text-gray-600 mb-1">Valor</label>
                           <input
                             type="text"
-                            value={split.amount > 0 ? formatCurrency(split.amount) : ''}
-                            onChange={(e) => {
-                              const value = parseCurrency(e.target.value)
-                              updatePaymentSplit(index, 'amount', value)
-                            }}
+                            value={splitValues[index] || ''}
+                            onChange={(e) => handleSplitValueChange(index, e.target.value)}
                             placeholder="R$ 0,00"
-                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20"
+                            className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                           />
                         </div>
                         {split.method === 'card' && (
