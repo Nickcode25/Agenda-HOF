@@ -397,8 +397,8 @@ export default function PatientDetail() {
   const completedProcedures = patient.plannedProcedures?.filter(proc => proc.status === 'completed') || []
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-8 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 -m-4 p-4 sm:-m-8 sm:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Breadcrumb */}
         <div className="text-sm text-gray-500">
           <Link to="/app" className="hover:text-orange-500">Início</Link>
@@ -409,42 +409,47 @@ export default function PatientDetail() {
         </div>
 
         {/* Patient Info Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-start gap-6">
-            {/* Avatar */}
-            {patient.photoUrl ? (
-              <img src={patient.photoUrl} className="h-16 w-16 rounded-xl object-cover border border-gray-200" alt={patient.name} />
-            ) : (
-              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
-                <span className="text-white font-bold text-xl">{getInitials(patient.name)}</span>
-              </div>
-            )}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+            {/* Avatar + Name (mobile) */}
+            <div className="flex items-center gap-4 sm:block">
+              {patient.photoUrl ? (
+                <img src={patient.photoUrl} className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border border-gray-200 flex-shrink-0" alt={patient.name} />
+              ) : (
+                <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-lg sm:text-xl">{getInitials(patient.name)}</span>
+                </div>
+              )}
+              {/* Name visible only on mobile */}
+              <h1 className="text-xl font-bold text-gray-900 sm:hidden">{patient.name}</h1>
+            </div>
 
             {/* Info */}
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-3">{patient.name}</h1>
+            <div className="flex-1 min-w-0">
+              {/* Name visible only on desktop */}
+              <h1 className="hidden sm:block text-2xl font-bold text-gray-900 mb-3">{patient.name}</h1>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <FileText size={16} className="text-gray-400" />
+                  <FileText size={16} className="text-gray-400 flex-shrink-0" />
                   <span className="text-gray-600">CPF:</span>
-                  <span className="text-gray-900 font-medium">{patient.cpf}</span>
+                  <span className="text-gray-900 font-medium truncate">{patient.cpf}</span>
                 </div>
                 {patient.phone && (
                   <div className="flex items-center gap-2">
-                    <Phone size={16} className="text-gray-400" />
+                    <Phone size={16} className="text-gray-400 flex-shrink-0" />
                     <span className="text-gray-600">Telefone:</span>
-                    <span className="text-gray-900 font-medium">{patient.phone}</span>
+                    <span className="text-gray-900 font-medium truncate">{patient.phone}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full flex-shrink-0" />
                   <span className="text-gray-600">Status:</span>
                   <span className="text-green-600 font-medium">Ativo</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 sm:mt-4 text-xs text-gray-500">
                 <span>Total de procedimentos: {completedProcedures.length}</span>
                 {completedProcedures.length > 0 && (
                   <span>Último: {new Date(completedProcedures[0]?.completedAt || '').toLocaleDateString('pt-BR')}</span>
@@ -453,20 +458,20 @@ export default function PatientDetail() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
               <Link
                 to={`/app/pacientes/${id}/editar`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 transition-colors text-sm font-medium"
               >
                 <Edit size={16} />
-                Editar
+                <span className="hidden xs:inline">Editar</span>
               </Link>
               <button
                 onClick={() => {}}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 transition-colors text-sm font-medium"
               >
                 <LinkIcon size={16} />
-                Enviar Link
+                <span className="hidden xs:inline">Enviar Link</span>
               </button>
               <button
                 onClick={handleDelete}
@@ -480,42 +485,42 @@ export default function PatientDetail() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button
             onClick={() => setShowProcedureModal(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium shadow-sm transition-colors text-sm sm:text-base"
           >
             <Plus size={18} />
-            Adicionar Procedimento
+            <span className="hidden xs:inline">Adicionar</span> Procedimento
           </button>
           <Link
             to={`/app/pacientes/${id}/evolucao`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium shadow-sm transition-colors text-sm sm:text-base"
           >
             <FileText size={18} />
-            Evolução do Paciente
+            Evolução
           </Link>
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column: Planning (30%) */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Calendar size={18} className="text-orange-500" />
-                Planejamento de Procedimentos
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <Calendar size={18} className="text-orange-500 flex-shrink-0" />
+                <span className="truncate">Planejamento de Procedimentos</span>
               </h3>
 
               {plannedProcedures.length > 0 ? (
                 <div className="space-y-3">
                   {plannedProcedures.map(proc => (
-                    <div key={proc.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {proc.status === 'in_progress' && <Clock size={16} className="text-blue-500" />}
-                            {proc.status === 'pending' && <Circle size={16} className="text-gray-400" />}
+                    <div key={proc.id} className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            {proc.status === 'in_progress' && <Clock size={16} className="text-blue-500 flex-shrink-0" />}
+                            {proc.status === 'pending' && <Circle size={16} className="text-gray-400 flex-shrink-0" />}
                             <span className="font-medium text-gray-900">{proc.procedureName}</span>
                             <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs rounded-full font-medium">
                               {proc.quantity}x
@@ -532,7 +537,7 @@ export default function PatientDetail() {
                           )}
                         </div>
 
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-row sm:flex-col flex-wrap gap-1 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200">
                           <select
                             value={proc.status}
                             onChange={(e) => handleUpdateProcedureStatus(proc.id, e.target.value as PlannedProcedure['status'])}
@@ -589,10 +594,10 @@ export default function PatientDetail() {
 
           {/* Right Column: Completed Procedures (70%) */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <CheckCircle size={18} className="text-green-500" />
-                Procedimentos Realizados
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
+                <span className="truncate">Procedimentos Realizados</span>
               </h3>
 
               {completedProcedures.length > 0 ? (
@@ -600,22 +605,25 @@ export default function PatientDetail() {
                   {completedProcedures
                     .sort((a, b) => new Date(b.completedAt || b.createdAt).getTime() - new Date(a.completedAt || a.createdAt).getTime())
                     .map(proc => (
-                    <div key={proc.id} className="bg-gray-50 rounded-lg border-l-4 border-green-500 p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <CheckCircle size={18} className="text-green-500" />
+                    <div key={proc.id} className="bg-gray-50 rounded-lg border-l-4 border-green-500 p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                            <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
                             <span className="font-semibold text-gray-900">{proc.procedureName}</span>
                             <span className="text-sm text-blue-600 font-medium">[{proc.quantity}x]</span>
                           </div>
 
                           <div className="space-y-1 mb-3">
-                            <div className="text-sm">
-                              <span className="text-gray-500">Valor da Sessão:</span>
-                              <span className="text-green-600 font-medium ml-2">{formatCurrency(proc.unitValue)}</span>
-                              <span className="text-gray-400 mx-3">|</span>
-                              <span className="text-gray-500">Total:</span>
-                              <span className="text-green-600 font-semibold ml-2">{formatCurrency(proc.totalValue)}</span>
+                            <div className="text-sm flex flex-wrap gap-x-3 gap-y-1">
+                              <span>
+                                <span className="text-gray-500">Sessão:</span>
+                                <span className="text-green-600 font-medium ml-1">{formatCurrency(proc.unitValue)}</span>
+                              </span>
+                              <span>
+                                <span className="text-gray-500">Total:</span>
+                                <span className="text-green-600 font-semibold ml-1">{formatCurrency(proc.totalValue)}</span>
+                              </span>
                             </div>
                           </div>
 
@@ -624,9 +632,9 @@ export default function PatientDetail() {
                               <span className="text-gray-600 font-medium">Forma de pagamento:</span>
                             </div>
                             {proc.paymentSplits && proc.paymentSplits.length > 0 ? (
-                              <div className="flex flex-wrap gap-2 mb-2">
+                              <div className="flex flex-wrap gap-1 sm:gap-2 mb-2">
                                 {proc.paymentSplits.map((split, idx) => (
-                                  <span key={idx} className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded font-medium">
+                                  <span key={idx} className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded font-medium text-xs">
                                     {formatCurrency(split.amount)} {
                                       split.method === 'cash' ? 'Dinheiro' :
                                       split.method === 'pix' ? 'PIX' :
@@ -637,7 +645,7 @@ export default function PatientDetail() {
                               </div>
                             ) : proc.paymentMethod ? (
                               <div className="mb-2">
-                                <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded font-medium">
+                                <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded font-medium text-xs">
                                   {proc.paymentMethod === 'cash' ? 'Dinheiro' :
                                    proc.paymentMethod === 'pix' ? 'PIX' :
                                    proc.installments > 1 ? `Cartão ${proc.installments}x` : 'Cartão à Vista'}
@@ -663,7 +671,7 @@ export default function PatientDetail() {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200">
                           <button
                             onClick={() => handleOpenEditValue(proc)}
                             className="px-3 py-1.5 text-xs bg-white hover:bg-gray-100 text-gray-700 rounded border border-gray-200 transition-colors"
