@@ -4,6 +4,7 @@ import { useUserProfile } from '@/store/userProfile'
 import { supabase } from '@/lib/supabase'
 import { Users, UserPlus, Mail, Shield, CheckCircle, XCircle, Eye, EyeOff, Info } from 'lucide-react'
 import type { UserProfile } from '@/types/user'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 export default function StaffManagement() {
   const { createStaff, toggleStaffActive } = useUserProfile()
@@ -294,7 +295,7 @@ export default function StaffManagement() {
                           )}
                         </div>
                         <p className="text-xs text-gray-400 mt-1">
-                          Criado em {new Date(staff.createdAt).toLocaleDateString('pt-BR')}
+                          Criado em {formatDateTimeBRSafe(staff.createdAt)}
                         </p>
                       </div>
                     </div>

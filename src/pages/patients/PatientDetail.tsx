@@ -5,6 +5,7 @@ import { useProcedures } from '@/store/procedures'
 import { useStock } from '@/store/stock'
 import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, FileText, Image as ImageIcon, Phone, Calendar, Link as LinkIcon, MoreHorizontal } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -452,7 +453,7 @@ export default function PatientDetail() {
               <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 sm:mt-4 text-xs text-gray-500">
                 <span>Total de procedimentos: {completedProcedures.length}</span>
                 {completedProcedures.length > 0 && (
-                  <span>Último: {new Date(completedProcedures[0]?.completedAt || '').toLocaleDateString('pt-BR')}</span>
+                  <span>Último: {formatDateTimeBRSafe(completedProcedures[0]?.completedAt || '')}</span>
                 )}
               </div>
             </div>
@@ -652,7 +653,7 @@ export default function PatientDetail() {
                                 </span>
                               </div>
                             ) : null}
-                            <span>Realizado em: {new Date(proc.completedAt || proc.createdAt).toLocaleDateString('pt-BR')}</span>
+                            <span>Realizado em: {formatDateTimeBRSafe(proc.completedAt || proc.createdAt)}</span>
                           </div>
 
                           {proc.photos && proc.photos.length > 0 && (

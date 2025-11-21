@@ -6,6 +6,7 @@ import { Search, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, BarChart
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
 
@@ -121,7 +122,12 @@ export default function SalesHistory() {
 
     doc.setFontSize(10)
     doc.setTextColor(100, 100, 100)
-    const periodText = `Período: ${new Date(startDate).toLocaleDateString('pt-BR')} até ${new Date(endDate).toLocaleDateString('pt-BR')}`
+    // Formatar datas corretamente sem problemas de timezone
+    const formatDateForPDF = (dateStr: string) => {
+      const [year, month, day] = dateStr.split('-')
+      return `${day}/${month}/${year}`
+    }
+    const periodText = `Período: ${formatDateForPDF(startDate)} até ${formatDateForPDF(endDate)}`
     doc.text(periodText, 14, 28)
 
     doc.setFontSize(12)
@@ -141,7 +147,7 @@ export default function SalesHistory() {
       const statusLabel = getPaymentStatusConfig(sale.paymentStatus).label
 
       return [
-        new Date(sale.createdAt).toLocaleDateString('pt-BR'),
+        formatDateTimeBRSafe(sale.createdAt),
         sale.professionalName,
         products,
         getPaymentMethodLabel(sale.paymentMethod),
@@ -414,7 +420,7 @@ export default function SalesHistory() {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5 text-sm text-gray-600">
                           <Calendar size={14} />
-                          <span>{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
+                          <span>{formatDateTimeBRSafe(sale.createdAt)}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-sm">
                           <DollarSign size={14} className="text-green-500" />

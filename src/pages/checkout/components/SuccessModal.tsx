@@ -1,4 +1,5 @@
 import { Check, CreditCard } from 'lucide-react'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 interface SuccessModalProps {
   show: boolean
@@ -58,7 +59,7 @@ export default function SuccessModal({ show, subscriptionData, onNavigate }: Suc
             <div className="flex justify-between items-center">
               <span className="text-gray-400 text-sm">Próxima cobrança:</span>
               <span className="text-white font-medium">
-                {new Date(subscriptionData.nextBillingDate).toLocaleDateString('pt-BR')}
+                {formatDateTimeBRSafe(subscriptionData.nextBillingDate)}
               </span>
             </div>
           </div>

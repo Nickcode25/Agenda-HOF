@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import BeforeAfterGallery from '@/components/BeforeAfterGallery'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 interface PhotoGalleryModalProps {
   isOpen: boolean
@@ -35,7 +36,7 @@ export default function PhotoGalleryModal({
               <h2 className="text-2xl font-bold text-white">{procedure.procedureName}</h2>
               <p className="text-gray-400">
                 {procedure.completedAt &&
-                  `Realizado em ${new Date(procedure.completedAt).toLocaleDateString('pt-BR')}`}
+                  `Realizado em ${formatDateTimeBRSafe(procedure.completedAt)}`}
               </p>
             </div>
             <button

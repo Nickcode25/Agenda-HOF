@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, Filter, Download, RefreshCw, DollarSign, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { formatDateTimeBRSafe, parseLocalDate } from '@/utils/dateHelpers'
 
 interface Payment {
   id: string
@@ -103,10 +104,8 @@ export default function PaymentsManager() {
 
     let matchesDateRange = true
     if (startDate && endDate) {
-      const paymentDate = new Date(payment.created_at)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      matchesDateRange = paymentDate >= start && paymentDate <= end
+      const paymentDateStr = payment.created_at.split('T')[0]
+      matchesDateRange = paymentDateStr >= startDate && paymentDateStr <= endDate
     }
 
     return matchesSearch && matchesStatus && matchesDateRange
@@ -133,7 +132,7 @@ export default function PaymentsManager() {
   const exportToCSV = () => {
     const headers = ['Data', 'Cliente', 'Email', 'Valor', 'Status', 'Método', 'ID Mercado Pago']
     const rows = filteredPayments.map(p => [
-      new Date(p.created_at).toLocaleDateString('pt-BR'),
+      formatDateTimeBRSafe(p.created_at),
       p.user_name,
       p.user_email,
       `R$ ${p.amount.toFixed(2)}`,
@@ -263,7 +262,7 @@ export default function PaymentsManager() {
               {filteredPayments.map((payment) => (
                 <tr key={payment.id} className="border-b border-white/10 hover:bg-white/5 transition-colors">
                   <td className="py-4 px-6 text-gray-300 text-sm">
-                    {new Date(payment.created_at).toLocaleDateString('pt-BR')}
+                    {formatDateTimeBRSafe(payment.created_at)}
                   </td>
                   <td className="py-4 px-6">
                     <div>

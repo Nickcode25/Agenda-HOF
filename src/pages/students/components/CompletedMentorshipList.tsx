@@ -1,6 +1,7 @@
 import { CheckCircle } from 'lucide-react'
 import { formatCurrency } from '@/utils/currency'
 import { PlannedMentorship } from '@/types/student'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 interface CompletedMentorshipListProps {
   mentorships: PlannedMentorship[]
@@ -45,9 +46,9 @@ export default function CompletedMentorshipList({ mentorships, onRemove }: Compl
               {ment.notes && <p className="text-sm text-gray-400 mb-2">{ment.notes}</p>}
 
               <div className="flex items-center gap-4 text-xs text-gray-500">
-                <span>Planejado em {new Date(ment.createdAt).toLocaleDateString('pt-BR')}</span>
+                <span>Planejado em {formatDateTimeBRSafe(ment.createdAt)}</span>
                 {ment.completedAt && (
-                  <span className="text-green-400">• Realizado em {new Date(ment.completedAt).toLocaleDateString('pt-BR')}</span>
+                  <span className="text-green-400">• Realizado em {formatDateTimeBRSafe(ment.completedAt)}</span>
                 )}
               </div>
 

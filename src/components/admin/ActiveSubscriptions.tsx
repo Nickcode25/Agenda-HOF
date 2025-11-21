@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, Filter, Eye, XCircle, Mail, Users, DollarSign, TrendingDown, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 interface Subscription {
   id: string
@@ -232,11 +233,11 @@ export default function ActiveSubscriptions() {
                     </td>
                     <td className="py-4 px-6 text-gray-300">{sub.plan_name}</td>
                     <td className="py-4 px-6 text-center text-gray-300 text-sm">
-                      {new Date(sub.started_at).toLocaleDateString('pt-BR')}
+                      {formatDateTimeBRSafe(sub.started_at)}
                     </td>
                     <td className="py-4 px-6 text-center text-gray-300 text-sm">
                       {sub.next_billing_date
-                        ? new Date(sub.next_billing_date).toLocaleDateString('pt-BR')
+                        ? formatDateTimeBRSafe(sub.next_billing_date)
                         : '-'}
                     </td>
                     <td className="py-4 px-6 text-center">

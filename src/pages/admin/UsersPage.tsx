@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../store/auth'
 import AdminSidebar from './components/AdminSidebar'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 interface Clinic {
   id: string
@@ -204,19 +205,19 @@ export default function UsersPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-300">
                       {clinic.trial_end_date
-                        ? new Date(clinic.trial_end_date).toLocaleDateString('pt-BR')
+                        ? formatDateTimeBRSafe(clinic.trial_end_date)
                         : 'Nunca'}
                     </td>
                     <td className="px-6 py-4 text-gray-300">
                       {clinic.last_login
-                        ? new Date(clinic.last_login).toLocaleDateString('pt-BR')
+                        ? formatDateTimeBRSafe(clinic.last_login)
                         : 'Nunca'}
                     </td>
                     <td className="px-6 py-4 text-right text-green-400 font-medium">
                       R$ {clinic.total_revenue.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 text-right text-gray-400 text-sm">
-                      {new Date(clinic.created_at).toLocaleDateString('pt-BR')}
+                      {formatDateTimeBRSafe(clinic.created_at)}
                     </td>
                   </tr>
                 ))}

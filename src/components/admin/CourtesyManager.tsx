@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Gift, Search, Check, X, AlertCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 interface User {
   id: string
@@ -401,13 +402,13 @@ export default function CourtesyManager() {
                     </td>
                     <td className="py-3 px-4">
                       <span className="text-gray-300">
-                        {new Date(courtesy.granted_at).toLocaleDateString('pt-BR')}
+                        {formatDateTimeBRSafe(courtesy.granted_at)}
                       </span>
                     </td>
                     <td className="py-3 px-4">
                       <span className="text-gray-300">
                         {courtesy.expires_at
-                          ? new Date(courtesy.expires_at).toLocaleDateString('pt-BR')
+                          ? formatDateTimeBRSafe(courtesy.expires_at)
                           : 'Sem expiração'}
                       </span>
                     </td>

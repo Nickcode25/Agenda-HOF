@@ -1,6 +1,7 @@
 import { Clock, Circle, CheckCircle } from 'lucide-react'
 import { formatCurrency } from '@/utils/currency'
 import { PlannedMentorship } from '@/types/student'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
 interface MentorshipListProps {
   mentorships: PlannedMentorship[]
@@ -42,7 +43,7 @@ export default function MentorshipList({ mentorships, onUpdateStatus, onRemove }
                 {ment.notes && <p className="text-sm text-gray-400 ml-8 mb-2">{ment.notes}</p>}
 
                 <div className="text-xs text-gray-500 ml-8">
-                  Adicionado em {new Date(ment.createdAt).toLocaleDateString('pt-BR')}
+                  Adicionado em {formatDateTimeBRSafe(ment.createdAt)}
                 </div>
               </div>
 

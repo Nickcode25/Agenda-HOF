@@ -6,6 +6,8 @@ import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clo
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import { formatInSaoPaulo } from '@/utils/timezone'
 
 export default function SalesList() {
   const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale } = useSales()
@@ -260,7 +262,7 @@ export default function SalesList() {
                         <div className="flex items-center gap-1.5">
                           <Calendar size={14} className="text-amber-600" />
                           <span className="text-amber-700 font-medium">Data:</span>
-                          <span className="text-gray-900">{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
+                          <span className="text-gray-900">{formatDateTimeBRSafe(sale.createdAt)}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <DollarSign size={14} className="text-green-600" />
@@ -271,7 +273,7 @@ export default function SalesList() {
                       <div className="flex items-center gap-1.5">
                         <Clock size={14} className="text-gray-600" />
                         <span className="text-gray-700 font-medium">Hora:</span>
-                        <span className="text-gray-900">{new Date(sale.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-gray-900">{formatInSaoPaulo(sale.createdAt, 'HH:mm')}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 mt-2">

@@ -15,6 +15,8 @@ import CourtesyManager from '@/components/admin/CourtesyManager'
 import AdminSidebar from './components/AdminSidebar'
 import AdminStatsGrid from './components/AdminStatsGrid'
 import { containsIgnoringAccents } from '@/utils/textSearch'
+import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import { formatInSaoPaulo } from '@/utils/timezone'
 
 interface Stats {
   totalClinics: number
@@ -309,22 +311,12 @@ export default function AdminDashboard() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Nunca'
-    return new Date(dateStr).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    })
+    return formatDateTimeBRSafe(dateStr)
   }
 
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return 'Nunca'
-    return new Date(dateStr).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    return formatInSaoPaulo(dateStr, 'dd/MM/yyyy HH:mm')
   }
 
   // Dados para gráficos baseados no período selecionado
