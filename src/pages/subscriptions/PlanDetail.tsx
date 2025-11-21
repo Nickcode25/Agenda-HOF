@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
@@ -34,19 +34,24 @@ export default function PlanDetail() {
   const { confirm, ConfirmDialog } = useConfirm()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null)
 
-  // Carregar planos, assinaturas e pacientes ao montar o componente
+  // Carregar planos, assinaturas e pacientes ao montar o componente (em paralelo)
   useEffect(() => {
-    fetchPlans()
-    fetchSubscriptions()
-    fetchPatients()
+    Promise.all([
+      fetchPlans(),
+      fetchSubscriptions(),
+      fetchPatients()
+    ])
   }, [])
 
-  const plan = plans.find(p => p.id === id)
-  const planSubscriptions = subscriptions.filter(s => s.planId === id)
+  const plan = useMemo(() => plans.find(p => p.id === id), [plans, id])
+  const planSubscriptions = useMemo(() => subscriptions.filter(s => s.planId === id), [subscriptions, id])
 
   // Filtrar pacientes que ainda não são assinantes deste plano
-  const subscribedPatientIds = planSubscriptions.map(s => s.patientId)
-  const allAvailablePatients = patients.filter(p => !subscribedPatientIds.includes(p.id))
+  const subscribedPatientIds = useMemo(() => planSubscriptions.map(s => s.patientId), [planSubscriptions])
+  const allAvailablePatients = useMemo(() =>
+    patients.filter(p => !subscribedPatientIds.includes(p.id)),
+    [patients, subscribedPatientIds]
+  )
 
   // Filtrar pacientes conforme a busca (usando função centralizada para ignorar acentos)
   const availablePatients = searchPatient.trim().length > 0
@@ -89,19 +94,34 @@ export default function PlanDetail() {
     )
   }
 
-  // Cálculos
-  const totalSubscribers = planSubscriptions.filter(s => s.status === 'active').length
-  const monthlyRevenue = planSubscriptions
-    .filter(s => s.status === 'active')
-    .reduce((total, sub) => total + sub.price, 0)
-  const receivedRevenue = planSubscriptions.reduce((total, sub) => {
-    const paidPayments = sub.payments.filter(p => p.status === 'paid')
-    return total + paidPayments.reduce((sum, p) => sum + p.amount, 0)
-  }, 0)
-  const overdueRevenue = planSubscriptions.reduce((total, sub) => {
-    const overduePayments = sub.payments.filter(p => p.status === 'overdue')
-    return total + overduePayments.reduce((sum, p) => sum + p.amount, 0)
-  }, 0)
+  // Cálculos (memoizados para melhor performance)
+  const totalSubscribers = useMemo(() =>
+    planSubscriptions.filter(s => s.status === 'active').length,
+    [planSubscriptions]
+  )
+
+  const monthlyRevenue = useMemo(() =>
+    planSubscriptions
+      .filter(s => s.status === 'active')
+      .reduce((total, sub) => total + sub.price, 0),
+    [planSubscriptions]
+  )
+
+  const receivedRevenue = useMemo(() =>
+    planSubscriptions.reduce((total, sub) => {
+      const paidPayments = sub.payments.filter(p => p.status === 'paid')
+      return total + paidPayments.reduce((sum, p) => sum + p.amount, 0)
+    }, 0),
+    [planSubscriptions]
+  )
+
+  const overdueRevenue = useMemo(() =>
+    planSubscriptions.reduce((total, sub) => {
+      const overduePayments = sub.payments.filter(p => p.status === 'overdue')
+      return total + overduePayments.reduce((sum, p) => sum + p.amount, 0)
+    }, 0),
+    [planSubscriptions]
+  )
 
   const handleAddSubscriber = async (e: React.FormEvent) => {
     e.preventDefault()

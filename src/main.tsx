@@ -1,11 +1,15 @@
 import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
 
 // Loading component - minimal fallback
-const LoadingFallback = () => null
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+  </div>
+)
 
 // Core components (loaded immediately)
 import App from './App'

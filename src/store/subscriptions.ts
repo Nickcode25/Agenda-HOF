@@ -93,19 +93,28 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
 
       if (subsError) throw subsError
 
-      // Buscar pagamentos de cada assinatura
-      const subscriptions: Subscription[] = []
+      // Buscar TODOS os pagamentos de UMA VEZ (muito mais rápido!)
+      const subscriptionIds = (subsData || []).map(s => s.id)
 
-      for (const sub of subsData || []) {
+      let allPaymentsData: any[] = []
+      if (subscriptionIds.length > 0) {
         const { data: paymentsData, error: paymentsError } = await supabase
           .from('subscription_payments')
           .select('*')
-          .eq('subscription_id', sub.id)
+          .in('subscription_id', subscriptionIds)
           .order('due_date', { ascending: false })
 
         if (paymentsError) throw paymentsError
+        allPaymentsData = paymentsData || []
+      }
 
-        const payments: SubscriptionPayment[] = (paymentsData || []).map(p => ({
+      // Agrupar pagamentos por subscription_id para acesso rápido
+      const paymentsBySubscription = new Map<string, SubscriptionPayment[]>()
+      for (const p of allPaymentsData) {
+        if (!paymentsBySubscription.has(p.subscription_id)) {
+          paymentsBySubscription.set(p.subscription_id, [])
+        }
+        paymentsBySubscription.get(p.subscription_id)!.push({
           id: p.id,
           subscriptionId: p.subscription_id,
           amount: parseFloat(p.amount) || 0,
@@ -113,21 +122,22 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
           paidAt: p.paid_at,
           paymentMethod: p.payment_method,
           status: p.status
-        }))
-
-        subscriptions.push({
-          id: sub.id,
-          patientId: sub.patient_id,
-          patientName: sub.patient_name,
-          planId: sub.plan_id,
-          planName: sub.plan_name,
-          price: parseFloat(sub.price),
-          startDate: sub.start_date,
-          nextBillingDate: sub.next_billing_date,
-          status: sub.status,
-          payments
         })
       }
+
+      // Montar as subscriptions com seus pagamentos
+      const subscriptions: Subscription[] = (subsData || []).map(sub => ({
+        id: sub.id,
+        patientId: sub.patient_id,
+        patientName: sub.patient_name,
+        planId: sub.plan_id,
+        planName: sub.plan_name,
+        price: parseFloat(sub.price),
+        startDate: sub.start_date,
+        nextBillingDate: sub.next_billing_date,
+        status: sub.status,
+        payments: paymentsBySubscription.get(sub.id) || []
+      }))
 
       set({ subscriptions, loading: false })
     } catch (error: any) {
