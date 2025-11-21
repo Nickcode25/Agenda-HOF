@@ -1,8 +1,10 @@
+import React from 'react'
 import { Link } from 'react-router-dom'
-import { X, Package, AlertTriangle } from 'lucide-react'
+import { X, Package, AlertTriangle, Plus, Trash2 } from 'lucide-react'
 import { Procedure } from '@/store/procedures'
 import { StockItem } from '@/types/stock'
-import { formatCurrency } from '@/utils/currency'
+import { PaymentSplit } from '@/types/patient'
+import { formatCurrency, parseCurrency } from '@/utils/currency'
 import SearchableSelect from '@/components/SearchableSelect'
 
 interface AddProcedureModalProps {
@@ -28,7 +30,7 @@ interface AddProcedureModalProps {
   onCustomValueFocus: () => void
   onCustomValueChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onClose: () => void
-  onAdd: () => void
+  onAdd: (paymentSplits?: PaymentSplit[]) => void
 }
 
 export default function AddProcedureModal({
@@ -56,6 +58,11 @@ export default function AddProcedureModal({
   onClose,
   onAdd
 }: AddProcedureModalProps) {
+  const [useMultiplePayments, setUseMultiplePayments] = React.useState(false)
+  const [paymentSplits, setPaymentSplits] = React.useState<PaymentSplit[]>([
+    { method: 'pix', amount: 0 }
+  ])
+
   if (!isOpen) return null
 
   // Obter categoria e produtos disponíveis do procedimento selecionado
@@ -63,6 +70,48 @@ export default function AddProcedureModal({
   const availableProducts = selectedProcedureData?.category
     ? stockItems.filter(item => item.category === selectedProcedureData.category)
     : []
+
+  // Calcular valor total do procedimento
+  const totalValue = isEditingValue
+    ? parseCurrency(customValue)
+    : procedureQuantity * (selectedProcedureData?.price || 0)
+
+  // Calcular total dos pagamentos parciais
+  const totalPaid = paymentSplits.reduce((sum, split) => sum + split.amount, 0)
+  const remaining = totalValue - totalPaid
+
+  const addPaymentSplit = () => {
+    setPaymentSplits([...paymentSplits, { method: 'pix', amount: 0 }])
+  }
+
+  const removePaymentSplit = (index: number) => {
+    if (paymentSplits.length > 1) {
+      setPaymentSplits(paymentSplits.filter((_, i) => i !== index))
+    }
+  }
+
+  const updatePaymentSplit = (index: number, field: keyof PaymentSplit, value: any) => {
+    const updated = [...paymentSplits]
+    updated[index] = { ...updated[index], [field]: value }
+    setPaymentSplits(updated)
+  }
+
+  const formatCurrencyInput = (value: string): string => {
+    const numbers = value.replace(/\D/g, '')
+    const amount = Number(numbers) / 100
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(amount)
+  }
+
+  const handleAdd = () => {
+    if (useMultiplePayments) {
+      onAdd(paymentSplits)
+    } else {
+      onAdd()
+    }
+  }
 
   return (
     <div
@@ -113,50 +162,155 @@ export default function AddProcedureModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-                <SearchableSelect
-                  options={[
-                    { value: 'cash', label: 'Valor à Vista' },
-                    { value: 'installment', label: 'Parcelado' }
-                  ]}
-                  value={paymentType}
-                  onChange={(value) => onPaymentTypeChange(value as 'cash' | 'installment')}
-                  placeholder="Selecione a forma"
-                />
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useMultiplePayments}
+                    onChange={(e) => setUseMultiplePayments(e.target.checked)}
+                    className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Usar múltiplas formas de pagamento
+                  </span>
+                </label>
               </div>
 
-              {paymentType === 'cash' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
-                  <SearchableSelect
-                    options={[
-                      { value: 'cash', label: 'Dinheiro' },
-                      { value: 'pix', label: 'PIX' }
-                    ]}
-                    value={paymentMethod}
-                    onChange={(value) => onPaymentMethodChange(value as 'cash' | 'pix' | 'card')}
-                    placeholder="Selecione o método"
-                  />
+              {!useMultiplePayments && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+                    <SearchableSelect
+                      options={[
+                        { value: 'cash', label: 'Valor à Vista' },
+                        { value: 'installment', label: 'Parcelado' }
+                      ]}
+                      value={paymentType}
+                      onChange={(value) => onPaymentTypeChange(value as 'cash' | 'installment')}
+                      placeholder="Selecione a forma"
+                    />
+                  </div>
+
+                  {paymentType === 'cash' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
+                      <SearchableSelect
+                        options={[
+                          { value: 'cash', label: 'Dinheiro' },
+                          { value: 'pix', label: 'PIX' }
+                        ]}
+                        value={paymentMethod}
+                        onChange={(value) => onPaymentMethodChange(value as 'cash' | 'pix' | 'card')}
+                        placeholder="Selecione o método"
+                      />
+                    </div>
+                  )}
+
+                  {paymentType === 'installment' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Parcelas (Cartão de Crédito)</label>
+                      <SearchableSelect
+                        options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => ({
+                          value: num.toString(),
+                          label: `${num}x ${num === 1 ? '(à vista)' : ''}`
+                        }))}
+                        value={installments.toString()}
+                        onChange={(value) => onInstallmentsChange(Number(value))}
+                        placeholder="Selecione as parcelas"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {useMultiplePayments && (
+                <div className="md:col-span-2 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700">Formas de Pagamento</label>
+                    <button
+                      type="button"
+                      onClick={addPaymentSplit}
+                      className="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      <Plus size={16} />
+                      Adicionar
+                    </button>
+                  </div>
+
+                  {paymentSplits.map((split, index) => (
+                    <div key={index} className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Método</label>
+                          <SearchableSelect
+                            options={[
+                              { value: 'cash', label: 'Dinheiro' },
+                              { value: 'pix', label: 'PIX' },
+                              { value: 'card', label: 'Cartão' }
+                            ]}
+                            value={split.method}
+                            onChange={(value) => updatePaymentSplit(index, 'method', value)}
+                            placeholder="Selecione"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Valor</label>
+                          <input
+                            type="text"
+                            value={split.amount > 0 ? formatCurrency(split.amount) : ''}
+                            onChange={(e) => {
+                              const value = parseCurrency(e.target.value)
+                              updatePaymentSplit(index, 'amount', value)
+                            }}
+                            placeholder="R$ 0,00"
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20"
+                          />
+                        </div>
+                        {split.method === 'card' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Parcelas</label>
+                            <SearchableSelect
+                              options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => ({
+                                value: num.toString(),
+                                label: `${num}x`
+                              }))}
+                              value={(split.installments || 1).toString()}
+                              onChange={(value) => updatePaymentSplit(index, 'installments', Number(value))}
+                              placeholder="1x"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {paymentSplits.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removePaymentSplit(index)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-5"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Total pago:</p>
+                      <p className="text-xs text-gray-500">Valor total: {formatCurrency(totalValue)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-orange-600">{formatCurrency(totalPaid)}</p>
+                      {remaining !== 0 && (
+                        <p className={`text-xs font-medium ${remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {remaining > 0 ? `Faltam ${formatCurrency(remaining)}` : `Excedeu ${formatCurrency(Math.abs(remaining))}`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {paymentType === 'installment' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Parcelas (Cartão de Crédito)</label>
-                  <SearchableSelect
-                    options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => ({
-                      value: num.toString(),
-                      label: `${num}x ${num === 1 ? '(à vista)' : ''}`
-                    }))}
-                    value={installments.toString()}
-                    onChange={(value) => onInstallmentsChange(Number(value))}
-                    placeholder="Selecione as parcelas"
-                  />
-                </div>
-              )}
-
-              <div className={paymentType === 'cash' ? 'md:col-span-2' : ''}>
+              <div className={!useMultiplePayments && paymentType === 'cash' ? 'md:col-span-2' : ''}>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Valor Total</label>
                 <input
                   type="text"
@@ -278,8 +432,8 @@ export default function AddProcedureModal({
             Cancelar
           </button>
           <button
-            onClick={onAdd}
-            disabled={!selectedProcedure}
+            onClick={handleAdd}
+            disabled={!selectedProcedure || (useMultiplePayments && remaining !== 0)}
             className="flex-1 px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
           >
             Adicionar Procedimento

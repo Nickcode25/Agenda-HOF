@@ -106,7 +106,7 @@ export default function PatientDetail() {
     setShowProcedureModal(false)
   }
 
-  const handleAddProcedure = () => {
+  const handleAddProcedure = (paymentSplits?: import('@/types/patient').PaymentSplit[]) => {
     if (!selectedProcedure || !patient) return
 
     const selectedProc = procedures.find(p => p.name === selectedProcedure)
@@ -129,6 +129,7 @@ export default function PatientDetail() {
       paymentType,
       paymentMethod,
       installments,
+      paymentSplits, // Adicionar os pagamentos múltiplos se fornecidos
       status: 'pending',
       notes: procedureNotes,
       createdAt: new Date().toISOString()

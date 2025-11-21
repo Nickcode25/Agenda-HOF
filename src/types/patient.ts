@@ -14,6 +14,12 @@ export type EvolutionPhoto = {
   procedureName?: string
 }
 
+export type PaymentSplit = {
+  method: 'cash' | 'pix' | 'card' // método de pagamento
+  amount: number // valor pago com este método
+  installments?: number // número de parcelas (apenas para cartão)
+}
+
 export type PlannedProcedure = {
   id: string
   procedureName: string
@@ -21,8 +27,9 @@ export type PlannedProcedure = {
   unitValue: number // valor unitário em reais
   totalValue: number // quantidade * valor unitário
   paymentType: 'cash' | 'installment' // à vista ou parcelado
-  paymentMethod: 'cash' | 'pix' | 'card' // método de pagamento (dinheiro, pix, cartão)
-  installments: number // número de parcelas (1 para à vista)
+  paymentMethod: 'cash' | 'pix' | 'card' // método de pagamento (dinheiro, pix, cartão) - DEPRECATED, usar paymentSplits
+  installments: number // número de parcelas (1 para à vista) - DEPRECATED, usar paymentSplits
+  paymentSplits?: PaymentSplit[] // lista de formas de pagamento (quando há múltiplas formas)
   status: 'pending' | 'in_progress' | 'completed'
   notes?: string
   createdAt: string
