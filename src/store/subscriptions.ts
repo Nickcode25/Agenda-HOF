@@ -339,6 +339,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       if (!user) throw new Error('Usuário não autenticado')
 
       const insertData: any = {
+        user_id: user.id,
         subscription_id: subscriptionId,
         amount: paymentData.amount,
         due_date: paymentData.dueDate,
