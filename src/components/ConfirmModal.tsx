@@ -29,19 +29,26 @@ export default function ConfirmModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+      aria-describedby="confirm-modal-description"
+    >
       <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-500/20 rounded-lg">
+            <div className="p-2 bg-orange-500/20 rounded-lg" aria-hidden="true">
               <AlertTriangle size={24} className="text-orange-400" />
             </div>
-            <h3 className="text-xl font-semibold text-white">{title}</h3>
+            <h3 id="confirm-modal-title" className="text-xl font-semibold text-white">{title}</h3>
           </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
+            aria-label="Fechar modal"
           >
             <X size={20} />
           </button>
@@ -49,7 +56,7 @@ export default function ConfirmModal({
 
         {/* Content */}
         <div className="p-6">
-          <p className="text-gray-300">{message}</p>
+          <p id="confirm-modal-description" className="text-gray-300">{message}</p>
         </div>
 
         {/* Footer */}

@@ -1,9 +1,9 @@
-import { format, parseISO } from 'date-fns'
-import { ptBR } from 'date-fns/locale/pt-BR'
 import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
 import { useConfirm } from '@/hooks/useConfirm'
 import { usePatients } from '@/store/patients'
+import { getWhatsAppUrl } from '@/utils/env'
+import { formatInSaoPaulo } from '@/utils/timezone'
 
 type AppointmentModalProps = {
   appointment: Appointment | null
@@ -48,24 +48,26 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
       return
     }
 
-    // Limpar telefone e criar link do WhatsApp
-    const cleanPhone = patientPhone.replace(/\D/g, '')
-    const whatsappUrl = `https://wa.me/55${cleanPhone}`
-
-    window.open(whatsappUrl, '_blank')
+    window.open(getWhatsAppUrl(patientPhone), '_blank')
   }
 
   return (
     <>
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div 
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="appointment-modal-title"
+    >
+      <div
         className="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-gray-700">
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white mb-2">{appointment.patientName}</h2>
+            <h2 id="appointment-modal-title" className="text-2xl font-bold text-white mb-2">{appointment.patientName}</h2>
             <div className="flex items-center gap-2">
               <span className="inline-block px-3 py-1 rounded-lg bg-orange-500/20 text-orange-400 text-sm font-medium">
                 {appointment.procedure}
@@ -78,6 +80,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+            aria-label="Fechar modal"
           >
             <X size={24} />
           </button>
@@ -94,7 +97,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
               <div>
                 <p className="text-sm text-gray-400 mb-1">Data</p>
                 <p className="text-white font-medium">
-                  {format(parseISO(appointment.start), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {formatInSaoPaulo(appointment.start, "dd 'de' MMMM 'de' yyyy")}
                 </p>
               </div>
             </div>
@@ -106,7 +109,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
               <div>
                 <p className="text-sm text-gray-400 mb-1">Horário</p>
                 <p className="text-white font-medium">
-                  {format(parseISO(appointment.start), 'HH:mm')} - {format(parseISO(appointment.end), 'HH:mm')}
+                  {formatInSaoPaulo(appointment.start, 'HH:mm')} - {formatInSaoPaulo(appointment.end, 'HH:mm')}
                 </p>
               </div>
             </div>

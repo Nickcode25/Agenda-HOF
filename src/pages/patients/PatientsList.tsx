@@ -10,6 +10,7 @@ import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import AddProcedureInlineForm from './components/AddProcedureInlineForm'
 import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
+import { getWhatsAppUrl } from '@/utils/env'
 
 export default function PatientsList() {
   const patients = usePatients(s => s.patients)
@@ -22,7 +23,7 @@ export default function PatientsList() {
   useEffect(() => {
     fetchPatients()
     fetchProcedures()
-  }, [])
+  }, [fetchPatients, fetchProcedures])
   const [q, setQ] = useState('')
   const [expandedPatients, setExpandedPatients] = useState<Set<string>>(new Set())
   const [showAddProcedure, setShowAddProcedure] = useState<string | null>(null)
@@ -151,16 +152,13 @@ export default function PatientsList() {
     update(patient.id, { plannedProcedures: updated })
   }
 
-  const handleWhatsApp = (patientName: string, patientPhone?: string) => {
+  const handleWhatsApp = (_patientName: string, patientPhone?: string) => {
     if (!patientPhone) {
       alert('Paciente não possui telefone cadastrado')
       return
     }
 
-    const cleanPhone = patientPhone.replace(/\D/g, '')
-    const whatsappUrl = `https://wa.me/55${cleanPhone}`
-
-    window.open(whatsappUrl, '_blank')
+    window.open(getWhatsAppUrl(patientPhone), '_blank')
   }
 
   // Stats calculations

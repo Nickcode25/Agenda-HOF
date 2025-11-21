@@ -120,6 +120,8 @@ export default function SearchableSelect({
   const dropdownContent = isOpen && (
     <div
       data-searchable-dropdown="true"
+      role="listbox"
+      aria-label="Opções disponíveis"
       style={{
         position: 'absolute',
         top: `${dropdownPosition.top}px`,
@@ -139,6 +141,7 @@ export default function SearchableSelect({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar..."
+            aria-label="Buscar opção"
             className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
           />
         </div>
@@ -151,6 +154,8 @@ export default function SearchableSelect({
             <button
               key={option.value}
               type="button"
+              role="option"
+              aria-selected={option.value === value}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -189,6 +194,8 @@ export default function SearchableSelect({
         {/* Trigger Button */}
         <button
           type="button"
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -210,11 +217,13 @@ export default function SearchableSelect({
                 size={16}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
                 onClick={handleClear}
+                aria-label="Limpar seleção"
               />
             )}
             <ChevronDown
               size={18}
               className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+              aria-hidden="true"
             />
           </div>
         </button>

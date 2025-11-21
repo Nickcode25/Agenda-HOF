@@ -38,12 +38,16 @@ function NotificationBell() {
   }, [])
 
   const handleNotificationClick = useCallback(async (notification: Notification) => {
-    if (!notification.isRead) {
-      await markAsRead(notification.id)
-    }
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl)
-      setIsOpen(false)
+    try {
+      if (!notification.isRead) {
+        await markAsRead(notification.id)
+      }
+      if (notification.actionUrl) {
+        navigate(notification.actionUrl)
+        setIsOpen(false)
+      }
+    } catch (error) {
+      console.error('Erro ao processar notificação:', error)
     }
   }, [markAsRead, navigate])
 

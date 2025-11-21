@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -18,11 +18,16 @@ export default function ScheduleCalendar() {
   const { user } = useAuth()
   const { currentProfile } = useUserProfile()
 
-  // Carregar profissionais e agendamentos ao montar o componente
-  useEffect(() => {
+  // Memoizar funções para evitar re-fetches desnecessários
+  const loadData = useCallback(() => {
     fetchProfessionals()
     fetchAppointments()
-  }, [])
+  }, [fetchProfessionals, fetchAppointments])
+
+  // Carregar profissionais e agendamentos ao montar o componente
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
 
@@ -50,9 +55,9 @@ export default function ScheduleCalendar() {
     removeAppointment(id)
   }
 
-  const handleTimeSlotClick = (date: Date, hour: number) => {
+  const handleTimeSlotClick = (_date: Date, _hour: number) => {
     // Pode ser usado para criar novo agendamento diretamente no slot
-    console.log('Time slot clicked:', date, hour)
+    // Handler disponível para futura implementação
   }
 
   return (

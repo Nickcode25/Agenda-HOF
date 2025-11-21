@@ -83,7 +83,7 @@ export default function NewLandingPage() {
               </h2>
 
               <p className="text-xl text-gray-600 leading-relaxed">
-                Sistema completo de agendamento e gestão desenvolvido especialmente para profissionais de
+                Sistema completo de agendamento e gestão desenvolvido especialmente para profissionais da
                 <span className="text-orange-500 font-semibold"> Harmonização Orofacial</span>.
                 Controle total da sua clínica em um só lugar.
               </p>
@@ -197,7 +197,7 @@ export default function NewLandingPage() {
                   <span className="text-orange-500 ml-2">HOF</span>
                 </div>
                 <p className="text-lg lg:text-xl font-semibold text-gray-600">
-                  O futuro da gestão em
+                  A plataforma completa para
                 </p>
                 <p className="text-xl lg:text-2xl text-orange-500 font-bold">
                   Harmonização Orofacial

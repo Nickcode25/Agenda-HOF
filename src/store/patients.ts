@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
 import { Patient } from '@/types/patient'
+import { getErrorMessage } from '@/types/errors'
 
 export type PatientsState = {
   patients: Patient[]
@@ -66,8 +67,8 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       }))
 
       set({ patients, loading: false, fetched: true })
-    } catch (error: any) {
-      set({ error: error.message, loading: false, fetched: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false, fetched: false })
     }
   },
 
@@ -82,11 +83,17 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      // Sanitizar query para evitar SQL Injection - escapar caracteres especiais do LIKE
+      const sanitizedQuery = query
+        .replace(/\\/g, '\\\\')  // Escapar backslash primeiro
+        .replace(/%/g, '\\%')    // Escapar %
+        .replace(/_/g, '\\_')    // Escapar _
+
       const { data, error } = await supabase
         .from('patients')
         .select('*')
         .eq('user_id', user.id)
-        .or(`name.ilike.%${query}%,cpf.ilike.%${query}%`)
+        .or(`name.ilike.%${sanitizedQuery}%,cpf.ilike.%${sanitizedQuery}%`)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -111,8 +118,8 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       }))
 
       set({ patients, loading: false })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
@@ -174,8 +181,8 @@ export const usePatients = create<PatientsState>()((set, get) => ({
       })
 
       return data.id
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
       return null
     }
   },
@@ -212,8 +219,8 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         ),
         loading: false,
       })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
@@ -231,8 +238,8 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         patients: get().patients.filter(p => p.id !== id),
         loading: false,
       })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 

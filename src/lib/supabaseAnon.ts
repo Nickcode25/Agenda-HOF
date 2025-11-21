@@ -20,5 +20,3 @@ export const supabaseAnon = createClient(
     }
   }
 )
-
-console.log('✅ Cliente Supabase Anônimo criado')

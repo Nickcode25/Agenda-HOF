@@ -10,6 +10,7 @@ type AuthState = {
   adminUser: AdminUser | null
   loading: boolean
   error: string | null
+  _checkingSession: boolean // Flag interno para evitar race conditions
 
   // Actions
   signIn: (email: string, password: string) => Promise<boolean>
@@ -28,6 +29,7 @@ export const useAuth = create<AuthState>()(
       adminUser: null,
       loading: false,
       error: null,
+      _checkingSession: false,
 
       signIn: async (email: string, password: string) => {
         set({ loading: true, error: null })
@@ -139,12 +141,17 @@ export const useAuth = create<AuthState>()(
       },
 
       checkSession: async () => {
-        set({ loading: true })
+        // Evitar race condition - se já está verificando, não executar novamente
+        if (get()._checkingSession) {
+          return
+        }
+
+        set({ loading: true, _checkingSession: true })
         try {
           const { data: { session } } = await supabase.auth.getSession()
 
           if (!session) {
-            set({ user: null, adminUser: null, loading: false })
+            set({ user: null, adminUser: null, loading: false, _checkingSession: false })
             return
           }
 
@@ -172,9 +179,10 @@ export const useAuth = create<AuthState>()(
             user: session.user,
             adminUser,
             loading: false,
+            _checkingSession: false,
           })
         } catch (error) {
-          set({ error: getErrorMessage(error), loading: false })
+          set({ error: getErrorMessage(error), loading: false, _checkingSession: false })
         }
       },
 

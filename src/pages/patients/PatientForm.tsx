@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { Upload, X, Save, User, Phone as PhoneIcon, Home, FileText } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { getViaCepUrl } from '@/utils/env'
+import { validatePhotoFile, fileToBase64 } from '@/utils/upload'
 
 export default function PatientForm() {
   const add = usePatients(s => s.add)
@@ -81,14 +83,21 @@ export default function PatientForm() {
 
     setIsLoadingCep(true)
     try {
-      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+      const response = await fetch(getViaCepUrl(cleanCep))
+
+      // Validar se a resposta foi bem-sucedida
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`)
+      }
+
       const data = await response.json()
 
-      if (!data.erro) {
-        setStreet(data.logradouro || '')
-        setNeighborhood(data.bairro || '')
-        setCity(data.localidade || '')
-        setState(data.uf || '')
+      // Validar estrutura da resposta antes de usar
+      if (data && typeof data === 'object' && !data.erro) {
+        setStreet(typeof data.logradouro === 'string' ? data.logradouro : '')
+        setNeighborhood(typeof data.bairro === 'string' ? data.bairro : '')
+        setCity(typeof data.localidade === 'string' ? data.localidade : '')
+        setState(typeof data.uf === 'string' ? data.uf : '')
       } else {
         showToast('CEP não encontrado', 'warning')
       }
@@ -120,12 +129,23 @@ export default function PatientForm() {
     }
   }
 
-  function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setPhotoUrl(String(reader.result))
-    reader.readAsDataURL(file)
+
+    // Validar arquivo antes de processar
+    const validation = validatePhotoFile(file)
+    if (!validation.valid) {
+      showToast(validation.error || 'Erro ao validar foto', 'error')
+      return
+    }
+
+    try {
+      const base64 = await fileToBase64(file)
+      setPhotoUrl(base64)
+    } catch {
+      showToast('Erro ao processar foto', 'error')
+    }
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {

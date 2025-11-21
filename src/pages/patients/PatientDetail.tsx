@@ -39,7 +39,7 @@ export default function PatientDetail() {
   useEffect(() => {
     fetchProcedures()
     fetchItems()
-  }, [])
+  }, [fetchProcedures, fetchItems])
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {

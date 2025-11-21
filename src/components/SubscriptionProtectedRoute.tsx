@@ -37,6 +37,10 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
 
 export const useSubscription = () => useContext(SubscriptionContext)
 
+// Chave para localStorage para sincronizar cache entre abas
+const CACHE_STORAGE_KEY = 'subscription_cache'
+const CACHE_TTL = 2 * 60 * 1000 // 2 minutos (cache mais curto para ser mais responsivo)
+
 // Cache global para evitar verificações repetidas durante navegação
 let subscriptionCache: {
   userId: string | null
@@ -48,11 +52,43 @@ let subscriptionCache: {
   timestamp: number
 } | null = null
 
-const CACHE_TTL = 2 * 60 * 1000 // 2 minutos (cache mais curto para ser mais responsivo)
+// Carregar cache do localStorage ao iniciar
+function loadCacheFromStorage(): typeof subscriptionCache {
+  try {
+    const stored = localStorage.getItem(CACHE_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      // Verificar se cache ainda é válido
+      if (parsed && (Date.now() - parsed.timestamp) < CACHE_TTL) {
+        return parsed
+      }
+    }
+  } catch {
+    // Ignorar erros de parsing
+  }
+  return null
+}
+
+// Salvar cache no localStorage para sincronizar entre abas
+function saveCacheToStorage(cache: typeof subscriptionCache) {
+  try {
+    if (cache) {
+      localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(cache))
+    } else {
+      localStorage.removeItem(CACHE_STORAGE_KEY)
+    }
+  } catch {
+    // Ignorar erros de storage
+  }
+}
+
+// Inicializar cache do localStorage
+subscriptionCache = loadCacheFromStorage()
 
 // Função para invalidar o cache (útil após login)
 export function invalidateSubscriptionCache() {
   subscriptionCache = null
+  saveCacheToStorage(null)
 }
 
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
@@ -117,11 +153,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             const daysDiff = Math.floor((now.getTime() - nextBilling.getTime()) / (1000 * 60 * 60 * 24))
 
             if (daysDiff > 5) {
-              console.warn('⚠️ Assinatura com cobrança atrasada:', {
-                next_billing_date: subscription.next_billing_date,
-                days_late: daysDiff
-              })
-              // Não considerar como ativa se está muito atrasada
+              // Assinatura com cobrança atrasada - não considerar como ativa
               setHasActiveSubscription(false)
               setHasPaidSubscription(false)
               setSubscription(null)
@@ -147,10 +179,6 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           const calculatedTrialEnd = new Date(createdAt)
           calculatedTrialEnd.setDate(calculatedTrialEnd.getDate() + 7) // 7 dias de trial
           trialEndDate = calculatedTrialEnd.toISOString()
-          console.log('📅 Trial calculado com base na data de criação:', {
-            created_at: userData.user.created_at,
-            trial_end: trialEndDate
-          })
         }
 
         if (trialEndDate) {
@@ -223,7 +251,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   // Atualizar cache sempre que os valores mudarem
   useEffect(() => {
     if (!loading && user) {
-      subscriptionCache = {
+      const newCache = {
         userId: user.id,
         hasActiveSubscription,
         hasPaidSubscription,
@@ -232,8 +260,30 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         subscription,
         timestamp: Date.now()
       }
+      subscriptionCache = newCache
+      // Sincronizar com localStorage para outras abas
+      saveCacheToStorage(newCache)
     }
   }, [loading, user, hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription])
+
+  // Escutar mudanças no localStorage de outras abas
+  useEffect(() => {
+    function handleStorageChange(e: StorageEvent) {
+      if (e.key === CACHE_STORAGE_KEY) {
+        const newCache = loadCacheFromStorage()
+        if (newCache && newCache.userId === user?.id) {
+          setHasActiveSubscription(newCache.hasActiveSubscription)
+          setHasPaidSubscription(newCache.hasPaidSubscription)
+          setIsInTrial(newCache.isInTrial)
+          setTrialDaysRemaining(newCache.trialDaysRemaining)
+          setSubscription(newCache.subscription)
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [user?.id])
 
   // Enquanto carrega, mostrar loading
   if (loading) {

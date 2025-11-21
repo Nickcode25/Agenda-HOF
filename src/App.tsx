@@ -35,7 +35,7 @@ export default function App() {
     if (user) {
       fetchCurrentProfile()
     }
-  }, [user])
+  }, [user, fetchCurrentProfile])
 
   // Iniciar polling de notificações
   useEffect(() => {

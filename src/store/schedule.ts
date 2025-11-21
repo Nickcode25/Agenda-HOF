@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Appointment, WaitlistItem } from '@/types/schedule'
 import { supabase } from '@/lib/supabase'
 import { useStock } from './stock'
+import { getErrorMessage } from '@/types/errors'
 
 export type ScheduleState = {
   appointments: Appointment[]
@@ -65,8 +66,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       }))
 
       set({ appointments, loading: false })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
@@ -102,8 +103,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       }))
 
       set({ appointments, loading: false })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
@@ -137,8 +138,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       await get().fetchAppointments()
       set({ loading: false })
       return data.id
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
       return null
     }
   },
@@ -172,8 +173,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
 
       await get().fetchAppointments()
       set({ loading: false })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
@@ -193,8 +194,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
 
       await get().fetchAppointments()
       set({ loading: false })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
@@ -217,8 +218,6 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
           : useProcedures.getState().procedures.find(p => p.name === appointment.procedure)
 
         if (procedure && procedure.stockCategories && procedure.stockCategories.length > 0) {
-          console.log('📦 [STOCK] Buscando produtos do procedimento:', procedure.name)
-
           // Mapear categorias para produtos reais
           productsToSubtract = []
           procedure.stockCategories.forEach(stockCat => {
@@ -242,18 +241,13 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
 
       // Subtrair cada produto do estoque
       if (productsToSubtract.length > 0) {
-        console.log('📦 [STOCK] Subtraindo', productsToSubtract.length, 'produtos do estoque')
-
         for (const product of productsToSubtract) {
           const stockItem = stock.items.find(s => s.id === product.stockItemId)
           if (stockItem) {
-            console.log('📦 [STOCK] Subtraindo', product.quantity, stockItem.unit, 'de', stockItem.name)
             const newQuantity = stockItem.quantity - product.quantity
             await stock.updateQuantity(product.stockItemId, newQuantity >= 0 ? newQuantity : 0)
           }
         }
-      } else {
-        console.log('⚠️ [STOCK] Nenhum produto para subtrair do estoque')
       }
     }
 
@@ -285,8 +279,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       }))
 
       set({ waitlist, loading: false })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
@@ -312,8 +306,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       await get().fetchWaitlist()
       set({ loading: false })
       return data.id
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
       return null
     }
   },
@@ -334,8 +328,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
 
       await get().fetchWaitlist()
       set({ loading: false })
-    } catch (error: any) {
-      set({ error: error.message, loading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false })
     }
   },
 
