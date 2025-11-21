@@ -729,7 +729,9 @@ export default function FinancialReport() {
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h4 className="text-gray-900 font-medium">{item.description}</h4>
+                            <h4 className="text-gray-900 font-medium">
+                              {item.description} - {formatPaymentDescription(item)}
+                            </h4>
                             <span className={`px-2 py-1 ${colorScheme.bg} ${colorScheme.text} text-xs rounded-full border ${colorScheme.border} font-medium`}>
                               {categoryLabels[item.category]}
                             </span>
@@ -754,7 +756,6 @@ export default function FinancialReport() {
                           )}
 
                           <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span className="font-medium">Pagamento: {formatPaymentDescription(item)}</span>
                             <span className="flex items-center gap-1">
                               <Calendar size={14} />
                               {new Date(item.createdAt).toLocaleDateString('pt-BR')}
@@ -855,7 +856,9 @@ export default function FinancialReport() {
                             <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
                               <div className="flex items-center justify-between gap-4">
                                 <div className="flex-1">
-                                  <h4 className="text-gray-900 font-medium mb-1">{item.description}</h4>
+                                  <h4 className="text-gray-900 font-medium mb-1">
+                                    {item.description} - {formatPaymentDescription(item)}
+                                  </h4>
                                   {'items' in item && item.items && item.items.length > 0 && (
                                     <div className="mb-2">
                                       <div className="flex items-center gap-1 text-xs text-gray-600">
@@ -870,7 +873,6 @@ export default function FinancialReport() {
                                     </div>
                                   )}
                                   <div className="flex items-center gap-4 text-sm text-gray-500">
-                                    <span>{formatPaymentDescription(item)}</span>
                                     <span className="flex items-center gap-1">
                                       <Calendar size={14} />
                                       {new Date(item.createdAt).toLocaleDateString('pt-BR')}
