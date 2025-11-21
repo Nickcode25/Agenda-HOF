@@ -407,34 +407,34 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-6 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 py-6 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header Compacto */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => navigate('/planos')}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors group"
           >
-            <div className="p-2 group-hover:bg-gray-800 rounded-lg transition-colors">
+            <div className="p-2 group-hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </div>
             <span className="text-sm font-medium hidden sm:inline">Voltar</span>
           </button>
 
           <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-gray-400">Pagamento Seguro</span>
+            <Lock className="w-4 h-4 text-green-500" />
+            <span className="text-sm text-gray-500">Pagamento Seguro</span>
           </div>
         </div>
 
         {/* Banner informativo para usuário já logado */}
         {userData?.existingUser && (
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
             <div className="flex items-start gap-3">
-              <Check className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="text-blue-400 font-semibold mb-1">Ativação da Assinatura</h3>
-                <p className="text-sm text-gray-300">
+                <h3 className="text-green-700 font-semibold mb-1">Ativação da Assinatura</h3>
+                <p className="text-sm text-gray-600">
                   Você está prestes a ativar sua assinatura {planName}. Após o pagamento, seu acesso será liberado imediatamente!
                 </p>
               </div>
@@ -443,12 +443,12 @@ export default function Checkout() {
         )}
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="text-red-400 font-semibold mb-1">Erro no Pagamento</h3>
-                <p className="text-sm text-gray-300">{error}</p>
+                <h3 className="text-red-700 font-semibold mb-1">Erro no Pagamento</h3>
+                <p className="text-sm text-gray-600">{error}</p>
               </div>
             </div>
           </div>

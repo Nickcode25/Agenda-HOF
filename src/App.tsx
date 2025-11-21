@@ -207,7 +207,7 @@ export default function App() {
   const isExpanded = sidebarOpen || sidebarHovered
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
       <aside
         onMouseEnter={() => setSidebarHovered(true)}
@@ -333,16 +333,16 @@ export default function App() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <header className="lg:hidden h-16 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4">
+        <header className="lg:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-white">
+            <button onClick={() => setSidebarOpen(true)} className="text-gray-500 hover:text-gray-900">
               <Menu size={24} />
             </button>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
                 <span className="text-white font-bold">H</span>
               </div>
-              <h1 className="font-bold text-white">Agenda HOF</h1>
+              <h1 className="font-bold text-gray-900">Agenda HOF</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -351,20 +351,20 @@ export default function App() {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden lg:flex h-16 bg-gray-800 border-b border-gray-700 px-6 items-center justify-between sticky top-0 z-30">
+        <header className="hidden lg:flex h-16 bg-white border-b border-gray-200 px-6 items-center justify-between sticky top-0 z-30 shadow-sm">
           {/* Left: Breadcrumbs */}
           <div className="flex items-center gap-4 flex-1">
             {breadcrumbs && (
               <nav className="flex items-center gap-2 text-sm">
                 {breadcrumbs.map((crumb, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    {index > 0 && <span className="text-gray-600">/</span>}
+                    {index > 0 && <span className="text-gray-400">/</span>}
                     {crumb.isLast ? (
-                      <span className="text-white font-medium">{crumb.name}</span>
+                      <span className="text-gray-900 font-medium">{crumb.name}</span>
                     ) : (
                       <button
                         onClick={() => navigate(crumb.path)}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        className="text-gray-500 hover:text-gray-900 transition-colors"
                       >
                         {crumb.name}
                       </button>
@@ -384,17 +384,17 @@ export default function App() {
             <SubscriptionBadge />
 
             {/* User Menu */}
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-700 dark:border-gray-700">
+            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
               <div className="text-right">
-                <p className="text-sm text-white dark:text-white font-medium">{currentProfile?.displayName || user?.email}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-400">
+                <p className="text-sm text-gray-900 font-medium">{currentProfile?.displayName || user?.email}</p>
+                <p className="text-xs text-gray-500">
                   {currentProfile?.role === 'owner' ? 'Administrador' : 'Funcionário'}
                 </p>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                  className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                   title="Sair"
                 >
                   <LogOut size={20} />

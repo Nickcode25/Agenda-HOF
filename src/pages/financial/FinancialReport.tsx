@@ -5,6 +5,7 @@ import { usePatients } from '@/store/patients'
 import { useSales } from '@/store/sales'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/utils/currency'
+import { formatDateBR } from '@/utils/dateHelpers'
 import {
   DollarSign,
   TrendingUp,
@@ -760,7 +761,7 @@ export default function FinancialReport() {
                           <div className="flex items-center gap-4 text-sm text-gray-600">
                             <span className="flex items-center gap-1">
                               <Calendar size={14} />
-                              {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                              {formatDateBR(item.createdAt.split('T')[0])}
                             </span>
                           </div>
                         </div>
@@ -877,7 +878,7 @@ export default function FinancialReport() {
                                   <div className="flex items-center gap-4 text-sm text-gray-500">
                                     <span className="flex items-center gap-1">
                                       <Calendar size={14} />
-                                      {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                                      {formatDateBR(item.createdAt.split('T')[0])}
                                     </span>
                                   </div>
                                 </div>

@@ -14,11 +14,11 @@ export default function SubscriptionBadge() {
     return (
       <button
         onClick={() => navigate('/planos')}
-        className="flex items-center gap-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 px-3 py-1.5 rounded-full hover:from-blue-500/30 hover:to-purple-500/30 transition-all"
+        className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 px-3 py-1.5 rounded-full hover:from-blue-100 hover:to-purple-100 transition-all"
         title="Período de Teste - Clique para assinar"
       >
-        <Sparkles className="w-4 h-4 text-blue-400" />
-        <span className="text-xs font-semibold text-blue-400">Trial Premium</span>
+        <Sparkles className="w-4 h-4 text-blue-500" />
+        <span className="text-xs font-semibold text-blue-600">Trial Premium</span>
       </button>
     )
   }
@@ -32,11 +32,11 @@ export default function SubscriptionBadge() {
       return (
         <button
           onClick={() => navigate('/app/assinatura')}
-          className="flex items-center gap-2 bg-gradient-to-r from-gray-500/20 to-gray-600/20 border border-gray-500/30 px-3 py-1.5 rounded-full hover:from-gray-500/30 hover:to-gray-600/30 transition-all"
+          className="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 px-3 py-1.5 rounded-full hover:from-gray-100 hover:to-gray-200 transition-all"
           title="Plano Básico - Gerenciar Assinatura"
         >
-          <Clock className="w-4 h-4 text-gray-400" />
-          <span className="text-xs font-semibold text-gray-400">Básico</span>
+          <Clock className="w-4 h-4 text-gray-500" />
+          <span className="text-xs font-semibold text-gray-600">Básico</span>
         </button>
       )
     }
@@ -45,11 +45,11 @@ export default function SubscriptionBadge() {
     return (
       <button
         onClick={() => navigate('/app/assinatura')}
-        className="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 px-3 py-1.5 rounded-full hover:from-orange-500/30 hover:to-yellow-500/30 transition-all"
+        className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 px-3 py-1.5 rounded-full hover:from-orange-100 hover:to-yellow-100 transition-all"
         title="Plano Premium - Gerenciar Assinatura"
       >
-        <Crown className="w-4 h-4 text-orange-400" />
-        <span className="text-xs font-semibold text-orange-400">Premium</span>
+        <Crown className="w-4 h-4 text-orange-500" />
+        <span className="text-xs font-semibold text-orange-600">Premium</span>
       </button>
     )
   }

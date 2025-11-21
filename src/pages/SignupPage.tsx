@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Mail, Lock, User, Phone, ArrowLeft, CheckCircle, Eye, EyeOff, X } from 'lucide-react'
 import { useAuth } from '@/store/auth'
+import { invalidateSubscriptionCache } from '@/components/SubscriptionProtectedRoute'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator'
 import { validateEmail, validatePhone, validatePasswordStrength } from '@/utils/validation'
 import NewLandingPage from './landing/NewLandingPage'
@@ -91,6 +92,8 @@ export default function SignupPage() {
       const success = await signUp(formData.email, formData.password, formData.name, formData.phone)
 
       if (success) {
+        // Invalidar cache de assinatura para garantir verificação fresh do trial
+        invalidateSubscriptionCache()
         // Redirecionar para dentro do app - usuário tem 7 dias de trial gratuito
         navigate('/app/agenda')
       } else {

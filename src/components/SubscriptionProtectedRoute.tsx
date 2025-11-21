@@ -138,7 +138,20 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         }
 
         // 2. Se não tem subscription, verificar período de trial (7 dias grátis)
-        const trialEndDate = userData.user?.user_metadata?.trial_end_date
+        let trialEndDate = userData.user?.user_metadata?.trial_end_date
+
+        // Se não tem trial_end_date definido, calcular com base na data de criação da conta
+        // Isso permite que usuários cadastrados manualmente também tenham trial
+        if (!trialEndDate && userData.user?.created_at) {
+          const createdAt = new Date(userData.user.created_at)
+          const calculatedTrialEnd = new Date(createdAt)
+          calculatedTrialEnd.setDate(calculatedTrialEnd.getDate() + 7) // 7 dias de trial
+          trialEndDate = calculatedTrialEnd.toISOString()
+          console.log('📅 Trial calculado com base na data de criação:', {
+            created_at: userData.user.created_at,
+            trial_end: trialEndDate
+          })
+        }
 
         if (trialEndDate) {
           const trialEnd = new Date(trialEndDate)
@@ -152,6 +165,17 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             setHasActiveSubscription(true) // Durante trial, tem acesso completo
             setHasPaidSubscription(false)  // Mas NÃO é assinatura paga
             setLoading(false)
+
+            // Atualizar cache
+            subscriptionCache = {
+              userId: user.id,
+              hasActiveSubscription: true,
+              hasPaidSubscription: false,
+              isInTrial: true,
+              trialDaysRemaining: daysRemaining,
+              subscription: null,
+              timestamp: Date.now()
+            }
             return
           } else {
             // Trial expirou

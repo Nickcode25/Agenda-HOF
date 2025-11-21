@@ -1,19 +1,16 @@
 import { Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { formatCurrency } from '@/utils/currency'
 
 interface CalendarHeaderProps {
   userName: string
   userPlan: string
   appointmentsToday: number
-  revenueToday: number
 }
 
 export default function CalendarHeader({
   userName,
   userPlan,
-  appointmentsToday,
-  revenueToday
+  appointmentsToday
 }: CalendarHeaderProps) {
   // Gerar iniciais do nome
   const getInitials = (name: string) => {
@@ -50,10 +47,6 @@ export default function CalendarHeader({
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">{appointmentsToday}</div>
             <div className="text-xs text-gray-500">Agendamentos hoje</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-500">{formatCurrency(revenueToday)}</div>
-            <div className="text-xs text-gray-500">Receita hoje</div>
           </div>
         </div>
       </div>

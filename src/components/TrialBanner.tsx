@@ -15,15 +15,15 @@ export default function TrialBanner() {
 
   // Determinar cor baseado nos dias restantes
   const getColorClass = () => {
-    if (trialDaysRemaining <= 2) return 'from-red-500/20 to-orange-500/20 border-red-500/30'
-    if (trialDaysRemaining <= 4) return 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30'
-    return 'from-blue-500/20 to-purple-500/20 border-blue-500/30'
+    if (trialDaysRemaining <= 2) return 'from-red-50 to-orange-50 border-red-200'
+    if (trialDaysRemaining <= 4) return 'from-yellow-50 to-orange-50 border-yellow-200'
+    return 'from-blue-50 to-purple-50 border-blue-200'
   }
 
   const getIconColor = () => {
-    if (trialDaysRemaining <= 2) return 'text-red-400'
-    if (trialDaysRemaining <= 4) return 'text-yellow-400'
-    return 'text-blue-400'
+    if (trialDaysRemaining <= 2) return 'text-red-500'
+    if (trialDaysRemaining <= 4) return 'text-yellow-500'
+    return 'text-blue-500'
   }
 
   const getMessage = () => {
@@ -45,10 +45,10 @@ export default function TrialBanner() {
             )}
           </div>
           <div className="flex-1">
-            <p className="text-white font-medium text-sm">
+            <p className="text-gray-900 font-medium text-sm">
               {getMessage()}
             </p>
-            <p className="text-gray-400 text-xs mt-0.5">
+            <p className="text-gray-500 text-xs mt-0.5">
               Aproveite o acesso completo a todas as funcionalidades
             </p>
           </div>

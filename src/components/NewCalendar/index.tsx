@@ -5,7 +5,6 @@ import { toSaoPauloTime } from '@/utils/timezone'
 import CalendarHeader from './CalendarHeader'
 import CalendarControls from './CalendarControls'
 import WeekGrid from './WeekGrid'
-import UpcomingAppointments from './UpcomingAppointments'
 
 type ViewMode = 'day' | 'week' | 'month'
 
@@ -34,13 +33,8 @@ export default function NewCalendar({
       return isToday(aptDate)
     })
 
-    // Por enquanto, receita é 0 pois Appointment não tem price
-    // No futuro, pode ser calculado a partir dos procedimentos
-    const revenue = 0
-
     return {
-      count: todayAppointments.length,
-      revenue
+      count: todayAppointments.length
     }
   }, [appointments])
 
@@ -56,7 +50,6 @@ export default function NewCalendar({
         userName={userName}
         userPlan={userPlan}
         appointmentsToday={todayStats.count}
-        revenueToday={todayStats.revenue}
       />
 
       {/* Controles de visualização e navegação */}
@@ -68,46 +61,14 @@ export default function NewCalendar({
         onToday={handleToday}
       />
 
-      {/* Layout principal com calendário e sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-4">
-        {/* Calendário */}
-        <div>
-          {viewMode === 'week' && (
-            <WeekGrid
-              currentDate={currentDate}
-              appointments={appointments}
-              onAppointmentClick={onAppointmentClick}
-              onTimeSlotClick={onTimeSlotClick}
-            />
-          )}
-
-          {viewMode === 'day' && (
-            <WeekGrid
-              currentDate={currentDate}
-              appointments={appointments}
-              onAppointmentClick={onAppointmentClick}
-              onTimeSlotClick={onTimeSlotClick}
-            />
-          )}
-
-          {viewMode === 'month' && (
-            <WeekGrid
-              currentDate={currentDate}
-              appointments={appointments}
-              onAppointmentClick={onAppointmentClick}
-              onTimeSlotClick={onTimeSlotClick}
-            />
-          )}
-        </div>
-
-        {/* Sidebar com próximos agendamentos */}
-        <div className="hidden lg:block">
-          <UpcomingAppointments
-            appointments={appointments}
-            onAppointmentClick={onAppointmentClick}
-          />
-        </div>
-      </div>
+      {/* Calendário em tela cheia */}
+      <WeekGrid
+        currentDate={currentDate}
+        appointments={appointments}
+        onAppointmentClick={onAppointmentClick}
+        onTimeSlotClick={onTimeSlotClick}
+        viewMode={viewMode}
+      />
     </div>
   )
 }

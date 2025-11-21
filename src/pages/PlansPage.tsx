@@ -112,17 +112,17 @@ export default function PlansPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
-          <p className="text-white text-lg">Carregando planos...</p>
+          <p className="text-gray-600 text-lg">Carregando planos...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black py-6 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 py-6 px-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
@@ -134,7 +134,7 @@ export default function PlansPage() {
         <div className="mb-4">
           <button
             onClick={() => navigate('/app/agenda')}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium text-sm">Voltar para Agenda</span>
@@ -143,10 +143,10 @@ export default function PlansPage() {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-5xl md:text-6xl font-black text-white mb-4 tracking-tight">
+          <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight">
             Escolha seu Plano
           </h1>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Selecione o plano ideal para a sua clínica e comece a automatizar a sua gestão
           </p>
         </div>
@@ -162,10 +162,10 @@ export default function PlansPage() {
             return (
               <div
                 key={plan.id}
-                className={`relative bg-gray-800/50 backdrop-blur-xl rounded-2xl p-6 border transition-all duration-300 hover:scale-105 ${
+                className={`relative bg-white backdrop-blur-xl rounded-2xl p-6 border transition-all duration-300 hover:scale-105 shadow-lg ${
                   isPremium
-                    ? 'border-orange-500/50 shadow-2xl shadow-orange-500/20'
-                    : 'border-gray-700/50'
+                    ? 'border-orange-500/50 shadow-xl shadow-orange-500/10'
+                    : 'border-gray-200'
                 }`}
               >
                 {/* Popular Badge - APENAS para Premium */}
@@ -185,7 +185,7 @@ export default function PlansPage() {
                       ? 'bg-gradient-to-br from-orange-500 to-orange-600'
                       : isPro
                       ? 'bg-gradient-to-br from-orange-400 to-orange-500'
-                      : 'bg-gradient-to-br from-gray-600 to-gray-700'
+                      : 'bg-gradient-to-br from-gray-400 to-gray-500'
                   }`}>
                     <Crown className="w-7 h-7 text-white" />
                   </div>
@@ -193,22 +193,22 @@ export default function PlansPage() {
 
                 {/* Plan Name & Description */}
                 <div className="text-center mb-5">
-                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">{plan.description}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed">{plan.description}</p>
                 </div>
 
                 {/* Price */}
-                <div className="text-center mb-5 pb-5 border-b border-gray-700/50">
+                <div className="text-center mb-5 pb-5 border-b border-gray-200">
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-gray-400 text-base">R$</span>
-                    <span className="text-5xl font-bold text-white">
+                    <span className="text-gray-500 text-base">R$</span>
+                    <span className="text-5xl font-bold text-gray-900">
                       {Math.floor(plan.price)}
                     </span>
-                    <span className="text-gray-400 text-base">
+                    <span className="text-gray-500 text-base">
                       ,{String(Math.round((plan.price % 1) * 100)).padStart(2, '0')}
                     </span>
                   </div>
-                  <p className="text-gray-400 text-sm mt-2">por mês</p>
+                  <p className="text-gray-500 text-sm mt-2">por mês</p>
                 </div>
 
                 {/* Features List */}
@@ -216,7 +216,7 @@ export default function PlansPage() {
                   {features.map((feature, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <div className={`flex-shrink-0 mt-0.5 ${
-                        feature.included ? 'text-green-400' : 'text-gray-600'
+                        feature.included ? 'text-green-500' : 'text-gray-300'
                       }`}>
                         {feature.included ? (
                           <Check className="w-4 h-4" />
@@ -225,7 +225,7 @@ export default function PlansPage() {
                         )}
                       </div>
                       <span className={`text-sm leading-relaxed ${
-                        feature.included ? 'text-gray-300' : 'text-gray-600'
+                        feature.included ? 'text-gray-700' : 'text-gray-400'
                       }`}>
                         {feature.text}
                       </span>
@@ -239,7 +239,7 @@ export default function PlansPage() {
                   className={`w-full py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                     isPremium
                       ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30'
-                      : 'bg-gray-700/50 hover:bg-gray-700 text-white border border-gray-600'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
                   }`}
                 >
                   <span>Assinar {plan.name}</span>
@@ -253,7 +253,7 @@ export default function PlansPage() {
         {/* No plans message */}
         {plans.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">Nenhum plano disponível no momento.</p>
+            <p className="text-gray-500 text-lg">Nenhum plano disponível no momento.</p>
           </div>
         )}
       </div>
