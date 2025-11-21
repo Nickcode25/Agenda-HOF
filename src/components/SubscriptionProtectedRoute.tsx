@@ -48,7 +48,12 @@ let subscriptionCache: {
   timestamp: number
 } | null = null
 
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutos
+const CACHE_TTL = 2 * 60 * 1000 // 2 minutos (cache mais curto para ser mais responsivo)
+
+// Função para invalidar o cache (útil após login)
+export function invalidateSubscriptionCache() {
+  subscriptionCache = null
+}
 
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
   const { user } = useAuth()
@@ -80,17 +85,30 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
       }
 
       try {
-        // 1. Verificar se usuário tem assinatura ativa
-        const { data: subscription } = await supabase
-          .from('user_subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle()
+        // Buscar todas as informações em paralelo (mais rápido)
+        const [subscriptionResult, userDataResult, courtesyResult] = await Promise.all([
+          supabase
+            .from('user_subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .maybeSingle(),
+          supabase.auth.getUser(),
+          supabase
+            .from('courtesy_users')
+            .select('*')
+            .eq('auth_user_id', user.id)
+            .eq('is_active', true)
+            .maybeSingle()
+        ])
 
+        const subscription = subscriptionResult.data
+        const userData = userDataResult.data
+        const courtesyUser = courtesyResult.data
+
+        // 1. Verificar se usuário tem assinatura ativa
         if (subscription) {
           // Verificar se a assinatura realmente está válida
-          // Se next_billing_date passou e não há pagamento, pode estar vencida
           if (subscription.next_billing_date) {
             const nextBilling = new Date(subscription.next_billing_date)
             const now = new Date()
@@ -120,7 +138,6 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         }
 
         // 2. Se não tem subscription, verificar período de trial (7 dias grátis)
-        const { data: userData } = await supabase.auth.getUser()
         const trialEndDate = userData.user?.user_metadata?.trial_end_date
 
         if (trialEndDate) {
@@ -137,24 +154,16 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             setLoading(false)
             return
           } else {
-            // Trial expirou - usuário precisa assinar
-            console.log('⏰ Trial expirado para usuário:', user.email)
+            // Trial expirou
             setIsInTrial(false)
             setTrialDaysRemaining(0)
             setHasActiveSubscription(false)
             setHasPaidSubscription(false)
-            // Não retornar aqui - continuar verificando cortesia
+            // Continuar verificando cortesia
           }
         }
 
-        // 3. Se não tem subscription nem trial, verificar se é usuário cortesia ativo
-        const { data: courtesyUser } = await supabase
-          .from('courtesy_users')
-          .select('*')
-          .eq('auth_user_id', user.id)
-          .eq('is_active', true)
-          .maybeSingle()
-
+        // 3. Verificar se é usuário cortesia ativo
         if (courtesyUser) {
           // Verificar se tem data de expiração
           if (courtesyUser.expires_at) {

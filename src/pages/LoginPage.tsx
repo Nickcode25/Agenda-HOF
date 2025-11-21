@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, X } from 'lucide-react'
 import { useAuth } from '@/store/auth'
+import { invalidateSubscriptionCache } from '@/components/SubscriptionProtectedRoute'
 import NewLandingPage from './landing/NewLandingPage'
 
 export default function LoginPage() {
@@ -44,6 +45,9 @@ export default function LoginPage() {
       const success = await signIn(formData.email, formData.password)
 
       if (success) {
+        // Invalidar cache de assinatura para forçar nova verificação
+        invalidateSubscriptionCache()
+
         // Salvar apenas email se "Lembrar de mim" estiver marcado
         if (rememberMe) {
           localStorage.setItem('savedEmail', formData.email)
