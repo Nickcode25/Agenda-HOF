@@ -100,14 +100,25 @@ export default function AddProcedureModal({
   }
 
   const handleSplitValueChange = (index: number, value: string) => {
-    // Atualizar o valor de exibição (mantém o que o usuário digita)
+    // Remover tudo exceto dígitos
+    const digits = value.replace(/\D/g, '')
+
+    // Formatar como moeda
+    const amount = Number(digits) / 100
+    const formatted = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount)
+
+    // Atualizar o valor de exibição
     const newSplitValues = [...splitValues]
-    newSplitValues[index] = value
+    newSplitValues[index] = formatted
     setSplitValues(newSplitValues)
 
-    // Parsear e atualizar o valor numérico para os cálculos
-    const numericValue = parseCurrency(value)
-    updatePaymentSplit(index, 'amount', numericValue)
+    // Atualizar o valor numérico para os cálculos
+    updatePaymentSplit(index, 'amount', amount)
   }
 
   const formatCurrencyInput = (value: string): string => {

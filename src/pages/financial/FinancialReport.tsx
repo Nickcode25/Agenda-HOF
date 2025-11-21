@@ -198,17 +198,35 @@ export default function FinancialReport() {
       )
 
       completedProcedures.forEach(proc => {
-        items.push({
-          id: proc.id,
-          amount: proc.totalValue,
-          description: `${proc.procedureName} - ${patient.name}`,
-          category: 'procedure',
-          createdAt: proc.completedAt!,
-          paymentMethod: proc.paymentMethod as PaymentMethod,
-          paymentType: proc.paymentType,
-          installments: proc.installments,
-          patientName: patient.name
-        })
+        // Se tem múltiplas formas de pagamento, criar entrada para cada uma
+        if (proc.paymentSplits && proc.paymentSplits.length > 0) {
+          proc.paymentSplits.forEach((split, idx) => {
+            items.push({
+              id: `${proc.id}-split-${idx}`,
+              amount: split.amount,
+              description: `${proc.procedureName} - ${patient.name}`,
+              category: 'procedure',
+              createdAt: proc.completedAt!,
+              paymentMethod: split.method as PaymentMethod,
+              paymentType: split.installments && split.installments > 1 ? 'installment' : 'cash',
+              installments: split.installments,
+              patientName: patient.name
+            })
+          })
+        } else {
+          // Forma de pagamento única (legado)
+          items.push({
+            id: proc.id,
+            amount: proc.totalValue,
+            description: `${proc.procedureName} - ${patient.name}`,
+            category: 'procedure',
+            createdAt: proc.completedAt!,
+            paymentMethod: proc.paymentMethod as PaymentMethod,
+            paymentType: proc.paymentType,
+            installments: proc.installments,
+            patientName: patient.name
+          })
+        }
       })
     })
 

@@ -619,14 +619,31 @@ export default function PatientDetail() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            {proc.paymentMethod && (
-                              <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded">
-                                {proc.paymentMethod === 'cash' ? 'Dinheiro' :
-                                 proc.paymentMethod === 'pix' ? 'PIX' :
-                                 proc.installments > 1 ? `Cartão ${proc.installments}x` : 'Cartão à Vista'}
-                              </span>
-                            )}
+                          <div className="text-xs text-gray-500">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-gray-600 font-medium">Forma de pagamento:</span>
+                            </div>
+                            {proc.paymentSplits && proc.paymentSplits.length > 0 ? (
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {proc.paymentSplits.map((split, idx) => (
+                                  <span key={idx} className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded font-medium">
+                                    {formatCurrency(split.amount)} {
+                                      split.method === 'cash' ? 'Dinheiro' :
+                                      split.method === 'pix' ? 'PIX' :
+                                      split.installments && split.installments > 1 ? `Cartão ${split.installments}x` : 'Cartão à Vista'
+                                    }
+                                  </span>
+                                ))}
+                              </div>
+                            ) : proc.paymentMethod ? (
+                              <div className="mb-2">
+                                <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded font-medium">
+                                  {proc.paymentMethod === 'cash' ? 'Dinheiro' :
+                                   proc.paymentMethod === 'pix' ? 'PIX' :
+                                   proc.installments > 1 ? `Cartão ${proc.installments}x` : 'Cartão à Vista'}
+                                </span>
+                              </div>
+                            ) : null}
                             <span>Realizado em: {new Date(proc.completedAt || proc.createdAt).toLocaleDateString('pt-BR')}</span>
                           </div>
 
