@@ -25,7 +25,7 @@ type SubscriptionStore = {
   removeSubscription: (id: string) => Promise<void>
 
   // Payments
-  addPayment: (subscriptionId: string, payment: Omit<SubscriptionPayment, 'id' | 'subscriptionId'>) => Promise<void>
+  addPayment: (subscriptionId: string, payment: Omit<SubscriptionPayment, 'id' | 'subscriptionId'>, skipFetch?: boolean) => Promise<void>
   confirmPayment: (subscriptionId: string, paymentId: string, paymentMethod: string) => Promise<void>
   generateNextPayment: (subscriptionId: string) => Promise<void>
   simulatePixPayment: (subscriptionId: string) => Promise<boolean>
@@ -332,14 +332,13 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   // ============================================
   // PAYMENTS
   // ============================================
-  addPayment: async (subscriptionId, paymentData) => {
+  addPayment: async (subscriptionId, paymentData, skipFetch = false) => {
     set({ loading: true, error: null })
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const insertData: any = {
-        user_id: user.id,
         subscription_id: subscriptionId,
         amount: paymentData.amount,
         due_date: paymentData.dueDate,
@@ -356,7 +355,10 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
 
       if (error) throw error
 
-      await get().fetchSubscriptions()
+      // Só faz fetch se não foi pedido para pular (útil para operações em lote)
+      if (!skipFetch) {
+        await get().fetchSubscriptions()
+      }
       set({ loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })

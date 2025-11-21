@@ -177,23 +177,24 @@ export default function PlanDetail() {
       return
     }
 
-    // Executar operações em paralelo para maior velocidade
-    await Promise.all([
-      // 1. Adicionar o primeiro pagamento como PAGO
-      addPayment(newSubscriptionId, {
-        amount: subscriptionPrice,
-        dueDate: paymentDate,
-        status: 'paid',
-        paidAt: new Date().toISOString(),
-        paymentMethod: paymentMethod,
-      }),
-      // 2. Adicionar a próxima cobrança como PENDENTE
-      addPayment(newSubscriptionId, {
-        amount: subscriptionPrice,
-        dueDate: nextBillingDateStr,
-        status: 'pending',
-      })
-    ])
+    // Adicionar pagamentos SEQUENCIALMENTE (evitar condição de corrida)
+    // skipFetch=true para evitar múltiplos fetches durante a operação
+
+    // 1. Adicionar o primeiro pagamento como PAGO
+    await addPayment(newSubscriptionId, {
+      amount: subscriptionPrice,
+      dueDate: paymentDate,
+      status: 'paid',
+      paidAt: new Date().toISOString(),
+      paymentMethod: paymentMethod,
+    }, true) // skipFetch=true
+
+    // 2. Adicionar a próxima cobrança como PENDENTE
+    await addPayment(newSubscriptionId, {
+      amount: subscriptionPrice,
+      dueDate: nextBillingDateStr,
+      status: 'pending',
+    }, false) // skipFetch=false - faz o fetch final aqui
 
     setToast({ message: `${patientName} adicionado ao plano com sucesso!`, type: 'success' })
   }

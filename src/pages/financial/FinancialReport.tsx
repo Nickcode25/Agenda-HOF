@@ -135,16 +135,18 @@ export default function FinancialReport() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // Buscar pagamentos via patient_subscriptions (que tem user_id)
       const { data, error } = await supabase
         .from('subscription_payments')
         .select(`
           *,
-          user_subscriptions (
+          patient_subscriptions!inner (
+            user_id,
             patient_name,
             plan_name
           )
         `)
-        .eq('user_id', user.id)
+        .eq('patient_subscriptions.user_id', user.id)
         .eq('status', 'paid')
 
       if (error) {
@@ -154,8 +156,8 @@ export default function FinancialReport() {
 
       const payments = (data || []).map(p => ({
         ...p,
-        patient_name: p.user_subscriptions?.patient_name,
-        plan_name: p.user_subscriptions?.plan_name
+        patient_name: p.patient_subscriptions?.patient_name,
+        plan_name: p.patient_subscriptions?.plan_name
       }))
 
       setSubscriptionPayments(payments)
