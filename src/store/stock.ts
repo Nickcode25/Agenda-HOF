@@ -254,37 +254,47 @@ export const useStock = create<StockStore>()(
       },
 
       removeStock: async (itemId, quantity, reason, procedureId, patientId) => {
-        // Força buscar os dados mais recentes do Supabase
-        await get().fetchItems(true)
+        // Primeiro verificar localmente se tem estoque
+        let item = get().getItem(itemId)
 
-        const item = get().getItem(itemId)
+        // Calcular quantidade real a descontar baseado em dosesPerUnit
+        // Se dosesPerUnit = 4, então cada aplicação desconta 1/4 = 0.25 unidades
+        const actualQuantityToRemove = item?.dosesPerUnit && item.dosesPerUnit > 1
+          ? quantity / item.dosesPerUnit
+          : quantity
+
+        // Se não encontrou localmente ou estoque insuficiente, buscar dados atualizados
+        if (!item || item.quantity < actualQuantityToRemove) {
+          await get().fetchItems(true)
+          item = get().getItem(itemId)
+        }
+
         if (!item) {
           console.error('❌ [STOCK] Item não encontrado:', itemId)
           return false
         }
 
-        // Calcular quantidade real a descontar baseado em dosesPerUnit
-        // Se dosesPerUnit = 4, então cada aplicação desconta 1/4 = 0.25 unidades
-        const actualQuantityToRemove = item.dosesPerUnit && item.dosesPerUnit > 1
+        // Recalcular com dados atualizados
+        const finalQuantityToRemove = item.dosesPerUnit && item.dosesPerUnit > 1
           ? quantity / item.dosesPerUnit
           : quantity
 
-        if (item.quantity < actualQuantityToRemove) {
-          console.error('❌ [STOCK] Estoque insuficiente:', item.name, 'Disponível:', item.quantity, 'Solicitado:', actualQuantityToRemove)
+        if (item.quantity < finalQuantityToRemove) {
+          console.error('❌ [STOCK] Estoque insuficiente:', item.name, 'Disponível:', item.quantity, 'Solicitado:', finalQuantityToRemove)
           return false
         }
 
-        console.log('📦 [STOCK] Removendo', actualQuantityToRemove, 'de', item.name, '- Estoque atual:', item.quantity,
+        console.log('📦 [STOCK] Removendo', finalQuantityToRemove, 'de', item.name, '- Estoque atual:', item.quantity,
           item.dosesPerUnit ? `(${quantity} aplicações de ${item.dosesPerUnit} doses)` : '')
 
         await get().updateItem(itemId, {
-          quantity: item.quantity - actualQuantityToRemove
+          quantity: item.quantity - finalQuantityToRemove
         })
 
         get().addMovement({
           stockItemId: itemId,
           type: 'out',
-          quantity: actualQuantityToRemove,
+          quantity: finalQuantityToRemove,
           reason,
           procedureId,
           patientId

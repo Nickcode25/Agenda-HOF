@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const { MercadoPagoConfig, PreApproval, Payment } = require('mercadopago')
 const { createClient } = require('@supabase/supabase-js')
+const { Resend } = require('resend')
 
 // Carregar .env apenas se não estiver em produção
 if (process.env.NODE_ENV !== 'production') {
@@ -44,6 +45,11 @@ app.use(express.json())
 
 // Configuração do Mercado Pago
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN
+
+// Configuração do Resend
+const resend = new Resend(process.env.RESEND_API_KEY)
+const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev'
+const APP_NAME = 'Agenda HOF'
 
 // Debug de variáveis
 console.log('🔍 Debug de variáveis:')
@@ -588,6 +594,212 @@ app.post('/api/mercadopago/create-card-token', async (req, res) => {
   }
 })
 
+// ============================================
+// ROTAS DE EMAIL (RESEND)
+// ============================================
+
+// Enviar código de verificação
+app.post('/api/email/send-verification', async (req, res) => {
+  try {
+    const { to, code, userName } = req.body
+
+    if (!to || !code || !userName) {
+      return res.status(400).json({ error: 'Campos obrigatórios: to, code, userName' })
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                  <tr>
+                    <td style="background: linear-gradient(to right, #fb923c, #f97316, #ea580c); padding: 2px 0;"></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 40px 40px 20px; text-align: center;">
+                      <h1 style="margin: 0; color: #111827; font-size: 28px; font-weight: bold;">${APP_NAME}</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 40px 40px;">
+                      <p style="margin: 0 0 20px; color: #374151; font-size: 16px;">Olá <strong>${userName}</strong>,</p>
+                      <p style="margin: 0 0 30px; color: #374151; font-size: 16px;">Bem-vindo ao ${APP_NAME}! Para confirmar seu cadastro, utilize o código de verificação abaixo:</p>
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+                        <tr>
+                          <td align="center" style="background-color: #fff7ed; border: 2px solid #fb923c; border-radius: 12px; padding: 30px;">
+                            <div style="font-size: 36px; font-weight: bold; color: #ea580c; letter-spacing: 8px; font-family: 'Courier New', monospace;">${code}</div>
+                          </td>
+                        </tr>
+                      </table>
+                      <p style="margin: 0 0 20px; color: #6b7280; font-size: 14px;">Este código é válido por <strong>15 minutos</strong>.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0; color: #6b7280; font-size: 12px;">© ${new Date().getFullYear()} ${APP_NAME}. Todos os direitos reservados.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `
+
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: [to],
+      subject: `${APP_NAME} - Confirme seu cadastro`,
+      html
+    })
+
+    if (error) {
+      console.error('Erro ao enviar email:', error)
+      return res.status(500).json({ error: 'Erro ao enviar email', details: error })
+    }
+
+    console.log('✅ Email de verificação enviado:', data)
+    res.json({ success: true, data })
+  } catch (error) {
+    console.error('Erro no endpoint de email:', error)
+    res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
+// Enviar confirmação de assinatura
+app.post('/api/email/send-subscription', async (req, res) => {
+  try {
+    const { to, userName, planName, planPrice, startDate } = req.body
+
+    if (!to || !userName || !planName || !planPrice || !startDate) {
+      return res.status(400).json({ error: 'Campos obrigatórios: to, userName, planName, planPrice, startDate' })
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
+                  <tr><td style="background: linear-gradient(to right, #fb923c, #f97316, #ea580c); padding: 2px 0;"></td></tr>
+                  <tr><td style="padding: 40px 40px 20px; text-align: center;"><h1 style="margin: 0; color: #111827; font-size: 28px;">${APP_NAME}</h1></td></tr>
+                  <tr>
+                    <td style="padding: 0 40px 40px;">
+                      <p style="margin: 0 0 20px; color: #374151; font-size: 16px;">Olá <strong>${userName}</strong>,</p>
+                      <p style="margin: 0 0 30px; color: #374151; font-size: 16px;">Sua assinatura foi confirmada com sucesso! 🎉</p>
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px; background-color: #fff7ed; border-radius: 12px; border: 1px solid #fb923c; overflow: hidden;">
+                        <tr>
+                          <td style="padding: 20px;">
+                            <h2 style="margin: 0 0 15px; color: #ea580c; font-size: 20px;">Detalhes da Assinatura</h2>
+                            <table width="100%" cellpadding="8" cellspacing="0">
+                              <tr><td style="color: #6b7280; font-size: 14px;">Plano:</td><td style="color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${planName}</td></tr>
+                              <tr><td style="color: #6b7280; font-size: 14px;">Valor:</td><td style="color: #16a34a; font-size: 14px; font-weight: 600; text-align: right;">${planPrice}</td></tr>
+                              <tr><td style="color: #6b7280; font-size: 14px;">Início:</td><td style="color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${startDate}</td></tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr><td style="background-color: #f9fafb; padding: 30px 40px; text-align: center;"><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${new Date().getFullYear()} ${APP_NAME}</p></td></tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `
+
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: [to],
+      subject: `${APP_NAME} - Assinatura Confirmada: ${planName}`,
+      html
+    })
+
+    if (error) {
+      console.error('Erro ao enviar email:', error)
+      return res.status(500).json({ error: 'Erro ao enviar email', details: error })
+    }
+
+    console.log('✅ Email de assinatura enviado:', data)
+    res.json({ success: true, data })
+  } catch (error) {
+    console.error('Erro no endpoint de email:', error)
+    res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
+// Enviar reset de senha
+app.post('/api/email/send-password-reset', async (req, res) => {
+  try {
+    const { to, userName, resetLink } = req.body
+
+    if (!to || !userName || !resetLink) {
+      return res.status(400).json({ error: 'Campos obrigatórios: to, userName, resetLink' })
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
+                  <tr><td style="background: linear-gradient(to right, #fb923c, #f97316, #ea580c); padding: 2px 0;"></td></tr>
+                  <tr><td style="padding: 40px; text-align: center;"><h1 style="margin: 0; color: #111827; font-size: 28px;">${APP_NAME}</h1></td></tr>
+                  <tr>
+                    <td style="padding: 0 40px 40px;">
+                      <p style="margin: 0 0 20px; color: #374151; font-size: 16px;">Olá <strong>${userName}</strong>,</p>
+                      <p style="margin: 0 0 30px; color: #374151; font-size: 16px;">Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo:</p>
+                      <div style="margin: 30px 0; text-align: center;">
+                        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(to right, #f97316, #ea580c); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Redefinir Senha</a>
+                      </div>
+                      <p style="margin: 0 0 20px; color: #6b7280; font-size: 14px;">Este link é válido por <strong>1 hora</strong>.</p>
+                    </td>
+                  </tr>
+                  <tr><td style="background-color: #f9fafb; padding: 30px 40px; text-align: center;"><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${new Date().getFullYear()} ${APP_NAME}</p></td></tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `
+
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: [to],
+      subject: `${APP_NAME} - Redefinição de Senha`,
+      html
+    })
+
+    if (error) {
+      console.error('Erro ao enviar email:', error)
+      return res.status(500).json({ error: 'Erro ao enviar email', details: error })
+    }
+
+    console.log('✅ Email de reset enviado:', data)
+    res.json({ success: true, data })
+  } catch (error) {
+    console.error('Erro no endpoint de email:', error)
+    res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log('\n🚀 Backend Agenda HOF iniciado!')
@@ -600,5 +812,9 @@ app.listen(PORT, () => {
   console.log('  - GET  /api/mercadopago/subscription/:id')
   console.log('  - POST /api/mercadopago/webhook ⭐ Notificações')
   console.log('  - POST /api/mercadopago/create-card-token (dev only)')
+  console.log('\n✅ Endpoints disponíveis (Email):')
+  console.log('  - POST /api/email/send-verification ⭐ Código de verificação')
+  console.log('  - POST /api/email/send-subscription ⭐ Confirmação de assinatura')
+  console.log('  - POST /api/email/send-password-reset ⭐ Reset de senha')
   console.log('\n💡 Use Ctrl+C para parar o servidor\n')
 })

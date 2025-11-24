@@ -4,7 +4,10 @@ import { Mail, Lock, User, Phone, ArrowLeft, CheckCircle, Eye, EyeOff, X } from 
 import { useAuth } from '@/store/auth'
 import { invalidateSubscriptionCache } from '@/components/SubscriptionProtectedRoute'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator'
+import VerificationCodeModal from '@/components/VerificationCodeModal'
 import { validateEmail, validatePhone, validatePasswordStrength } from '@/utils/validation'
+import { sendVerificationCode } from '@/services/email/resend.service'
+import { saveVerificationCode, verifyCode } from '@/services/email/verification.service'
 import NewLandingPage from './landing/NewLandingPage'
 
 export default function SignupPage() {
@@ -23,6 +26,15 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Email verification
+  const [showVerificationModal, setShowVerificationModal] = useState(false)
+  const [pendingUserData, setPendingUserData] = useState<{
+    email: string
+    password: string
+    name: string
+    phone: string
+  } | null>(null)
 
   // Validações em tempo real
   const [emailValidation, setEmailValidation] = useState<{ isValid: boolean; message: string } | null>(null)
@@ -88,23 +100,94 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      // Criar conta do usuário
-      const success = await signUp(formData.email, formData.password, formData.name, formData.phone)
+      // Normalizar email (remover espaços e converter para minúsculas)
+      const normalizedEmail = formData.email.trim().toLowerCase()
 
-      if (success) {
-        // Invalidar cache de assinatura para garantir verificação fresh do trial
-        invalidateSubscriptionCache()
-        // Redirecionar para dentro do app - usuário tem 7 dias de trial gratuito
-        navigate('/app/agenda')
-      } else {
-        setError('Erro ao criar conta. Este email pode já estar cadastrado.')
+      // Gerar e enviar código de verificação
+      const verificationCode = saveVerificationCode(normalizedEmail)
+
+      const emailResult = await sendVerificationCode({
+        to: normalizedEmail,
+        code: verificationCode,
+        userName: formData.name
+      })
+
+      if (!emailResult.success) {
+        setError('Erro ao enviar email de verificação. Verifique seu email e tente novamente.')
+        setLoading(false)
+        return
       }
+
+      // Salvar dados do usuário para criar conta após verificação
+      setPendingUserData({
+        email: normalizedEmail,
+        password: formData.password,
+        name: formData.name,
+        phone: formData.phone
+      })
+
+      // Mostrar modal de verificação
+      setShowVerificationModal(true)
+      setLoading(false)
     } catch (err: any) {
       console.error('Erro no cadastro:', err)
       setError(err.message || 'Erro ao criar conta. Tente novamente.')
-    } finally {
       setLoading(false)
     }
+  }
+
+  const handleVerifyCode = async (code: string): Promise<boolean> => {
+    if (!pendingUserData) return false
+
+    const isValid = verifyCode(pendingUserData.email, code)
+
+    if (isValid) {
+      // Código válido - criar conta do usuário
+      try {
+        const success = await signUp(
+          pendingUserData.email,
+          pendingUserData.password,
+          pendingUserData.name,
+          pendingUserData.phone
+        )
+
+        if (success) {
+          // Invalidar cache de assinatura para garantir verificação fresh do trial
+          invalidateSubscriptionCache()
+          // Redirecionar para dentro do app - usuário tem 7 dias de trial gratuito
+          setTimeout(() => {
+            navigate('/app/agenda')
+          }, 1500)
+          return true
+        } else {
+          setError('Erro ao criar conta. Este email pode já estar cadastrado.')
+          return false
+        }
+      } catch (err: any) {
+        console.error('Erro ao criar conta:', err)
+        setError(err.message || 'Erro ao criar conta. Tente novamente.')
+        return false
+      }
+    }
+
+    return false
+  }
+
+  const handleResendCode = async () => {
+    if (!pendingUserData) return
+
+    const verificationCode = saveVerificationCode(pendingUserData.email)
+
+    await sendVerificationCode({
+      to: pendingUserData.email,
+      code: verificationCode,
+      userName: pendingUserData.name
+    })
+  }
+
+  const handleCloseVerificationModal = () => {
+    setShowVerificationModal(false)
+    setPendingUserData(null)
   }
 
   const formatPhone = (value: string) => {
@@ -355,6 +438,16 @@ export default function SignupPage() {
       </div>
       {/* Fim do container scrollável */}
       </div>
+
+      {/* Modal de Verificação de Email */}
+      <VerificationCodeModal
+        show={showVerificationModal}
+        email={pendingUserData?.email || ''}
+        onVerify={handleVerifyCode}
+        onResend={handleResendCode}
+        onClose={handleCloseVerificationModal}
+        loading={loading}
+      />
     </div>
   )
 }

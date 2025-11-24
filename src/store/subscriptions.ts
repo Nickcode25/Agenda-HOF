@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { SubscriptionPlan, Subscription, SubscriptionPayment } from '../types/subscription'
 import { supabase } from '@/lib/supabase'
+import { sendSubscriptionConfirmation } from '@/services/email/resend.service'
+import { formatCurrency } from '@/utils/currency'
 
 type SubscriptionStore = {
   plans: SubscriptionPlan[]
@@ -266,7 +268,38 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       await get().fetchSubscriptions()
       set({ loading: false })
 
-      return data?.id
+      if (!data?.id) {
+        throw new Error('Falha ao criar assinatura: ID não retornado')
+      }
+
+      // Tentar enviar email de confirmação de assinatura (não bloqueia a operação se falhar)
+      try {
+        // Buscar informações do paciente para obter email
+        const { data: patientData } = await supabase
+          .from('patients')
+          .select('email, name')
+          .eq('id', subscriptionData.patientId)
+          .single()
+
+        if (patientData?.email) {
+          const startDateFormatted = new Date(subscriptionData.startDate).toLocaleDateString('pt-BR')
+
+          await sendSubscriptionConfirmation({
+            to: patientData.email,
+            userName: subscriptionData.patientName,
+            planName: subscriptionData.planName,
+            planPrice: formatCurrency(subscriptionData.price),
+            startDate: startDateFormatted
+          })
+
+          console.log('Email de confirmação de assinatura enviado com sucesso')
+        }
+      } catch (emailError) {
+        console.error('Erro ao enviar email de confirmação de assinatura:', emailError)
+        // Não propaga o erro - assinatura foi criada com sucesso
+      }
+
+      return data.id
     } catch (error: any) {
       set({ error: error.message, loading: false })
       console.error('Erro ao adicionar assinatura:', error)
@@ -419,8 +452,22 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       })
 
       // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
-      const dateStr = subscription.nextBillingDate.split('T')[0]
+      // Validar formato da data antes de fazer split
+      const billingDate = subscription.nextBillingDate || ''
+      const dateStr = billingDate.includes('T') ? billingDate.split('T')[0] : billingDate
+
+      if (!dateStr || !dateStr.includes('-')) {
+        console.error('Formato de data inválido:', subscription.nextBillingDate)
+        return
+      }
+
       const [year, month, day] = dateStr.split('-').map(Number)
+
+      // Validar se os valores são números válidos
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        console.error('Data inválida:', dateStr)
+        return
+      }
 
       // Adicionar 1 mês mantendo o mesmo dia
       let nextMonth = month + 1
@@ -430,7 +477,12 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
         nextYear += 1
       }
 
-      const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      // Verificar se o dia é válido para o próximo mês
+      // Ex: 31 de janeiro -> 28/29 de fevereiro
+      const daysInNextMonth = new Date(nextYear, nextMonth, 0).getDate()
+      const validDay = Math.min(day, daysInNextMonth)
+
+      const nextBillingDateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`
 
       // Atualizar próxima data de cobrança
       await updateSubscription(subscriptionId, {
@@ -451,17 +503,28 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
     const success = Math.random() > 0.05
 
     if (success) {
-      const { subscriptions, confirmPayment } = get()
-      const subscription = subscriptions.find(s => s.id === subscriptionId)
+      try {
+        const { subscriptions, confirmPayment } = get()
+        const subscription = subscriptions.find(s => s.id === subscriptionId)
 
-      if (subscription) {
+        if (!subscription) {
+          console.error('Assinatura não encontrada:', subscriptionId)
+          return false
+        }
+
         const pendingPayment = subscription.payments.find(
           p => p.status === 'pending' || p.status === 'overdue'
         )
 
-        if (pendingPayment) {
-          await confirmPayment(subscriptionId, pendingPayment.id, 'PIX')
+        if (!pendingPayment) {
+          console.warn('Nenhum pagamento pendente encontrado para:', subscriptionId)
+          return false
         }
+
+        await confirmPayment(subscriptionId, pendingPayment.id, 'PIX')
+      } catch (error) {
+        console.error('Erro ao confirmar pagamento PIX:', error)
+        return false
       }
     }
 

@@ -109,12 +109,17 @@ export default function Checkout() {
     }
   }, [userData, planPrice])
 
-  // Calcular preço final com desconto (arredondado para 2 casas decimais)
-  const finalPrice = Math.round(planPrice * (1 - couponDiscount / 100) * 100) / 100
-
   // Validar valor mínimo (Mercado Pago pode recusar valores muito baixos)
   const MINIMUM_SUBSCRIPTION_VALUE = 10.00
-  const isFinalPriceTooLow = finalPrice < MINIMUM_SUBSCRIPTION_VALUE
+
+  // Calcular preço final com desconto (arredondado para 2 casas decimais)
+  // Primeiro calcula o desconto, depois arredonda uma única vez
+  const discountMultiplier = 1 - couponDiscount / 100
+  const discountedPrice = planPrice * discountMultiplier
+  // Garantir que nunca seja menor que o mínimo ou negativo
+  const finalPrice = Math.max(MINIMUM_SUBSCRIPTION_VALUE, Math.round(discountedPrice * 100) / 100)
+
+  const isFinalPriceTooLow = discountedPrice < MINIMUM_SUBSCRIPTION_VALUE
 
   // Validar cupom
   const validateCoupon = async () => {
@@ -156,6 +161,19 @@ export default function Checkout() {
       // Validar número de usos
       if (coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses) {
         setCouponError('Este cupom atingiu o limite de usos')
+        return
+      }
+
+      // Validar desconto não pode ser >= 100%
+      if (coupon.discount_percentage >= 100) {
+        setCouponError('Desconto inválido')
+        return
+      }
+
+      // Validar se o preço final não fica abaixo do mínimo
+      const priceAfterDiscount = planPrice * (1 - coupon.discount_percentage / 100)
+      if (priceAfterDiscount < MINIMUM_SUBSCRIPTION_VALUE) {
+        setCouponError(`Desconto deixa o valor abaixo do mínimo (R$ ${MINIMUM_SUBSCRIPTION_VALUE.toFixed(2)})`)
         return
       }
 

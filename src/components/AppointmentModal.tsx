@@ -4,6 +4,7 @@ import { useConfirm } from '@/hooks/useConfirm'
 import { usePatients } from '@/store/patients'
 import { getWhatsAppUrl } from '@/utils/env'
 import { formatInSaoPaulo } from '@/utils/timezone'
+import { useToast } from '@/hooks/useToast'
 
 type AppointmentModalProps = {
   appointment: Appointment | null
@@ -14,6 +15,7 @@ type AppointmentModalProps = {
 export default function AppointmentModal({ appointment, onClose, onDelete }: AppointmentModalProps) {
   const { confirm, ConfirmDialog } = useConfirm()
   const patients = usePatients(s => s.patients)
+  const { show: showToast } = useToast()
 
   if (!appointment) return null
 
@@ -44,7 +46,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete }: App
 
   const handleWhatsApp = () => {
     if (!patientPhone) {
-      alert('Paciente não possui telefone cadastrado')
+      showToast('Paciente não possui telefone cadastrado', 'warning')
       return
     }
 

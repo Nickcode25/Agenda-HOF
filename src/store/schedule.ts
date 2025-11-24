@@ -77,12 +77,17 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      // Validar parâmetros antes de usar
+      if (!startDate || !endDate) {
+        throw new Error('Datas de início e fim são obrigatórias')
+      }
+
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
         .eq('user_id', user.id)
         .gte('start', startDate)
-        .lte('start', endDate + 'T23:59:59')
+        .lte('start', `${endDate}T23:59:59`)
         .order('start', { ascending: true })
 
       if (error) throw error

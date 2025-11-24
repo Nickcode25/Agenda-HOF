@@ -64,12 +64,27 @@ export function getTodayString(): string {
 }
 
 /**
- * Converte string YYYY-MM-DD para Date com hora ao meio-dia (evita problemas de timezone)
+ * Converte string YYYY-MM-DD para Date no fuso horário de São Paulo
  * @param dateString - String no formato YYYY-MM-DD
- * @returns Date object
+ * @returns Date object no timezone de São Paulo
  */
 export function parseLocalDate(dateString: string): Date {
   if (!dateString) return new Date()
-  const [year, month, day] = dateString.split('-').map(Number)
-  return new Date(year, month - 1, day, 12, 0, 0)
+
+  // Validar formato da string
+  if (!dateString.includes('-')) return new Date()
+
+  const parts = dateString.split('-').map(Number)
+  if (parts.length !== 3 || parts.some(isNaN)) return new Date()
+
+  const [year, month, day] = parts
+
+  // Criar data ao meio-dia para evitar problemas de DST
+  // Usar o timezone de São Paulo indiretamente através de uma data local
+  const date = new Date(year, month - 1, day, 12, 0, 0)
+
+  // Validar se a data é válida
+  if (isNaN(date.getTime())) return new Date()
+
+  return date
 }

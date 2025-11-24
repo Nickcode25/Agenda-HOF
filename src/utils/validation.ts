@@ -124,5 +124,117 @@ export function validatePhone(phone: string): {
     return { isValid: false, message: 'DDD inválido' }
   }
 
+  // Validar se telefone celular começa com 9
+  if (numbers.length === 11) {
+    const firstDigit = numbers.charAt(2)
+    if (firstDigit !== '9') {
+      return { isValid: false, message: 'Celular deve começar com 9' }
+    }
+  }
+
+  // Verificar sequências inválidas (ex: 999999999)
+  const phoneNumber = numbers.substring(2)
+  if (/^(\d)\1+$/.test(phoneNumber)) {
+    return { isValid: false, message: 'Telefone inválido' }
+  }
+
   return { isValid: true, message: 'Telefone válido' }
+}
+
+/**
+ * Valida CPF brasileiro
+ */
+export function validateCPF(cpf: string): {
+  isValid: boolean
+  message: string
+} {
+  // Remove caracteres não numéricos
+  const numbers = cpf.replace(/\D/g, '')
+
+  if (!numbers) {
+    return { isValid: false, message: 'CPF é obrigatório' }
+  }
+
+  if (numbers.length !== 11) {
+    return { isValid: false, message: 'CPF deve ter 11 dígitos' }
+  }
+
+  // Verifica se todos os dígitos são iguais (ex: 111.111.111-11)
+  if (/^(\d)\1+$/.test(numbers)) {
+    return { isValid: false, message: 'CPF inválido' }
+  }
+
+  // Validação do primeiro dígito verificador
+  let sum = 0
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(numbers.charAt(i)) * (10 - i)
+  }
+  let remainder = (sum * 10) % 11
+  if (remainder === 10 || remainder === 11) remainder = 0
+  if (remainder !== parseInt(numbers.charAt(9))) {
+    return { isValid: false, message: 'CPF inválido' }
+  }
+
+  // Validação do segundo dígito verificador
+  sum = 0
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(numbers.charAt(i)) * (11 - i)
+  }
+  remainder = (sum * 10) % 11
+  if (remainder === 10 || remainder === 11) remainder = 0
+  if (remainder !== parseInt(numbers.charAt(10))) {
+    return { isValid: false, message: 'CPF inválido' }
+  }
+
+  return { isValid: true, message: 'CPF válido' }
+}
+
+/**
+ * Formata CPF para exibição (XXX.XXX.XXX-XX)
+ */
+export function formatCPF(cpf: string): string {
+  const numbers = cpf.replace(/\D/g, '')
+  if (numbers.length !== 11) return cpf
+  return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+}
+
+/**
+ * Valida CEP brasileiro
+ */
+export function validateCEP(cep: string): {
+  isValid: boolean
+  message: string
+} {
+  // Remove caracteres não numéricos
+  const numbers = cep.replace(/\D/g, '')
+
+  if (!numbers) {
+    return { isValid: false, message: 'CEP é obrigatório' }
+  }
+
+  if (numbers.length !== 8) {
+    return { isValid: false, message: 'CEP deve ter 8 dígitos' }
+  }
+
+  // Verifica se todos os dígitos são iguais
+  if (/^(\d)\1+$/.test(numbers)) {
+    return { isValid: false, message: 'CEP inválido' }
+  }
+
+  // CEPs válidos começam entre 01000-000 e 99999-999
+  const cepNumber = parseInt(numbers)
+  if (cepNumber < 1000000 || cepNumber > 99999999) {
+    return { isValid: false, message: 'CEP inválido' }
+  }
+
+  return { isValid: true, message: 'CEP válido' }
+}
+
+/**
+ * Formata CEP para exibição (XXXXX-XXX)
+ */
+export function formatCEP(cep: string): string {
+  const numbers = cep.replace(/\D/g, '')
+  if (numbers.length !== 8) return cep
+  return numbers.replace(/(\d{5})(\d{3})/, '$1-$2')
 }

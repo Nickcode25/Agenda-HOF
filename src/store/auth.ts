@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import type { AdminUser } from '@/types/admin'
 import { getErrorMessage } from '@/types/errors'
+import { sendPasswordReset } from '@/services/email/resend.service'
 
 type AuthState = {
   user: User | null
@@ -11,6 +12,7 @@ type AuthState = {
   loading: boolean
   error: string | null
   _checkingSession: boolean // Flag interno para evitar race conditions
+  _sessionCheckPromise: Promise<void> | null // Promise para aguardar verificação em andamento
 
   // Actions
   signIn: (email: string, password: string) => Promise<boolean>
@@ -30,6 +32,7 @@ export const useAuth = create<AuthState>()(
       loading: false,
       error: null,
       _checkingSession: false,
+      _sessionCheckPromise: null,
 
       signIn: async (email: string, password: string) => {
         set({ loading: true, error: null })
@@ -141,56 +144,71 @@ export const useAuth = create<AuthState>()(
       },
 
       checkSession: async () => {
-        // Evitar race condition - se já está verificando, não executar novamente
-        if (get()._checkingSession) {
-          return
+        // Se já existe uma verificação em andamento, aguardar ela terminar
+        const existingPromise = get()._sessionCheckPromise
+        if (existingPromise) {
+          return existingPromise
         }
 
-        set({ loading: true, _checkingSession: true })
-        try {
-          const { data: { session } } = await supabase.auth.getSession()
+        // Criar nova promise para esta verificação
+        const checkPromise = (async () => {
+          set({ loading: true, _checkingSession: true })
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
 
-          if (!session) {
-            set({ user: null, adminUser: null, loading: false, _checkingSession: false })
-            return
-          }
-
-          // Verificar se é admin (opcional - não força logout)
-          const { data: adminData } = await supabase
-            .from('admin_users')
-            .select('*')
-            .eq('email', session.user.email)
-            .maybeSingle()
-
-          let adminUser: AdminUser | null = null
-
-          if (adminData) {
-            adminUser = {
-              id: adminData.id,
-              email: adminData.email,
-              fullName: adminData.full_name,
-              role: adminData.role,
-              createdAt: adminData.created_at,
-              updatedAt: adminData.updated_at,
+            if (!session) {
+              set({ user: null, adminUser: null, loading: false, _checkingSession: false, _sessionCheckPromise: null })
+              return
             }
-          }
 
-          set({
-            user: session.user,
-            adminUser,
-            loading: false,
-            _checkingSession: false,
-          })
-        } catch (error) {
-          set({ error: getErrorMessage(error), loading: false, _checkingSession: false })
-        }
+            // Verificar se é admin (opcional - não força logout)
+            const { data: adminData } = await supabase
+              .from('admin_users')
+              .select('*')
+              .eq('email', session.user.email)
+              .maybeSingle()
+
+            let adminUser: AdminUser | null = null
+
+            if (adminData) {
+              adminUser = {
+                id: adminData.id,
+                email: adminData.email,
+                fullName: adminData.full_name,
+                role: adminData.role,
+                createdAt: adminData.created_at,
+                updatedAt: adminData.updated_at,
+              }
+            }
+
+            set({
+              user: session.user,
+              adminUser,
+              loading: false,
+              _checkingSession: false,
+              _sessionCheckPromise: null,
+            })
+          } catch (error) {
+            set({ error: getErrorMessage(error), loading: false, _checkingSession: false, _sessionCheckPromise: null })
+          }
+        })()
+
+        set({ _sessionCheckPromise: checkPromise })
+        return checkPromise
       },
 
       resetPassword: async (email: string) => {
         set({ loading: true, error: null })
         try {
-          // Usar VITE_SITE_URL se configurado, senão usar window.location.origin
-          const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin
+          // Buscar informações do usuário para obter o nome
+          const { data: userData } = await supabase
+            .from('users')
+            .select('name')
+            .eq('email', email)
+            .single()
+
+          // Gerar link de reset usando Supabase
+          const siteUrl = import.meta.env.VITE_APP_URL || window.location.origin
           const redirectUrl = `${siteUrl}/reset-password`
 
           const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -198,6 +216,23 @@ export const useAuth = create<AuthState>()(
           })
 
           if (error) throw error
+
+          // Enviar email customizado com Resend (não bloqueia se falhar)
+          try {
+            if (data && userData?.name) {
+              // Criar link de reset (Supabase envia token por email, nós enviamos o link direto)
+              await sendPasswordReset({
+                to: email,
+                userName: userData.name,
+                resetLink: redirectUrl
+              })
+
+              console.log('Email customizado de reset de senha enviado com sucesso')
+            }
+          } catch (emailError) {
+            console.error('Erro ao enviar email customizado:', emailError)
+            // Não propaga o erro - Supabase já enviou o email padrão
+          }
 
           set({ loading: false })
           return true

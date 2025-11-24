@@ -376,11 +376,12 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
               (Date.now() - new Date(sale.due_date).getTime()) / (1000 * 60 * 60 * 24)
             )
 
+            const totalAmount = sale.total_amount ?? 0
             await get().createNotification({
               type: 'payment_overdue',
               priority: daysOverdue > 7 ? 'urgent' : 'high',
               title: 'Pagamento Atrasado',
-              message: `Venda para ${sale.professional_name} está ${daysOverdue} dias atrasada (R$ ${sale.total_amount.toFixed(2)})`,
+              message: `Venda para ${sale.professional_name || 'Profissional'} está ${daysOverdue} dias atrasada (R$ ${totalAmount.toFixed(2)})`,
               actionUrl: '/app/vendas',
               relatedId: sale.id
             })

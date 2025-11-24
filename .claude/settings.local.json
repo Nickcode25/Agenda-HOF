@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nConverte interface para modo light e melhora calendário\n\n- Converte toda a aplicação de dark mode para light mode\n- Adiciona horário de início e término nos cards de agendamento\n- Remove estatísticas de receita do cabeçalho do calendário\n- Melhora layout da visualização diária do calendário\n- Corrige bug do período trial para novos cadastros\n- Implementa troca de visualização dia/semana/mês no calendário\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash(winget install:*)",
+      "Bash(choco install:*)",
+      "Bash(cmd.exe /c \"refreshenv && node --version\")",
+      "Bash(cmd.exe /c \"\"\"C:\\Program Files\\nodejs\\node.exe\"\" --version\")",
+      "Bash(powershell -Command:*)",
+      "Bash(npm install:*)",
+      "Bash(test:*)",
+      "Bash(node server.js:*)"
+    ]
+  }
+}

@@ -42,7 +42,10 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const success = await signIn(formData.email, formData.password)
+      // Normalizar email (remover espaços e converter para minúsculas)
+      const normalizedEmail = formData.email.trim().toLowerCase()
+
+      const success = await signIn(normalizedEmail, formData.password)
 
       if (success) {
         // Invalidar cache de assinatura para forçar nova verificação
@@ -50,7 +53,7 @@ export default function LoginPage() {
 
         // Salvar apenas email se "Lembrar de mim" estiver marcado
         if (rememberMe) {
-          localStorage.setItem('savedEmail', formData.email)
+          localStorage.setItem('savedEmail', normalizedEmail)
           localStorage.setItem('rememberMe', 'true')
         } else {
           // Remover email salvo se não marcar "Lembrar de mim"
