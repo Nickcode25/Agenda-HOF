@@ -46,7 +46,7 @@ export default function SalesList() {
       case 'paid':
         return { icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', label: 'Pago', dot: 'bg-green-500' }
       case 'pending':
-        return { icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', label: 'Pendente', dot: 'bg-yellow-500' }
+        return { icon: Clock, color: 'text-yellow-600', bg: 'bg-orange-50', border: 'border-yellow-200', label: 'Pendente', dot: 'bg-orange-500' }
       case 'overdue':
         return { icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', label: 'Vencido', dot: 'bg-red-500' }
       default:
@@ -83,8 +83,8 @@ export default function SalesList() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200">
-                <ShoppingCart size={24} className="text-amber-600" />
+              <div className="p-2.5 bg-orange-50 rounded-xl border border-orange-200">
+                <ShoppingCart size={24} className="text-orange-600" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Vendas de Produtos</h1>
@@ -107,7 +107,7 @@ export default function SalesList() {
             </Link>
             <Link
               to="nova"
-              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
+              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
             >
               <Plus size={18} />
               Nova Venda
@@ -120,8 +120,8 @@ export default function SalesList() {
           {/* Faturamento Total */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-amber-600">Faturamento Total</span>
-              <DollarSign size={18} className="text-amber-500" />
+              <span className="text-sm font-medium text-orange-600">Faturamento Total</span>
+              <DollarSign size={18} className="text-orange-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(totalRevenue)}</div>
             <div className="flex items-center gap-1 text-sm">
@@ -173,13 +173,13 @@ export default function SalesList() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar por profissional, produto ou ID da venda..."
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm min-w-[160px]"
+              className="bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm min-w-[160px]"
             >
               <option value="">Todos os status</option>
               <option value="paid">Pago</option>
@@ -192,8 +192,8 @@ export default function SalesList() {
         {/* Sales List */}
         {filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-200">
-              <ShoppingCart size={32} className="text-amber-500" />
+            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-200">
+              <ShoppingCart size={32} className="text-orange-500" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma venda encontrada</h3>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
@@ -201,7 +201,7 @@ export default function SalesList() {
             </p>
             <Link
               to="nova"
-              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
             >
               <Plus size={18} />
               Nova Venda
@@ -215,10 +215,10 @@ export default function SalesList() {
               return (
                 <div key={sale.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden border-l-4 border-l-amber-400 hover:shadow-md transition-all">
                   {/* Header da venda - Fundo amarelo claro */}
-                  <div className="bg-amber-50 px-6 py-4 border-b border-amber-100">
+                  <div className="bg-orange-50 px-6 py-4 border-b border-orange-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                           {sale.professionalName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
                         </div>
                         <div>
@@ -238,11 +238,11 @@ export default function SalesList() {
                       <div key={item.id} className={`py-3 ${index !== sale.items.length - 1 ? 'border-b border-gray-100' : ''}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <ShoppingCart size={16} className="text-amber-500" />
+                            <ShoppingCart size={16} className="text-orange-500" />
                             <span className="font-medium text-gray-900">{item.stockItemName}</span>
                           </div>
                           <div className="text-right">
-                            <div className="text-amber-600 font-semibold">{formatCurrency(item.totalPrice)}</div>
+                            <div className="text-orange-600 font-semibold">{formatCurrency(item.totalPrice)}</div>
                           </div>
                         </div>
                         <div className="text-sm text-gray-500 ml-6">Quantidade: {item.quantity}</div>
@@ -251,12 +251,12 @@ export default function SalesList() {
                   </div>
 
                   {/* Footer - Detalhes da venda */}
-                  <div className="bg-yellow-50 px-6 py-3 border-t border-yellow-100">
+                  <div className="bg-orange-50 px-6 py-3 border-t border-orange-100">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">
-                          <Calendar size={14} className="text-amber-600" />
-                          <span className="text-amber-700 font-medium">Data:</span>
+                          <Calendar size={14} className="text-orange-600" />
+                          <span className="text-orange-700 font-medium">Data:</span>
                           <span className="text-gray-900">{formatDateTimeBRSafe(sale.createdAt)}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -283,7 +283,7 @@ export default function SalesList() {
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/app/vendas/editar/${sale.id}`}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all border border-gray-200 hover:border-amber-200"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-100 rounded-lg transition-all border border-gray-200 hover:border-orange-300"
                       >
                         <Edit size={16} />
                         <span className="text-sm font-medium">Editar</span>

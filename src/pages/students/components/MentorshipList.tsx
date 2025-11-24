@@ -22,7 +22,7 @@ export default function MentorshipList({ mentorships, onUpdateStatus, onRemove }
   return (
     <div className="space-y-3">
       {mentorships.map(ment => (
-        <div key={ment.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-purple-200 transition-colors">
+        <div key={ment.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-orange-200 transition-colors">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
@@ -32,7 +32,7 @@ export default function MentorshipList({ mentorships, onUpdateStatus, onRemove }
                   <Circle size={18} className="text-gray-400" />
                 )}
                 <h4 className="font-semibold text-gray-900">{ment.mentorshipName}</h4>
-                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
                   {ment.quantity}x
                 </span>
               </div>
@@ -58,7 +58,7 @@ export default function MentorshipList({ mentorships, onUpdateStatus, onRemove }
               <select
                 value={ment.status}
                 onChange={(e) => onUpdateStatus(ment.id, e.target.value as PlannedMentorship['status'])}
-                className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20"
+                className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
               >
                 <option value="pending">Pendente</option>
                 <option value="in_progress">Em Andamento</option>
@@ -75,10 +75,10 @@ export default function MentorshipList({ mentorships, onUpdateStatus, onRemove }
         </div>
       ))}
 
-      <div className="mt-4 p-4 bg-purple-50 rounded-xl border border-purple-100">
+      <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-gray-700">Total do Planejamento:</span>
-          <span className="text-xl font-bold text-purple-600">
+          <span className="text-xl font-bold text-orange-600">
             {formatCurrency(mentorships.reduce((sum, m) => sum + m.totalValue, 0))}
           </span>
         </div>

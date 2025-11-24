@@ -79,7 +79,7 @@ export default function StudentsList() {
         title="Alunos"
         subtitle="Gerencie os alunos de mentoria"
         stats={[
-          { label: 'Total de Alunos', value: stats.total, icon: GraduationCap, color: 'text-purple-500' },
+          { label: 'Total de Alunos', value: stats.total, icon: GraduationCap, color: 'text-orange-500' },
           { label: 'Alunos Ativos', value: stats.activeCount, icon: CheckSquare, color: 'text-green-500' },
           { label: 'Mentorias Concluídas', value: stats.completedMentorships, icon: BookOpen, color: 'text-blue-500' }
         ]}
@@ -87,7 +87,7 @@ export default function StudentsList() {
           label: 'Novo Aluno',
           icon: UserPlus,
           href: '/app/alunos/novo',
-          className: 'bg-purple-500 hover:bg-purple-600'
+          className: 'bg-orange-500 hover:bg-orange-600'
         }}
       />
 
@@ -103,7 +103,7 @@ export default function StudentsList() {
       {/* Students List */}
       {loading ? (
         <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-500">Carregando alunos...</p>
         </div>
       ) : filtered.length === 0 ? (
@@ -117,7 +117,7 @@ export default function StudentsList() {
                   label: 'Novo Aluno',
                   icon: UserPlus,
                   href: '/app/alunos/novo',
-                  className: 'bg-purple-500 hover:bg-purple-600'
+                  className: 'bg-orange-500 hover:bg-orange-600'
                 }
               : undefined
           }
@@ -137,7 +137,7 @@ export default function StudentsList() {
               return (
                 <div
                   key={student.id}
-                  className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-purple-200 transition-all group"
+                  className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-orange-200 transition-all group"
                 >
                   <Link to={`/app/alunos/${student.id}`} className="block p-5">
                     <div className="flex items-start gap-4">
@@ -149,7 +149,7 @@ export default function StudentsList() {
                           className="h-14 w-14 rounded-lg object-cover border border-gray-100"
                         />
                       ) : (
-                        <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0">
+                        <div className="h-14 w-14 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
                           <span className="text-white font-bold text-lg">{getInitials(student.name)}</span>
                         </div>
                       )}
@@ -157,7 +157,7 @@ export default function StudentsList() {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-purple-600 transition-colors">
+                          <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-orange-600 transition-colors">
                             {student.name}
                           </h3>
                         </div>
@@ -177,13 +177,13 @@ export default function StudentsList() {
                         <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                           {student.phone && (
                             <div className="flex items-center gap-1">
-                              <Phone size={14} className="text-purple-500" />
+                              <Phone size={14} className="text-orange-500" />
                               <span>{student.phone}</span>
                             </div>
                           )}
                           {student.city && (
                             <div className="flex items-center gap-1">
-                              <MapPin size={14} className="text-purple-500" />
+                              <MapPin size={14} className="text-orange-500" />
                               <span>
                                 {student.city}, {student.state}
                               </span>
@@ -192,7 +192,7 @@ export default function StudentsList() {
                         </div>
                       </div>
 
-                      <ChevronRight size={20} className="text-gray-400 group-hover:text-purple-500 transition-colors" />
+                      <ChevronRight size={20} className="text-gray-400 group-hover:text-orange-500 transition-colors" />
                     </div>
                   </Link>
 

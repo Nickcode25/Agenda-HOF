@@ -114,8 +114,8 @@ export default function StockList() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 rounded-xl">
-              <Package size={28} className="text-emerald-600" />
+            <div className="p-3 bg-orange-50 rounded-xl">
+              <Package size={28} className="text-orange-600" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Estoque</h1>
@@ -133,7 +133,7 @@ export default function StockList() {
             </Link>
             <Link
               to="/app/estoque/novo"
-              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all"
+              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all"
             >
               <Plus size={18} />
               Adicionar Produto
@@ -145,7 +145,7 @@ export default function StockList() {
         <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <div className="flex items-center gap-2 mb-1">
-              <Package size={16} className="text-emerald-600" />
+              <Package size={16} className="text-orange-600" />
               <span className="text-sm text-gray-600">Total de Produtos</span>
             </div>
             <div className="text-xl font-bold text-gray-900">{stats.total}</div>
@@ -183,7 +183,7 @@ export default function StockList() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar produtos..."
-            className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-12 pr-4 py-3 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-12 pr-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
           />
         </div>
       </div>
@@ -212,7 +212,7 @@ export default function StockList() {
           onClick={() => setCategoryFilter('')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             !categoryFilter
-              ? 'bg-emerald-500 text-white shadow-sm'
+              ? 'bg-orange-500 text-white shadow-sm'
               : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
           }`}
         >
@@ -224,7 +224,7 @@ export default function StockList() {
             onClick={() => setCategoryFilter(category)}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
               categoryFilter === category
-                ? 'bg-emerald-500 text-white shadow-sm'
+                ? 'bg-orange-500 text-white shadow-sm'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
             }`}
           >
@@ -236,8 +236,8 @@ export default function StockList() {
       {/* Stock Grid */}
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Package size={32} className="text-emerald-500" />
+          <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Package size={32} className="text-orange-500" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum produto encontrado</h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
@@ -245,7 +245,7 @@ export default function StockList() {
           </p>
           <Link
             to="/app/estoque/novo"
-            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all"
+            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all"
           >
             <Plus size={18} />
             Adicionar Produto
@@ -257,11 +257,11 @@ export default function StockList() {
             const stockStatus = getStockStatus(item)
 
             return (
-              <div key={item.id} className={`bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 ${stockStatus.status === 'ok' ? 'border-l-emerald-500' : stockStatus.status === 'low' ? 'border-l-yellow-500' : 'border-l-red-500'} p-5 hover:shadow-md transition-all`}>
+              <div key={item.id} className={`bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 ${stockStatus.status === 'ok' ? 'border-l-orange-500' : stockStatus.status === 'low' ? 'border-l-yellow-500' : 'border-l-red-500'} p-5 hover:shadow-md transition-all`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-medium">
+                      <span className="text-xs px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full font-medium">
                         {item.category}
                       </span>
                     </div>
@@ -300,7 +300,7 @@ export default function StockList() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Valor total:</span>
-                    <span className="text-emerald-600 font-bold">
+                    <span className="text-orange-600 font-bold">
                       {formatCurrency(item.quantity * item.costPrice)}
                     </span>
                   </div>

@@ -30,7 +30,7 @@ export default function CompletedMentorshipList({ mentorships, onRemove }: Compl
               <div className="flex items-center gap-3 mb-2">
                 <CheckCircle size={18} className="text-green-500" />
                 <h4 className="font-semibold text-gray-900">{ment.mentorshipName}</h4>
-                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
                   {ment.quantity}x
                 </span>
               </div>

@@ -282,7 +282,7 @@ export default function App() {
               <Scissors size={22} className="flex-shrink-0"/>
               <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Procedimentos</span>
             </NavLink>
-            <NavLink to="/app/alunos" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Alunos">
+            <NavLink to="/app/alunos" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Alunos">
               <GraduationCap size={22} className="flex-shrink-0"/>
               <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Alunos</span>
             </NavLink>
@@ -299,7 +299,7 @@ export default function App() {
                   <ShoppingCart size={22} className="flex-shrink-0"/>
                   <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Venda de Produtos</span>
                 </NavLink>
-                <NavLink to="/app/despesas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Despesas">
+                <NavLink to="/app/despesas" className={({isActive})=>`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30':'text-gray-400 hover:bg-gray-700 hover:text-white'}`} title="Despesas">
                   <Receipt size={22} className="flex-shrink-0"/>
                   <span className={`font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
                 </NavLink>

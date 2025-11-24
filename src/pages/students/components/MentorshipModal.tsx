@@ -126,7 +126,7 @@ export default function MentorshipModal({
                 }}
                 onChange={handleCustomValueChange}
                 placeholder="R$ 0,00"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-green-600 font-bold text-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-green-600 font-bold text-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               />
               <p className="text-xs text-gray-500 mt-1">Digite o valor da mentoria</p>
             </div>
@@ -137,7 +137,7 @@ export default function MentorshipModal({
                 value={mentorshipNotes}
                 onChange={(e) => setMentorshipNotes(e.target.value)}
                 placeholder="Ex: modalidade, cronograma..."
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
                 rows={3}
               />
             </div>
@@ -153,7 +153,7 @@ export default function MentorshipModal({
           </button>
           <button
             onClick={onSubmit}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40"
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
           >
             {mentorshipType === 'enrollment' ? 'Adicionar Inscrição' : 'Adicionar Mentoria'}
           </button>

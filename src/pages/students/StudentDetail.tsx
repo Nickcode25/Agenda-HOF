@@ -36,7 +36,7 @@ export default function StudentDetail() {
         <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
           <GraduationCap size={48} className="mx-auto mb-4 text-gray-300" />
           <p className="text-gray-500 mb-4">Aluno não encontrado</p>
-          <Link to="/app/alunos" className="text-purple-600 hover:text-purple-500 font-medium">
+          <Link to="/app/alunos" className="text-orange-600 hover:text-orange-500 font-medium">
             Voltar para lista de alunos
           </Link>
         </div>
@@ -196,7 +196,7 @@ export default function StudentDetail() {
           <div className="flex gap-2">
             <Link
               to={`/app/alunos/${student.id}/editar`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-medium transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors shadow-sm"
             >
               <Edit size={18} />
               Editar
@@ -214,7 +214,7 @@ export default function StudentDetail() {
         {/* Card do Aluno */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           {/* Barra de status */}
-          <div className="h-1.5 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600"></div>
+          <div className="h-1.5 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600"></div>
 
           <div className="p-6 lg:p-8">
             <div className="flex flex-col lg:flex-row lg:items-start gap-6">
@@ -224,11 +224,11 @@ export default function StudentDetail() {
                   <img
                     src={student.photoUrl}
                     alt={student.name}
-                    className="h-24 w-24 lg:h-32 lg:w-32 rounded-2xl object-cover border-2 border-purple-200"
+                    className="h-24 w-24 lg:h-32 lg:w-32 rounded-2xl object-cover border-2 border-orange-200"
                   />
                 ) : (
-                  <div className="h-24 w-24 lg:h-32 lg:w-32 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-200 flex items-center justify-center">
-                    <span className="text-3xl lg:text-4xl font-bold text-purple-600">{getInitials(student.name)}</span>
+                  <div className="h-24 w-24 lg:h-32 lg:w-32 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 border-2 border-orange-200 flex items-center justify-center">
+                    <span className="text-3xl lg:text-4xl font-bold text-orange-600">{getInitials(student.name)}</span>
                   </div>
                 )}
               </div>
@@ -269,12 +269,12 @@ export default function StudentDetail() {
 
               {/* Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:w-48">
-                <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 text-center">
+                <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-1">
-                    <BookOpen size={16} className="text-purple-500" />
+                    <BookOpen size={16} className="text-orange-500" />
                     <span className="text-sm text-gray-600">Mentorias</span>
                   </div>
-                  <p className="text-2xl font-bold text-purple-600">{completedMentorships.length}</p>
+                  <p className="text-2xl font-bold text-orange-600">{completedMentorships.length}</p>
                 </div>
                 <div className="bg-green-50 border border-green-100 rounded-xl p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-1">
@@ -292,18 +292,18 @@ export default function StudentDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Mentorias Planejadas */}
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 bg-purple-50 border-b border-purple-100">
+            <div className="px-6 py-4 bg-orange-50 border-b border-orange-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-white border border-purple-200 rounded-lg shadow-sm">
-                    <Clock size={18} className="text-purple-500" />
+                  <div className="p-2 bg-white border border-orange-200 rounded-lg shadow-sm">
+                    <Clock size={18} className="text-orange-500" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">Mentorias Planejadas</h3>
                 </div>
                 <div className="relative">
                   <button
                     onClick={() => setShowMentorshipMenu(!showMentorshipMenu)}
-                    className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-xl font-medium text-sm shadow-sm transition-all"
+                    className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl font-medium text-sm shadow-sm transition-all"
                   >
                     <Plus size={16} />
                     Mentoria

@@ -42,8 +42,8 @@ export default function PlansList() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-purple-50 rounded-xl border border-purple-200">
-                <CreditCard size={24} className="text-purple-600" />
+              <div className="p-2.5 bg-orange-50 rounded-xl border border-orange-200">
+                <CreditCard size={24} className="text-orange-600" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Planos de Mensalidade</h1>
@@ -53,7 +53,7 @@ export default function PlansList() {
           </div>
           <Link
             to="/app/mensalidades/planos/novo"
-            className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
+            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
           >
             <Plus size={18} />
             Novo Plano
@@ -63,10 +63,10 @@ export default function PlansList() {
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           {/* Planos Ativos */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-orange-500">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-purple-600">Planos Ativos</span>
-              <Crown size={18} className="text-purple-500" />
+              <span className="text-sm font-medium text-orange-600">Planos Ativos</span>
+              <Crown size={18} className="text-orange-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{activePlans}</div>
             <div className="text-sm text-gray-500">Disponíveis</div>
@@ -106,8 +106,8 @@ export default function PlansList() {
         {/* Lista de Planos */}
         {plans.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
-              <CreditCard size={32} className="text-purple-500" />
+            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-200">
+              <CreditCard size={32} className="text-orange-500" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Nenhum plano cadastrado
@@ -117,7 +117,7 @@ export default function PlansList() {
             </p>
             <Link
               to="/app/mensalidades/planos/novo"
-              className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
             >
               <Plus size={18} />
               Criar Primeiro Plano
@@ -133,7 +133,7 @@ export default function PlansList() {
                   key={plan.id}
                   to={`/app/mensalidades/planos/${plan.id}`}
                   className={`bg-white rounded-xl border ${
-                    plan.active ? 'border-purple-200 hover:border-purple-400' : 'border-gray-200 hover:border-gray-300'
+                    plan.active ? 'border-orange-200 hover:border-orange-400' : 'border-gray-200 hover:border-gray-300'
                   } p-6 transition-all hover:shadow-md cursor-pointer block`}
                 >
                   <div className="flex items-start justify-between mb-4">
@@ -169,7 +169,7 @@ export default function PlansList() {
                     <div className="mb-6 space-y-2">
                       {plan.benefits.slice(0, 3).map((benefit, index) => (
                         <div key={index} className="flex items-start gap-2">
-                          <Check className="text-purple-500 mt-0.5 flex-shrink-0" size={16} />
+                          <Check className="text-orange-500 mt-0.5 flex-shrink-0" size={16} />
                           <span className="text-sm text-gray-600">{benefit}</span>
                         </div>
                       ))}
