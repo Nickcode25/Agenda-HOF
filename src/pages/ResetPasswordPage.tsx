@@ -161,7 +161,7 @@ export default function ResetPasswordPage() {
       <div className="fixed inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
         {/* Card Principal */}
         <div className="w-full max-w-md pointer-events-auto">
-          <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl">
+          <div className="relative bg-gradient-to-br from-gray-800 via-gray-900 to-gray-950 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl shadow-orange-500/20">
             {/* Botão Fechar */}
             <Link
               to="/login"
@@ -172,14 +172,14 @@ export default function ResetPasswordPage() {
             </Link>
 
             {/* Header */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8 text-blue-400" />
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
+                <Lock className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white mb-2">
+              <h1 className="text-2xl font-bold text-white mb-2">
                 Redefinir Senha
               </h1>
-              <p className="text-gray-400">
+              <p className="text-gray-400 text-sm">
                 Digite sua nova senha
               </p>
             </div>
@@ -187,7 +187,7 @@ export default function ResetPasswordPage() {
             {/* Formulário */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
@@ -195,7 +195,7 @@ export default function ResetPasswordPage() {
                       {error.includes('expirado') && (
                         <Link
                           to="/forgot-password"
-                          className="inline-block text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                          className="inline-block text-sm text-orange-400 hover:text-orange-300 font-medium transition-colors"
                         >
                           Solicitar novo link →
                         </Link>
@@ -217,7 +217,7 @@ export default function ResetPasswordPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     onFocus={() => setPasswordTouched(true)}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-gray-800/50 border border-gray-700 rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     placeholder="Crie uma senha forte"
                     required
                   />
@@ -247,9 +247,9 @@ export default function ResetPasswordPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                    className={`w-full bg-gray-800/50 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
                       !formData.confirmPassword
-                        ? 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
+                        ? 'border-gray-700 focus:border-orange-500 focus:ring-orange-500/20'
                         : formData.password === formData.confirmPassword
                         ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
                         : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
@@ -277,16 +277,16 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-blue-500/30"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
               >
                 {loading ? 'Redefinindo senha...' : 'Redefinir Senha'}
               </button>
 
               {/* Link para Login */}
-              <div className="text-center">
+              <div className="text-center pt-2">
                 <p className="text-sm text-gray-400">
                   Lembrou sua senha?{' '}
-                  <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                  <Link to="/login" className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
                     Fazer login
                   </Link>
                 </p>

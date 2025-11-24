@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import type { AdminUser } from '@/types/admin'
 import { getErrorMessage } from '@/types/errors'
-import { sendPasswordReset } from '@/services/email/resend.service'
 
 type AuthState = {
   user: User | null
@@ -200,43 +199,29 @@ export const useAuth = create<AuthState>()(
       resetPassword: async (email: string) => {
         set({ loading: true, error: null })
         try {
-          // Buscar informações do usuário para obter o nome
-          const { data: userData } = await supabase
-            .from('users')
-            .select('name')
-            .eq('email', email)
-            .single()
+          // Chamar backend para gerar token e enviar email customizado
+          const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
-          // Gerar link de reset usando Supabase
-          const siteUrl = import.meta.env.VITE_APP_URL || window.location.origin
-          const redirectUrl = `${siteUrl}/reset-password`
-
-          const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: redirectUrl,
+          const response = await fetch(`${backendUrl}/api/auth/request-password-reset`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
           })
 
-          if (error) throw error
+          const data = await response.json()
 
-          // Enviar email customizado com Resend (não bloqueia se falhar)
-          try {
-            if (data && userData?.name) {
-              // Criar link de reset (Supabase envia token por email, nós enviamos o link direto)
-              await sendPasswordReset({
-                to: email,
-                userName: userData.name,
-                resetLink: redirectUrl
-              })
-
-              console.log('Email customizado de reset de senha enviado com sucesso')
-            }
-          } catch (emailError) {
-            console.error('Erro ao enviar email customizado:', emailError)
-            // Não propaga o erro - Supabase já enviou o email padrão
+          if (!response.ok) {
+            throw new Error(data.error || 'Erro ao solicitar redefinição de senha')
           }
+
+          console.log('✅ Email de reset de senha enviado com sucesso')
 
           set({ loading: false })
           return true
         } catch (error) {
+          console.error('❌ Erro ao solicitar reset de senha:', error)
           set({
             error: getErrorMessage(error),
             loading: false,

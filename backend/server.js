@@ -742,14 +742,64 @@ app.post('/api/email/send-subscription', async (req, res) => {
 })
 
 // Enviar reset de senha
-app.post('/api/email/send-password-reset', async (req, res) => {
+/**
+ * Endpoint para solicitar reset de senha
+ * Gera token e envia email customizado (não usa email padrão do Supabase)
+ */
+app.post('/api/auth/request-password-reset', async (req, res) => {
   try {
-    const { to, userName, resetLink } = req.body
+    const { email } = req.body
 
-    if (!to || !userName || !resetLink) {
-      return res.status(400).json({ error: 'Campos obrigatórios: to, userName, resetLink' })
+    if (!email) {
+      return res.status(400).json({ error: 'Email é obrigatório' })
     }
 
+    console.log('🔑 Solicitação de reset de senha para:', email)
+
+    // 1. Verificar se usuário existe
+    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+
+    if (authError) {
+      console.error('Erro ao buscar usuários:', authError)
+      // Por segurança, não revelar se email existe ou não
+      return res.json({ success: true, message: 'Se o email existir, você receberá instruções para resetar sua senha.' })
+    }
+
+    const user = authUsers.users.find(u => u.email === email)
+
+    if (!user) {
+      console.log('❌ Usuário não encontrado:', email)
+      // Por segurança, não revelar se email existe ou não
+      return res.json({ success: true, message: 'Se o email existir, você receberá instruções para resetar sua senha.' })
+    }
+
+    console.log('✅ Usuário encontrado:', user.id)
+
+    // 2. Gerar token de recuperação (OTP) - válido por 1 hora
+    const { data: otpData, error: otpError } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+      options: {
+        redirectTo: `${process.env.FRONTEND_URL}/reset-password`
+      }
+    })
+
+    if (otpError) {
+      console.error('Erro ao gerar token:', otpError)
+      return res.status(500).json({ error: 'Erro ao gerar token de recuperação' })
+    }
+
+    console.log('🔐 Token gerado com sucesso')
+
+    // 3. Extrair token da URL gerada pelo Supabase
+    const resetLink = otpData.properties.action_link
+
+    console.log('📧 Link de reset:', resetLink)
+
+    // 4. Buscar nome do usuário
+    const userName = user.user_metadata?.full_name || user.email.split('@')[0]
+
+    // 5. Enviar email customizado via Resend
     const html = `
       <!DOCTYPE html>
       <html>
@@ -758,20 +808,81 @@ app.post('/api/email/send-password-reset', async (req, res) => {
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
             <tr>
               <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                  <!-- Orange gradient bar -->
                   <tr><td style="background: linear-gradient(to right, #fb923c, #f97316, #ea580c); padding: 2px 0;"></td></tr>
-                  <tr><td style="padding: 40px; text-align: center;"><h1 style="margin: 0; color: #111827; font-size: 28px;">${APP_NAME}</h1></td></tr>
+
+                  <!-- Header -->
                   <tr>
-                    <td style="padding: 0 40px 40px;">
-                      <p style="margin: 0 0 20px; color: #374151; font-size: 16px;">Olá <strong>${userName}</strong>,</p>
-                      <p style="margin: 0 0 30px; color: #374151; font-size: 16px;">Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo:</p>
-                      <div style="margin: 30px 0; text-align: center;">
-                        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(to right, #f97316, #ea580c); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Redefinir Senha</a>
-                      </div>
-                      <p style="margin: 0 0 20px; color: #6b7280; font-size: 14px;">Este link é válido por <strong>1 hora</strong>.</p>
+                    <td style="padding: 40px; text-align: center;">
+                      <h1 style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">${APP_NAME}</h1>
+                      <p style="margin: 10px 0 0; color: #6b7280; font-size: 14px;">Sistema de Agendamento Online</p>
                     </td>
                   </tr>
-                  <tr><td style="background-color: #f9fafb; padding: 30px 40px; text-align: center;"><p style="margin: 0; color: #6b7280; font-size: 12px;">© ${new Date().getFullYear()} ${APP_NAME}</p></td></tr>
+
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 0 40px 40px;">
+                      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-bottom: 30px;">
+                        <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 600;">🔒 Redefinição de Senha</p>
+                      </div>
+
+                      <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                        Olá <strong style="color: #f97316;">${userName}</strong>,
+                      </p>
+
+                      <p style="margin: 0 0 30px; color: #374151; font-size: 16px; line-height: 1.6;">
+                        Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo para criar uma nova senha:
+                      </p>
+
+                      <!-- CTA Button -->
+                      <div style="margin: 30px 0; text-align: center;">
+                        <a href="${resetLink}"
+                           style="display: inline-block;
+                                  background: linear-gradient(135deg, #f97316, #ea580c);
+                                  color: #ffffff;
+                                  text-decoration: none;
+                                  padding: 16px 40px;
+                                  border-radius: 10px;
+                                  font-weight: 600;
+                                  font-size: 16px;
+                                  box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3);
+                                  transition: transform 0.2s;">
+                          🔑 Redefinir Minha Senha
+                        </a>
+                      </div>
+
+                      <!-- Security Info -->
+                      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-top: 30px;">
+                        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                          ⏱️ <strong>Validade:</strong> Este link expira em <strong style="color: #f97316;">1 hora</strong>
+                        </p>
+                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                          🛡️ <strong>Segurança:</strong> Se você não solicitou esta redefinição, ignore este email
+                        </p>
+                      </div>
+
+                      <!-- Alternative Link -->
+                      <p style="margin: 30px 0 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
+                        Caso o botão não funcione, copie e cole este link no seu navegador:
+                      </p>
+                      <p style="margin: 10px 0 0; color: #6b7280; font-size: 12px; word-break: break-all;">
+                        ${resetLink}
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 5px; color: #6b7280; font-size: 12px;">
+                        © ${new Date().getFullYear()} ${APP_NAME}. Todos os direitos reservados.
+                      </p>
+                      <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+                        Este é um email automático, por favor não responda.
+                      </p>
+                    </td>
+                  </tr>
                 </table>
               </td>
             </tr>
@@ -780,22 +891,28 @@ app.post('/api/email/send-password-reset', async (req, res) => {
       </html>
     `
 
-    const { data, error } = await resend.emails.send({
+    const { data: emailData, error: emailError } = await resend.emails.send({
       from: EMAIL_FROM,
-      to: [to],
-      subject: `${APP_NAME} - Redefinição de Senha`,
+      to: [email],
+      subject: `${APP_NAME} - Redefinir Senha`,
       html
     })
 
-    if (error) {
-      console.error('Erro ao enviar email:', error)
-      return res.status(500).json({ error: 'Erro ao enviar email', details: error })
+    if (emailError) {
+      console.error('❌ Erro ao enviar email:', emailError)
+      return res.status(500).json({ error: 'Erro ao enviar email de recuperação' })
     }
 
-    console.log('✅ Email de reset enviado:', data)
-    res.json({ success: true, data })
+    console.log('✅ Email de reset enviado com sucesso:', emailData)
+
+    res.json({
+      success: true,
+      message: 'Email de recuperação enviado com sucesso!',
+      data: emailData
+    })
+
   } catch (error) {
-    console.error('Erro no endpoint de email:', error)
+    console.error('❌ Erro no endpoint de reset de senha:', error)
     res.status(500).json({ error: 'Erro interno do servidor' })
   }
 })
@@ -815,6 +932,7 @@ app.listen(PORT, () => {
   console.log('\n✅ Endpoints disponíveis (Email):')
   console.log('  - POST /api/email/send-verification ⭐ Código de verificação')
   console.log('  - POST /api/email/send-subscription ⭐ Confirmação de assinatura')
-  console.log('  - POST /api/email/send-password-reset ⭐ Reset de senha')
+  console.log('\n✅ Endpoints disponíveis (Auth):')
+  console.log('  - POST /api/auth/request-password-reset ⭐ Solicitação de reset de senha')
   console.log('\n💡 Use Ctrl+C para parar o servidor\n')
 })
