@@ -82,11 +82,6 @@ export default function SalesList() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-              <Link to="/app" className="hover:text-amber-600 transition-colors">Início</Link>
-              <span>›</span>
-              <span className="text-gray-900">Vendas</span>
-            </div>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200">
                 <ShoppingCart size={24} className="text-amber-600" />

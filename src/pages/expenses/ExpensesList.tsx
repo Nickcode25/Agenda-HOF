@@ -118,14 +118,9 @@ export default function ExpensesList() {
       {!hasActiveSubscription && <UpgradeOverlay message="Despesas bloqueadas" feature="o controle completo de despesas e categorias" />}
 
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header com breadcrumb */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-              <Link to="/app" className="hover:text-red-600 transition-colors">Início</Link>
-              <span>›</span>
-              <span className="text-gray-900">Despesas</span>
-            </div>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-red-50 rounded-xl border border-red-200">
                 <Receipt size={24} className="text-red-600" />

@@ -334,13 +334,8 @@ export default function FinancialReport() {
       {!hasActiveSubscription && <UpgradeOverlay message="Relatório Financeiro bloqueado" feature="relatórios financeiros completos e detalhados" />}
 
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header com breadcrumb */}
+        {/* Header */}
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <Link to="/app" className="hover:text-green-600 transition-colors">Início</Link>
-            <span>›</span>
-            <span className="text-gray-900">Relatório Financeiro</span>
-          </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-green-50 rounded-xl border border-green-200">

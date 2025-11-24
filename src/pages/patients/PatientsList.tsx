@@ -11,6 +11,7 @@ import UpgradeOverlay from '@/components/UpgradeOverlay'
 import AddProcedureInlineForm from './components/AddProcedureInlineForm'
 import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
 import { getWhatsAppUrl } from '@/utils/env'
+import { useToast } from '@/hooks/useToast'
 
 export default function PatientsList() {
   const patients = usePatients(s => s.patients)
@@ -19,6 +20,7 @@ export default function PatientsList() {
   const procedures = useProcedures(s => s.procedures)
   const fetchProcedures = useProcedures(s => s.fetchAll)
   const { hasActiveSubscription } = useSubscription()
+  const { show: showToast } = useToast()
 
   useEffect(() => {
     fetchPatients()
@@ -154,7 +156,7 @@ export default function PatientsList() {
 
   const handleWhatsApp = (_patientName: string, patientPhone?: string) => {
     if (!patientPhone) {
-      alert('Paciente não possui telefone cadastrado')
+      showToast('Paciente não possui telefone cadastrado', 'warning')
       return
     }
 

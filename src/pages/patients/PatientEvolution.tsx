@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
-import { ArrowLeft, Upload, X, Camera, Trash2, Calendar, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Upload, X, Camera, Trash2, Calendar, Image as ImageIcon, Plus, Sparkles, Clock, FileText } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 
@@ -154,8 +154,8 @@ export default function PatientEvolution() {
   if (!patient) {
     return (
       <div className="max-w-7xl mx-auto p-6">
-        <p className="text-gray-400">Paciente não encontrado.</p>
-        <Link to="/app/pacientes" className="text-orange-500 hover:text-orange-400 hover:underline">
+        <p className="text-gray-600">Paciente não encontrado.</p>
+        <Link to="/app/pacientes" className="text-orange-600 hover:text-orange-500 hover:underline">
           Voltar
         </Link>
       </div>
@@ -182,128 +182,207 @@ export default function PatientEvolution() {
   })
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link
-              to={`/app/pacientes/${id}`}
-              className="p-3 hover:bg-gray-700/50 rounded-xl transition-colors border border-gray-600/50 hover:border-blue-500/50"
-              title="Voltar para detalhes do paciente"
-            >
-              <ArrowLeft size={24} className="text-gray-400 hover:text-blue-400" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Evolução do Paciente</h1>
-              <p className="text-gray-400 mt-1">{patient.name}</p>
+    <div className="max-w-7xl mx-auto space-y-6 pb-8">
+      {/* Header Principal */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        {/* Barra superior com gradiente sutil */}
+        <div className="h-1.5 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600"></div>
+
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link
+                to={`/app/pacientes/${id}`}
+                className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors group"
+                title="Voltar para detalhes do paciente"
+              >
+                <ArrowLeft size={20} className="text-gray-500 group-hover:text-gray-700" />
+              </Link>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles size={20} className="text-orange-500" />
+                  <h1 className="text-2xl font-bold text-gray-900">Evolução do Paciente</h1>
+                </div>
+                <p className="text-gray-500 mt-0.5">{patient.name}</p>
+              </div>
             </div>
+
+            <button
+              onClick={() => setShowAddPhotoModal(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium shadow-sm transition-all"
+            >
+              <Plus size={18} />
+              Nova Foto
+            </button>
           </div>
 
-          <button
-            onClick={() => setShowAddPhotoModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 transition-all"
-          >
-            <Camera size={18} />
-            Adicionar Fotos
-          </button>
-        </div>
-
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          <div className="flex items-center gap-2">
-            <ImageIcon size={16} className="text-blue-400" />
-            <span>{evolutionPhotos.length} foto{evolutionPhotos.length !== 1 ? 's' : ''} registrada{evolutionPhotos.length !== 1 ? 's' : ''}</span>
+          {/* Estatísticas */}
+          <div className="mt-6 grid grid-cols-3 gap-4">
+            <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <ImageIcon size={18} className="text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{evolutionPhotos.length}</p>
+                  <p className="text-sm text-gray-500">Fotos registradas</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Calendar size={18} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{sortedDates.length}</p>
+                  <p className="text-sm text-gray-500">Datas diferentes</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Clock size={18} className="text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {sortedDates.length > 0 ? sortedDates[0] : '-'}
+                  </p>
+                  <p className="text-sm text-gray-500">Último registro</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Timeline de Fotos */}
       {sortedDates.length > 0 ? (
-        <div className="space-y-6">
-          {sortedDates.map(date => (
-            <div key={date} className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Calendar size={18} className="text-blue-400" />
-                <h3 className="text-lg font-semibold text-white">{date}</h3>
-                <span className="text-sm text-gray-400">
-                  ({photosByDate[date].length} foto{photosByDate[date].length !== 1 ? 's' : ''})
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {photosByDate[date].map(photo => (
-                  <div
-                    key={photo.id}
-                    onClick={() => setSelectedPhotoView(photo)}
-                    className="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-700 hover:border-blue-500 transition-all cursor-pointer group"
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.procedureName || 'Foto'}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute bottom-0 left-0 right-0 p-3">
-                        {photo.procedureName && (
-                          <p className="text-xs text-white font-medium truncate">
-                            {photo.procedureName}
-                          </p>
-                        )}
-                      </div>
+        <div className="space-y-4">
+          {sortedDates.map((date, dateIndex) => (
+            <div
+              key={date}
+              className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden"
+            >
+              {/* Header da Data */}
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+                      <Calendar size={16} className="text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{date}</h3>
+                      <p className="text-sm text-gray-500">
+                        {photosByDate[date].length} foto{photosByDate[date].length !== 1 ? 's' : ''}
+                      </p>
                     </div>
                   </div>
-                ))}
+                  {dateIndex === 0 && (
+                    <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                      Mais recente
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Grid de Fotos */}
+              <div className="p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {photosByDate[date].map(photo => (
+                    <div
+                      key={photo.id}
+                      onClick={() => setSelectedPhotoView(photo)}
+                      className="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200 hover:border-orange-400 transition-all cursor-pointer group shadow-sm hover:shadow-md"
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.procedureName || 'Foto'}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                          {photo.procedureName ? (
+                            <p className="text-xs text-white font-medium truncate">
+                              {photo.procedureName}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-white/70 font-medium">
+                              Clique para ver
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {photo.notes && (
+                        <div className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                          <FileText size={14} className="text-gray-600" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-12 text-center">
-          <Camera size={48} className="mx-auto mb-4 text-gray-600" />
-          <h3 className="text-lg font-medium text-white mb-2">Nenhuma foto registrada</h3>
-          <p className="text-gray-400 mb-6">
-            Comece a documentar a evolução do paciente adicionando fotos dos procedimentos realizados
-          </p>
-          <button
-            onClick={() => setShowAddPhotoModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 transition-all"
-          >
-            <Camera size={18} />
-            Adicionar Primeira Foto
-          </button>
+        /* Estado Vazio */
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-12 text-center">
+            <div className="mx-auto w-20 h-20 bg-orange-50 rounded-2xl flex items-center justify-center mb-6">
+              <Camera size={36} className="text-orange-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Nenhuma foto registrada ainda
+            </h3>
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+              Comece a documentar a evolução do paciente adicionando fotos dos procedimentos realizados.
+              Acompanhe os resultados ao longo do tempo!
+            </p>
+            <button
+              onClick={() => setShowAddPhotoModal(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium shadow-sm transition-all"
+            >
+              <Camera size={18} />
+              Adicionar Primeira Foto
+            </button>
+          </div>
         </div>
       )}
 
       {/* Modal Adicionar Fotos */}
       {showAddPhotoModal && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={handleCloseModal}
         >
           <div
-            className="bg-gray-800 border border-gray-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white">Adicionar Fotos da Evolução</h2>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-xl">
+                  <Camera size={20} className="text-orange-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Adicionar Fotos</h2>
+              </div>
               <button
                 onClick={handleCloseModal}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
               >
-                <X size={24} className="text-gray-400" />
+                <X size={20} className="text-gray-500" />
               </button>
             </div>
 
             {/* Content */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
               {/* Upload de Fotos */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Camera size={16} className="text-blue-400" />
-                    <span>Fotos *</span>
-                  </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fotos *
                 </label>
                 <input
                   type="file"
@@ -315,23 +394,28 @@ export default function PatientEvolution() {
                 />
                 <label
                   htmlFor="evolution-photos"
-                  className="flex items-center justify-center gap-2 p-8 border-2 border-dashed border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 rounded-xl cursor-pointer transition-colors"
+                  className="flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed border-orange-300 bg-orange-50 hover:bg-orange-100 rounded-xl cursor-pointer transition-colors"
                 >
-                  <Upload size={24} className="text-blue-400" />
-                  <span className="text-blue-400 font-medium">Clique para adicionar fotos</span>
+                  <div className="p-3 bg-orange-100 rounded-full">
+                    <Upload size={24} className="text-orange-600" />
+                  </div>
+                  <div className="text-center">
+                    <span className="text-orange-600 font-medium">Clique para adicionar fotos</span>
+                    <p className="text-sm text-gray-500 mt-1">ou arraste e solte aqui</p>
+                  </div>
                 </label>
 
                 {selectedPhotos.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-3">
                     {selectedPhotos.map((photo, index) => (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-blue-500/30">
+                      <div key={index} className="relative aspect-square rounded-xl overflow-hidden border-2 border-orange-200 shadow-sm">
                         <img src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => handleRemovePhoto(index)}
                           className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 rounded-full transition-colors shadow-lg"
                         >
-                          <X size={16} className="text-white" />
+                          <X size={14} className="text-white" />
                         </button>
                       </div>
                     ))}
@@ -341,7 +425,7 @@ export default function PatientEvolution() {
 
               {/* Data */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Data da Foto *
                 </label>
                 <input
@@ -350,14 +434,14 @@ export default function PatientEvolution() {
                   onChange={(e) => handleDateChange(e.target.value)}
                   maxLength={10}
                   placeholder="DD/MM/AAAA"
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all"
                 />
-                <p className="text-xs text-gray-400 mt-1">Digite apenas números (ex: 05112025 para 05/11/2025)</p>
+                <p className="text-xs text-gray-400 mt-1.5">Digite apenas números (ex: 05112025 para 05/11/2025)</p>
               </div>
 
               {/* Procedimento */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Procedimento (opcional)
                 </label>
                 <input
@@ -365,37 +449,37 @@ export default function PatientEvolution() {
                   value={photoProcedure}
                   onChange={(e) => setPhotoProcedure(e.target.value)}
                   placeholder="Ex: Preenchimento labial, Botox testa..."
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all"
                 />
               </div>
 
               {/* Observações */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Observações (opcional)
                 </label>
                 <textarea
                   value={photoNotes}
                   onChange={(e) => setPhotoNotes(e.target.value)}
                   placeholder="Ex: Segunda sessão, paciente respondeu bem ao tratamento..."
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
-                  rows={4}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 transition-all resize-none"
+                  rows={3}
                 />
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 p-6 border-t border-gray-700">
+            <div className="flex gap-3 p-6 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={handleCloseModal}
-                className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+                className="flex-1 px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSavePhotos}
                 disabled={selectedPhotos.length === 0}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-500/30"
+                className="flex-1 px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all"
               >
                 Salvar Fotos
               </button>
@@ -407,7 +491,7 @@ export default function PatientEvolution() {
       {/* Modal Visualizar Foto */}
       {selectedPhotoView && (
         <div
-          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedPhotoView(null)}
         >
           <div
@@ -417,27 +501,31 @@ export default function PatientEvolution() {
             <div className="flex items-center justify-between mb-4">
               <div className="text-white">
                 <h3 className="text-xl font-bold">{selectedPhotoView.procedureName || 'Foto da Evolução'}</h3>
-                <p className="text-gray-400 text-sm">{selectedPhotoView.date}</p>
+                <p className="text-gray-300 text-sm flex items-center gap-2 mt-1">
+                  <Calendar size={14} />
+                  {selectedPhotoView.date}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={async () => {
                     await handleDeletePhoto(selectedPhotoView.id)
                   }}
-                  className="p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                  className="p-2.5 bg-red-500 hover:bg-red-600 rounded-xl transition-colors"
+                  title="Remover foto"
                 >
-                  <Trash2 size={20} className="text-white" />
+                  <Trash2 size={18} className="text-white" />
                 </button>
                 <button
                   onClick={() => setSelectedPhotoView(null)}
-                  className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
                 >
-                  <X size={24} className="text-white" />
+                  <X size={20} className="text-white" />
                 </button>
               </div>
             </div>
 
-            <div className="bg-gray-900 rounded-2xl overflow-hidden border border-gray-700">
+            <div className="bg-black/50 rounded-2xl overflow-hidden border border-white/10">
               <img
                 src={selectedPhotoView.url}
                 alt={selectedPhotoView.procedureName || 'Foto'}
@@ -446,9 +534,12 @@ export default function PatientEvolution() {
             </div>
 
             {selectedPhotoView.notes && (
-              <div className="mt-4 bg-gray-800 border border-gray-700 rounded-xl p-4">
-                <p className="text-sm font-medium text-gray-300 mb-1">Observações:</p>
-                <p className="text-gray-400">{selectedPhotoView.notes}</p>
+              <div className="mt-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
+                <p className="text-sm font-medium text-white/70 mb-1 flex items-center gap-2">
+                  <FileText size={14} />
+                  Observações
+                </p>
+                <p className="text-white">{selectedPhotoView.notes}</p>
               </div>
             )}
           </div>

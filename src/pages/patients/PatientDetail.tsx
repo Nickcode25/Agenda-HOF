@@ -10,7 +10,6 @@ import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, FileText, Image as Imag
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import AddProcedureModal from './components/AddProcedureModal'
-import CompleteProcedureModal from './components/CompleteProcedureModal'
 import EditValueModal from './components/EditValueModal'
 import PhotoGalleryModal from './components/PhotoGalleryModal'
 
@@ -57,14 +56,6 @@ export default function PatientDetail() {
       setCustomValue('')
     }
   }, [procedureQuantity, selectedProcedure, paymentType, paymentMethod, installments])
-
-  const [showCompleteModal, setShowCompleteModal] = useState(false)
-  const [completingProcedure, setCompletingProcedure] = useState<PlannedProcedure | null>(null)
-  const [selectedProductId, setSelectedProductId] = useState('')
-
-  const [beforePhotos, setBeforePhotos] = useState<string[]>([])
-  const [afterPhotos, setAfterPhotos] = useState<string[]>([])
-  const [photoNotes, setPhotoNotes] = useState('')
 
   const [showPhotoGallery, setShowPhotoGallery] = useState(false)
   const [selectedProcedurePhotos, setSelectedProcedurePhotos] = useState<PlannedProcedure | null>(null)
@@ -150,137 +141,19 @@ export default function PatientDetail() {
     const procedure = patient.plannedProcedures?.find(p => p.id === procId)
     if (!procedure) return
 
-    if (status === 'completed' && procedure.status !== 'completed') {
-      setCompletingProcedure(procedure)
-      setShowCompleteModal(true)
-      return
-    }
-
     const updated = (patient.plannedProcedures || []).map(p =>
-      p.id === procId ? { ...p, status, completedAt: status === 'completed' ? new Date().toISOString() : p.completedAt } : p
-    )
-
-    update(patient.id, { plannedProcedures: updated })
-  }
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
-    const files = e.target.files
-    if (!files) return
-
-    Array.from(files).forEach(file => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const photoUrl = String(reader.result)
-        if (type === 'before') {
-          setBeforePhotos(prev => [...prev, photoUrl])
-        } else {
-          setAfterPhotos(prev => [...prev, photoUrl])
-        }
-      }
-      reader.readAsDataURL(file)
-    })
-  }
-
-  const handleRemovePhoto = (index: number, type: 'before' | 'after') => {
-    if (type === 'before') {
-      setBeforePhotos(prev => prev.filter((_, i) => i !== index))
-    } else {
-      setAfterPhotos(prev => prev.filter((_, i) => i !== index))
-    }
-  }
-
-  const handleCompleteProcedure = async () => {
-    if (!patient || !completingProcedure) return
-
-    let product = null
-
-    if (selectedProductId) {
-      product = stockItems.find(item => item.id === selectedProductId)
-      if (!product) {
-        showToast('Produto não encontrado', 'error')
-        return
-      }
-
-      if (product.quantity < completingProcedure.quantity) {
-        showToast(`Estoque insuficiente de ${product.name}. Disponível: ${product.quantity} ${product.unit}`, 'error')
-        return
-      }
-
-      const { removeStock, fetchItems } = useStock.getState()
-
-      const success = await removeStock(
-        selectedProductId,
-        completingProcedure.quantity,
-        `Procedimento: ${completingProcedure.procedureName} - Paciente: ${patient.name}`,
-        completingProcedure.id,
-        patient.id
-      )
-
-      if (!success) {
-        showToast('Erro ao atualizar estoque. Tente novamente.', 'error')
-        return
-      }
-
-      await fetchItems(true)
-    }
-
-    const photos: ProcedurePhoto[] = []
-    const uploadedAt = new Date().toISOString()
-
-    beforePhotos.forEach(url => {
-      photos.push({
-        id: crypto.randomUUID(),
-        url,
-        type: 'before',
-        uploadedAt,
-        notes: photoNotes
-      })
-    })
-
-    afterPhotos.forEach(url => {
-      photos.push({
-        id: crypto.randomUUID(),
-        url,
-        type: 'after',
-        uploadedAt,
-        notes: photoNotes
-      })
-    })
-
-    const updated = (patient.plannedProcedures || []).map(p =>
-      p.id === completingProcedure.id ? {
+      p.id === procId ? {
         ...p,
-        status: 'completed' as PlannedProcedure['status'],
-        completedAt: new Date().toISOString(),
-        usedProductId: product ? selectedProductId : undefined,
-        usedProductName: product ? product.name : undefined,
-        photos: photos.length > 0 ? photos : undefined
+        status,
+        completedAt: status === 'completed' ? new Date().toISOString() : p.completedAt
       } : p
     )
 
     update(patient.id, { plannedProcedures: updated })
 
-    let paymentInfo = ''
-    if (completingProcedure.paymentMethod === 'cash') {
-      paymentInfo = 'Dinheiro'
-    } else if (completingProcedure.paymentMethod === 'pix') {
-      paymentInfo = 'PIX'
-    } else if (completingProcedure.paymentMethod === 'card') {
-      if (completingProcedure.installments > 1) {
-        paymentInfo = `Cartão de Crédito ${completingProcedure.installments}x`
-      } else {
-        paymentInfo = 'Cartão de Crédito à vista'
-      }
+    if (status === 'completed' && procedure.status !== 'completed') {
+      showToast('Procedimento concluído com sucesso!', 'success')
     }
-
-    setShowCompleteModal(false)
-    setCompletingProcedure(null)
-    setSelectedProductId('')
-    setBeforePhotos([])
-    setAfterPhotos([])
-    setPhotoNotes('')
-
-    showToast('Procedimento concluído com sucesso!', 'success')
   }
 
   const handleRemoveProcedure = async (procId: string) => {
@@ -292,7 +165,7 @@ export default function PatientDetail() {
     const confirmed = await confirm({
       title: 'Remover Procedimento',
       message: procedure.status === 'completed'
-        ? 'Remover este procedimento realizado? O produto usado será devolvido ao estoque.'
+        ? 'Remover este procedimento realizado?'
         : 'Remover este procedimento do planejamento?',
       confirmText: 'Remover',
       cancelText: 'Cancelar'
@@ -300,22 +173,10 @@ export default function PatientDetail() {
 
     if (!confirmed) return
 
-    if (procedure.status === 'completed' && procedure.usedProductId) {
-      const { addStock, fetchItems } = useStock.getState()
-
-      await addStock(
-        procedure.usedProductId,
-        procedure.quantity,
-        `Devolução - Procedimento excluído: ${procedure.procedureName} - Paciente: ${patient.name}`
-      )
-
-      await fetchItems(true)
-    }
-
     const updated = (patient.plannedProcedures || []).filter(p => p.id !== procId)
     update(patient.id, { plannedProcedures: updated })
 
-    showToast(procedure.status === 'completed' ? 'Procedimento removido e produto devolvido ao estoque!' : 'Procedimento removido!', 'success')
+    showToast('Procedimento removido!', 'success')
   }
 
   const handleCustomValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -400,15 +261,6 @@ export default function PatientDetail() {
   return (
     <div className="min-h-screen bg-gray-50 -m-4 p-4 sm:-m-8 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-        {/* Breadcrumb */}
-        <div className="text-sm text-gray-500">
-          <Link to="/app" className="hover:text-orange-500">Início</Link>
-          <span className="mx-2">&gt;</span>
-          <Link to="/app/pacientes" className="hover:text-orange-500">Pacientes</Link>
-          <span className="mx-2">&gt;</span>
-          <span className="text-gray-900 font-medium">{patient.name}</span>
-        </div>
-
         {/* Patient Info Card */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
@@ -771,27 +623,6 @@ export default function PatientDetail() {
         onCustomValueChange={handleCustomValueChange}
         onClose={resetProcedureModal}
         onAdd={handleAddProcedure}
-      />
-
-      <CompleteProcedureModal
-        isOpen={showCompleteModal}
-        procedure={completingProcedure}
-        selectedProductId={selectedProductId}
-        beforePhotos={beforePhotos}
-        afterPhotos={afterPhotos}
-        photoNotes={photoNotes}
-        procedures={procedures}
-        stockItems={stockItems}
-        onProductSelect={setSelectedProductId}
-        onPhotoUpload={handlePhotoUpload}
-        onRemovePhoto={handleRemovePhoto}
-        onPhotoNotesChange={setPhotoNotes}
-        onClose={() => {
-          setShowCompleteModal(false)
-          setCompletingProcedure(null)
-          setSelectedProductId('')
-        }}
-        onComplete={handleCompleteProcedure}
       />
 
       <EditValueModal

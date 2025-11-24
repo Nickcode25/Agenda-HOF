@@ -96,14 +96,9 @@ export default function StaffManagement() {
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header com breadcrumb */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-              <Link to="/app" className="hover:text-orange-600 transition-colors">Início</Link>
-              <span>›</span>
-              <span className="text-gray-900">Funcionários</span>
-            </div>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-orange-50 rounded-xl border border-orange-200">
                 <Users size={24} className="text-orange-600" />

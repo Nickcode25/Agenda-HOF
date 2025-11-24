@@ -73,13 +73,6 @@ export default function StudentsList() {
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6">
-      {/* Breadcrumb */}
-      <div className="text-sm text-gray-500">
-        <Link to="/app" className="hover:text-purple-600 transition-colors">Início</Link>
-        <span className="mx-2">&gt;</span>
-        <span className="text-gray-900">Alunos</span>
-      </div>
-
       {/* Header */}
       <PageHeader
         icon={GraduationCap}

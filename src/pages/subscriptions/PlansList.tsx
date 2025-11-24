@@ -38,14 +38,9 @@ export default function PlansList() {
     <>
     <div className="min-h-screen bg-gray-50 -m-8 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header com breadcrumb */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-              <Link to="/app" className="hover:text-purple-600 transition-colors">Início</Link>
-              <span>›</span>
-              <span className="text-gray-900">Planos de Mensalidade</span>
-            </div>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-purple-50 rounded-xl border border-purple-200">
                 <CreditCard size={24} className="text-purple-600" />

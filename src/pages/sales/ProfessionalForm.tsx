@@ -170,15 +170,6 @@ export default function ProfessionalForm() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-              <Link to="/app" className="hover:text-amber-600 transition-colors">Início</Link>
-              <span>›</span>
-              <Link to="/app/vendas" className="hover:text-amber-600 transition-colors">Vendas</Link>
-              <span>›</span>
-              <Link to="/app/vendas/profissionais" className="hover:text-amber-600 transition-colors">Profissionais</Link>
-              <span>›</span>
-              <span className="text-gray-900">Novo</span>
-            </div>
             <h1 className="text-2xl font-bold text-gray-900">Novo Profissional</h1>
             <p className="text-sm text-gray-500 mt-1">Preencha os dados do profissional de vendas</p>
           </div>

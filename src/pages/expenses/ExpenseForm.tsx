@@ -114,15 +114,8 @@ export default function ExpenseForm() {
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header com breadcrumb */}
+        {/* Header */}
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <Link to="/app" className="hover:text-red-600 transition-colors">Início</Link>
-            <span>›</span>
-            <Link to="/app/despesas" className="hover:text-red-600 transition-colors">Despesas</Link>
-            <span>›</span>
-            <span className="text-gray-900">{isEditing ? 'Editar' : 'Nova Despesa'}</span>
-          </div>
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-red-50 rounded-xl border border-red-200">
               <Receipt size={24} className="text-red-600" />

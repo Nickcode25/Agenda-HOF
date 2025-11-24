@@ -1,4 +1,4 @@
-import { useEffect, useState, createContext, useContext } from 'react'
+import { useEffect, useState, createContext, useContext, useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/store/auth'
 import { supabase } from '@/lib/supabase'
@@ -285,6 +285,16 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [user?.id])
 
+  // Memoizar o valor do contexto para evitar re-renders desnecessários nos filhos
+  // IMPORTANTE: Este useMemo DEVE vir antes de qualquer return condicional
+  const contextValue = useMemo(() => ({
+    hasActiveSubscription,
+    hasPaidSubscription,
+    isInTrial,
+    trialDaysRemaining,
+    subscription
+  }), [hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription])
+
   // Enquanto carrega, mostrar loading
   if (loading) {
     return (
@@ -305,7 +315,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   // Se não tem assinatura ativa, mostrar overlay de bloqueio
   if (!hasActiveSubscription) {
     return (
-      <SubscriptionContext.Provider value={{ hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription }}>
+      <SubscriptionContext.Provider value={contextValue}>
         <UpgradeOverlay
           message="Seu período de teste expirou"
           feature="todas as funcionalidades premium"
@@ -316,7 +326,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
 
   // Usuário com assinatura ativa - permitir acesso completo
   return (
-    <SubscriptionContext.Provider value={{ hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription }}>
+    <SubscriptionContext.Provider value={contextValue}>
       {children}
     </SubscriptionContext.Provider>
   )

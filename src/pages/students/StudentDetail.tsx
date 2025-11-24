@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useStudents } from '@/store/students'
 import { PlannedMentorship } from '@/types/student'
 import { formatCurrency } from '@/utils/currency'
-import { Edit, Trash2, Plus, CheckCircle, Clock, ArrowLeft, Phone, GraduationCap, ChevronDown } from 'lucide-react'
+import { Edit, Trash2, Plus, CheckCircle, Clock, ArrowLeft, Phone, GraduationCap, ChevronDown, Mail, MapPin, Calendar, BookOpen, DollarSign } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import MentorshipModal from './components/MentorshipModal'
@@ -32,11 +32,14 @@ export default function StudentDetail() {
 
   if (!student) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-400">Aluno não encontrado</p>
-        <Link to="/app/alunos" className="text-purple-400 hover:text-purple-300 mt-4 inline-block">
-          Voltar para lista de alunos
-        </Link>
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
+          <GraduationCap size={48} className="mx-auto mb-4 text-gray-300" />
+          <p className="text-gray-500 mb-4">Aluno não encontrado</p>
+          <Link to="/app/alunos" className="text-purple-600 hover:text-purple-500 font-medium">
+            Voltar para lista de alunos
+          </Link>
+        </div>
       </div>
     )
   }
@@ -61,7 +64,6 @@ export default function StudentDetail() {
   const handleAddMentorship = async () => {
     if (!student) return
 
-    // Calcular o valor total a partir do customValue
     let totalValue: number
     if (customValue) {
       const cleanValue = customValue.replace(/[R$\s.]/g, '').replace(',', '.')
@@ -70,7 +72,6 @@ export default function StudentDetail() {
       totalValue = 0
     }
 
-    // Validar se o valor foi informado
     if (totalValue <= 0) {
       showToast('Informe o valor da mentoria', 'error')
       return
@@ -90,20 +91,6 @@ export default function StudentDetail() {
       createdAt: new Date().toISOString()
     }
 
-    // Registrar no caixa imediatamente ao adicionar
-    let paymentInfo = ''
-    if (paymentMethod === 'cash') {
-      paymentInfo = 'Dinheiro'
-    } else if (paymentMethod === 'pix') {
-      paymentInfo = 'PIX'
-    } else if (paymentMethod === 'card') {
-      if (installments > 1) {
-        paymentInfo = `Cartão de Crédito ${installments}x`
-      } else {
-        paymentInfo = 'Cartão de Crédito à vista'
-      }
-    }
-
     const currentPlanned = student.plannedMentorships || []
     update(student.id, {
       plannedMentorships: [...currentPlanned, newPlannedMentorship]
@@ -118,8 +105,6 @@ export default function StudentDetail() {
 
     const mentorship = student.plannedMentorships?.find(m => m.id === mentId)
     if (!mentorship) return
-
-    // Não precisa mais registrar no caixa aqui, pois já foi registrado ao adicionar a mentoria
 
     const updated = (student.plannedMentorships || []).map(m =>
       m.id === mentId ? { ...m, status, completedAt: status === 'completed' ? new Date().toISOString() : m.completedAt } : m
@@ -184,60 +169,120 @@ export default function StudentDetail() {
   const allMentorships = student.plannedMentorships || []
   const pendingMentorships = allMentorships.filter(m => m.status !== 'completed')
   const completedMentorships = allMentorships.filter(m => m.status === 'completed')
+  const totalRevenue = completedMentorships.reduce((sum, m) => sum + m.totalValue, 0)
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
+  }
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8">
-          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header com botão voltar */}
+        <div className="flex items-center justify-between">
+          <Link
+            to="/app/alunos"
+            className="inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+          >
+            <ArrowLeft size={20} />
+            <span className="font-medium">Voltar</span>
+          </Link>
+
+          <div className="flex gap-2">
             <Link
-              to="/app/alunos"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+              to={`/app/alunos/${student.id}/editar`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-medium transition-colors shadow-sm"
             >
-              <ArrowLeft size={20} />
-              Voltar para Alunos
+              <Edit size={18} />
+              Editar
             </Link>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-500/20 to-purple-600/10 rounded-full flex items-center justify-center border border-purple-500/30">
-                  {student.photoUrl ? (
-                    <img src={student.photoUrl} alt={student.name} className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <GraduationCap size={40} className="text-purple-400" />
+            <button
+              onClick={handleRemoveStudent}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-red-50 text-red-600 rounded-xl font-medium transition-colors border border-red-200"
+            >
+              <Trash2 size={18} />
+              Remover
+            </button>
+          </div>
+        </div>
+
+        {/* Card do Aluno */}
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          {/* Barra de status */}
+          <div className="h-1.5 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600"></div>
+
+          <div className="p-6 lg:p-8">
+            <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+              {/* Avatar */}
+              <div className="flex-shrink-0">
+                {student.photoUrl ? (
+                  <img
+                    src={student.photoUrl}
+                    alt={student.name}
+                    className="h-24 w-24 lg:h-32 lg:w-32 rounded-2xl object-cover border-2 border-purple-200"
+                  />
+                ) : (
+                  <div className="h-24 w-24 lg:h-32 lg:w-32 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-200 border-2 border-purple-200 flex items-center justify-center">
+                    <span className="text-3xl lg:text-4xl font-bold text-purple-600">{getInitials(student.name)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Informações */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">{student.name}</h1>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {student.phone && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone size={16} className="text-gray-400" />
+                      <span>{student.phone}</span>
+                    </div>
+                  )}
+                  {student.email && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail size={16} className="text-gray-400" />
+                      <span className="truncate">{student.email}</span>
+                    </div>
+                  )}
+                  {student.cpf && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Calendar size={16} className="text-gray-400" />
+                      <span>CPF: {student.cpf}</span>
+                    </div>
+                  )}
+                  {(student.street || student.city) && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin size={16} className="text-gray-400" />
+                      <span className="truncate">
+                        {[student.street, student.number, student.neighborhood, student.city, student.state].filter(Boolean).join(', ')}
+                      </span>
+                    </div>
                   )}
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{student.name}</h1>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                    {student.phone && (
-                      <div className="flex items-center gap-1">
-                        <Phone size={16} />
-                        <span>{student.phone}</span>
-                      </div>
-                    )}
-                    {student.cpf && <span>CPF: {student.cpf}</span>}
-                  </div>
-                </div>
               </div>
-              <div className="flex gap-2">
-                <Link
-                  to={`/app/alunos/${student.id}/editar`}
-                  className="inline-flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-4 py-2 rounded-xl border border-blue-500/30 transition-all"
-                >
-                  <Edit size={18} />
-                  Editar
-                </Link>
-                <button
-                  onClick={handleRemoveStudent}
-                  className="inline-flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl border border-red-500/30 transition-all"
-                >
-                  <Trash2 size={18} />
-                  Remover
-                </button>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:w-48">
+                <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <BookOpen size={16} className="text-purple-500" />
+                    <span className="text-sm text-gray-600">Mentorias</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">{completedMentorships.length}</p>
+                </div>
+                <div className="bg-green-50 border border-green-100 rounded-xl p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <DollarSign size={16} className="text-green-500" />
+                    <span className="text-sm text-gray-600">Receita</span>
+                  </div>
+                  <p className="text-xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -246,58 +291,70 @@ export default function StudentDetail() {
         {/* Mentorias */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Mentorias Planejadas */}
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-purple-400 flex items-center gap-2">
-                <Clock size={20} />
-                Mentorias Planejadas
-              </h3>
-              <div className="relative">
-                <button
-                  onClick={() => setShowMentorshipMenu(!showMentorshipMenu)}
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl font-medium text-sm shadow-lg shadow-purple-500/30 transition-all"
-                >
-                  <Plus size={16} />
-                  Mentoria
-                  <ChevronDown size={16} />
-                </button>
-                {showMentorshipMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-10">
-                    <button
-                      onClick={() => openMentorshipModal('enrollment')}
-                      className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors rounded-t-xl"
-                    >
-                      Inscrição Mentoria
-                    </button>
-                    <button
-                      onClick={() => openMentorshipModal('mentorship')}
-                      className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors rounded-b-xl border-t border-gray-700"
-                    >
-                      Mentoria
-                    </button>
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 bg-purple-50 border-b border-purple-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-white border border-purple-200 rounded-lg shadow-sm">
+                    <Clock size={18} className="text-purple-500" />
                   </div>
-                )}
+                  <h3 className="text-lg font-semibold text-gray-900">Mentorias Planejadas</h3>
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMentorshipMenu(!showMentorshipMenu)}
+                    className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-xl font-medium text-sm shadow-sm transition-all"
+                  >
+                    <Plus size={16} />
+                    Mentoria
+                    <ChevronDown size={16} />
+                  </button>
+                  {showMentorshipMenu && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-10 overflow-hidden">
+                      <button
+                        onClick={() => openMentorshipModal('enrollment')}
+                        className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Inscrição Mentoria
+                      </button>
+                      <button
+                        onClick={() => openMentorshipModal('mentorship')}
+                        className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
+                      >
+                        Mentoria
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <MentorshipList
-              mentorships={pendingMentorships}
-              onUpdateStatus={handleUpdateMentorshipStatus}
-              onRemove={handleRemoveMentorship}
-            />
+            <div className="p-6">
+              <MentorshipList
+                mentorships={pendingMentorships}
+                onUpdateStatus={handleUpdateMentorshipStatus}
+                onRemove={handleRemoveMentorship}
+              />
+            </div>
           </div>
 
           {/* Mentorias Realizadas */}
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
-              <CheckCircle size={20} />
-              Mentorias Realizadas
-            </h3>
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 bg-green-50 border-b border-green-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-white border border-green-200 rounded-lg shadow-sm">
+                  <CheckCircle size={18} className="text-green-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Mentorias Realizadas</h3>
+              </div>
+            </div>
 
-            <CompletedMentorshipList
-              mentorships={completedMentorships}
-              onRemove={handleRemoveMentorship}
-            />
+            <div className="p-6">
+              <CompletedMentorshipList
+                mentorships={completedMentorships}
+                onRemove={handleRemoveMentorship}
+              />
+            </div>
           </div>
         </div>
       </div>
