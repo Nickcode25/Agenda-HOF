@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle, Check, XCircle, Pencil } from 'lucide-react'
+import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle, Check, XCircle, Pencil, CalendarOff } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
 import { useConfirm } from '@/hooks/useConfirm'
 import { usePatients } from '@/store/patients'
@@ -43,7 +43,10 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
   }
 
   const handleDelete = async () => {
-    if (await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja remover este agendamento?' })) {
+    const message = appointment.isPersonal
+      ? 'Tem certeza que deseja remover este compromisso?'
+      : 'Tem certeza que deseja remover este agendamento?'
+    if (await confirm({ title: 'Confirmação', message })) {
       onDelete(appointment.id)
       onClose()
     }
@@ -96,15 +99,29 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-gray-200">
           <div className="flex-1">
-            <h2 id="appointment-modal-title" className="text-2xl font-bold text-gray-900 mb-2">{appointment.patientName}</h2>
-            <div className="flex items-center gap-2">
-              <span className="inline-block px-3 py-1 rounded-lg bg-orange-100 text-orange-600 text-sm font-medium">
-                {appointment.procedure}
-              </span>
-              <span className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${statusColors[appointment.status || 'scheduled']}`}>
-                {statusLabels[appointment.status || 'scheduled']}
-              </span>
-            </div>
+            {appointment.isPersonal ? (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <CalendarOff size={24} className="text-sky-500" />
+                  <h2 id="appointment-modal-title" className="text-2xl font-bold text-gray-900">{appointment.title}</h2>
+                </div>
+                <span className="inline-block px-3 py-1 rounded-lg bg-sky-100 text-sky-600 text-sm font-medium">
+                  Compromisso Pessoal
+                </span>
+              </>
+            ) : (
+              <>
+                <h2 id="appointment-modal-title" className="text-2xl font-bold text-gray-900 mb-2">{appointment.patientName}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="inline-block px-3 py-1 rounded-lg bg-orange-100 text-orange-600 text-sm font-medium">
+                    {appointment.procedure}
+                  </span>
+                  <span className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${statusColors[appointment.status || 'scheduled']}`}>
+                    {statusLabels[appointment.status || 'scheduled']}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -120,8 +137,8 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
           {/* Date & Time */}
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Calendar size={20} className="text-orange-500" />
+              <div className={`p-2 rounded-lg ${appointment.isPersonal ? 'bg-sky-100' : 'bg-orange-100'}`}>
+                <Calendar size={20} className={appointment.isPersonal ? 'text-sky-500' : 'text-orange-500'} />
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Data</p>
@@ -132,8 +149,8 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Clock size={20} className="text-orange-500" />
+              <div className={`p-2 rounded-lg ${appointment.isPersonal ? 'bg-sky-100' : 'bg-orange-100'}`}>
+                <Clock size={20} className={appointment.isPersonal ? 'text-sky-500' : 'text-orange-500'} />
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Horário</p>
@@ -144,36 +161,38 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
             </div>
           </div>
 
-          {/* Professional & Room */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <User size={20} className="text-orange-500" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Profissional</p>
-                <p className="text-gray-900 font-medium">{appointment.professional}</p>
-              </div>
-            </div>
-
-            {appointment.room && (
+          {/* Professional & Room - Só mostra para agendamentos de pacientes */}
+          {!appointment.isPersonal && (
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-orange-100 rounded-lg">
-                  <MapPin size={20} className="text-orange-500" />
+                  <User size={20} className="text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Sala</p>
-                  <p className="text-gray-900 font-medium">Sala {appointment.room}</p>
+                  <p className="text-sm text-gray-500 mb-1">Profissional</p>
+                  <p className="text-gray-900 font-medium">{appointment.professional}</p>
                 </div>
               </div>
-            )}
-          </div>
+
+              {appointment.room && (
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <MapPin size={20} className="text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Sala</p>
+                    <p className="text-gray-900 font-medium">Sala {appointment.room}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Notes */}
           {appointment.notes && (
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <FileText size={20} className="text-orange-500" />
+              <div className={`p-2 rounded-lg ${appointment.isPersonal ? 'bg-sky-100' : 'bg-orange-100'}`}>
+                <FileText size={20} className={appointment.isPersonal ? 'text-sky-500' : 'text-orange-500'} />
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500 mb-1">Observações</p>
@@ -182,8 +201,8 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
             </div>
           )}
 
-          {/* Status Buttons */}
-          {appointment.status !== 'done' && appointment.status !== 'cancelled' && (
+          {/* Status Buttons - Só mostra para agendamentos de pacientes */}
+          {!appointment.isPersonal && appointment.status !== 'done' && appointment.status !== 'cancelled' && (
             <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
               <span className="text-sm text-gray-500 font-medium">Alterar status:</span>
               <div className="flex items-center gap-2 flex-wrap">
@@ -220,7 +239,11 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
           <div className="flex items-center gap-2">
             <button
               onClick={handleEdit}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium transition-colors border border-blue-200"
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border ${
+                appointment.isPersonal
+                  ? 'bg-sky-50 hover:bg-sky-100 text-sky-600 border-sky-200'
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200'
+              }`}
             >
               <Pencil size={18} />
               Editar
@@ -232,7 +255,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
               <Trash2 size={18} />
               Remover
             </button>
-            {patientPhone && (
+            {!appointment.isPersonal && patientPhone && (
               <button
                 onClick={handleWhatsApp}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg font-medium transition-colors border border-green-200"

@@ -3,13 +3,13 @@ import { useNavigate, Link, useParams } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
-import { useProcedures } from '@/store/procedures'
-import { useStock } from '@/store/stock'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
-import { Save, Search, Calendar, X, User, Phone, Clock, FileText, Stethoscope } from 'lucide-react'
+import { Save, Search, Calendar, X, User, Phone, Clock, FileText, Stethoscope, UserPlus, CalendarOff } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { createISOFromDateTimeBR, formatInSaoPaulo } from '@/utils/timezone'
 import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
+import { formatTimeInput, formatDateInput } from '@/utils/inputFormatters'
+import QuickPatientModal from '@/components/QuickPatientModal'
 
 export default function AppointmentForm() {
   const { id: appointmentId } = useParams<{ id: string }>()
@@ -20,8 +20,6 @@ export default function AppointmentForm() {
   const professionals = useProfessionals(s => s.professionals.filter(p => p.active))
   const allProfessionals = useProfessionals(s => s.professionals)
   const fetchProfessionals = useProfessionals(s => s.fetchAll)
-  const { fetchAll: fetchProcedures } = useProcedures()
-  const { fetchItems } = useStock()
   const { selectedProfessional } = useProfessionalContext()
   const add = useSchedule(s => s.addAppointment)
   const update = useSchedule(s => s.updateAppointment)
@@ -34,9 +32,8 @@ export default function AppointmentForm() {
   useEffect(() => {
     fetchPatients()
     fetchProfessionals()
-    fetchProcedures()
-    fetchItems()
     fetchAppointments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const [startTime, setStartTime] = useState('')
@@ -47,11 +44,18 @@ export default function AppointmentForm() {
   const [notes, setNotes] = useState('')
   const [professionalId, setProfessionalId] = useState(selectedProfessional || '')
 
+  // Compromisso pessoal
+  const [isPersonal, setIsPersonal] = useState(false)
+  const [personalTitle, setPersonalTitle] = useState('')
+
   // Autocomplete patient search
   const [patientSearch, setPatientSearch] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<typeof patients[0] | null>(null)
   const [showPatientDropdown, setShowPatientDropdown] = useState(false)
   const patientSearchRef = useRef<HTMLDivElement>(null)
+
+  // Quick patient modal
+  const [showQuickPatientModal, setShowQuickPatientModal] = useState(false)
 
   // Obter nome do profissional selecionado
   const selectedProfessionalName = selectedProfessional
@@ -60,18 +64,24 @@ export default function AppointmentForm() {
 
   // Carregar dados do agendamento quando estiver editando
   useEffect(() => {
-    if (isEditing && appointmentId && appointments.length > 0 && patients.length > 0) {
+    if (isEditing && appointmentId && appointments.length > 0) {
       const appointment = appointments.find(a => a.id === appointmentId)
       if (appointment) {
-        // Preencher dados do paciente
-        const patient = patients.find(p => p.id === appointment.patientId)
-        if (patient) {
-          setSelectedPatient(patient)
-          setPatientSearch(patient.name)
-        }
+        // Verificar se é compromisso pessoal
+        if (appointment.isPersonal) {
+          setIsPersonal(true)
+          setPersonalTitle(appointment.title || '')
+        } else {
+          // Preencher dados do paciente
+          const patient = patients.find(p => p.id === appointment.patientId)
+          if (patient) {
+            setSelectedPatient(patient)
+            setPatientSearch(patient.name)
+          }
 
-        // Preencher procedimento
-        setCustomProcedureName(appointment.procedure || '')
+          // Preencher procedimento
+          setCustomProcedureName(appointment.procedure || '')
+        }
 
         // Preencher profissional
         const prof = allProfessionals.find(p => p.name === appointment.professional)
@@ -135,62 +145,41 @@ export default function AppointmentForm() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Função para formatar horário
-  const formatTimeInput = (value: string): string => {
-    const numbers = value.replace(/\D/g, '')
-    const limited = numbers.slice(0, 4)
-
-    if (limited.length >= 3) {
-      return `${limited.slice(0, 2)}:${limited.slice(2)}`
-    } else if (limited.length >= 1) {
-      return limited
-    }
-
-    return ''
-  }
-
-  // Função para formatar data
-  const formatDateInput = (value: string): string => {
-    const numbers = value.replace(/\D/g, '')
-    const limited = numbers.slice(0, 8)
-
-    if (limited.length >= 5) {
-      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`
-    } else if (limited.length >= 3) {
-      return `${limited.slice(0, 2)}/${limited.slice(2)}`
-    } else if (limited.length >= 1) {
-      return limited
-    }
-
-    return ''
-  }
-
   const handleStartTimeChange = (value: string) => {
-    const formatted = formatTimeInput(value)
-    setStartTime(formatted)
+    setStartTime(formatTimeInput(value))
   }
 
   const handleEndTimeChange = (value: string) => {
-    const formatted = formatTimeInput(value)
-    setEndTime(formatted)
+    setEndTime(formatTimeInput(value))
   }
 
   const handleDateChange = (value: string) => {
-    const formatted = formatDateInput(value)
-    setAppointmentDate(formatted)
+    setAppointmentDate(formatDateInput(value))
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    if (!selectedPatient) {
-      showToast('Por favor, selecione um paciente', 'error')
-      return
-    }
+    // Validações diferentes para compromisso pessoal vs agendamento
+    if (isPersonal) {
+      if (!personalTitle.trim()) {
+        showToast('Por favor, informe o título do compromisso', 'error')
+        return
+      }
+      if (!professionalId) {
+        showToast('Por favor, selecione um profissional para o compromisso', 'error')
+        return
+      }
+    } else {
+      if (!selectedPatient) {
+        showToast('Por favor, selecione um paciente', 'error')
+        return
+      }
 
-    if (!professionalId) {
-      showToast('Por favor, selecione um profissional', 'error')
-      return
+      if (!professionalId) {
+        showToast('Por favor, selecione um profissional', 'error')
+        return
+      }
     }
 
     const professional = professionals.find(p => p.id === professionalId) || allProfessionals.find(p => p.id === professionalId)
@@ -199,48 +188,93 @@ export default function AppointmentForm() {
 
     if (isEditing && appointmentId) {
       // Atualizar agendamento existente
-      await update(appointmentId, {
-        patientId: selectedPatient.id,
-        patientName: selectedPatient.name,
-        procedure: customProcedureName,
-        professional: professional?.name || '',
-        room,
-        start,
-        end,
-        notes,
-      })
+      if (isPersonal) {
+        await update(appointmentId, {
+          patientId: '',
+          patientName: personalTitle,
+          procedure: 'Compromisso Pessoal',
+          professional: professional?.name || '',
+          room: room || undefined,
+          start,
+          end,
+          notes: notes || undefined,
+          isPersonal: true,
+          title: personalTitle,
+        })
+      } else {
+        await update(appointmentId, {
+          patientId: selectedPatient!.id,
+          patientName: selectedPatient!.name,
+          procedure: customProcedureName,
+          professional: professional?.name || '',
+          room,
+          start,
+          end,
+          notes,
+          isPersonal: false,
+          title: '',
+        })
+      }
 
       await fetchAppointments()
-      showToast('Agendamento atualizado com sucesso!', 'success')
+      showToast(isPersonal ? 'Compromisso atualizado com sucesso!' : 'Agendamento atualizado com sucesso!', 'success')
       navigate('/app/agenda')
     } else {
-      // Criar novo agendamento
+      // Criar novo agendamento ou compromisso
       const newAppointmentId = await add({
-        patientId: selectedPatient.id,
-        patientName: selectedPatient.name,
-        procedure: customProcedureName,
+        patientId: isPersonal ? '' : selectedPatient!.id,
+        patientName: isPersonal ? personalTitle : selectedPatient!.name,
+        procedure: isPersonal ? 'Compromisso Pessoal' : customProcedureName,
         procedureId: undefined,
         selectedProducts: undefined,
         professional: professional?.name || '',
-        room,
+        room: room || undefined,
         start,
         end,
-        notes,
-        status: 'scheduled'
+        notes: notes || undefined,
+        status: 'scheduled',
+        isPersonal,
+        title: isPersonal ? personalTitle : undefined,
       })
 
       if (!newAppointmentId) {
-        showToast('Erro ao criar agendamento. Tente novamente.', 'error')
+        showToast(isPersonal ? 'Erro ao criar compromisso. Tente novamente.' : 'Erro ao criar agendamento. Tente novamente.', 'error')
         return
       }
 
       await fetchAppointments()
-      showToast('Agendamento criado com sucesso!', 'success')
+      showToast(isPersonal ? 'Compromisso criado com sucesso!' : 'Agendamento criado com sucesso!', 'success')
       navigate('/app/agenda')
     }
   }
 
-  const canSubmit = selectedPatient && customProcedureName.trim() && professionalId && appointmentDate && startTime && endTime
+  // Para compromisso pessoal: precisa de título, profissional, data e horários
+  // Para agendamento: precisa de paciente, procedimento, profissional, data e horários
+  const canSubmit = isPersonal
+    ? (personalTitle.trim() && professionalId && appointmentDate && startTime && endTime)
+    : (selectedPatient && customProcedureName.trim() && professionalId && appointmentDate && startTime && endTime)
+
+  // Callback quando paciente é criado pelo modal rápido
+  const handleQuickPatientCreated = (newPatient: { id: string; name: string; phone?: string }) => {
+    // Buscar o paciente completo na lista atualizada
+    fetchPatients().then(() => {
+      const foundPatient = patients.find(p => p.id === newPatient.id)
+      if (foundPatient) {
+        setSelectedPatient(foundPatient)
+      } else {
+        // Criar objeto temporário caso o paciente ainda não esteja na lista
+        setSelectedPatient({
+          id: newPatient.id,
+          name: newPatient.name,
+          phone: newPatient.phone || '',
+          cpf: '',
+          createdAt: new Date().toISOString(),
+        })
+      }
+      setPatientSearch(newPatient.name)
+      setShowPatientDropdown(false)
+    })
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8">
@@ -249,14 +283,18 @@ export default function AppointmentForm() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {isEditing ? 'Editar Agendamento' : 'Novo Agendamento'}
+              {isEditing
+                ? (isPersonal ? 'Editar Compromisso' : 'Editar Agendamento')
+                : (isPersonal ? 'Novo Compromisso' : 'Novo Agendamento')}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               {isEditing
-                ? 'Altere os dados do agendamento'
-                : selectedProfessionalName
-                  ? `Agenda: ${selectedProfessionalName}`
-                  : 'Agende um novo procedimento'}
+                ? (isPersonal ? 'Altere os dados do compromisso pessoal' : 'Altere os dados do agendamento')
+                : isPersonal
+                  ? 'Bloqueie um horário na sua agenda'
+                  : selectedProfessionalName
+                    ? `Agenda: ${selectedProfessionalName}`
+                    : 'Agende um novo procedimento'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -266,6 +304,16 @@ export default function AppointmentForm() {
             >
               Cancelar
             </Link>
+            {!isPersonal && (
+              <button
+                type="button"
+                onClick={() => setShowQuickPatientModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors"
+              >
+                <UserPlus size={18} />
+                Adicionar Paciente
+              </button>
+            )}
             <button
               type="submit"
               form="appointment-form"
@@ -273,18 +321,110 @@ export default function AppointmentForm() {
               className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all ${
                 !canSubmit
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
+                  : isPersonal
+                    ? 'bg-sky-500 hover:bg-sky-600 text-white shadow-sm'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
               }`}
             >
               <Save size={18} />
-              {isEditing ? 'Salvar Alterações' : 'Salvar Agendamento'}
+              {isEditing ? 'Salvar Alterações' : (isPersonal ? 'Salvar Compromisso' : 'Salvar Agendamento')}
             </button>
           </div>
         </div>
 
         {/* Form */}
         <form id="appointment-form" onSubmit={onSubmit} className="space-y-4">
-          {/* Seção: Paciente */}
+          {/* Toggle: Tipo de agendamento */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+              <div className={`p-2 rounded-lg ${isPersonal ? 'bg-sky-50' : 'bg-gray-100'}`}>
+                <CalendarOff size={18} className={isPersonal ? 'text-sky-600' : 'text-gray-500'} />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Tipo</h3>
+                <p className="text-xs text-gray-500">Selecione o tipo de evento na agenda</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsPersonal(false)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                  !isPersonal
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <User size={18} />
+                Agendamento de Paciente
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPersonal(true)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                  isPersonal
+                    ? 'border-sky-500 bg-sky-50 text-sky-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <CalendarOff size={18} />
+                Compromisso Pessoal
+              </button>
+            </div>
+          </div>
+
+          {/* Seção: Compromisso Pessoal (quando isPersonal = true) */}
+          {isPersonal && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                <div className="p-2 bg-sky-50 rounded-lg">
+                  <CalendarOff size={18} className="text-sky-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Compromisso</h3>
+                  <p className="text-xs text-gray-500">Bloqueie um horário na sua agenda</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Título do Compromisso <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={personalTitle}
+                    onChange={(e) => setPersonalTitle(e.target.value)}
+                    placeholder="Ex: Reunião, Gravação, Viagem..."
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-0.5">Descreva brevemente o compromisso</p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Profissional <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={professionalId}
+                    onChange={(e) => setProfessionalId(e.target.value)}
+                    required
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm"
+                  >
+                    <option value="">Selecione um profissional</option>
+                    {professionals.map(prof => (
+                      <option key={prof.id} value={prof.id}>{prof.name} - {prof.specialty}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-0.5">A quem pertence este compromisso</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Seção: Paciente (quando isPersonal = false) */}
+          {!isPersonal && (
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
               <div className="p-2 bg-blue-50 rounded-lg">
@@ -387,8 +527,10 @@ export default function AppointmentForm() {
               )}
             </div>
           </div>
+          )}
 
-          {/* Seção: Procedimento */}
+          {/* Seção: Procedimento (quando isPersonal = false) */}
+          {!isPersonal && (
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
               <div className="p-2 bg-orange-50 rounded-lg">
@@ -450,16 +592,17 @@ export default function AppointmentForm() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Seção: Data e Horário */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <Calendar size={18} className="text-green-600" />
+              <div className={`p-2 rounded-lg ${isPersonal ? 'bg-sky-50' : 'bg-green-50'}`}>
+                <Calendar size={18} className={isPersonal ? 'text-sky-600' : 'text-green-600'} />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Data e Horário</h3>
-                <p className="text-xs text-gray-500">Quando será o agendamento</p>
+                <p className="text-xs text-gray-500">{isPersonal ? 'Quando será o compromisso' : 'Quando será o agendamento'}</p>
               </div>
             </div>
 
@@ -573,6 +716,13 @@ export default function AppointmentForm() {
           </div>
         </form>
       </div>
+
+      {/* Modal de Cadastro Rápido de Paciente */}
+      <QuickPatientModal
+        isOpen={showQuickPatientModal}
+        onClose={() => setShowQuickPatientModal(false)}
+        onPatientCreated={handleQuickPatientCreated}
+      />
     </div>
   )
 }

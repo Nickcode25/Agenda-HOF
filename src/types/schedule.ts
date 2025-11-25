@@ -17,6 +17,8 @@ export type Appointment = {
   end: string   // ISO
   notes?: string
   status?: 'scheduled' | 'confirmed' | 'done' | 'cancelled'
+  isPersonal?: boolean // Compromisso pessoal (não é atendimento de paciente)
+  title?: string // Título do compromisso pessoal (ex: "Almoço", "Viagem")
 }
 
 export type WaitlistItem = {

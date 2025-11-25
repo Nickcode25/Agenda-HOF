@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { format, startOfWeek, startOfMonth, endOfMonth, addDays, isSameDay, isToday, parseISO, getDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Appointment } from '@/types/schedule'
+import type { VirtualBlock } from '@/utils/recurringBlocks'
 import { toSaoPauloTime, formatInSaoPaulo } from '@/utils/timezone'
 
 type ViewMode = 'day' | 'week' | 'month'
@@ -9,6 +10,7 @@ type ViewMode = 'day' | 'week' | 'month'
 interface WeekGridProps {
   currentDate: Date
   appointments: Appointment[]
+  recurringBlocks?: VirtualBlock[]
   onAppointmentClick: (appointment: Appointment) => void
   onTimeSlotClick?: (date: Date, hour: number) => void
   viewMode: ViewMode
@@ -17,6 +19,7 @@ interface WeekGridProps {
 export default function WeekGrid({
   currentDate,
   appointments,
+  recurringBlocks = [],
   onAppointmentClick,
   onTimeSlotClick,
   viewMode
@@ -68,6 +71,14 @@ export default function WeekGrid({
     }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
   }
 
+  // Obter bloqueios recorrentes para um dia específico
+  const getRecurringBlocksForDay = (date: Date) => {
+    return recurringBlocks.filter(block => {
+      const blockDate = parseISO(block.start)
+      return isSameDay(blockDate, date)
+    }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+  }
+
   // Calcular duração do agendamento em minutos
   const getAppointmentDuration = (apt: Appointment) => {
     const aptStart = toSaoPauloTime(parseISO(apt.start))
@@ -101,9 +112,43 @@ export default function WeekGrid({
     }
   }
 
+  // Calcular posição e altura de um bloqueio recorrente
+  const getRecurringBlockStyle = (block: VirtualBlock) => {
+    const blockStart = parseISO(block.start)
+    const blockEnd = parseISO(block.end)
+
+    const startMinutesFromDayStart = (blockStart.getHours() - 7) * 60 + blockStart.getMinutes()
+    const endMinutesFromDayStart = (blockEnd.getHours() - 7) * 60 + blockEnd.getMinutes()
+
+    const topPx = (startMinutesFromDayStart / 60) * HOUR_HEIGHT
+    const heightPx = ((endMinutesFromDayStart - startMinutesFromDayStart) / 60) * HOUR_HEIGHT
+
+    const minHeight = 30
+
+    return {
+      top: `${topPx + 1}px`,
+      height: `${Math.max(heightPx - 2, minHeight)}px`,
+      position: 'absolute' as const,
+      left: '3px',
+      right: '3px',
+    }
+  }
+
+  // Calcular duração de um bloqueio recorrente em minutos
+  const getRecurringBlockDuration = (block: VirtualBlock) => {
+    const blockStart = parseISO(block.start)
+    const blockEnd = parseISO(block.end)
+    return (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60)
+  }
+
   // Obter classes de cor baseado no status do agendamento
-  const getAppointmentColors = (status?: string) => {
-    switch (status) {
+  const getAppointmentColors = (apt: Appointment) => {
+    // Compromisso pessoal = azul claro
+    if (apt.isPersonal) {
+      return 'bg-gradient-to-r from-sky-300 to-sky-400 hover:from-sky-400 hover:to-sky-500'
+    }
+
+    switch (apt.status) {
       case 'confirmed':
         return 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
       case 'cancelled':
@@ -168,9 +213,9 @@ export default function WeekGrid({
                         e.stopPropagation()
                         onAppointmentClick(apt)
                       }}
-                      className={`w-full text-left p-1 rounded ${getAppointmentColors(apt.status)} text-white text-xs truncate transition-all`}
+                      className={`w-full text-left p-1 rounded ${getAppointmentColors(apt)} text-white text-xs truncate transition-all`}
                     >
-                      {formatInSaoPaulo(apt.start, 'HH:mm')} - {apt.patientName}
+                      {formatInSaoPaulo(apt.start, 'HH:mm')} - {apt.isPersonal ? apt.title : apt.patientName}
                     </button>
                   ))}
                   {dayAppointments.length > 3 && (
@@ -250,6 +295,7 @@ export default function WeekGrid({
           {/* Colunas dos dias com agendamentos */}
           {days.map((day, dayIndex) => {
             const dayAppointments = getAppointmentsForDay(day)
+            const dayRecurringBlocks = getRecurringBlocksForDay(day)
             const isDayToday = isToday(day)
 
             return (
@@ -270,6 +316,22 @@ export default function WeekGrid({
                   />
                 ))}
 
+                {/* Bloqueios recorrentes (renderizados atrás dos agendamentos) */}
+                {dayRecurringBlocks.map(block => (
+                  <div
+                    key={block.id}
+                    style={getRecurringBlockStyle(block)}
+                    className="rounded-lg bg-sky-100 border-2 border-dashed border-sky-300 overflow-hidden z-5 flex flex-col justify-center items-center p-1.5 text-center opacity-80"
+                  >
+                    <div className={`font-medium text-sky-700 ${getRecurringBlockDuration(block) <= 30 ? 'text-[10px]' : 'text-xs'}`}>
+                      {format(parseISO(block.start), 'HH:mm')} - {format(parseISO(block.end), 'HH:mm')}
+                    </div>
+                    <div className={`font-medium text-sky-600 leading-tight truncate w-full ${getRecurringBlockDuration(block) <= 30 ? 'text-xs' : 'text-sm'}`}>
+                      {block.title}
+                    </div>
+                  </div>
+                ))}
+
                 {/* Agendamentos posicionados absolutamente */}
                 {dayAppointments.map(apt => (
                   <button
@@ -279,15 +341,15 @@ export default function WeekGrid({
                       onAppointmentClick(apt)
                     }}
                     style={getAppointmentStyle(apt)}
-                    className={`rounded-lg ${getAppointmentColors(apt.status)} text-white shadow-sm hover:shadow-lg transition-all overflow-hidden z-10 flex flex-col justify-center items-center p-1.5 text-center border-2 border-white/30`}
+                    className={`rounded-lg ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-lg transition-all overflow-hidden z-10 flex flex-col justify-center items-center p-1.5 text-center border-2 border-white/30`}
                   >
                     <div className={`font-semibold opacity-90 ${getAppointmentDuration(apt) <= 15 ? 'text-[10px]' : 'text-xs'}`}>
                       {formatInSaoPaulo(apt.start, 'HH:mm')} - {formatInSaoPaulo(apt.end, 'HH:mm')}
                     </div>
                     <div className={`font-medium leading-tight truncate w-full ${getAppointmentDuration(apt) <= 15 ? 'text-xs' : 'text-[13px]'}`}>
-                      {apt.patientName}
+                      {apt.isPersonal ? apt.title : apt.patientName}
                     </div>
-                    {viewMode === 'day' && apt.professional && getAppointmentDuration(apt) >= 30 && (
+                    {!apt.isPersonal && viewMode === 'day' && apt.professional && getAppointmentDuration(apt) >= 30 && (
                       <div className="text-[10px] opacity-80 truncate w-full mt-0.5">
                         {apt.professional}
                       </div>

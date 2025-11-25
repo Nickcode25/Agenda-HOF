@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
+import { useRecurring } from '@/store/recurring'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
@@ -13,21 +14,19 @@ import type { Appointment } from '@/types/schedule'
 export default function ScheduleCalendar() {
   const { appointments, removeAppointment, fetchAppointments } = useSchedule()
   const { professionals, fetchAll: fetchProfessionals } = useProfessionals()
+  const { blocks: recurringBlocks, fetchBlocks: fetchRecurringBlocks } = useRecurring()
   const { selectedProfessional } = useProfessionalContext()
   const { hasActiveSubscription } = useSubscription()
   const { user } = useAuth()
   const { currentProfile } = useUserProfile()
 
-  // Memoizar funções para evitar re-fetches desnecessários
-  const loadData = useCallback(() => {
+  // Carregar dados ao montar o componente (apenas uma vez)
+  useEffect(() => {
     fetchProfessionals()
     fetchAppointments()
-  }, [fetchProfessionals, fetchAppointments])
-
-  // Carregar profissionais e agendamentos ao montar o componente
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+    fetchRecurringBlocks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
 
@@ -73,6 +72,7 @@ export default function ScheduleCalendar() {
       {/* Novo Calendário */}
       <NewCalendar
         appointments={filteredAppointments}
+        recurringBlocks={recurringBlocks}
         userName={userName}
         userPlan={userPlan}
         onAppointmentClick={handleAppointmentClick}

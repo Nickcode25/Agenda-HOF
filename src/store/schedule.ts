@@ -63,6 +63,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
         end: row.end,
         notes: row.notes || undefined,
         status: row.status || 'scheduled',
+        isPersonal: row.is_personal || false,
+        title: row.title || undefined,
       }))
 
       set({ appointments, loading: false })
@@ -105,6 +107,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
         end: row.end,
         notes: row.notes || undefined,
         status: row.status || 'scheduled',
+        isPersonal: row.is_personal || false,
+        title: row.title || undefined,
       }))
 
       set({ appointments, loading: false })
@@ -119,22 +123,26 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      const insertData = {
+        user_id: user.id,
+        patient_id: a.patientId || null,
+        patient_name: a.patientName,
+        procedure: a.procedure,
+        procedure_id: a.procedureId || null,
+        selected_products: a.selectedProducts || null,
+        professional: a.professional,
+        room: a.room || null,
+        start: a.start,
+        end: a.end,
+        notes: a.notes || null,
+        status: a.status || 'scheduled',
+        is_personal: a.isPersonal || false,
+        title: a.title || null,
+      }
+
       const { data, error } = await supabase
         .from('appointments')
-        .insert({
-          user_id: user.id,
-          patient_id: a.patientId,
-          patient_name: a.patientName,
-          procedure: a.procedure,
-          procedure_id: a.procedureId || null,
-          selected_products: a.selectedProducts || null,
-          professional: a.professional,
-          room: a.room || null,
-          start: a.start,
-          end: a.end,
-          notes: a.notes || null,
-          status: a.status || 'scheduled',
-        })
+        .insert(insertData)
         .select()
         .single()
 
@@ -156,7 +164,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       if (!user) throw new Error('Usuário não autenticado')
 
       const updateData: any = {}
-      if (patch.patientId !== undefined) updateData.patient_id = patch.patientId
+      if (patch.patientId !== undefined) updateData.patient_id = patch.patientId || null
       if (patch.patientName !== undefined) updateData.patient_name = patch.patientName
       if (patch.procedure !== undefined) updateData.procedure = patch.procedure
       if (patch.procedureId !== undefined) updateData.procedure_id = patch.procedureId || null
@@ -167,6 +175,8 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
       if (patch.end !== undefined) updateData.end = patch.end
       if (patch.notes !== undefined) updateData.notes = patch.notes || null
       if (patch.status !== undefined) updateData.status = patch.status
+      if (patch.isPersonal !== undefined) updateData.is_personal = patch.isPersonal
+      if (patch.title !== undefined) updateData.title = patch.title || null
 
       const { error } = await supabase
         .from('appointments')

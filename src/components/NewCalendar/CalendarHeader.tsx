@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Plus, Repeat } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface CalendarHeaderProps {
@@ -51,14 +51,24 @@ export default function CalendarHeader({
         </div>
       </div>
 
-      {/* Lado direito - Botão novo agendamento */}
-      <Link
-        to="/app/agenda/nova"
-        className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:scale-105"
-      >
-        <Plus size={20} />
-        Novo Agendamento
-      </Link>
+      {/* Lado direito - Botões */}
+      <div className="flex items-center gap-3">
+        <Link
+          to="/app/agenda/recorrentes"
+          className="inline-flex items-center gap-2 bg-sky-50 hover:bg-sky-100 text-sky-600 px-4 py-3 rounded-xl font-medium border border-sky-200 transition-all hover:border-sky-300"
+          title="Bloqueios Recorrentes"
+        >
+          <Repeat size={18} />
+          <span className="hidden sm:inline">Recorrentes</span>
+        </Link>
+        <Link
+          to="/app/agenda/nova"
+          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:scale-105"
+        >
+          <Plus size={20} />
+          Novo Agendamento
+        </Link>
+      </div>
     </div>
   )
 }
