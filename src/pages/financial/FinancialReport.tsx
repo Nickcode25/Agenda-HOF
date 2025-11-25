@@ -302,7 +302,7 @@ export default function FinancialReport() {
       amount: -expense.amount,
       description: expense.description,
       category: 'expense' as const,
-      createdAt: (expense.paidAt || expense.dueDate)!,
+      createdAt: expense.createdAt, // Usar data de criação real para ordenação
       paymentMethod: expense.paymentMethod,
       expenseCategory: expense.categoryName
     }))
