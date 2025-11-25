@@ -1,8 +1,25 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, ComponentType } from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
+
+// Lazy load com retry automático em caso de erro de cache após deploy
+function lazyWithRetry<T extends ComponentType<unknown>>(
+  importFn: () => Promise<{ default: T }>
+): React.LazyExoticComponent<T> {
+  return lazy(async () => {
+    try {
+      return await importFn()
+    } catch (error) {
+      // Se falhar (geralmente por cache antigo após deploy), recarrega a página
+      console.warn('Erro ao carregar módulo, recarregando página...', error)
+      window.location.reload()
+      // Retorna um componente vazio enquanto recarrega
+      return { default: (() => null) as unknown as T }
+    }
+  })
+}
 
 // Loading component - minimal fallback
 const LoadingFallback = () => (
@@ -16,100 +33,100 @@ import App from './App'
 import RoleGuard from './components/RoleGuard'
 import SubscriptionProtectedRoute from './components/SubscriptionProtectedRoute'
 
-// Lazy loaded pages
-const LandingPage = lazy(() => import('./pages/landing/NewLandingPage'))
-const SignupPage = lazy(() => import('./pages/SignupPage'))
-const LoginPage = lazy(() => import('./pages/LoginPage'))
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
-const PlansPage = lazy(() => import('./pages/PlansPage'))
-const Checkout = lazy(() => import('./pages/Checkout'))
+// Lazy loaded pages (com retry automático para evitar erro de cache após deploy)
+const LandingPage = lazyWithRetry(() => import('./pages/landing/NewLandingPage'))
+const SignupPage = lazyWithRetry(() => import('./pages/SignupPage'))
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'))
+const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage'))
+const PlansPage = lazyWithRetry(() => import('./pages/PlansPage'))
+const Checkout = lazyWithRetry(() => import('./pages/Checkout'))
 
 // Schedule
-const ScheduleCalendar = lazy(() => import('./pages/schedule/ScheduleCalendar'))
-const AppointmentForm = lazy(() => import('./pages/schedule/AppointmentForm'))
-const RecurringBlocks = lazy(() => import('./pages/schedule/RecurringBlocks'))
+const ScheduleCalendar = lazyWithRetry(() => import('./pages/schedule/ScheduleCalendar'))
+const AppointmentForm = lazyWithRetry(() => import('./pages/schedule/AppointmentForm'))
+const RecurringBlocks = lazyWithRetry(() => import('./pages/schedule/RecurringBlocks'))
 
 // Patients
-const PatientsList = lazy(() => import('./pages/patients/PatientsList'))
-const PatientForm = lazy(() => import('./pages/patients/PatientForm'))
-const PatientDetail = lazy(() => import('./pages/patients/PatientDetail'))
-const PatientEdit = lazy(() => import('./pages/patients/PatientEdit'))
-const PatientEvolution = lazy(() => import('./pages/patients/PatientEvolution'))
+const PatientsList = lazyWithRetry(() => import('./pages/patients/PatientsList'))
+const PatientForm = lazyWithRetry(() => import('./pages/patients/PatientForm'))
+const PatientDetail = lazyWithRetry(() => import('./pages/patients/PatientDetail'))
+const PatientEdit = lazyWithRetry(() => import('./pages/patients/PatientEdit'))
+const PatientEvolution = lazyWithRetry(() => import('./pages/patients/PatientEvolution'))
 
 // Students
-const StudentsList = lazy(() => import('./pages/students/StudentsList'))
-const StudentForm = lazy(() => import('./pages/students/StudentForm'))
-const StudentDetail = lazy(() => import('./pages/students/StudentDetail'))
+const StudentsList = lazyWithRetry(() => import('./pages/students/StudentsList'))
+const StudentForm = lazyWithRetry(() => import('./pages/students/StudentForm'))
+const StudentDetail = lazyWithRetry(() => import('./pages/students/StudentDetail'))
 
 // Professionals
-const ProfessionalsList = lazy(() => import('./pages/professionals/ProfessionalsList'))
-const ProfessionalForm = lazy(() => import('./pages/professionals/ProfessionalForm'))
-const ProfessionalDetail = lazy(() => import('./pages/professionals/ProfessionalDetail'))
-const ProfessionalEdit = lazy(() => import('./pages/professionals/ProfessionalEdit'))
+const ProfessionalsList = lazyWithRetry(() => import('./pages/professionals/ProfessionalsList'))
+const ProfessionalForm = lazyWithRetry(() => import('./pages/professionals/ProfessionalForm'))
+const ProfessionalDetail = lazyWithRetry(() => import('./pages/professionals/ProfessionalDetail'))
+const ProfessionalEdit = lazyWithRetry(() => import('./pages/professionals/ProfessionalEdit'))
 
 // Procedures
-const ProceduresList = lazy(() => import('./pages/procedures/ProceduresList'))
-const ProcedureForm = lazy(() => import('./pages/procedures/ProcedureForm'))
-const ProcedureDetail = lazy(() => import('./pages/procedures/ProcedureDetail'))
-const ProcedureEdit = lazy(() => import('./pages/procedures/ProcedureEdit'))
-const ProcedureCategories = lazy(() => import('./pages/procedures/ProcedureCategories'))
+const ProceduresList = lazyWithRetry(() => import('./pages/procedures/ProceduresList'))
+const ProcedureForm = lazyWithRetry(() => import('./pages/procedures/ProcedureForm'))
+const ProcedureDetail = lazyWithRetry(() => import('./pages/procedures/ProcedureDetail'))
+const ProcedureEdit = lazyWithRetry(() => import('./pages/procedures/ProcedureEdit'))
+const ProcedureCategories = lazyWithRetry(() => import('./pages/procedures/ProcedureCategories'))
 
 // Stock
-const StockList = lazy(() => import('./pages/stock/StockList'))
-const StockForm = lazy(() => import('./pages/stock/StockForm'))
+const StockList = lazyWithRetry(() => import('./pages/stock/StockList'))
+const StockForm = lazyWithRetry(() => import('./pages/stock/StockForm'))
 
 // Sales
-const SalesList = lazy(() => import('./pages/sales/SalesList'))
-const SaleForm = lazy(() => import('./pages/sales/SaleForm'))
-const SalesProfessionalForm = lazy(() => import('./pages/sales/ProfessionalForm'))
-const SalesProfessionalEdit = lazy(() => import('./pages/sales/ProfessionalEdit'))
-const SalesHistory = lazy(() => import('./pages/sales/SalesHistory'))
-const SalesProfessionalsList = lazy(() => import('./pages/sales/SalesProfessionalsList'))
+const SalesList = lazyWithRetry(() => import('./pages/sales/SalesList'))
+const SaleForm = lazyWithRetry(() => import('./pages/sales/SaleForm'))
+const SalesProfessionalForm = lazyWithRetry(() => import('./pages/sales/ProfessionalForm'))
+const SalesProfessionalEdit = lazyWithRetry(() => import('./pages/sales/ProfessionalEdit'))
+const SalesHistory = lazyWithRetry(() => import('./pages/sales/SalesHistory'))
+const SalesProfessionalsList = lazyWithRetry(() => import('./pages/sales/SalesProfessionalsList'))
 
 // Financial
-const FinancialReport = lazy(() => import('./pages/financial/FinancialReport'))
+const FinancialReport = lazyWithRetry(() => import('./pages/financial/FinancialReport'))
 
 // Expenses
-const ExpensesList = lazy(() => import('./pages/expenses/ExpensesList'))
-const ExpenseForm = lazy(() => import('./pages/expenses/ExpenseForm'))
-const ExpenseCategories = lazy(() => import('./pages/expenses/ExpenseCategories'))
+const ExpensesList = lazyWithRetry(() => import('./pages/expenses/ExpensesList'))
+const ExpenseForm = lazyWithRetry(() => import('./pages/expenses/ExpenseForm'))
+const ExpenseCategories = lazyWithRetry(() => import('./pages/expenses/ExpenseCategories'))
 
 // Subscriptions
-const PlansList = lazy(() => import('./pages/subscriptions/PlansList'))
-const PlanForm = lazy(() => import('./pages/subscriptions/PlanForm'))
-const PlanDetail = lazy(() => import('./pages/subscriptions/PlanDetail'))
-const SubscribersList = lazy(() => import('./pages/subscriptions/SubscribersList'))
-const SubscriptionForm = lazy(() => import('./pages/subscriptions/SubscriptionForm'))
-const SubscriptionReports = lazy(() => import('./pages/subscriptions/SubscriptionReports'))
-const SubscriptionsMain = lazy(() => import('./pages/subscriptions/SubscriptionsMain'))
+const PlansList = lazyWithRetry(() => import('./pages/subscriptions/PlansList'))
+const PlanForm = lazyWithRetry(() => import('./pages/subscriptions/PlanForm'))
+const PlanDetail = lazyWithRetry(() => import('./pages/subscriptions/PlanDetail'))
+const SubscribersList = lazyWithRetry(() => import('./pages/subscriptions/SubscribersList'))
+const SubscriptionForm = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionForm'))
+const SubscriptionReports = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionReports'))
+const SubscriptionsMain = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionsMain'))
 
 // Staff
-const StaffManagement = lazy(() => import('./pages/staff/StaffManagement'))
+const StaffManagement = lazyWithRetry(() => import('./pages/staff/StaffManagement'))
 
 // Notifications
-const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage'))
+const NotificationsPage = lazyWithRetry(() => import('./pages/notifications/NotificationsPage'))
 
 // Clinical Evolution and Photos - moved to patients directory
-const ClinicalEvolutionForm = lazy(() => import('./pages/patients/ClinicalEvolutionForm'))
-const PhotoUploadPage = lazy(() => import('./pages/patients/PhotoUploadPage'))
-const PhotoEditPage = lazy(() => import('./pages/patients/PhotoEditPage'))
+const ClinicalEvolutionForm = lazyWithRetry(() => import('./pages/patients/ClinicalEvolutionForm'))
+const PhotoUploadPage = lazyWithRetry(() => import('./pages/patients/PhotoUploadPage'))
+const PhotoEditPage = lazyWithRetry(() => import('./pages/patients/PhotoEditPage'))
 
 // Settings
-const EvolutionSettings = lazy(() => import('./pages/settings/EvolutionSettings'))
+const EvolutionSettings = lazyWithRetry(() => import('./pages/settings/EvolutionSettings'))
 
 // Account
-const SubscriptionManagement = lazy(() => import('./pages/account/SubscriptionManagement'))
+const SubscriptionManagement = lazyWithRetry(() => import('./pages/account/SubscriptionManagement'))
 
 // Admin
-const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'))
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
-const UsersPage = lazy(() => import('./pages/admin/UsersPage'))
-const PlansAdminPage = lazy(() => import('./pages/admin/PlansAdminPage'))
-const SubscriptionsAdminPage = lazy(() => import('./pages/admin/SubscriptionsAdminPage'))
-const PaymentsAdminPage = lazy(() => import('./pages/admin/PaymentsAdminPage'))
-const CouponsAdminPage = lazy(() => import('./pages/admin/CouponsAdminPage'))
-const CourtesyAdminPage = lazy(() => import('./pages/admin/CourtesyAdminPage'))
+const AdminLoginPage = lazyWithRetry(() => import('./pages/admin/AdminLoginPage'))
+const AdminDashboard = lazyWithRetry(() => import('./pages/admin/AdminDashboard'))
+const UsersPage = lazyWithRetry(() => import('./pages/admin/UsersPage'))
+const PlansAdminPage = lazyWithRetry(() => import('./pages/admin/PlansAdminPage'))
+const SubscriptionsAdminPage = lazyWithRetry(() => import('./pages/admin/SubscriptionsAdminPage'))
+const PaymentsAdminPage = lazyWithRetry(() => import('./pages/admin/PaymentsAdminPage'))
+const CouponsAdminPage = lazyWithRetry(() => import('./pages/admin/CouponsAdminPage'))
+const CourtesyAdminPage = lazyWithRetry(() => import('./pages/admin/CourtesyAdminPage'))
 
 // Helper to wrap lazy components with Suspense
 const withSuspense = (Component: React.LazyExoticComponent<React.ComponentType>) => (
