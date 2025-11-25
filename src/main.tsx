@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
+import { isIOSDevice } from './utils/deviceDetection'
 
 // Loading component - minimal fallback
 const LoadingFallback = () => (
@@ -13,6 +14,7 @@ const LoadingFallback = () => (
 
 // Core components (loaded immediately)
 import App from './App'
+import MobileApp from './MobileApp'
 import RoleGuard from './components/RoleGuard'
 import SubscriptionProtectedRoute from './components/SubscriptionProtectedRoute'
 
@@ -28,6 +30,10 @@ const Checkout = lazy(() => import('./pages/Checkout'))
 // Schedule
 const ScheduleCalendar = lazy(() => import('./pages/schedule/ScheduleCalendar'))
 const AppointmentForm = lazy(() => import('./pages/schedule/AppointmentForm'))
+
+// Mobile pages
+const MobileSchedule = lazy(() => import('./pages/mobile/MobileSchedule'))
+const MobilePatients = lazy(() => import('./pages/mobile/MobilePatients'))
 
 // Patients
 const PatientsList = lazy(() => import('./pages/patients/PatientsList'))
@@ -117,6 +123,12 @@ const withSuspense = (Component: React.LazyExoticComponent<React.ComponentType>)
   </Suspense>
 )
 
+// Wrapper component to decide between mobile and desktop layout
+const AppLayoutWrapper = () => {
+  const isMobile = isIOSDevice()
+  return isMobile ? <MobileApp /> : <App />
+}
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -150,16 +162,20 @@ const router = createBrowserRouter([
     path: '/app',
     element: (
       <SubscriptionProtectedRoute>
-        <App />
+        <AppLayoutWrapper />
       </SubscriptionProtectedRoute>
     ),
     children: [
       {
         index: true,
-        element: withSuspense(ScheduleCalendar)
+        element: isIOSDevice() ? withSuspense(MobileSchedule) : withSuspense(ScheduleCalendar)
       },
-      { path: 'agenda', element: withSuspense(ScheduleCalendar) },
+      {
+        path: 'agenda',
+        element: isIOSDevice() ? withSuspense(MobileSchedule) : withSuspense(ScheduleCalendar)
+      },
       { path: 'agenda/nova', element: withSuspense(AppointmentForm) },
+      { path: 'agenda/editar/:id', element: withSuspense(AppointmentForm) },
 
       { path: 'procedimentos', element: withSuspense(ProceduresList) },
       { path: 'procedimentos/categorias', element: withSuspense(ProcedureCategories) },
@@ -172,7 +188,10 @@ const router = createBrowserRouter([
       { path: 'profissionais/:id', element: withSuspense(ProfessionalDetail) },
       { path: 'profissionais/:id/editar', element: withSuspense(ProfessionalEdit) },
 
-      { path: 'pacientes', element: withSuspense(PatientsList) },
+      {
+        path: 'pacientes',
+        element: isIOSDevice() ? withSuspense(MobilePatients) : withSuspense(PatientsList)
+      },
       { path: 'pacientes/novo', element: withSuspense(PatientForm) },
       { path: 'pacientes/:id', element: withSuspense(PatientDetail) },
       { path: 'pacientes/:id/editar', element: withSuspense(PatientEdit) },

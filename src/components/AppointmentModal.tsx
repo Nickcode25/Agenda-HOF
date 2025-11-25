@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle, Check, XCircle } from 'lucide-react'
+import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle, Check, XCircle, Pencil } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
 import { useConfirm } from '@/hooks/useConfirm'
 import { usePatients } from '@/store/patients'
@@ -6,6 +6,7 @@ import { useSchedule } from '@/store/schedule'
 import { getWhatsAppUrl } from '@/utils/env'
 import { formatInSaoPaulo } from '@/utils/timezone'
 import { useToast } from '@/hooks/useToast'
+import { useNavigate } from 'react-router-dom'
 
 type AppointmentModalProps = {
   appointment: Appointment | null
@@ -19,6 +20,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
   const patients = usePatients(s => s.patients)
   const updateAppointmentStatus = useSchedule(s => s.updateAppointmentStatus)
   const { show: showToast } = useToast()
+  const navigate = useNavigate()
 
   if (!appointment) return null
 
@@ -71,6 +73,11 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
     showToast(messages[status], types[status])
     onStatusChange?.()
     onClose()
+  }
+
+  const handleEdit = () => {
+    onClose()
+    navigate(`/app/agenda/editar/${appointment.id}`)
   }
 
   return (
@@ -211,6 +218,13 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-gray-200">
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleEdit}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium transition-colors border border-blue-200"
+            >
+              <Pencil size={18} />
+              Editar
+            </button>
             <button
               onClick={handleDelete}
               className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors border border-red-200"

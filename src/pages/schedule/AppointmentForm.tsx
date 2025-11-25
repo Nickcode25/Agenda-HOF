@@ -1,5 +1,5 @@
 import { FormEvent, useState, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useParams } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
@@ -8,18 +8,24 @@ import { useStock } from '@/store/stock'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { Save, Search, Calendar, X, User, Phone, Clock, FileText, Stethoscope } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
-import { createISOFromDateTimeBR } from '@/utils/timezone'
+import { createISOFromDateTimeBR, formatInSaoPaulo } from '@/utils/timezone'
 import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
 
 export default function AppointmentForm() {
+  const { id: appointmentId } = useParams<{ id: string }>()
+  const isEditing = Boolean(appointmentId)
+
   const patients = usePatients(s => s.patients)
   const fetchPatients = usePatients(s => s.fetchAll)
   const professionals = useProfessionals(s => s.professionals.filter(p => p.active))
+  const allProfessionals = useProfessionals(s => s.professionals)
   const fetchProfessionals = useProfessionals(s => s.fetchAll)
   const { fetchAll: fetchProcedures } = useProcedures()
   const { fetchItems } = useStock()
   const { selectedProfessional } = useProfessionalContext()
   const add = useSchedule(s => s.addAppointment)
+  const update = useSchedule(s => s.updateAppointment)
+  const appointments = useSchedule(s => s.appointments)
   const fetchAppointments = useSchedule(s => s.fetchAppointments)
   const navigate = useNavigate()
   const showToast = useToast(s => s.show)
@@ -30,6 +36,7 @@ export default function AppointmentForm() {
     fetchProfessionals()
     fetchProcedures()
     fetchItems()
+    fetchAppointments()
   }, [])
 
   const [startTime, setStartTime] = useState('')
@@ -50,6 +57,39 @@ export default function AppointmentForm() {
   const selectedProfessionalName = selectedProfessional
     ? professionals.find(p => p.id === selectedProfessional)?.name || ''
     : ''
+
+  // Carregar dados do agendamento quando estiver editando
+  useEffect(() => {
+    if (isEditing && appointmentId && appointments.length > 0 && patients.length > 0) {
+      const appointment = appointments.find(a => a.id === appointmentId)
+      if (appointment) {
+        // Preencher dados do paciente
+        const patient = patients.find(p => p.id === appointment.patientId)
+        if (patient) {
+          setSelectedPatient(patient)
+          setPatientSearch(patient.name)
+        }
+
+        // Preencher procedimento
+        setCustomProcedureName(appointment.procedure || '')
+
+        // Preencher profissional
+        const prof = allProfessionals.find(p => p.name === appointment.professional)
+        if (prof) {
+          setProfessionalId(prof.id)
+        }
+
+        // Preencher sala e notas
+        setRoom(appointment.room || '')
+        setNotes(appointment.notes || '')
+
+        // Preencher data e horários
+        setAppointmentDate(formatInSaoPaulo(appointment.start, 'dd/MM/yyyy'))
+        setStartTime(formatInSaoPaulo(appointment.start, 'HH:mm'))
+        setEndTime(formatInSaoPaulo(appointment.end, 'HH:mm'))
+      }
+    }
+  }, [isEditing, appointmentId, appointments, patients, allProfessionals])
 
   // Patient search filter
   const filteredPatients = useMemo(() => {
@@ -153,32 +193,51 @@ export default function AppointmentForm() {
       return
     }
 
-    const professional = professionals.find(p => p.id === professionalId)
+    const professional = professionals.find(p => p.id === professionalId) || allProfessionals.find(p => p.id === professionalId)
     const start = createISOFromDateTimeBR(appointmentDate, startTime)
     const end = createISOFromDateTimeBR(appointmentDate, endTime)
 
-    const appointmentId = await add({
-      patientId: selectedPatient.id,
-      patientName: selectedPatient.name,
-      procedure: customProcedureName,
-      procedureId: undefined,
-      selectedProducts: undefined,
-      professional: professional?.name || '',
-      room,
-      start,
-      end,
-      notes,
-      status: 'scheduled'
-    })
+    if (isEditing && appointmentId) {
+      // Atualizar agendamento existente
+      await update(appointmentId, {
+        patientId: selectedPatient.id,
+        patientName: selectedPatient.name,
+        procedure: customProcedureName,
+        professional: professional?.name || '',
+        room,
+        start,
+        end,
+        notes,
+      })
 
-    if (!appointmentId) {
-      showToast('Erro ao criar agendamento. Tente novamente.', 'error')
-      return
+      await fetchAppointments()
+      showToast('Agendamento atualizado com sucesso!', 'success')
+      navigate('/app/agenda')
+    } else {
+      // Criar novo agendamento
+      const newAppointmentId = await add({
+        patientId: selectedPatient.id,
+        patientName: selectedPatient.name,
+        procedure: customProcedureName,
+        procedureId: undefined,
+        selectedProducts: undefined,
+        professional: professional?.name || '',
+        room,
+        start,
+        end,
+        notes,
+        status: 'scheduled'
+      })
+
+      if (!newAppointmentId) {
+        showToast('Erro ao criar agendamento. Tente novamente.', 'error')
+        return
+      }
+
+      await fetchAppointments()
+      showToast('Agendamento criado com sucesso!', 'success')
+      navigate('/app/agenda')
     }
-
-    await fetchAppointments()
-    showToast('Agendamento criado com sucesso!', 'success')
-    navigate('/app/agenda')
   }
 
   const canSubmit = selectedPatient && customProcedureName.trim() && professionalId && appointmentDate && startTime && endTime
@@ -189,9 +248,15 @@ export default function AppointmentForm() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Novo Agendamento</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isEditing ? 'Editar Agendamento' : 'Novo Agendamento'}
+            </h1>
             <p className="text-sm text-gray-500 mt-1">
-              {selectedProfessionalName ? `Agenda: ${selectedProfessionalName}` : 'Agende um novo procedimento'}
+              {isEditing
+                ? 'Altere os dados do agendamento'
+                : selectedProfessionalName
+                  ? `Agenda: ${selectedProfessionalName}`
+                  : 'Agende um novo procedimento'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -212,7 +277,7 @@ export default function AppointmentForm() {
               }`}
             >
               <Save size={18} />
-              Salvar Agendamento
+              {isEditing ? 'Salvar Alterações' : 'Salvar Agendamento'}
             </button>
           </div>
         </div>
@@ -502,7 +567,7 @@ export default function AppointmentForm() {
                 }`}
               >
                 <Save size={18} />
-                Salvar Agendamento
+                {isEditing ? 'Salvar Alterações' : 'Salvar Agendamento'}
               </button>
             </div>
           </div>
