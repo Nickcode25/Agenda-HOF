@@ -46,8 +46,11 @@ export default function PatientsList() {
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
 
+    // Garantir que patients é sempre um array
+    const safePatients = Array.isArray(patients) ? patients : []
+
     // Primeiro, ordenar todos os pacientes alfabeticamente
-    const sortedPatients = [...patients].sort((a, b) => {
+    const sortedPatients = [...safePatients].sort((a, b) => {
       return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
     })
 
@@ -165,10 +168,16 @@ export default function PatientsList() {
 
   // Stats calculations
   const stats = useMemo(() => {
-    const total = patients.length
-    const withProcedures = patients.filter(p => (p.plannedProcedures?.length || 0) > 0).length
-    const activeThisMonth = patients.filter(p => {
-      const hasRecent = p.plannedProcedures?.some(proc => {
+    // Garantir que patients é sempre um array
+    const safePatients = Array.isArray(patients) ? patients : []
+    const total = safePatients.length
+    const withProcedures = safePatients.filter(p => {
+      const procedures = Array.isArray(p.plannedProcedures) ? p.plannedProcedures : []
+      return procedures.length > 0
+    }).length
+    const activeThisMonth = safePatients.filter(p => {
+      const procedures = Array.isArray(p.plannedProcedures) ? p.plannedProcedures : []
+      const hasRecent = procedures.some(proc => {
         if (!proc.createdAt) return false
         const date = new Date(proc.createdAt)
         const now = new Date()
@@ -241,9 +250,10 @@ export default function PatientsList() {
 
           {filtered.map(p => {
             const isExpanded = expandedPatients.has(p.id)
-            const pendingCount = p.plannedProcedures?.filter(proc => proc.status === 'pending').length || 0
-            const inProgressCount = p.plannedProcedures?.filter(proc => proc.status === 'in_progress').length || 0
-            const completedCount = p.plannedProcedures?.filter(proc => proc.status === 'completed').length || 0
+            const patientProcedures = Array.isArray(p.plannedProcedures) ? p.plannedProcedures : []
+            const pendingCount = patientProcedures.filter(proc => proc.status === 'pending').length
+            const inProgressCount = patientProcedures.filter(proc => proc.status === 'in_progress').length
+            const completedCount = patientProcedures.filter(proc => proc.status === 'completed').length
 
             return (
               <div key={p.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all">
@@ -373,9 +383,9 @@ export default function PatientsList() {
                     <div className="pt-4">
                       <h4 className="text-sm font-semibold text-orange-600 mb-3">Planejamento de Procedimentos</h4>
 
-                      {p.plannedProcedures && p.plannedProcedures.filter(proc => proc.status !== 'completed').length > 0 ? (
+                      {patientProcedures.filter(proc => proc.status !== 'completed').length > 0 ? (
                         <div className="space-y-3">
-                          {p.plannedProcedures
+                          {patientProcedures
                             .filter(proc => proc.status !== 'completed')
                             .map(proc => (
                             <div key={proc.id} className="p-4 bg-white rounded-lg border border-gray-200">
@@ -442,7 +452,7 @@ export default function PatientsList() {
                               <span className="text-sm font-medium text-gray-700">Total do Planejamento:</span>
                               <span className="text-lg font-bold text-green-600">
                                 {formatCurrency(
-                                  p.plannedProcedures
+                                  patientProcedures
                                     .filter(proc => proc.status !== 'completed')
                                     .reduce((sum, proc) => sum + proc.totalValue, 0)
                                 )}

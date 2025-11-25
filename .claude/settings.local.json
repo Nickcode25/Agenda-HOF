@@ -21,7 +21,11 @@
       "Bash(powershell -Command:*)",
       "Bash(npm install:*)",
       "Bash(test:*)",
-      "Bash(node server.js:*)"
+      "Bash(node server.js:*)",
+      "Bash(winget:*)",
+      "Bash(ipconfig:*)",
+      "Bash(findstr:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

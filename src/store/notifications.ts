@@ -406,7 +406,18 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
       if (patients) {
         for (const patient of patients) {
-          const plannedProcs = patient.planned_procedures || []
+          // Garantir que planned_procedures é sempre um array
+          let plannedProcs = patient.planned_procedures
+          if (typeof plannedProcs === 'string') {
+            try {
+              plannedProcs = JSON.parse(plannedProcs)
+            } catch {
+              plannedProcs = []
+            }
+          }
+          if (!Array.isArray(plannedProcs)) {
+            plannedProcs = []
+          }
           const pendingProcs = plannedProcs.filter((p: any) => p.status === 'pending')
 
           for (const proc of pendingProcs) {

@@ -1,7 +1,22 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
-import { Patient } from '@/types/patient'
+import { Patient, PlannedProcedure } from '@/types/patient'
 import { getErrorMessage } from '@/types/errors'
+
+// Função para garantir que planned_procedures seja sempre um array válido
+function normalizeProcs(procs: unknown): PlannedProcedure[] {
+  if (typeof procs === 'string') {
+    try {
+      procs = JSON.parse(procs)
+    } catch {
+      return []
+    }
+  }
+  if (!Array.isArray(procs)) {
+    return []
+  }
+  return procs
+}
 
 export type PatientsState = {
   patients: Patient[]
@@ -62,7 +77,7 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         clinicalInfo: p.clinical_info || '',
         notes: p.notes || '',
         photoUrl: p.photo_url || undefined,
-        plannedProcedures: p.planned_procedures || [],
+        plannedProcedures: normalizeProcs(p.planned_procedures),
         createdAt: p.created_at,
       }))
 
@@ -113,7 +128,7 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         clinicalInfo: p.clinical_info || '',
         notes: p.notes || '',
         photoUrl: p.photo_url || undefined,
-        plannedProcedures: p.planned_procedures || [],
+        plannedProcedures: normalizeProcs(p.planned_procedures),
         createdAt: p.created_at,
       }))
 
@@ -171,7 +186,7 @@ export const usePatients = create<PatientsState>()((set, get) => ({
         clinicalInfo: data.clinical_info || '',
         notes: data.notes || '',
         photoUrl: data.photo_url || undefined,
-        plannedProcedures: data.planned_procedures || [],
+        plannedProcedures: normalizeProcs(data.planned_procedures),
         createdAt: data.created_at,
       }
 
