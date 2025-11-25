@@ -3,6 +3,7 @@ import { Gift, Search, Check, X, AlertCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface User {
   id: string
@@ -36,6 +37,7 @@ export default function CourtesyManager() {
   const [courtesies, setCourtesies] = useState<Courtesy[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const { confirm, ConfirmDialog } = useConfirm()
   const [selectedUser, setSelectedUser] = useState<string>('')
   const [selectedPlan, setSelectedPlan] = useState<string>('')
   const [expirationMonths, setExpirationMonths] = useState<number>(12)
@@ -194,9 +196,13 @@ export default function CourtesyManager() {
   }
 
   const handleRevokeCourtesy = async (courtesyId: string) => {
-    if (!confirm('Tem certeza que deseja revogar esta cortesia?')) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Revogar Cortesia',
+      message: 'Tem certeza que deseja revogar esta cortesia?',
+      confirmText: 'Revogar',
+      cancelText: 'Cancelar'
+    })
+    if (!confirmed) return
 
     try {
       const { error } = await supabase.rpc('admin_revoke_courtesy', {
@@ -428,6 +434,9 @@ export default function CourtesyManager() {
           </div>
         )}
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }

@@ -8,12 +8,14 @@ import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import { formatInSaoPaulo } from '@/utils/timezone'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function SalesList() {
   const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const { hasActiveSubscription } = useSubscription()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
     fetchProfessionals()
@@ -55,7 +57,13 @@ export default function SalesList() {
   }
 
   const handleDeleteSale = async (saleId: string, saleName: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir a venda para ${saleName}? Esta ação não pode ser desfeita.`)) {
+    const confirmed = await confirm({
+      title: 'Excluir Venda',
+      message: `Tem certeza que deseja excluir a venda para ${saleName}? Esta ação não pode ser desfeita.`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (confirmed) {
       await removeSale(saleId)
       await fetchSales()
     }
@@ -303,6 +311,9 @@ export default function SalesList() {
           </div>
         )}
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }

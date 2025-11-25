@@ -105,7 +105,13 @@ export default function ExpensesList() {
   }
 
   const handleDelete = async (id: string, description: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir a despesa "${description}"?`)) {
+    const confirmed = await confirm({
+      title: 'Excluir Despesa',
+      message: `Tem certeza que deseja excluir a despesa "${description}"?`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (confirmed) {
       await deleteExpense(id)
       await fetchExpenses()
       show('Despesa excluída com sucesso!', 'success')

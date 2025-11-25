@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useCategories } from '@/store/categories'
 import { Plus, Trash2, Tag } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 import { Category } from '@/store/categories'
 
 // Categorias nativas pré-cadastradas
@@ -24,6 +25,7 @@ const DEFAULT_PROCEDURE_CATEGORIES = [
 export default function ProcedureCategories() {
   const { categories, fetchCategories, addCategory, deleteCategory } = useCategories()
   const { show } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [categoryName, setCategoryName] = useState('')
@@ -113,7 +115,13 @@ export default function ProcedureCategories() {
       return
     }
 
-    if (window.confirm(`Tem certeza que deseja excluir a categoria "${category.name}"?`)) {
+    const confirmed = await confirm({
+      title: 'Excluir Categoria',
+      message: `Tem certeza que deseja excluir a categoria "${category.name}"?`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (confirmed) {
       try {
         await deleteCategory(category.id)
         show('Categoria excluída com sucesso!', 'success')
@@ -253,6 +261,9 @@ export default function ProcedureCategories() {
             </div>
           </div>
         )}
+
+        {/* Modal de Confirmação */}
+        <ConfirmDialog />
       </div>
     </div>
   )

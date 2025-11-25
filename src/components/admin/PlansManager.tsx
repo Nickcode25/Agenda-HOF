@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, Power, PowerOff, X, Save } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import PlanForm from './components/PlanForm'
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface Plan {
   id: string
@@ -39,6 +40,7 @@ export default function PlansManager() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
+  const { confirm, ConfirmDialog } = useConfirm()
   const [formData, setFormData] = useState<PlanFormData>({
     name: '',
     description: '',
@@ -150,7 +152,13 @@ export default function PlansManager() {
   }
 
   const handleDelete = async (plan: Plan) => {
-    if (!confirm(`Tem certeza que deseja deletar o plano "${plan.name}"?`)) return
+    const confirmed = await confirm({
+      title: 'Excluir Plano',
+      message: `Tem certeza que deseja deletar o plano "${plan.name}"?`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (!confirmed) return
 
     try {
       const { error } = await supabase
@@ -518,6 +526,9 @@ export default function PlansManager() {
           )}
         </div>
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }

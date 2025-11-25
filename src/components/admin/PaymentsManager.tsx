@@ -3,6 +3,7 @@ import { Search, Filter, Download, RefreshCw, DollarSign, CheckCircle, XCircle, 
 import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe, parseLocalDate } from '@/utils/dateHelpers'
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface Payment {
   id: string
@@ -28,6 +29,7 @@ export default function PaymentsManager() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const { confirm, ConfirmDialog } = useConfirm()
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'rejected' | 'pending' | 'refunded'>('all')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -120,12 +122,25 @@ export default function PaymentsManager() {
   }
 
   const handleReprocessPayment = async (payment: Payment) => {
-    if (!confirm(`Deseja reprocessar o pagamento de ${payment.user_name}?`)) return
+    const confirmed = await confirm({
+      title: 'Reprocessar Pagamento',
+      message: `Deseja reprocessar o pagamento de ${payment.user_name}?`,
+      confirmText: 'Reprocessar',
+      cancelText: 'Cancelar',
+      confirmButtonClass: 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/30'
+    })
+    if (!confirmed) return
     alert('Funcionalidade de reprocessamento será implementada com a API do Mercado Pago')
   }
 
   const handleRefund = async (payment: Payment) => {
-    if (!confirm(`Tem certeza que deseja estornar o pagamento de R$ ${payment.amount.toFixed(2)} de ${payment.user_name}?`)) return
+    const confirmed = await confirm({
+      title: 'Estornar Pagamento',
+      message: `Tem certeza que deseja estornar o pagamento de R$ ${payment.amount.toFixed(2)} de ${payment.user_name}?`,
+      confirmText: 'Estornar',
+      cancelText: 'Cancelar'
+    })
+    if (!confirmed) return
     alert('Funcionalidade de estorno será implementada com a API do Mercado Pago')
   }
 
@@ -343,6 +358,9 @@ export default function PaymentsManager() {
           )}
         </div>
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }

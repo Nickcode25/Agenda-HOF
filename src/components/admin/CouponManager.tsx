@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Tag, Plus, Trash2, Edit2, Check, X, Calendar, Percent, Users, AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface Coupon {
   id: string
@@ -20,6 +21,7 @@ export default function CouponManager() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null)
+  const { confirm, ConfirmDialog } = useConfirm()
 
   // Form state
   const [formData, setFormData] = useState({
@@ -130,7 +132,13 @@ export default function CouponManager() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este cupom?')) return
+    const confirmed = await confirm({
+      title: 'Excluir Cupom',
+      message: 'Tem certeza que deseja excluir este cupom?',
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (!confirmed) return
 
     try {
       const { error } = await supabase
@@ -430,6 +438,9 @@ export default function CouponManager() {
           </table>
         </div>
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }

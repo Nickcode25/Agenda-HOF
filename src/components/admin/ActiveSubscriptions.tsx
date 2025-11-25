@@ -3,6 +3,7 @@ import { Search, Filter, Eye, XCircle, Mail, Users, DollarSign, TrendingDown, Al
 import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import { useConfirm } from '@/hooks/useConfirm'
 
 interface Subscription {
   id: string
@@ -29,6 +30,7 @@ export default function ActiveSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const { confirm, ConfirmDialog } = useConfirm()
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'expired'>('all')
   const [planFilter, setPlanFilter] = useState<string>('all')
   const [stats, setStats] = useState<Stats>({
@@ -113,7 +115,13 @@ export default function ActiveSubscriptions() {
   })
 
   const handleCancelSubscription = async (subscription: Subscription) => {
-    if (!confirm(`Tem certeza que deseja cancelar a assinatura de ${subscription.user_name}?`)) return
+    const confirmed = await confirm({
+      title: 'Cancelar Assinatura',
+      message: `Tem certeza que deseja cancelar a assinatura de ${subscription.user_name}?`,
+      confirmText: 'Cancelar Assinatura',
+      cancelText: 'Voltar'
+    })
+    if (!confirmed) return
 
     try {
       const { error } = await supabase
@@ -303,6 +311,9 @@ export default function ActiveSubscriptions() {
           )}
         </div>
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }

@@ -12,8 +12,14 @@ export default function PlansList() {
     updatePlan(planId, { active: !currentStatus })
   }
 
-  const handleDelete = (planId: string, planName: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir o plano "${planName}"?`)) {
+  const handleDelete = async (planId: string, planName: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Plano',
+      message: `Tem certeza que deseja excluir o plano "${planName}"?`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (confirmed) {
       deletePlan(planId)
     }
   }

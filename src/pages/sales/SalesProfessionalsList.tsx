@@ -4,10 +4,12 @@ import { useMemo, useState, useEffect } from 'react'
 import { Search, User, Plus, Edit, Mail, Phone, MapPin, Trash2, DollarSign } from 'lucide-react'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatCurrency } from '@/utils/currency'
+import { useConfirm } from '@/hooks/useConfirm'
 
 export default function SalesProfessionalsList() {
   const { professionals, sales, fetchProfessionals, removeProfessional, fetchSales } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
+  const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
     fetchProfessionals()
@@ -38,7 +40,13 @@ export default function SalesProfessionalsList() {
   }
 
   const handleDeleteProfessional = async (id: string, name: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir o profissional ${name}? Esta ação não pode ser desfeita.`)) {
+    const confirmed = await confirm({
+      title: 'Excluir Profissional',
+      message: `Tem certeza que deseja excluir o profissional ${name}? Esta ação não pode ser desfeita.`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (confirmed) {
       await removeProfessional(id)
       await fetchProfessionals()
     }
@@ -192,6 +200,9 @@ export default function SalesProfessionalsList() {
           </div>
         )}
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmDialog />
     </div>
   )
 }

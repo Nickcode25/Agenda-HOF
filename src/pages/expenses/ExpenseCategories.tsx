@@ -63,7 +63,13 @@ export default function ExpenseCategories() {
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir a categoria "${name}"?`)) {
+    const confirmed = await confirm({
+      title: 'Excluir Categoria',
+      message: `Tem certeza que deseja excluir a categoria "${name}"?`,
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar'
+    })
+    if (confirmed) {
       await deleteCategory(id)
       await fetchCategories()
     }
