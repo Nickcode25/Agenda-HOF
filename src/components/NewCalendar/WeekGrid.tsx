@@ -234,9 +234,9 @@ export default function WeekGrid({
 
   // Renderizar visualização de dia ou semana
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col">
       {/* Header com dias */}
-      <div className={`grid ${gridCols} border-b border-gray-200`}>
+      <div className={`grid ${gridCols} border-b border-gray-200 flex-shrink-0`}>
         {/* Coluna vazia para horários */}
         <div className="p-3 bg-gray-50 border-r border-gray-200" />
 
@@ -277,7 +277,7 @@ export default function WeekGrid({
       </div>
 
       {/* Grid de horários e agendamentos */}
-      <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         <div className={`grid ${gridCols}`}>
           {/* Coluna de horários */}
           <div className="border-r border-gray-200 bg-gray-50">

@@ -60,7 +60,7 @@ export default function ScheduleCalendar() {
   }
 
   return (
-    <div className="relative -m-8">
+    <div className="relative -m-8 h-[calc(100vh-64px)] overflow-hidden">
       {/* Overlay de bloqueio se não tiver assinatura */}
       {!hasActiveSubscription && (
         <UpgradeOverlay

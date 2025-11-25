@@ -79,32 +79,38 @@ export default function NewCalendar({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 space-y-4">
+    <div className="h-full bg-gray-50 p-6 flex flex-col overflow-hidden">
       {/* Header com info do usuário e stats */}
-      <CalendarHeader
-        userName={userName}
-        userPlan={userPlan}
-        appointmentsToday={todayStats.count}
-      />
+      <div className="flex-shrink-0 mb-4">
+        <CalendarHeader
+          userName={userName}
+          userPlan={userPlan}
+          appointmentsToday={todayStats.count}
+        />
+      </div>
 
       {/* Controles de visualização e navegação */}
-      <CalendarControls
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        currentDate={currentDate}
-        onDateChange={setCurrentDate}
-        onToday={handleToday}
-      />
+      <div className="flex-shrink-0 mb-4">
+        <CalendarControls
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+          onToday={handleToday}
+        />
+      </div>
 
       {/* Calendário em tela cheia */}
-      <WeekGrid
-        currentDate={currentDate}
-        appointments={appointments}
-        recurringBlocks={virtualBlocks}
-        onAppointmentClick={onAppointmentClick}
-        onTimeSlotClick={onTimeSlotClick}
-        viewMode={viewMode}
-      />
+      <div className="flex-1 min-h-0">
+        <WeekGrid
+          currentDate={currentDate}
+          appointments={appointments}
+          recurringBlocks={virtualBlocks}
+          onAppointmentClick={onAppointmentClick}
+          onTimeSlotClick={onTimeSlotClick}
+          viewMode={viewMode}
+        />
+      </div>
     </div>
   )
 }
