@@ -27,7 +27,8 @@ export default function WeekGrid({
       return [currentDate]
     }
     if (viewMode === 'week') {
-      const start = startOfWeek(currentDate, { locale: ptBR })
+      // Começar na segunda-feira (weekStartsOn: 1)
+      const start = startOfWeek(currentDate, { weekStartsOn: 1 })
       const daysArray = []
       for (let i = 0; i < 7; i++) {
         daysArray.push(addDays(start, i))
@@ -46,10 +47,10 @@ export default function WeekGrid({
     return daysArray
   }, [currentDate, viewMode])
 
-  // Gerar horários (7h às 20h)
+  // Gerar horários (7h às 24h)
   const timeSlots = useMemo(() => {
     const slots = []
-    for (let hour = 7; hour <= 20; hour++) {
+    for (let hour = 7; hour <= 23; hour++) {
       slots.push(hour)
     }
     return slots
@@ -77,7 +78,10 @@ export default function WeekGrid({
   // Renderizar visualização de mês
   if (viewMode === 'month') {
     const monthStart = startOfMonth(currentDate)
-    const startDayOfWeek = getDay(monthStart)
+    // getDay retorna 0 para domingo, 1 para segunda, etc.
+    // Para começar na segunda, ajustamos: se for domingo (0), vira 6, senão subtrai 1
+    const dayOfWeek = getDay(monthStart)
+    const startDayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1
 
     // Criar array com dias vazios antes do primeiro dia do mês
     const calendarDays: (Date | null)[] = []
@@ -88,9 +92,9 @@ export default function WeekGrid({
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Header com dias da semana */}
+        {/* Header com dias da semana - Segunda a Domingo */}
         <div className="grid grid-cols-7 border-b border-gray-200">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName, index) => (
+          {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((dayName, index) => (
             <div key={index} className="p-3 text-center bg-gray-50 border-r border-gray-200 last:border-r-0">
               <span className="text-xs font-medium text-gray-500 uppercase">{dayName}</span>
             </div>
