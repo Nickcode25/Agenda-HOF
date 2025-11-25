@@ -97,10 +97,21 @@ export default function App() {
             if (data) newEntityNames[id] = data.name
           }
 
-          // Profissionais
-          else if (path === 'profissionais') {
+          // Profissionais (da clínica)
+          else if (path === 'profissionais' && !paths.includes('vendas')) {
             const result = await supabase
               .from('professionals')
+              .select('name')
+              .eq('id', id)
+              .single()
+            data = result.data
+            if (data) newEntityNames[id] = data.name
+          }
+
+          // Profissionais de Vendas (dentro de vendas/profissionais/editar/ID)
+          else if (path === 'editar' && paths.includes('vendas') && paths.includes('profissionais')) {
+            const result = await supabase
+              .from('sales_professionals')
               .select('name')
               .eq('id', id)
               .single()
