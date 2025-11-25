@@ -189,24 +189,20 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
                     Confirmado
                   </button>
                 )}
-                {appointment.status !== 'done' && (
-                  <button
-                    onClick={() => handleStatusChange('done')}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm"
-                  >
-                    <Check size={18} />
-                    Concluído
-                  </button>
-                )}
-                {appointment.status !== 'cancelled' && (
-                  <button
-                    onClick={() => handleStatusChange('cancelled')}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors shadow-sm"
-                  >
-                    <XCircle size={18} />
-                    Cancelado
-                  </button>
-                )}
+                <button
+                  onClick={() => handleStatusChange('done')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm"
+                >
+                  <Check size={18} />
+                  Concluído
+                </button>
+                <button
+                  onClick={() => handleStatusChange('cancelled')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors shadow-sm"
+                >
+                  <XCircle size={18} />
+                  Cancelado
+                </button>
               </div>
             </div>
           )}
