@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { format, startOfWeek, startOfMonth, endOfMonth, addDays, isSameDay, isToday, parseISO, getDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Appointment } from '@/types/schedule'
@@ -27,6 +27,9 @@ export default function WeekGrid({
   // Altura de cada slot de hora em pixels
   // 176px por hora = 88px para 30min, 44px para 15min (base legível)
   const HOUR_HEIGHT = 176
+
+  // Ref para o container de scroll
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   // Gerar dias baseado no modo de visualização
   const days = useMemo(() => {
@@ -78,6 +81,50 @@ export default function WeekGrid({
       return isSameDay(blockDate, date)
     }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
   }
+
+  // Encontrar o primeiro agendamento de hoje para scroll automático
+  const firstTodayAppointment = useMemo(() => {
+    const today = new Date()
+    const todayAppointments = appointments.filter(apt => {
+      const aptDate = toSaoPauloTime(parseISO(apt.start))
+      return isSameDay(aptDate, today)
+    }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+
+    return todayAppointments[0] || null
+  }, [appointments])
+
+  // Scroll automático para o primeiro agendamento do dia ao carregar
+  useEffect(() => {
+    if (viewMode === 'month' || !scrollContainerRef.current) return
+
+    // Pequeno delay para garantir que o DOM está renderizado
+    const timer = setTimeout(() => {
+      if (!scrollContainerRef.current) return
+
+      let scrollPosition = 0
+
+      if (firstTodayAppointment) {
+        // Se tem agendamento hoje, scroll para o primeiro agendamento
+        const aptStart = toSaoPauloTime(parseISO(firstTodayAppointment.start))
+        const startHour = aptStart.getHours()
+        const startMinutes = aptStart.getMinutes()
+
+        // Calcular posição em pixels (horário - 7h de início - 1h de margem)
+        const hoursFromStart = Math.max(0, startHour - 7 - 1) // -1h para dar margem visual
+        scrollPosition = (hoursFromStart * 60 + startMinutes) / 60 * HOUR_HEIGHT
+      } else {
+        // Se não tem agendamento, scroll para 8h da manhã (1h após o início)
+        scrollPosition = HOUR_HEIGHT // 1 hora após as 7h
+      }
+
+      scrollContainerRef.current.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      })
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [firstTodayAppointment, viewMode, HOUR_HEIGHT])
 
   // Calcular duração do agendamento em minutos
   const getAppointmentDuration = (apt: Appointment) => {
@@ -277,7 +324,7 @@ export default function WeekGrid({
       </div>
 
       {/* Grid de horários e agendamentos */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         <div className={`grid ${gridCols}`}>
           {/* Coluna de horários */}
           <div className="border-r border-gray-200 bg-gray-50">
