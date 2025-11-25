@@ -22,8 +22,8 @@ export default function WeekGrid({
   viewMode
 }: WeekGridProps) {
   // Altura de cada slot de hora em pixels
-  // 120px por hora = 60px para 30min, 30px para 15min
-  const HOUR_HEIGHT = 120
+  // 176px por hora = 88px para 30min, 44px para 15min (base legível)
+  const HOUR_HEIGHT = 176
 
   // Gerar dias baseado no modo de visualização
   const days = useMemo(() => {
@@ -68,6 +68,13 @@ export default function WeekGrid({
     }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
   }
 
+  // Calcular duração do agendamento em minutos
+  const getAppointmentDuration = (apt: Appointment) => {
+    const aptStart = toSaoPauloTime(parseISO(apt.start))
+    const aptEnd = toSaoPauloTime(parseISO(apt.end))
+    return (aptEnd.getTime() - aptStart.getTime()) / (1000 * 60)
+  }
+
   // Calcular posição e altura do agendamento baseado no horário
   const getAppointmentStyle = (apt: Appointment) => {
     const aptStart = toSaoPauloTime(parseISO(apt.start))
@@ -81,9 +88,9 @@ export default function WeekGrid({
     const topPx = (startMinutesFromDayStart / 60) * HOUR_HEIGHT
     const heightPx = ((endMinutesFromDayStart - startMinutesFromDayStart) / 60) * HOUR_HEIGHT
 
-    // Altura mínima de 28px para agendamentos curtos (15min)
-    // Com HOUR_HEIGHT=120: 15min=30px, 30min=60px, 1h=120px
-    const minHeight = 28
+    // Altura mínima de 44px para agendamentos curtos (15min)
+    // Com HOUR_HEIGHT=176: 15min=44px, 30min=88px, 1h=176px
+    const minHeight = 44
 
     return {
       top: `${topPx + 1}px`, // +1px para criar espaço entre agendamentos consecutivos
@@ -91,6 +98,20 @@ export default function WeekGrid({
       position: 'absolute' as const,
       left: '3px',
       right: '3px',
+    }
+  }
+
+  // Obter classes de cor baseado no status do agendamento
+  const getAppointmentColors = (status?: string) => {
+    switch (status) {
+      case 'confirmed':
+        return 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+      case 'cancelled':
+        return 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+      case 'done':
+        return 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'
+      default: // scheduled
+        return 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'
     }
   }
 
@@ -147,7 +168,7 @@ export default function WeekGrid({
                         e.stopPropagation()
                         onAppointmentClick(apt)
                       }}
-                      className="w-full text-left p-1 rounded bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs truncate hover:from-orange-600 hover:to-orange-700 transition-all"
+                      className={`w-full text-left p-1 rounded ${getAppointmentColors(apt.status)} text-white text-xs truncate transition-all`}
                     >
                       {formatInSaoPaulo(apt.start, 'HH:mm')} - {apt.patientName}
                     </button>
@@ -258,16 +279,16 @@ export default function WeekGrid({
                       onAppointmentClick(apt)
                     }}
                     style={getAppointmentStyle(apt)}
-                    className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm hover:shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all overflow-hidden z-10 flex flex-col justify-start p-1.5 text-left border-2 border-white/30"
+                    className={`rounded-lg ${getAppointmentColors(apt.status)} text-white shadow-sm hover:shadow-lg transition-all overflow-hidden z-10 flex flex-col justify-center items-center p-1.5 text-center border-2 border-white/30`}
                   >
-                    <div className="text-[10px] font-semibold opacity-90">
+                    <div className={`font-semibold opacity-90 ${getAppointmentDuration(apt) <= 15 ? 'text-[10px]' : 'text-xs'}`}>
                       {formatInSaoPaulo(apt.start, 'HH:mm')} - {formatInSaoPaulo(apt.end, 'HH:mm')}
                     </div>
-                    <div className="text-xs font-medium leading-tight truncate">
+                    <div className={`font-medium leading-tight truncate w-full ${getAppointmentDuration(apt) <= 15 ? 'text-xs' : 'text-[13px]'}`}>
                       {apt.patientName}
                     </div>
-                    {viewMode === 'day' && apt.professional && (
-                      <div className="text-[10px] opacity-80 truncate mt-0.5">
+                    {viewMode === 'day' && apt.professional && getAppointmentDuration(apt) >= 30 && (
+                      <div className="text-[10px] opacity-80 truncate w-full mt-0.5">
                         {apt.professional}
                       </div>
                     )}
