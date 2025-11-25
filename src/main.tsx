@@ -30,6 +30,7 @@ const Checkout = lazy(() => import('./pages/Checkout'))
 // Schedule
 const ScheduleCalendar = lazy(() => import('./pages/schedule/ScheduleCalendar'))
 const AppointmentForm = lazy(() => import('./pages/schedule/AppointmentForm'))
+const RecurringBlocks = lazy(() => import('./pages/schedule/RecurringBlocks'))
 
 // Mobile pages
 const MobileSchedule = lazy(() => import('./pages/mobile/MobileSchedule'))
@@ -176,6 +177,7 @@ const router = createBrowserRouter([
       },
       { path: 'agenda/nova', element: withSuspense(AppointmentForm) },
       { path: 'agenda/editar/:id', element: withSuspense(AppointmentForm) },
+      { path: 'agenda/recorrentes', element: withSuspense(RecurringBlocks) },
 
       { path: 'procedimentos', element: withSuspense(ProceduresList) },
       { path: 'procedimentos/categorias', element: withSuspense(ProcedureCategories) },
