@@ -197,10 +197,10 @@ export default function ResetPasswordPage() {
         <div className="fixed inset-0 z-10 flex items-center justify-center p-4 pointer-events-none">
           <div className="w-full max-w-md pointer-events-auto">
             {/* Card de Sucesso */}
-            <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl border-2 border-green-500 p-8 shadow-2xl">
+            <div className="relative bg-gradient-to-br from-gray-800 via-gray-900 to-gray-950 rounded-3xl border-2 border-orange-500 p-8 shadow-2xl shadow-orange-500/20">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-400" />
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
+                  <CheckCircle className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">
                   Senha Redefinida!
@@ -208,14 +208,14 @@ export default function ResetPasswordPage() {
                 <p className="text-gray-400 mb-6">
                   Sua senha foi alterada com sucesso.
                 </p>
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
-                  <p className="text-sm text-blue-400">
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 mb-6">
+                  <p className="text-sm text-orange-400">
                     Você será redirecionado para a página de login em instantes...
                   </p>
                 </div>
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                  className="inline-flex items-center gap-2 text-orange-500 hover:text-orange-400 font-medium transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Ir para login agora
