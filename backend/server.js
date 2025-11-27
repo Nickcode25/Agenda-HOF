@@ -803,86 +803,147 @@ app.post('/api/auth/request-password-reset', async (req, res) => {
     const html = `
       <!DOCTYPE html>
       <html>
-        <head><meta charset="utf-8"></head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Redefinir Senha - ${APP_NAME}</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #111827; min-height: 100vh;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #111827; padding: 40px 20px;">
             <tr>
               <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                  <!-- Orange gradient bar -->
-                  <tr><td style="background: linear-gradient(to right, #fb923c, #f97316, #ea580c); padding: 2px 0;"></td></tr>
+                <!-- Main Container -->
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px;">
 
-                  <!-- Header -->
+                  <!-- Logo Header -->
                   <tr>
-                    <td style="padding: 40px; text-align: center;">
-                      <h1 style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">${APP_NAME}</h1>
-                      <p style="margin: 10px 0 0; color: #6b7280; font-size: 14px;">Sistema de Agendamento Online</p>
+                    <td style="padding: 30px 0; text-align: center;">
+                      <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                        <tr>
+                          <td style="background: linear-gradient(135deg, #f97316, #ea580c); width: 50px; height: 50px; border-radius: 12px; text-align: center; vertical-align: middle;">
+                            <span style="color: #ffffff; font-size: 24px; font-weight: 800;">H</span>
+                          </td>
+                          <td style="padding-left: 12px;">
+                            <span style="color: #ffffff; font-size: 24px; font-weight: 700;">Agenda</span>
+                            <span style="color: #f97316; font-size: 24px; font-weight: 700;">HOF</span>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
 
-                  <!-- Content -->
+                  <!-- Card Principal -->
                   <tr>
-                    <td style="padding: 0 40px 40px;">
-                      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-bottom: 30px;">
-                        <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 600;">🔒 Redefinição de Senha</p>
-                      </div>
+                    <td>
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(180deg, #1f2937 0%, #111827 100%); border-radius: 24px; border: 1px solid #374151; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
 
-                      <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
-                        Olá <strong style="color: #f97316;">${userName}</strong>,
-                      </p>
+                        <!-- Barra Laranja Top -->
+                        <tr>
+                          <td style="background: linear-gradient(90deg, #f97316, #ea580c, #f97316); height: 4px;"></td>
+                        </tr>
 
-                      <p style="margin: 0 0 30px; color: #374151; font-size: 16px; line-height: 1.6;">
-                        Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo para criar uma nova senha:
-                      </p>
+                        <!-- Ícone Central -->
+                        <tr>
+                          <td style="padding: 40px 40px 20px; text-align: center;">
+                            <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                              <tr>
+                                <td style="background: linear-gradient(135deg, #f97316, #ea580c); width: 80px; height: 80px; border-radius: 20px; text-align: center; vertical-align: middle; box-shadow: 0 10px 40px rgba(249, 115, 22, 0.3);">
+                                  <span style="font-size: 36px;">🔐</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
 
-                      <!-- CTA Button -->
-                      <div style="margin: 30px 0; text-align: center;">
-                        <a href="${resetLink}"
-                           style="display: inline-block;
-                                  background: linear-gradient(135deg, #f97316, #ea580c);
-                                  color: #ffffff;
-                                  text-decoration: none;
-                                  padding: 16px 40px;
-                                  border-radius: 10px;
-                                  font-weight: 600;
-                                  font-size: 16px;
-                                  box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3);
-                                  transition: transform 0.2s;">
-                          🔑 Redefinir Minha Senha
-                        </a>
-                      </div>
+                        <!-- Título -->
+                        <tr>
+                          <td style="padding: 0 40px 10px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                              Redefinir sua senha
+                            </h1>
+                          </td>
+                        </tr>
 
-                      <!-- Security Info -->
-                      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-top: 30px;">
-                        <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                          ⏱️ <strong>Validade:</strong> Este link expira em <strong style="color: #f97316;">1 hora</strong>
-                        </p>
-                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                          🛡️ <strong>Segurança:</strong> Se você não solicitou esta redefinição, ignore este email
-                        </p>
-                      </div>
+                        <!-- Subtítulo -->
+                        <tr>
+                          <td style="padding: 0 40px 30px; text-align: center;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 16px; line-height: 1.6;">
+                              Olá <span style="color: #f97316; font-weight: 600;">${userName}</span>, recebemos uma solicitação para redefinir a senha da sua conta.
+                            </p>
+                          </td>
+                        </tr>
 
-                      <!-- Alternative Link -->
-                      <p style="margin: 30px 0 0; color: #9ca3af; font-size: 12px; line-height: 1.6;">
-                        Caso o botão não funcione, copie e cole este link no seu navegador:
-                      </p>
-                      <p style="margin: 10px 0 0; color: #6b7280; font-size: 12px; word-break: break-all;">
-                        ${resetLink}
-                      </p>
+                        <!-- Botão CTA -->
+                        <tr>
+                          <td style="padding: 0 40px 30px; text-align: center;">
+                            <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                              <tr>
+                                <td style="background: linear-gradient(135deg, #f97316, #ea580c); border-radius: 14px; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);">
+                                  <a href="${resetLink}" style="display: inline-block; padding: 18px 50px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; letter-spacing: 0.3px;">
+                                    Redefinir minha senha
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Informações de Segurança -->
+                        <tr>
+                          <td style="padding: 0 40px 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 16px;">
+                              <tr>
+                                <td style="padding: 20px;">
+                                  <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td style="padding-bottom: 12px;">
+                                        <span style="color: #f97316; font-size: 14px;">⏱️</span>
+                                        <span style="color: #d1d5db; font-size: 14px; margin-left: 8px;">Este link expira em <strong style="color: #f97316;">1 hora</strong></span>
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td>
+                                        <span style="color: #f97316; font-size: 14px;">🛡️</span>
+                                        <span style="color: #d1d5db; font-size: 14px; margin-left: 8px;">Se você não solicitou, ignore este email</span>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Link Alternativo -->
+                        <tr>
+                          <td style="padding: 0 40px 30px;">
+                            <p style="margin: 0 0 10px; color: #6b7280; font-size: 12px; text-align: center;">
+                              Caso o botão não funcione, copie e cole este link:
+                            </p>
+                            <p style="margin: 0; padding: 12px; background-color: #1f2937; border-radius: 8px; border: 1px solid #374151;">
+                              <a href="${resetLink}" style="color: #f97316; font-size: 11px; word-break: break-all; text-decoration: none;">
+                                ${resetLink}
+                              </a>
+                            </p>
+                          </td>
+                        </tr>
+
+                      </table>
                     </td>
                   </tr>
 
                   <!-- Footer -->
                   <tr>
-                    <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-                      <p style="margin: 0 0 5px; color: #6b7280; font-size: 12px;">
-                        © ${new Date().getFullYear()} ${APP_NAME}. Todos os direitos reservados.
+                    <td style="padding: 30px 20px; text-align: center;">
+                      <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px;">
+                        © ${new Date().getFullYear()} <span style="color: #9ca3af;">Agenda</span> <span style="color: #f97316;">HOF</span>
                       </p>
-                      <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-                        Este é um email automático, por favor não responda.
+                      <p style="margin: 0; color: #4b5563; font-size: 12px;">
+                        Gestão completa da sua clínica
                       </p>
                     </td>
                   </tr>
+
                 </table>
               </td>
             </tr>

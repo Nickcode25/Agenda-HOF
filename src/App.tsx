@@ -229,10 +229,8 @@ export default function App() {
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700">
             <NavLink to="/app" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                <span className="text-white font-bold text-lg">H</span>
-              </div>
-              <h1 className={`font-bold text-white text-lg whitespace-nowrap transition-all duration-500 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>Agenda HOF</h1>
+              <img src="/logo-agenda-hof.png" alt="Agenda HOF" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+              <h1 className={`font-bold text-lg whitespace-nowrap transition-all duration-500 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}><span className="text-white">Agenda</span> <span className="text-orange-500">HOF</span></h1>
             </NavLink>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-white flex-shrink-0">
               <X size={20} />
@@ -350,10 +348,8 @@ export default function App() {
               <Menu size={24} />
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                <span className="text-white font-bold">H</span>
-              </div>
-              <h1 className="font-bold text-gray-900">Agenda HOF</h1>
+              <img src="/logo-agenda-hof.png" alt="Agenda HOF" className="w-8 h-8 rounded-lg object-cover" />
+              <h1 className="font-bold"><span className="text-gray-900">Agenda</span> <span className="text-orange-500">HOF</span></h1>
             </div>
           </div>
           <div className="flex items-center gap-3">

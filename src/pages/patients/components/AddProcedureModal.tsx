@@ -31,6 +31,9 @@ interface AddProcedureModalProps {
   onCustomValueChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onClose: () => void
   onAdd: (paymentSplits?: PaymentSplit[]) => void
+  // Props para modo de edição
+  isEditMode?: boolean
+  editingProcedureId?: string
 }
 
 export default function AddProcedureModal({
@@ -56,7 +59,9 @@ export default function AddProcedureModal({
   onCustomValueFocus,
   onCustomValueChange,
   onClose,
-  onAdd
+  onAdd,
+  isEditMode = false,
+  editingProcedureId
 }: AddProcedureModalProps) {
   const [useMultiplePayments, setUseMultiplePayments] = React.useState(false)
   const [paymentSplits, setPaymentSplits] = React.useState<PaymentSplit[]>([
@@ -149,7 +154,9 @@ export default function AddProcedureModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-2xl font-bold text-gray-900">Adicionar Procedimento</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isEditMode ? 'Editar Procedimento' : 'Adicionar Procedimento'}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -458,7 +465,7 @@ export default function AddProcedureModal({
             disabled={!selectedProcedure || (useMultiplePayments && remaining !== 0)}
             className="flex-1 px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
           >
-            Adicionar Procedimento
+            {isEditMode ? 'Salvar Alterações' : 'Adicionar Procedimento'}
           </button>
         </div>
       </div>

@@ -10,7 +10,6 @@ import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, FileText, Image as Imag
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import AddProcedureModal from './components/AddProcedureModal'
-import EditValueModal from './components/EditValueModal'
 import PhotoGalleryModal from './components/PhotoGalleryModal'
 
 export default function PatientDetail() {
@@ -60,10 +59,8 @@ export default function PatientDetail() {
   const [showPhotoGallery, setShowPhotoGallery] = useState(false)
   const [selectedProcedurePhotos, setSelectedProcedurePhotos] = useState<PlannedProcedure | null>(null)
 
-  const [showEditValueModal, setShowEditValueModal] = useState(false)
-  const [editingProcedure, setEditingProcedure] = useState<PlannedProcedure | null>(null)
-  const [editedValue, setEditedValue] = useState('')
-  const [editedDescription, setEditedDescription] = useState('')
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editingProcedureId, setEditingProcedureId] = useState<string | null>(null)
 
   const handleDelete = async () => {
     const confirmed = await confirm({
@@ -96,6 +93,8 @@ export default function PatientDetail() {
     setCustomValue('')
     setIsEditingValue(false)
     setShowProcedureModal(false)
+    setIsEditMode(false)
+    setEditingProcedureId(null)
   }
 
   const handleAddProcedure = (paymentSplits?: import('@/types/patient').PaymentSplit[]) => {
@@ -112,6 +111,30 @@ export default function PatientDetail() {
       totalValue = procedureQuantity * unitValue
     }
 
+    // Modo de edição - atualizar procedimento existente
+    if (isEditMode && editingProcedureId) {
+      const updated = (patient.plannedProcedures || []).map(p =>
+        p.id === editingProcedureId ? {
+          ...p,
+          procedureName: selectedProcedure,
+          quantity: procedureQuantity,
+          unitValue,
+          totalValue,
+          paymentType,
+          paymentMethod,
+          installments,
+          paymentSplits: paymentSplits || p.paymentSplits,
+          notes: procedureNotes
+        } : p
+      )
+
+      update(patient.id, { plannedProcedures: updated })
+      showToast('Procedimento atualizado com sucesso!', 'success')
+      resetProcedureModal()
+      return
+    }
+
+    // Modo de adição - criar novo procedimento
     const newPlannedProcedure: PlannedProcedure = {
       id: crypto.randomUUID(),
       procedureName: selectedProcedure,
@@ -200,40 +223,21 @@ export default function PatientDetail() {
   }
 
   const handleOpenEditValue = (proc: PlannedProcedure) => {
-    setEditingProcedure(proc)
-    setEditedValue(formatCurrency(proc.totalValue))
-    setEditedDescription(proc.notes || '')
-    setShowEditValueModal(true)
+    // Preencher o modal com os dados do procedimento existente
+    setSelectedProcedure(proc.procedureName)
+    setProcedureNotes(proc.notes || '')
+    setProcedureQuantity(proc.quantity)
+    setQuantityInput(proc.quantity.toString())
+    setPaymentType(proc.paymentType || 'cash')
+    setPaymentMethod(proc.paymentMethod || 'cash')
+    setInstallments(proc.installments || 1)
+    setCustomValue(formatCurrency(proc.totalValue))
+    setIsEditingValue(true)
+    setEditingProcedureId(proc.id)
+    setIsEditMode(true)
+    setShowProcedureModal(true)
   }
 
-  const handleSaveEditedValue = async () => {
-    if (!patient || !editingProcedure) return
-
-    const parsedValue = parseFloat(editedValue.replace(/[^\d,]/g, '').replace(',', '.'))
-
-    if (isNaN(parsedValue) || parsedValue < 0) {
-      alert('Por favor, insira um valor válido')
-      return
-    }
-
-    const updated = (patient.plannedProcedures || []).map(p =>
-      p.id === editingProcedure.id ? {
-        ...p,
-        totalValue: parsedValue,
-        unitValue: parsedValue / p.quantity,
-        notes: editedDescription
-      } : p
-    )
-
-    update(patient.id, { plannedProcedures: updated })
-
-    setShowEditValueModal(false)
-    setEditingProcedure(null)
-    setEditedValue('')
-    setEditedDescription('')
-
-    showToast('Valor atualizado com sucesso!', 'success')
-  }
 
   const getInitials = (name: string) => {
     return name
@@ -623,29 +627,8 @@ export default function PatientDetail() {
         onCustomValueChange={handleCustomValueChange}
         onClose={resetProcedureModal}
         onAdd={handleAddProcedure}
-      />
-
-      <EditValueModal
-        isOpen={showEditValueModal}
-        procedure={editingProcedure}
-        editedValue={editedValue}
-        editedDescription={editedDescription}
-        onValueChange={(value) => {
-          const numbersOnly = value.replace(/\D/g, '')
-          const formatted = (parseInt(numbersOnly || '0') / 100).toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })
-          setEditedValue(formatted)
-        }}
-        onDescriptionChange={setEditedDescription}
-        onSave={handleSaveEditedValue}
-        onClose={() => {
-          setShowEditValueModal(false)
-          setEditingProcedure(null)
-          setEditedValue('')
-          setEditedDescription('')
-        }}
+        isEditMode={isEditMode}
+        editingProcedureId={editingProcedureId || undefined}
       />
 
       <PhotoGalleryModal

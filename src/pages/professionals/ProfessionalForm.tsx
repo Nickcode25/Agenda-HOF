@@ -273,7 +273,7 @@ export default function ProfessionalForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Especialidade <span className="text-red-500">*</span>
+                  Especialidade
                 </label>
                 <SearchableSelect
                   options={[
@@ -284,7 +284,8 @@ export default function ProfessionalForm() {
                     { value: 'Esteticista', label: 'Esteticista' },
                     { value: 'Farmacêutico(a)', label: 'Farmacêutico(a)' },
                     { value: 'Fisioterapeuta', label: 'Fisioterapeuta' },
-                    { value: 'Médico(a)', label: 'Médico(a)' }
+                    { value: 'Médico(a)', label: 'Médico(a)' },
+                    { value: 'Harmonização Orofacial', label: 'Harmonização Orofacial' }
                   ]}
                   value={specialty}
                   onChange={setSpecialty}
@@ -294,13 +295,12 @@ export default function ProfessionalForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Registro Profissional <span className="text-red-500">*</span>
+                  Registro Profissional
                 </label>
                 <input
                   value={registrationNumber}
                   onChange={(e) => setRegistrationNumber(e.target.value)}
                   placeholder="CRO, CRM, COREN, etc"
-                  required
                   className={`w-full bg-gray-50 border ${
                     duplicateRegWarning
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'

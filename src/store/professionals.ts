@@ -106,7 +106,7 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
       }
 
 
-      await get().fetchAll()
+      await get().fetchAll(true)
       set({ loading: false })
       return data.id
     } catch (error: any) {
@@ -147,7 +147,7 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
 
       if (error) throw error
 
-      await get().fetchAll()
+      await get().fetchAll(true)
       set({ loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
@@ -168,7 +168,7 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
 
       if (error) throw error
 
-      await get().fetchAll()
+      await get().fetchAll(true)
       set({ loading: false })
     } catch (error: any) {
       set({ error: error.message, loading: false })
