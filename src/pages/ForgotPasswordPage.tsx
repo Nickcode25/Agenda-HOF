@@ -88,10 +88,10 @@ export default function ForgotPasswordPage() {
                     </div>
                     <div className="flex-1 space-y-2">
                       <p className="text-sm text-gray-200 font-medium">
-                        ✓ Verifique sua caixa de entrada e spam
+                        Verifique sua caixa de entrada e spam
                       </p>
                       <p className="text-sm text-gray-200 font-medium">
-                        ⏱️ O link expira em <span className="text-orange-400 font-bold">1 hora</span>
+                        O link expira em <span className="text-orange-400 font-bold">1 hora</span>
                       </p>
                     </div>
                   </div>

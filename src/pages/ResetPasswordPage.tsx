@@ -364,7 +364,7 @@ export default function ResetPasswordPage() {
                   <p className="text-xs text-red-400 mt-1">As senhas não coincidem</p>
                 )}
                 {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                  <p className="text-xs text-green-400 mt-1">✓ Senhas coincidem</p>
+                  <p className="text-xs text-green-400 mt-1">Senhas coincidem</p>
                 )}
               </div>
 

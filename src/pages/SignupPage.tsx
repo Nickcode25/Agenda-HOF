@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    confirmEmail: '',
     phone: '',
     password: '',
     confirmPassword: ''
@@ -75,6 +76,12 @@ export default function SignupPage() {
     const emailCheck = validateEmail(formData.email)
     if (!emailCheck.isValid) {
       setError(emailCheck.message)
+      return
+    }
+
+    // Validar confirmação de email
+    if (formData.email.trim().toLowerCase() !== formData.confirmEmail.trim().toLowerCase()) {
+      setError('Os emails não coincidem')
       return
     }
 
@@ -300,7 +307,37 @@ export default function SignupPage() {
                       <p className="text-xs text-red-400 mt-1">{emailValidation.message}</p>
                     )}
                     {emailValidation && emailValidation.isValid && (
-                      <p className="text-xs text-green-400 mt-1">✓ Email válido</p>
+                      <p className="text-xs text-green-400 mt-1">Email válido</p>
+                    )}
+                  </div>
+
+                  {/* Confirmar Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Confirmar Email *
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={formData.confirmEmail}
+                        onChange={(e) => setFormData({ ...formData, confirmEmail: e.target.value })}
+                        className={`w-full bg-gray-700/50 border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                          !formData.confirmEmail
+                            ? 'border-gray-600 focus:border-orange-500 focus:ring-orange-500/20'
+                            : formData.email.trim().toLowerCase() === formData.confirmEmail.trim().toLowerCase()
+                            ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
+                            : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                        }`}
+                        placeholder="Confirme seu email"
+                        required
+                      />
+                    </div>
+                    {formData.confirmEmail && formData.email.trim().toLowerCase() !== formData.confirmEmail.trim().toLowerCase() && (
+                      <p className="text-xs text-red-400 mt-1">Os emails não coincidem</p>
+                    )}
+                    {formData.confirmEmail && formData.email.trim().toLowerCase() === formData.confirmEmail.trim().toLowerCase() && (
+                      <p className="text-xs text-green-400 mt-1">Emails coincidem</p>
                     )}
                   </div>
 
@@ -330,7 +367,7 @@ export default function SignupPage() {
                       <p className="text-xs text-red-400 mt-1">{phoneValidation.message}</p>
                     )}
                     {phoneValidation && phoneValidation.isValid && (
-                      <p className="text-xs text-green-400 mt-1">✓ Telefone válido</p>
+                      <p className="text-xs text-green-400 mt-1">Telefone válido</p>
                     )}
                   </div>
                 </div>
@@ -401,7 +438,7 @@ export default function SignupPage() {
                       <p className="text-xs text-red-400 mt-1">As senhas não coincidem</p>
                     )}
                     {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                      <p className="text-xs text-green-400 mt-1">✓ Senhas coincidem</p>
+                      <p className="text-xs text-green-400 mt-1">Senhas coincidem</p>
                     )}
                   </div>
                 </div>
@@ -430,7 +467,7 @@ export default function SignupPage() {
             {/* Informação sobre trial */}
             <div className="mt-6 pt-6 border-t border-gray-700/50">
               <p className="text-xs text-center text-gray-500">
-                🎉 Após criar sua conta, você terá 7 dias de acesso gratuito completo!
+                Após criar sua conta, você terá 7 dias de acesso gratuito completo!
               </p>
             </div>
           </div>
