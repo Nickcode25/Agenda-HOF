@@ -20,6 +20,11 @@ if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true, // Importante: detecta tokens na URL automaticamente
+  },
   global: {
     headers: {
       'Accept': 'application/json',
