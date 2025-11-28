@@ -12,7 +12,7 @@ import UpgradeOverlay from '@/components/UpgradeOverlay'
 import type { Appointment } from '@/types/schedule'
 
 export default function ScheduleCalendar() {
-  const { appointments, removeAppointment, fetchAppointments } = useSchedule()
+  const { appointments, removeAppointment, fetchAppointments, updateAppointment } = useSchedule()
   const { professionals, fetchAll: fetchProfessionals } = useProfessionals()
   const { blocks: recurringBlocks, fetchBlocks: fetchRecurringBlocks } = useRecurring()
   const { selectedProfessional } = useProfessionalContext()
@@ -59,6 +59,13 @@ export default function ScheduleCalendar() {
     // Handler disponível para futura implementação
   }
 
+  const handleAppointmentResize = async (appointmentId: string, newStart: Date, newEnd: Date) => {
+    await updateAppointment(appointmentId, {
+      start: newStart.toISOString(),
+      end: newEnd.toISOString()
+    })
+  }
+
   return (
     <div className="relative -m-8 h-[calc(100vh-64px)] overflow-hidden">
       {/* Overlay de bloqueio se não tiver assinatura */}
@@ -77,6 +84,7 @@ export default function ScheduleCalendar() {
         userPlan={userPlan}
         onAppointmentClick={handleAppointmentClick}
         onTimeSlotClick={handleTimeSlotClick}
+        onAppointmentResize={handleAppointmentResize}
       />
 
       {/* Appointment Modal */}

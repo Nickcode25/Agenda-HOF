@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useRef } from 'react'
-import { format, startOfWeek, startOfMonth, endOfMonth, addDays, isSameDay, isToday, parseISO, getDay } from 'date-fns'
+import { useMemo, useEffect, useRef, useState, useCallback } from 'react'
+import { format, startOfWeek, startOfMonth, endOfMonth, addDays, isSameDay, isToday, parseISO, getDay, addMinutes, subMinutes } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Appointment } from '@/types/schedule'
 import type { VirtualBlock } from '@/utils/recurringBlocks'
@@ -13,6 +13,7 @@ interface WeekGridProps {
   recurringBlocks?: VirtualBlock[]
   onAppointmentClick: (appointment: Appointment) => void
   onTimeSlotClick?: (date: Date, hour: number) => void
+  onAppointmentResize?: (appointmentId: string, newStart: Date, newEnd: Date) => void
   viewMode: ViewMode
 }
 
@@ -22,14 +23,102 @@ export default function WeekGrid({
   recurringBlocks = [],
   onAppointmentClick,
   onTimeSlotClick,
+  onAppointmentResize,
   viewMode
 }: WeekGridProps) {
   // Altura de cada slot de hora em pixels
-  // 176px por hora = 88px para 30min, 44px para 15min (base legível)
-  const HOUR_HEIGHT = 176
+  // 60px por hora = estilo Google Agenda, mais compacto
+  const HOUR_HEIGHT = 60
+
+  // Estado para resize - agora com preview local para fluidez
+  const [resizing, setResizing] = useState<{
+    appointmentId: string
+    edge: 'top' | 'bottom'
+    initialY: number
+    initialStart: Date
+    initialEnd: Date
+    currentStart: Date
+    currentEnd: Date
+  } | null>(null)
 
   // Ref para o container de scroll
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Funções de resize
+  const handleResizeStart = useCallback((
+    e: React.MouseEvent,
+    apt: Appointment,
+    edge: 'top' | 'bottom'
+  ) => {
+    e.stopPropagation()
+    e.preventDefault()
+
+    const start = parseISO(apt.start)
+    const end = parseISO(apt.end)
+
+    setResizing({
+      appointmentId: apt.id,
+      edge,
+      initialY: e.clientY,
+      initialStart: start,
+      initialEnd: end,
+      currentStart: start,
+      currentEnd: end
+    })
+  }, [])
+
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!resizing) return
+
+    const deltaY = e.clientY - resizing.initialY
+    // Converter pixels para minutos (HOUR_HEIGHT px = 60 min)
+    const deltaMinutes = Math.round((deltaY / HOUR_HEIGHT) * 60 / 15) * 15 // Arredondar para 15 min
+
+    let newStart = resizing.initialStart
+    let newEnd = resizing.initialEnd
+
+    if (resizing.edge === 'top') {
+      newStart = addMinutes(resizing.initialStart, deltaMinutes)
+      // Garantir que não ultrapasse o fim e tenha pelo menos 15 min
+      if (newStart >= resizing.initialEnd) {
+        newStart = subMinutes(resizing.initialEnd, 15)
+      }
+    } else {
+      newEnd = addMinutes(resizing.initialEnd, deltaMinutes)
+      // Garantir que não seja antes do início e tenha pelo menos 15 min
+      if (newEnd <= resizing.initialStart) {
+        newEnd = addMinutes(resizing.initialStart, 15)
+      }
+    }
+
+    // Atualiza apenas o estado local (preview visual fluido)
+    setResizing(prev => prev ? { ...prev, currentStart: newStart, currentEnd: newEnd } : null)
+  }, [resizing, HOUR_HEIGHT])
+
+  const handleResizeEnd = useCallback(() => {
+    if (resizing && onAppointmentResize) {
+      // Só salva no banco quando soltar o mouse
+      onAppointmentResize(resizing.appointmentId, resizing.currentStart, resizing.currentEnd)
+    }
+    setResizing(null)
+  }, [resizing, onAppointmentResize])
+
+  // Adicionar listeners globais para mouse move/up durante resize
+  useEffect(() => {
+    if (resizing) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      document.body.style.cursor = 'ns-resize'
+      document.body.style.userSelect = 'none'
+
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+    }
+  }, [resizing, handleResizeMove, handleResizeEnd])
 
   // Gerar dias baseado no modo de visualização
   const days = useMemo(() => {
@@ -133,10 +222,41 @@ export default function WeekGrid({
     return (aptEnd.getTime() - aptStart.getTime()) / (1000 * 60)
   }
 
+  // Verificar se dois agendamentos se sobrepõem
+  const doAppointmentsOverlap = (apt1: Appointment, apt2: Appointment) => {
+    const start1 = new Date(apt1.start).getTime()
+    const end1 = new Date(apt1.end).getTime()
+    const start2 = new Date(apt2.start).getTime()
+    const end2 = new Date(apt2.end).getTime()
+    return start1 < end2 && start2 < end1
+  }
+
+  // Calcular posição horizontal para agendamentos sobrepostos
+  const getOverlappingPosition = (apt: Appointment, dayAppointments: Appointment[]) => {
+    // Encontrar todos os agendamentos que se sobrepõem com este
+    const overlapping = dayAppointments.filter(other =>
+      other.id !== apt.id && doAppointmentsOverlap(apt, other)
+    )
+
+    if (overlapping.length === 0) {
+      return { index: 0, total: 1 }
+    }
+
+    // Incluir o agendamento atual na lista e ordenar por horário de início
+    const allOverlapping = [...overlapping, apt].sort((a, b) =>
+      new Date(a.start).getTime() - new Date(b.start).getTime()
+    )
+
+    const index = allOverlapping.findIndex(a => a.id === apt.id)
+    return { index, total: allOverlapping.length }
+  }
+
   // Calcular posição e altura do agendamento baseado no horário
-  const getAppointmentStyle = (apt: Appointment) => {
-    const aptStart = toSaoPauloTime(parseISO(apt.start))
-    const aptEnd = toSaoPauloTime(parseISO(apt.end))
+  const getAppointmentStyle = (apt: Appointment, dayAppointments: Appointment[]) => {
+    // Se este agendamento está sendo redimensionado, usa os valores do preview
+    const isBeingResized = resizing?.appointmentId === apt.id
+    const aptStart = isBeingResized ? resizing.currentStart : toSaoPauloTime(parseISO(apt.start))
+    const aptEnd = isBeingResized ? resizing.currentEnd : toSaoPauloTime(parseISO(apt.end))
 
     // Calcular minutos desde o início do dia (7h)
     const startMinutesFromDayStart = (aptStart.getHours() - 7) * 60 + aptStart.getMinutes()
@@ -146,16 +266,21 @@ export default function WeekGrid({
     const topPx = (startMinutesFromDayStart / 60) * HOUR_HEIGHT
     const heightPx = ((endMinutesFromDayStart - startMinutesFromDayStart) / 60) * HOUR_HEIGHT
 
-    // Altura mínima de 44px para agendamentos curtos (15min)
-    // Com HOUR_HEIGHT=176: 15min=44px, 30min=88px, 1h=176px
-    const minHeight = 44
+    // Altura mínima de 20px para agendamentos curtos
+    // Com HOUR_HEIGHT=60: 15min=15px, 30min=30px, 1h=60px
+    const minHeight = 20
+
+    // Calcular posição horizontal para agendamentos sobrepostos
+    const { index, total } = getOverlappingPosition(apt, dayAppointments)
+    const width = 100 / total
+    const leftPercent = index * width
 
     return {
-      top: `${topPx + 1}px`, // +1px para criar espaço entre agendamentos consecutivos
-      height: `${Math.max(heightPx - 2, minHeight)}px`, // -2px para criar espaço
+      top: `${topPx + 1}px`,
+      height: `${Math.max(heightPx - 2, minHeight)}px`,
       position: 'absolute' as const,
-      left: '3px',
-      right: '3px',
+      left: `calc(${leftPercent}% + 2px)`,
+      width: `calc(${width}% - 4px)`,
     }
   }
 
@@ -170,14 +295,14 @@ export default function WeekGrid({
     const topPx = (startMinutesFromDayStart / 60) * HOUR_HEIGHT
     const heightPx = ((endMinutesFromDayStart - startMinutesFromDayStart) / 60) * HOUR_HEIGHT
 
-    const minHeight = 30
+    const minHeight = 18
 
     return {
       top: `${topPx + 1}px`,
       height: `${Math.max(heightPx - 2, minHeight)}px`,
       position: 'absolute' as const,
-      left: '3px',
-      right: '3px',
+      left: '2px',
+      right: '2px',
     }
   }
 
@@ -368,41 +493,62 @@ export default function WeekGrid({
                   <div
                     key={block.id}
                     style={getRecurringBlockStyle(block)}
-                    className="rounded-lg bg-sky-100 border-2 border-dashed border-sky-300 overflow-hidden z-5 flex flex-col justify-center items-center p-1.5 text-center opacity-80"
+                    className="rounded bg-sky-100 border border-dashed border-sky-300 overflow-hidden z-5 flex flex-col justify-center px-1.5 py-0.5 text-left opacity-80"
                   >
-                    <div className={`font-medium text-sky-700 ${getRecurringBlockDuration(block) <= 30 ? 'text-[10px]' : 'text-xs'}`}>
+                    <div className="text-[10px] font-medium text-sky-700 leading-tight">
                       {format(parseISO(block.start), 'HH:mm')} - {format(parseISO(block.end), 'HH:mm')}
                     </div>
-                    <div className={`font-medium text-sky-600 leading-tight truncate w-full ${getRecurringBlockDuration(block) <= 30 ? 'text-xs' : 'text-sm'}`}>
+                    <div className="text-[11px] font-medium text-sky-600 leading-tight truncate w-full">
                       {block.title}
                     </div>
                   </div>
                 ))}
 
                 {/* Agendamentos posicionados absolutamente */}
-                {dayAppointments.map(apt => (
-                  <button
-                    key={apt.id}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onAppointmentClick(apt)
-                    }}
-                    style={getAppointmentStyle(apt)}
-                    className={`rounded-lg ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-lg transition-all overflow-hidden z-10 flex flex-col justify-center items-center p-1.5 text-center border-2 border-white/30`}
-                  >
-                    <div className={`font-semibold opacity-90 ${getAppointmentDuration(apt) <= 15 ? 'text-[10px]' : 'text-xs'}`}>
-                      {formatInSaoPaulo(apt.start, 'HH:mm')} - {formatInSaoPaulo(apt.end, 'HH:mm')}
+                {dayAppointments.map(apt => {
+                  const isBeingResized = resizing?.appointmentId === apt.id
+                  const displayStart = isBeingResized ? resizing.currentStart : parseISO(apt.start)
+
+                  return (
+                    <div
+                      key={apt.id}
+                      style={getAppointmentStyle(apt, dayAppointments)}
+                      className={`rounded ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-md overflow-hidden z-10 flex flex-col border border-white/20 group relative ${isBeingResized ? 'ring-2 ring-white/50' : ''}`}
+                    >
+                      {/* Handle superior para resize */}
+                      {onAppointmentResize && (
+                        <div
+                          onMouseDown={(e) => handleResizeStart(e, apt, 'top')}
+                          className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 hover:bg-white/30 transition-opacity z-20"
+                        />
+                      )}
+
+                      {/* Conteúdo do card - centralizado */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!resizing) onAppointmentClick(apt)
+                        }}
+                        className="flex-1 flex items-center justify-center px-1 w-full"
+                      >
+                        <span className="text-[10px] font-medium opacity-90 whitespace-nowrap">
+                          {format(displayStart, 'HH:mm')}
+                        </span>
+                        <span className="text-[11px] font-semibold truncate ml-1">
+                          {apt.isPersonal ? apt.title : apt.patientName}
+                        </span>
+                      </button>
+
+                      {/* Handle inferior para resize */}
+                      {onAppointmentResize && (
+                        <div
+                          onMouseDown={(e) => handleResizeStart(e, apt, 'bottom')}
+                          className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 hover:bg-white/30 transition-opacity z-20"
+                        />
+                      )}
                     </div>
-                    <div className={`font-medium leading-tight truncate w-full ${getAppointmentDuration(apt) <= 15 ? 'text-xs' : 'text-[13px]'}`}>
-                      {apt.isPersonal ? apt.title : apt.patientName}
-                    </div>
-                    {!apt.isPersonal && viewMode === 'day' && apt.professional && getAppointmentDuration(apt) >= 30 && (
-                      <div className="text-[10px] opacity-80 truncate w-full mt-0.5">
-                        {apt.professional}
-                      </div>
-                    )}
-                  </button>
-                ))}
+                  )
+                })}
               </div>
             )
           })}
