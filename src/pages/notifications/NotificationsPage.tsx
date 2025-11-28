@@ -104,7 +104,7 @@ export default function NotificationsPage() {
           )}
           <button
             onClick={() => navigate('/app/configuracoes/notificacoes')}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all flex items-center gap-2"
+            className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition-all flex items-center gap-2"
           >
             <Settings size={18} />
             Configurar
@@ -113,17 +113,17 @@ export default function NotificationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <Filter size={18} className="text-gray-400" />
-            <span className="text-sm text-gray-400">Filtros:</span>
+            <Filter size={18} className="text-gray-500" />
+            <span className="text-sm text-gray-500">Filtros:</span>
           </div>
 
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as NotificationType | 'all')}
-            className="px-3 py-1.5 bg-gray-700 border border-gray-600 text-white rounded-lg text-sm focus:outline-none focus:border-orange-500"
+            className="px-3 py-1.5 bg-white border border-gray-300 text-gray-900 rounded-lg text-sm focus:outline-none focus:border-orange-500"
           >
             <option value="all">Todos os tipos</option>
             <option value="appointment_reminder">Agendamentos</option>
@@ -136,12 +136,12 @@ export default function NotificationsPage() {
               type="checkbox"
               checked={showOnlyUnread}
               onChange={(e) => setShowOnlyUnread(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-orange-500 focus:ring-orange-500 focus:ring-offset-gray-800"
+              className="w-4 h-4 rounded border-gray-300 bg-white text-orange-500 focus:ring-orange-500 focus:ring-offset-white"
             />
-            <span className="text-sm text-gray-300">Apenas não lidas</span>
+            <span className="text-sm text-gray-700">Apenas não lidas</span>
           </label>
 
-          <div className="ml-auto text-sm text-gray-400">
+          <div className="ml-auto text-sm text-gray-500">
             {filteredNotifications.length} de {notifications.length} notificações
           </div>
         </div>
@@ -162,10 +162,10 @@ export default function NotificationsPage() {
           filteredNotifications.map(notification => (
             <div
               key={notification.id}
-              className={`bg-gray-800 border rounded-xl p-4 transition-all ${
+              className={`bg-white border rounded-xl p-4 transition-all shadow-sm ${
                 !notification.isRead
-                  ? 'border-orange-500/30 bg-orange-500/5'
-                  : 'border-gray-700 hover:border-gray-600'
+                  ? 'border-orange-300 bg-orange-50'
+                  : 'border-gray-200 hover:border-gray-300'
               } ${notification.actionUrl ? 'cursor-pointer' : ''}`}
               onClick={() => handleNotificationClick(notification)}
             >
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`font-semibold ${!notification.isRead ? 'text-white' : 'text-gray-300'}`}>
+                      <h3 className={`font-semibold ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
                         {notification.title}
                       </h3>
                       {getPriorityBadge(notification.priority)}
@@ -190,10 +190,10 @@ export default function NotificationsPage() {
                             e.stopPropagation()
                             markAsRead(notification.id)
                           }}
-                          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Marcar como lida"
                         >
-                          <Check size={18} className="text-gray-400" />
+                          <Check size={18} className="text-gray-500" />
                         </button>
                       )}
                       <button
@@ -203,15 +203,15 @@ export default function NotificationsPage() {
                             deleteNotification(notification.id)
                           }
                         }}
-                        className="p-2 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors"
+                        className="p-2 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"
                         title="Excluir"
                       >
-                        <Trash2 size={18} className="text-gray-400" />
+                        <Trash2 size={18} className="text-gray-500" />
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-gray-300 mb-3">{notification.message}</p>
+                  <p className="text-gray-600 mb-3">{notification.message}</p>
 
                   <div className="flex items-center gap-4 text-xs text-gray-500">
                     <span>{formatDateTime(notification.createdAt)}</span>

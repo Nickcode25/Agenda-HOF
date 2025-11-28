@@ -43,7 +43,7 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
       onChange(formatted)
     }
 
-    const defaultClassName = "w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+    const defaultClassName = "w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
 
     return (
       <input

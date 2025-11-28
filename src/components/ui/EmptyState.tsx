@@ -34,7 +34,7 @@ export default function EmptyState({ icon: Icon, title, description, action }: E
     }
 
     return (
-      <button onClick={action.onClick} className={className}>
+      <button type="button" onClick={action.onClick} className={className}>
         {ActionIcon && <ActionIcon size={18} />}
         {action.label}
       </button>

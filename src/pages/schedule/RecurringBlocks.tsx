@@ -149,7 +149,7 @@ export default function RecurringBlocks() {
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors shadow-sm"
             >
               <Plus size={18} />
               Novo Bloqueio
@@ -183,7 +183,7 @@ export default function RecurringBlocks() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ex: Almoço, Reunião semanal, Intervalo..."
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                 />
               </div>
 
@@ -201,7 +201,7 @@ export default function RecurringBlocks() {
                       onChange={(e) => setStartTime(formatTimeInput(e.target.value))}
                       maxLength={5}
                       placeholder="HH:MM"
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm"
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                     />
                   </div>
                 </div>
@@ -218,7 +218,7 @@ export default function RecurringBlocks() {
                       onChange={(e) => setEndTime(formatTimeInput(e.target.value))}
                       maxLength={5}
                       placeholder="HH:MM"
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm"
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                     />
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export default function RecurringBlocks() {
                       onClick={() => toggleDay(day.value)}
                       className={`px-4 py-2 rounded-lg font-medium text-sm transition-all border-2 ${
                         selectedDays.includes(day.value)
-                          ? 'border-sky-500 bg-sky-50 text-sky-700'
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
                           : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                       }`}
                     >
@@ -262,7 +262,7 @@ export default function RecurringBlocks() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                 >
                   <Save size={18} />
                   {editingId ? 'Salvar Alterações' : 'Criar Bloqueio'}
@@ -276,7 +276,7 @@ export default function RecurringBlocks() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center gap-2">
-              <Repeat size={18} className="text-sky-500" />
+              <Repeat size={18} className="text-orange-500" />
               <h2 className="font-semibold text-gray-900">Seus Bloqueios Recorrentes</h2>
             </div>
           </div>
@@ -287,8 +287,8 @@ export default function RecurringBlocks() {
             </div>
           ) : blocks.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center mx-auto mb-4">
-                <Calendar size={32} className="text-sky-500" />
+              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
+                <Calendar size={32} className="text-orange-500" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Nenhum bloqueio configurado
@@ -298,7 +298,7 @@ export default function RecurringBlocks() {
               </p>
               <button
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
               >
                 <Plus size={18} />
                 Criar Primeiro Bloqueio
@@ -315,9 +315,9 @@ export default function RecurringBlocks() {
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      block.active ? 'bg-sky-100' : 'bg-gray-100'
+                      block.active ? 'bg-orange-100' : 'bg-gray-100'
                     }`}>
-                      <Clock size={24} className={block.active ? 'text-sky-500' : 'text-gray-400'} />
+                      <Clock size={24} className={block.active ? 'text-orange-500' : 'text-gray-400'} />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">{block.title}</h3>
@@ -339,7 +339,7 @@ export default function RecurringBlocks() {
                       onClick={() => toggleBlockActive(block.id)}
                       className={`p-2 rounded-lg transition-colors ${
                         block.active
-                          ? 'text-sky-500 hover:bg-sky-50'
+                          ? 'text-orange-500 hover:bg-orange-50'
                           : 'text-gray-400 hover:bg-gray-100'
                       }`}
                       title={block.active ? 'Desativar' : 'Ativar'}
@@ -348,7 +348,7 @@ export default function RecurringBlocks() {
                     </button>
                     <button
                       onClick={() => handleEdit(block.id)}
-                      className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
                       title="Editar"
                     >
                       <Edit2 size={18} />
@@ -368,9 +368,9 @@ export default function RecurringBlocks() {
         </div>
 
         {/* Dica */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <h4 className="font-medium text-blue-800 mb-1">Como funciona?</h4>
-          <p className="text-sm text-blue-700">
+        <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+          <h4 className="font-medium text-orange-800 mb-1">Como funciona?</h4>
+          <p className="text-sm text-orange-700">
             Os bloqueios recorrentes aparecem automaticamente nos dias configurados.
             Se você agendar um paciente em um horário que tem bloqueio recorrente,
             o agendamento prevalece e o bloqueio é "cortado" naquele horário.

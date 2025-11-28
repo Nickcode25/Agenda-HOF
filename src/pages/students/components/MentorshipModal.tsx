@@ -52,7 +52,7 @@ export default function MentorshipModal({
           <h2 className="text-2xl font-bold text-gray-900">
             {mentorshipType === 'enrollment' ? 'Inscrição Mentoria' : 'Adicionar Mentoria'}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <X size={24} className="text-gray-600" />
           </button>
         </div>
@@ -146,12 +146,14 @@ export default function MentorshipModal({
 
         <div className="flex gap-3 p-6 border-t border-gray-200">
           <button
+            type="button"
             onClick={onClose}
             className="flex-1 px-6 py-3 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-xl font-medium transition-colors"
           >
             Cancelar
           </button>
           <button
+            type="button"
             onClick={onSubmit}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
           >

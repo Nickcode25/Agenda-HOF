@@ -50,6 +50,7 @@ export default function ConfirmModal({
             <h3 id="confirm-modal-title" className="text-lg font-semibold text-gray-900">{title}</h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600"
             aria-label="Fechar modal"
@@ -66,12 +67,14 @@ export default function ConfirmModal({
         {/* Footer */}
         <div className="flex gap-3 p-6 pt-2">
           <button
+            type="button"
             onClick={onClose}
             className="flex-1 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
           >
             {cancelText}
           </button>
           <button
+            type="button"
             onClick={handleConfirm}
             className={`flex-1 px-5 py-2.5 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-xl ${confirmButtonClass}`}
           >

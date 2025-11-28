@@ -61,7 +61,10 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
     window.open(getWhatsAppUrl(patientPhone), '_blank')
   }
 
-  const handleStatusChange = async (status: 'confirmed' | 'cancelled' | 'done') => {
+  const handleStatusChange = async (e: React.MouseEvent, status: 'confirmed' | 'cancelled' | 'done') => {
+    e.preventDefault()
+    e.stopPropagation()
+
     await updateAppointmentStatus(appointment.id, status)
     const messages = {
       confirmed: 'Agendamento confirmado!',
@@ -124,6 +127,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
             aria-label="Fechar modal"
@@ -208,7 +212,8 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
               <div className="flex items-center gap-2 flex-wrap">
                 {appointment.status !== 'confirmed' && (
                   <button
-                    onClick={() => handleStatusChange('confirmed')}
+                    type="button"
+                    onClick={(e) => handleStatusChange(e, 'confirmed')}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors shadow-sm"
                   >
                     <Check size={18} />
@@ -216,14 +221,16 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
                   </button>
                 )}
                 <button
-                  onClick={() => handleStatusChange('done')}
+                  type="button"
+                  onClick={(e) => handleStatusChange(e, 'done')}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors shadow-sm"
                 >
                   <Check size={18} />
                   Concluído
                 </button>
                 <button
-                  onClick={() => handleStatusChange('cancelled')}
+                  type="button"
+                  onClick={(e) => handleStatusChange(e, 'cancelled')}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors shadow-sm"
                 >
                   <XCircle size={18} />
@@ -238,6 +245,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
         <div className="flex items-center justify-between p-6 border-t border-gray-200">
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleEdit}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border ${
                 appointment.isPersonal
@@ -249,6 +257,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
               Editar
             </button>
             <button
+              type="button"
               onClick={handleDelete}
               className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors border border-red-200"
             >
@@ -257,6 +266,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
             </button>
             {!appointment.isPersonal && patientPhone && (
               <button
+                type="button"
                 onClick={handleWhatsApp}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg font-medium transition-colors border border-green-200"
                 title="Enviar mensagem no WhatsApp"
@@ -267,6 +277,7 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
           >

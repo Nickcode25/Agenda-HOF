@@ -158,27 +158,27 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
     const dayAppointments = getAppointmentsForDay(currentDay)
 
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
-        <div className="p-6 border-b border-gray-700 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">
             {format(currentDay, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={today}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
             >
               Hoje
             </button>
             <button
               onClick={prevDay}
-              className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-lg transition-colors"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={nextDay}
-              className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-lg transition-colors"
             >
               <ChevronRight size={20} />
             </button>
@@ -189,8 +189,8 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
           {hours.map(hour => {
             const hourAppointments = getAppointmentsForDayAndHour(currentDay, hour)
             return (
-              <div key={hour} className="flex gap-4 border-b border-gray-700/50 py-3">
-                <div className="w-20 flex-shrink-0 text-gray-400 font-medium">
+              <div key={hour} className="flex gap-4 border-b border-gray-100 py-3">
+                <div className="w-20 flex-shrink-0 text-gray-500 font-medium">
                   {hour.toString().padStart(2, '0')}:00
                 </div>
                 <div className="flex-1 space-y-2">
@@ -208,8 +208,8 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                             {formatInSaoPaulo(apt.start, 'HH:mm')} - {formatInSaoPaulo(apt.end, 'HH:mm')}
                           </span>
                         </div>
-                        <div className="text-white font-medium">{apt.patientName}</div>
-                        <div className="text-gray-400 text-sm">{apt.procedure}</div>
+                        <div className="text-gray-900 font-medium">{apt.patientName}</div>
+                        <div className="text-gray-500 text-sm">{apt.procedure}</div>
                       </button>
                     )
                   })}
@@ -227,27 +227,27 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
     const hours = getHoursRange()
 
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
-        <div className="p-6 border-b border-gray-700 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">
             {format(weekDays[0], "d 'de' MMM", { locale: ptBR })} - {format(weekDays[6], "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={today}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
             >
               Hoje
             </button>
             <button
               onClick={prevWeek}
-              className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-lg transition-colors"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={nextWeek}
-              className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-lg transition-colors"
             >
               <ChevronRight size={20} />
             </button>
@@ -257,10 +257,10 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
         <div className="p-4 overflow-x-auto">
           <div className="min-w-[800px]">
             <div className="grid grid-cols-8 gap-2 mb-2">
-              <div className="text-sm font-semibold text-gray-400"></div>
+              <div className="text-sm font-semibold text-gray-500"></div>
               {weekDays.map(day => (
                 <div key={day.toString()} className={`text-center text-sm font-semibold py-2 rounded-lg ${
-                  isToday(day) ? 'bg-orange-500/10 text-orange-400' : 'text-gray-400'
+                  isToday(day) ? 'bg-orange-50 text-orange-600' : 'text-gray-500'
                 }`}>
                   <div>{format(day, 'EEE', { locale: ptBR })}</div>
                   <div className="text-lg">{format(day, 'd')}</div>
@@ -271,13 +271,13 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
             <div className="space-y-1 max-h-[500px] overflow-y-auto">
               {hours.map(hour => (
                 <div key={hour} className="grid grid-cols-8 gap-2">
-                  <div className="text-gray-400 text-sm font-medium py-2">
+                  <div className="text-gray-500 text-sm font-medium py-2">
                     {hour.toString().padStart(2, '0')}:00
                   </div>
                   {weekDays.map(day => {
                     const hourAppointments = getAppointmentsForDayAndHour(day, hour)
                     return (
-                      <div key={day.toString()} className="min-h-[60px] border border-gray-700/50 rounded-lg p-1">
+                      <div key={day.toString()} className="min-h-[60px] border border-gray-200 rounded-lg p-1">
                         {hourAppointments.map(apt => {
                           const colors = getProcedureColor(apt.procedure)
                           return (
@@ -289,7 +289,7 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                               <div className={`text-xs ${colors.text} font-medium`}>
                                 {formatInSaoPaulo(apt.start, 'HH:mm')} - {formatInSaoPaulo(apt.end, 'HH:mm')}
                               </div>
-                              <div className="text-xs text-white truncate">{apt.patientName}</div>
+                              <div className="text-xs text-gray-900 truncate">{apt.patientName}</div>
                             </button>
                           )
                         })}
@@ -307,28 +307,28 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
 
   // Visualização de mês (código original)
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="p-6 border-b border-gray-700 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">
+      <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">
           {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={today}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
           >
             Hoje
           </button>
           <button
             onClick={prevMonth}
-            className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-lg transition-colors"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={nextMonth}
-            className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-lg transition-colors"
           >
             <ChevronRight size={20} />
           </button>
@@ -340,7 +340,7 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
         {/* Weekday Headers */}
         <div className="grid grid-cols-7 gap-2 mb-2">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-            <div key={day} className="text-center text-sm font-semibold text-gray-400 py-2">
+            <div key={day} className="text-center text-sm font-semibold text-gray-500 py-2">
               {day}
             </div>
           ))}
@@ -362,17 +362,17 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                     className={`min-h-[120px] rounded-xl border-2 p-2 transition-all ${
                       isCurrentMonth
                         ? isDayToday
-                          ? 'bg-orange-500/10 border-orange-500 cursor-pointer hover:bg-orange-500/20'
-                          : 'bg-gray-700/50 border-gray-700 hover:border-orange-500/50 cursor-pointer hover:bg-gray-700'
-                        : 'bg-gray-800/30 border-gray-800'
+                          ? 'bg-orange-50 border-orange-500 cursor-pointer hover:bg-orange-100'
+                          : 'bg-gray-50 border-gray-200 hover:border-orange-300 cursor-pointer hover:bg-gray-100'
+                        : 'bg-gray-50/50 border-gray-100'
                     }`}
                   >
                     <div className={`text-sm font-semibold mb-2 ${
                       isCurrentMonth
                         ? isDayToday
-                          ? 'text-orange-400'
-                          : 'text-white'
-                        : 'text-gray-600'
+                          ? 'text-orange-600'
+                          : 'text-gray-900'
+                        : 'text-gray-400'
                     }`}>
                       {format(day, dateFormat)}
                     </div>
@@ -396,14 +396,14 @@ export default function Calendar({ appointments, onAppointmentClick, onDayClick,
                                 {formatInSaoPaulo(apt.start, 'HH:mm')}
                               </span>
                             </div>
-                            <div className="text-xs text-white truncate mt-0.5">
+                            <div className="text-xs text-gray-900 truncate mt-0.5">
                               {apt.patientName}
                             </div>
                           </button>
                         )
                       })}
                       {dayAppointments.length > 3 && (
-                        <div className="text-xs text-gray-400 text-center py-1">
+                        <div className="text-xs text-gray-500 text-center py-1">
                           +{dayAppointments.length - 3} mais
                         </div>
                       )}

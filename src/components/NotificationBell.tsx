@@ -102,6 +102,7 @@ function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
       >
@@ -126,6 +127,7 @@ function NotificationBell() {
             </div>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={markAllAsRead}
                 className="text-xs text-orange-500 hover:text-orange-600 flex items-center gap-1"
               >
@@ -165,6 +167,7 @@ function NotificationBell() {
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {!notification.isRead && (
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 markAsRead(notification.id)
@@ -176,6 +179,7 @@ function NotificationBell() {
                             </button>
                           )}
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation()
                               deleteNotification(notification.id)
@@ -204,6 +208,7 @@ function NotificationBell() {
           {recentNotifications.length > 0 && (
             <div className="p-3 border-t border-gray-200 bg-gray-50">
               <button
+                type="button"
                 onClick={() => {
                   navigate('/app/notificacoes')
                   setIsOpen(false)

@@ -59,7 +59,7 @@ export default function PageHeader({
     }
 
     return (
-      <button onClick={action.onClick} className={className}>
+      <button type="button" onClick={action.onClick} className={className}>
         {ActionIcon && <ActionIcon size={18} />}
         {action.label}
       </button>

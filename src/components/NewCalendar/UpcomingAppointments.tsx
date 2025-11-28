@@ -33,7 +33,7 @@ export default function UpcomingAppointments({
       case 'confirmed':
         return <div className="w-2.5 h-2.5 rounded-full bg-green-500" title="Confirmado" />
       case 'done':
-        return <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Concluído" />
+        return <div className="w-2.5 h-2.5 rounded-full bg-orange-500" title="Concluído" />
       case 'cancelled':
         return <div className="w-2.5 h-2.5 rounded-full bg-red-500" title="Cancelado" />
       default:
@@ -59,7 +59,7 @@ export default function UpcomingAppointments({
       case 'confirmed':
         return 'border-l-green-500'
       case 'done':
-        return 'border-l-blue-500'
+        return 'border-l-orange-500'
       case 'cancelled':
         return 'border-l-red-500'
       default:
@@ -106,7 +106,7 @@ export default function UpcomingAppointments({
               </div>
 
               <div className="flex items-center gap-1 text-xs text-gray-600">
-                <span className="text-blue-500">•</span>
+                <span className="text-orange-500">•</span>
                 <span>{apt.procedure}</span>
               </div>
             </button>

@@ -157,6 +157,7 @@ export default function QuickPatientModal({ isOpen, onClose, onPatientCreated }:
             <p className="text-sm text-gray-500 mt-1">Cadastro rápido de paciente</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
           >

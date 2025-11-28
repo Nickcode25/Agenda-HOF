@@ -48,8 +48,8 @@ export default function BeforeAfterGallery({
 
   if (photos.length === 0) {
     return (
-      <div className="text-center py-12 bg-gray-800/50 rounded-2xl border border-gray-700/50">
-        <p className="text-gray-400">Nenhuma foto disponível para este procedimento</p>
+      <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
+        <p className="text-gray-500">Nenhuma foto disponível para este procedimento</p>
       </div>
     )
   }
@@ -58,23 +58,23 @@ export default function BeforeAfterGallery({
     <div className="space-y-6">
       {/* Comparação Lado a Lado */}
       {beforePhotos.length > 0 && afterPhotos.length > 0 && (
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-6">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            📸 Comparação Antes/Depois
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+          <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            Comparacao Antes/Depois
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Antes */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-400 bg-blue-500/20 px-3 py-1 rounded-full">
+                <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                   Antes
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-500">
                   {new Date(beforePhotos[0].uploadedAt).toLocaleDateString()}
                 </span>
               </div>
               <div
-                className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-blue-500/30 cursor-pointer group"
+                className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-blue-200 cursor-pointer group"
                 onClick={() => setSelectedPhoto(beforePhotos[0])}
               >
                 <img
@@ -87,22 +87,22 @@ export default function BeforeAfterGallery({
                 </div>
               </div>
               {beforePhotos[0].notes && (
-                <p className="text-xs text-gray-400 italic">{beforePhotos[0].notes}</p>
+                <p className="text-xs text-gray-500 italic">{beforePhotos[0].notes}</p>
               )}
             </div>
 
             {/* Depois */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-green-400 bg-green-500/20 px-3 py-1 rounded-full">
+                <span className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
                   Depois
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-500">
                   {new Date(afterPhotos[0].uploadedAt).toLocaleDateString()}
                 </span>
               </div>
               <div
-                className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-green-500/30 cursor-pointer group"
+                className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-green-200 cursor-pointer group"
                 onClick={() => setSelectedPhoto(afterPhotos[0])}
               >
                 <img
@@ -115,7 +115,7 @@ export default function BeforeAfterGallery({
                 </div>
               </div>
               {afterPhotos[0].notes && (
-                <p className="text-xs text-gray-400 italic">{afterPhotos[0].notes}</p>
+                <p className="text-xs text-gray-500 italic">{afterPhotos[0].notes}</p>
               )}
             </div>
           </div>
@@ -124,13 +124,13 @@ export default function BeforeAfterGallery({
 
       {/* Todas as Fotos em Grid */}
       {photos.length > 2 && (
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/50 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-6">
-          <h3 className="text-xl font-bold text-white mb-4">📁 Todas as Fotos</h3>
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Todas as Fotos</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {photos.map((photo, index) => (
               <div
                 key={photo.id}
-                className="relative aspect-square rounded-xl overflow-hidden border border-gray-700 cursor-pointer group"
+                className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 cursor-pointer group"
                 onClick={() => {
                   setSelectedPhoto(photo)
                   setCurrentIndex(index)
@@ -164,9 +164,9 @@ export default function BeforeAfterGallery({
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
           <button
             onClick={() => setSelectedPhoto(null)}
-            className="absolute top-4 right-4 p-2 bg-gray-800/80 hover:bg-gray-700 rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-full transition-colors z-10"
           >
-            <X size={24} className="text-white" />
+            <X size={24} className="text-gray-700" />
           </button>
 
           {/* Navegação */}
@@ -174,29 +174,29 @@ export default function BeforeAfterGallery({
             <>
               <button
                 onClick={handlePrevious}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-gray-800/80 hover:bg-gray-700 rounded-full transition-colors z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 hover:bg-white rounded-full transition-colors z-10"
               >
-                <ChevronLeft size={24} className="text-white" />
+                <ChevronLeft size={24} className="text-gray-700" />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-gray-800/80 hover:bg-gray-700 rounded-full transition-colors z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 hover:bg-white rounded-full transition-colors z-10"
               >
-                <ChevronRight size={24} className="text-white" />
+                <ChevronRight size={24} className="text-gray-700" />
               </button>
             </>
           )}
 
           <div className="max-w-6xl w-full h-full flex flex-col">
             {/* Info */}
-            <div className="flex items-center justify-between mb-4 bg-gray-800/80 backdrop-blur-sm rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-4 bg-white/95 backdrop-blur-sm rounded-2xl p-4">
               <div>
-                <h3 className="text-white font-bold">{procedureName}</h3>
-                <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
+                <h3 className="text-gray-900 font-bold">{procedureName}</h3>
+                <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                   <span className={`px-3 py-1 rounded-full ${
                     selectedPhoto.type === 'before'
-                      ? 'bg-blue-500/20 text-blue-400'
-                      : 'bg-green-500/20 text-green-400'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'bg-green-50 text-green-600'
                   }`}>
                     {selectedPhoto.type === 'before' ? 'Antes' : 'Depois'}
                   </span>
@@ -212,10 +212,10 @@ export default function BeforeAfterGallery({
               <div className="flex gap-2">
                 <button
                   onClick={() => handleDownload(selectedPhoto)}
-                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   title="Baixar foto"
                 >
-                  <Download size={20} className="text-white" />
+                  <Download size={20} className="text-gray-700" />
                 </button>
                 {onShare && (
                   <button
@@ -240,8 +240,8 @@ export default function BeforeAfterGallery({
 
             {/* Notas */}
             {photos[currentIndex].notes && (
-              <div className="mt-4 bg-gray-800/80 backdrop-blur-sm rounded-2xl p-4">
-                <p className="text-gray-300 text-center italic">"{photos[currentIndex].notes}"</p>
+              <div className="mt-4 bg-white/95 backdrop-blur-sm rounded-2xl p-4">
+                <p className="text-gray-700 text-center italic">"{photos[currentIndex].notes}"</p>
               </div>
             )}
           </div>

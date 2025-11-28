@@ -17,6 +17,7 @@ interface NewCalendarProps {
   userPlan: string
   onAppointmentClick: (appointment: Appointment) => void
   onTimeSlotClick?: (date: Date, hour: number) => void
+  onTimeSlotSelect?: (date: Date, startHour: number, startMinutes: number, endHour: number, endMinutes: number) => void
   onAppointmentResize?: (appointmentId: string, newStart: Date, newEnd: Date) => void
 }
 
@@ -27,6 +28,7 @@ export default function NewCalendar({
   userPlan,
   onAppointmentClick,
   onTimeSlotClick,
+  onTimeSlotSelect,
   onAppointmentResize
 }: NewCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('week')
@@ -110,6 +112,7 @@ export default function NewCalendar({
           recurringBlocks={virtualBlocks}
           onAppointmentClick={onAppointmentClick}
           onTimeSlotClick={onTimeSlotClick}
+          onTimeSlotSelect={onTimeSlotSelect}
           onAppointmentResize={onAppointmentResize}
           viewMode={viewMode}
         />

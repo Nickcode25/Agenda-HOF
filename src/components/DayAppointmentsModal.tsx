@@ -48,6 +48,7 @@ export default function DayAppointmentsModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
           >
@@ -73,6 +74,7 @@ export default function DayAppointmentsModal({
             <div className="space-y-3">
               {sortedAppointments.map((apt) => (
                 <button
+                  type="button"
                   key={apt.id}
                   onClick={() => onAppointmentClick(apt)}
                   className="w-full bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-orange-500/50 rounded-xl p-4 transition-all text-left group"
@@ -140,6 +142,7 @@ export default function DayAppointmentsModal({
         {/* Footer */}
         <div className="p-4 border-t border-gray-700 bg-gray-800/50">
           <button
+            type="button"
             onClick={onClose}
             className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
           >

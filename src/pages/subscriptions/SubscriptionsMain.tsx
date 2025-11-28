@@ -249,6 +249,7 @@ export default function SubscriptionsMain() {
           <div>
             <div className="flex justify-end mb-6">
               <button
+                type="button"
                 onClick={() => setShowPlanModal(true)}
                 className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
               >
@@ -265,6 +266,7 @@ export default function SubscriptionsMain() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum plano cadastrado</h3>
                 <p className="text-gray-500 mb-6 max-w-md mx-auto">Comece criando seu primeiro plano de mensalidade</p>
                 <button
+                  type="button"
                   onClick={() => setShowPlanModal(true)}
                   className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
                 >
@@ -276,6 +278,7 @@ export default function SubscriptionsMain() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan) => (
                   <button
+                    type="button"
                     key={plan.id}
                     onClick={() => navigate(`/app/mensalidades/planos/${plan.id}`)}
                     className={`group relative bg-white rounded-xl border ${
@@ -329,6 +332,7 @@ export default function SubscriptionsMain() {
           <div>
             <div className="flex justify-end mb-6">
               <button
+                type="button"
                 onClick={() => setShowSubscriberModal(true)}
                 className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-all"
               >
@@ -345,6 +349,7 @@ export default function SubscriptionsMain() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum assinante</h3>
                 <p className="text-gray-500 mb-6 max-w-md mx-auto">Adicione pacientes aos planos de mensalidade</p>
                 <button
+                  type="button"
                   onClick={() => setShowSubscriberModal(true)}
                   className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all"
                 >
@@ -394,7 +399,7 @@ export default function SubscriptionsMain() {
             <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Criar Novo Plano</h2>
-                <button onClick={() => setShowPlanModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <button type="button" onClick={() => setShowPlanModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   <X size={24} />
                 </button>
               </div>
@@ -494,7 +499,7 @@ export default function SubscriptionsMain() {
             <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-2xl">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Adicionar Assinante ao Plano</h2>
-                <button onClick={() => setShowSubscriberModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <button type="button" onClick={() => setShowSubscriberModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   <X size={24} />
                 </button>
               </div>

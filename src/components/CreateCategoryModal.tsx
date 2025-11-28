@@ -47,14 +47,14 @@ export default function CreateCategoryModal({
       onClick={onClose}
     >
       <div
-        className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full"
+        className="bg-white border border-gray-200 rounded-2xl max-w-md w-full shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-xl font-bold text-white">Nova Categoria</h2>
-            <p className="text-sm text-gray-400 mt-1">
+            <h2 className="text-xl font-bold text-gray-900">Nova Categoria</h2>
+            <p className="text-sm text-gray-500 mt-1">
               {type === 'both' && 'Para Procedimentos e Estoque'}
               {type === 'procedure' && 'Apenas para Procedimentos'}
               {type === 'stock' && 'Apenas para Estoque'}
@@ -62,16 +62,16 @@ export default function CreateCategoryModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X size={20} className="text-gray-400" />
+            <X size={20} className="text-gray-500" />
           </button>
         </div>
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Nome da Categoria *
             </label>
             <input
@@ -79,15 +79,15 @@ export default function CreateCategoryModal({
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               placeholder="Ex: Skinbooster, Harmonização Facial..."
-              className="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
               required
               autoFocus
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <p className="text-sm text-red-400">{error}</p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
@@ -96,7 +96,7 @@ export default function CreateCategoryModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+              className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
             >
               Cancelar
             </button>

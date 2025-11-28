@@ -89,7 +89,7 @@ export default function SaleForm() {
   const totalProfit = calculatedItems.reduce((sum, item) => sum + item.profit, 0)
 
   const addItem = () => {
-    setSaleItems([...saleItems, { stockItemId: '', quantity: 1, salePrice: '' }])
+    setSaleItems([{ stockItemId: '', quantity: 1, salePrice: '' }, ...saleItems])
   }
 
   const removeItem = (index: number) => {

@@ -363,6 +363,7 @@ export default function FinancialReport() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Período</label>
               <div className="grid grid-cols-4 gap-2">
                 <button
+                  type="button"
                   onClick={() => setPeriodFilter('day')}
                   className={`px-4 py-2 rounded-lg font-medium transition-all ${
                     periodFilter === 'day'
@@ -373,6 +374,7 @@ export default function FinancialReport() {
                   Dia
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPeriodFilter('week')}
                   className={`px-4 py-2 rounded-lg font-medium transition-all ${
                     periodFilter === 'week'
@@ -383,6 +385,7 @@ export default function FinancialReport() {
                   Semana
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPeriodFilter('month')}
                   className={`px-4 py-2 rounded-lg font-medium transition-all ${
                     periodFilter === 'month'
@@ -393,6 +396,7 @@ export default function FinancialReport() {
                   Mês
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPeriodFilter('year')}
                   className={`px-4 py-2 rounded-lg font-medium transition-all ${
                     periodFilter === 'year'
@@ -431,6 +435,7 @@ export default function FinancialReport() {
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
           {/* Receita Total */}
           <button
+            type="button"
             onClick={() => setDetailModal('total')}
             className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500 hover:shadow-md hover:border-green-300 transition-all text-left cursor-pointer"
           >
@@ -444,6 +449,7 @@ export default function FinancialReport() {
 
           {/* Procedimentos */}
           <button
+            type="button"
             onClick={() => setDetailModal('procedures')}
             className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500 hover:shadow-md hover:border-blue-300 transition-all text-left cursor-pointer"
           >
@@ -457,6 +463,7 @@ export default function FinancialReport() {
 
           {/* Vendas */}
           <button
+            type="button"
             onClick={() => setDetailModal('sales')}
             className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500 hover:shadow-md hover:border-amber-300 transition-all text-left cursor-pointer"
           >
@@ -470,6 +477,7 @@ export default function FinancialReport() {
 
           {/* Mensalidades */}
           <button
+            type="button"
             onClick={() => setDetailModal('subscriptions')}
             className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 hover:shadow-md hover:border-purple-300 transition-all text-left cursor-pointer"
           >
@@ -483,6 +491,7 @@ export default function FinancialReport() {
 
           {/* Outras Receitas */}
           <button
+            type="button"
             onClick={() => setDetailModal('other')}
             className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-cyan-500 hover:shadow-md hover:border-cyan-300 transition-all text-left cursor-pointer"
           >
@@ -496,6 +505,7 @@ export default function FinancialReport() {
 
           {/* Despesas */}
           <button
+            type="button"
             onClick={() => setDetailModal('expenses')}
             className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500 hover:shadow-md hover:border-red-300 transition-all text-left cursor-pointer"
           >
@@ -799,7 +809,7 @@ export default function FinancialReport() {
                     <p className="text-sm text-gray-500">{getPeriodLabel()}</p>
                   </div>
                 </div>
-                <button onClick={() => setDetailModal(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <button type="button" onClick={() => setDetailModal(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <X size={24} className="text-gray-600" />
                 </button>
               </div>
@@ -894,6 +904,7 @@ export default function FinancialReport() {
               {/* Footer */}
               <div className="p-6 border-t border-gray-200">
                 <button
+                  type="button"
                   onClick={() => setDetailModal(null)}
                   className="w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
                 >

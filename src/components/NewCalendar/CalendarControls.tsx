@@ -59,6 +59,7 @@ export default function CalendarControls({
       {/* View Selector */}
       <div className="flex items-center bg-gray-100 rounded-lg p-1">
         <button
+          type="button"
           onClick={() => onViewModeChange('day')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
             viewMode === 'day'
@@ -69,6 +70,7 @@ export default function CalendarControls({
           Dia
         </button>
         <button
+          type="button"
           onClick={() => onViewModeChange('week')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
             viewMode === 'week'
@@ -79,6 +81,7 @@ export default function CalendarControls({
           Semana
         </button>
         <button
+          type="button"
           onClick={() => onViewModeChange('month')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
             viewMode === 'month'
@@ -93,6 +96,7 @@ export default function CalendarControls({
       {/* Navigation */}
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={handlePrevious}
           className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
           title="Anterior"
@@ -105,6 +109,7 @@ export default function CalendarControls({
         </span>
 
         <button
+          type="button"
           onClick={handleNext}
           className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
           title="Próximo"
@@ -113,6 +118,7 @@ export default function CalendarControls({
         </button>
 
         <button
+          type="button"
           onClick={onToday}
           className="px-4 py-2 text-orange-500 border-2 border-orange-500 rounded-lg font-medium hover:bg-orange-50 transition-all"
         >

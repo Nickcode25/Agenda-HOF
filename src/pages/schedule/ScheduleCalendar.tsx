@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { format } from 'date-fns'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
 import { useRecurring } from '@/store/recurring'
@@ -12,6 +14,7 @@ import UpgradeOverlay from '@/components/UpgradeOverlay'
 import type { Appointment } from '@/types/schedule'
 
 export default function ScheduleCalendar() {
+  const navigate = useNavigate()
   const { appointments, removeAppointment, fetchAppointments, updateAppointment } = useSchedule()
   const { professionals, fetchAll: fetchProfessionals } = useProfessionals()
   const { blocks: recurringBlocks, fetchBlocks: fetchRecurringBlocks } = useRecurring()
@@ -59,6 +62,17 @@ export default function ScheduleCalendar() {
     // Handler disponível para futura implementação
   }
 
+  // Handler para seleção de horário por drag (clicar e arrastar)
+  const handleTimeSlotSelect = (date: Date, startHour: number, startMinutes: number, endHour: number, endMinutes: number) => {
+    // Formatar data e horários para passar via query params
+    const dateStr = format(date, 'dd/MM/yyyy')
+    const startTimeStr = `${String(startHour).padStart(2, '0')}:${String(startMinutes).padStart(2, '0')}`
+    const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
+
+    // Navegar para o formulário de agendamento com os parâmetros pré-preenchidos
+    navigate(`/app/agenda/nova?date=${encodeURIComponent(dateStr)}&start=${encodeURIComponent(startTimeStr)}&end=${encodeURIComponent(endTimeStr)}`)
+  }
+
   const handleAppointmentResize = async (appointmentId: string, newStart: Date, newEnd: Date) => {
     await updateAppointment(appointmentId, {
       start: newStart.toISOString(),
@@ -84,6 +98,7 @@ export default function ScheduleCalendar() {
         userPlan={userPlan}
         onAppointmentClick={handleAppointmentClick}
         onTimeSlotClick={handleTimeSlotClick}
+        onTimeSlotSelect={handleTimeSlotSelect}
         onAppointmentResize={handleAppointmentResize}
       />
 

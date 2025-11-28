@@ -22,12 +22,12 @@ function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
   const config = useMemo(() => ({
     success: {
       icon: CheckCircle,
-      gradient: 'from-green-500/20 to-green-600/30',
-      borderColor: 'border-green-500/50',
-      iconColor: 'text-green-400',
-      iconBg: 'bg-green-500/20',
-      progressBar: 'from-green-500 to-green-600',
-      shadow: 'shadow-green-500/20'
+      gradient: 'from-orange-500/20 to-orange-600/30',
+      borderColor: 'border-orange-500/50',
+      iconColor: 'text-orange-400',
+      iconBg: 'bg-orange-500/20',
+      progressBar: 'from-orange-500 to-orange-600',
+      shadow: 'shadow-orange-500/20'
     },
     error: {
       icon: XCircle,

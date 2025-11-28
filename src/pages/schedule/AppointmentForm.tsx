@@ -1,5 +1,5 @@
 import { FormEvent, useState, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, Link, useParams } from 'react-router-dom'
+import { useNavigate, Link, useParams, useSearchParams } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
@@ -13,7 +13,13 @@ import QuickPatientModal from '@/components/QuickPatientModal'
 
 export default function AppointmentForm() {
   const { id: appointmentId } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const isEditing = Boolean(appointmentId)
+
+  // Parâmetros pré-preenchidos da URL (vindos do calendário)
+  const urlDate = searchParams.get('date')
+  const urlStartTime = searchParams.get('start')
+  const urlEndTime = searchParams.get('end')
 
   const patients = usePatients(s => s.patients)
   const fetchPatients = usePatients(s => s.fetchAll)
@@ -100,6 +106,15 @@ export default function AppointmentForm() {
       }
     }
   }, [isEditing, appointmentId, appointments, patients, allProfessionals])
+
+  // Preencher campos com parâmetros da URL (vindos do calendário)
+  useEffect(() => {
+    if (!isEditing && urlDate && urlStartTime && urlEndTime) {
+      setAppointmentDate(urlDate)
+      setStartTime(urlStartTime)
+      setEndTime(urlEndTime)
+    }
+  }, [isEditing, urlDate, urlStartTime, urlEndTime])
 
   // Patient search filter
   const filteredPatients = useMemo(() => {
@@ -322,8 +337,8 @@ export default function AppointmentForm() {
                 !canSubmit
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : isPersonal
-                    ? 'bg-sky-500 hover:bg-sky-600 text-white shadow-sm'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
+                    ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
               }`}
             >
               <Save size={18} />
@@ -337,8 +352,8 @@ export default function AppointmentForm() {
           {/* Toggle: Tipo de agendamento */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className={`p-2 rounded-lg ${isPersonal ? 'bg-sky-50' : 'bg-gray-100'}`}>
-                <CalendarOff size={18} className={isPersonal ? 'text-sky-600' : 'text-gray-500'} />
+              <div className={`p-2 rounded-lg ${isPersonal ? 'bg-orange-50' : 'bg-gray-100'}`}>
+                <CalendarOff size={18} className={isPersonal ? 'text-orange-600' : 'text-gray-500'} />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Tipo</h3>
@@ -352,7 +367,7 @@ export default function AppointmentForm() {
                 onClick={() => setIsPersonal(false)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
                   !isPersonal
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    ? 'border-orange-500 bg-orange-50 text-orange-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
               >
@@ -364,7 +379,7 @@ export default function AppointmentForm() {
                 onClick={() => setIsPersonal(true)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
                   isPersonal
-                    ? 'border-sky-500 bg-sky-50 text-sky-700'
+                    ? 'border-orange-500 bg-orange-50 text-orange-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
               >
@@ -378,8 +393,8 @@ export default function AppointmentForm() {
           {isPersonal && (
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-                <div className="p-2 bg-sky-50 rounded-lg">
-                  <CalendarOff size={18} className="text-sky-600" />
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <CalendarOff size={18} className="text-orange-600" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Compromisso</h3>
@@ -397,7 +412,7 @@ export default function AppointmentForm() {
                     value={personalTitle}
                     onChange={(e) => setPersonalTitle(e.target.value)}
                     placeholder="Ex: Reunião, Gravação, Viagem..."
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                   />
                   <p className="text-xs text-gray-500 mt-0.5">Descreva brevemente o compromisso</p>
                 </div>
@@ -410,7 +425,7 @@ export default function AppointmentForm() {
                     value={professionalId}
                     onChange={(e) => setProfessionalId(e.target.value)}
                     required
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all text-sm"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                   >
                     <option value="">Selecione um profissional</option>
                     {professionals.map(prof => (
@@ -427,8 +442,8 @@ export default function AppointmentForm() {
           {!isPersonal && (
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <User size={18} className="text-blue-600" />
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <User size={18} className="text-orange-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Paciente</h3>
@@ -469,7 +484,7 @@ export default function AppointmentForm() {
                       }}
                       onFocus={() => setShowPatientDropdown(true)}
                       placeholder="Buscar por nome, CPF ou telefone..."
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">Digite para buscar o paciente</p>
@@ -486,14 +501,14 @@ export default function AppointmentForm() {
                                 setPatientSearch(patient.name)
                                 setShowPatientDropdown(false)
                               }}
-                              className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-all rounded-lg mb-1 last:mb-0 border border-transparent hover:border-blue-200 group"
+                              className="w-full text-left px-3 py-2 hover:bg-orange-50 transition-all rounded-lg mb-1 last:mb-0 border border-transparent hover:border-orange-200 group"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center border border-blue-200 group-hover:border-blue-400 transition-colors">
-                                  <User size={14} className="text-blue-600" />
+                                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center border border-orange-200 group-hover:border-orange-400 transition-colors">
+                                  <User size={14} className="text-orange-600" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-gray-900 font-medium group-hover:text-blue-600 transition-colors truncate text-sm">
+                                  <div className="text-gray-900 font-medium group-hover:text-orange-600 transition-colors truncate text-sm">
                                     {patient.name}
                                   </div>
                                   {patient.phone && (
@@ -515,7 +530,7 @@ export default function AppointmentForm() {
                           <p className="mb-2 text-gray-900 font-medium text-sm">Nenhum paciente encontrado</p>
                           <Link
                             to="/app/pacientes/novo"
-                            className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 text-xs font-medium underline"
+                            className="inline-flex items-center gap-2 text-orange-500 hover:text-orange-600 text-xs font-medium underline"
                           >
                             Cadastrar novo paciente
                           </Link>
@@ -597,8 +612,8 @@ export default function AppointmentForm() {
           {/* Seção: Data e Horário */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className={`p-2 rounded-lg ${isPersonal ? 'bg-sky-50' : 'bg-green-50'}`}>
-                <Calendar size={18} className={isPersonal ? 'text-sky-600' : 'text-green-600'} />
+              <div className="p-2 rounded-lg bg-orange-50">
+                <Calendar size={18} className="text-orange-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Data e Horário</h3>
@@ -620,7 +635,7 @@ export default function AppointmentForm() {
                     required
                     maxLength={10}
                     placeholder="dd/mm/aaaa"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all text-sm"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">Ex: 05112025 para 05/11/2025</p>
@@ -639,7 +654,7 @@ export default function AppointmentForm() {
                     required
                     maxLength={5}
                     placeholder="HH:MM"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all text-sm"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">Ex: 0900 para 09:00</p>
@@ -658,7 +673,7 @@ export default function AppointmentForm() {
                     required
                     maxLength={5}
                     placeholder="HH:MM"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all text-sm"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">Ex: 1000 para 10:00</p>
@@ -669,8 +684,8 @@ export default function AppointmentForm() {
           {/* Seção: Observações */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <FileText size={18} className="text-purple-600" />
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <FileText size={18} className="text-orange-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Observações</h3>
@@ -685,7 +700,7 @@ export default function AppointmentForm() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Adicione observações sobre o agendamento..."
                 rows={4}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-sm resize-none"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm resize-none"
               />
               <p className="text-xs text-gray-500 mt-0.5">Opcional - informações relevantes sobre o agendamento</p>
             </div>
@@ -706,7 +721,7 @@ export default function AppointmentForm() {
                 className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all ${
                   !canSubmit
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
                 }`}
               >
                 <Save size={18} />

@@ -19,7 +19,7 @@
   }
 
   body {
-    @apply bg-gray-900 text-gray-100 transition-colors duration-300;
+    @apply bg-gray-100 text-gray-900 transition-colors duration-300;
   }
 
   /* Classes utilitárias para tema */
@@ -56,41 +56,41 @@
   }
 }
 
-/* Custom Scrollbar - Modern Design */
+/* Custom Scrollbar - Modern Design (Light Theme) */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #4b5563 #1f2937; /* thumb: gray-600, track: gray-800 */
+  scrollbar-color: #d1d5db #f3f4f6; /* thumb: gray-300, track: gray-100 */
 }
 
 /* Webkit Browsers (Chrome, Safari, Edge) */
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 *::-webkit-scrollbar-track {
-  background: #1f2937; /* gray-800 */
+  background: #f9fafb; /* gray-50 */
   border-radius: 10px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #4b5563 0%, #374151 100%); /* gray-600 to gray-700 */
+  background: #d1d5db; /* gray-300 */
   border-radius: 10px;
-  border: 2px solid #1f2937; /* gray-800 - creates padding effect */
+  border: 2px solid #f9fafb; /* gray-50 */
   transition: all 0.3s ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%); /* orange-500 to orange-600 */
-  border-color: #1f2937;
+  background: #f97316; /* orange-500 */
+  border-color: #f9fafb;
 }
 
 *::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%); /* orange-600 to orange-700 */
+  background: #ea580c; /* orange-600 */
 }
 
 *::-webkit-scrollbar-corner {
-  background: #1f2937; /* gray-800 */
+  background: #f9fafb; /* gray-50 */
 }
 
 /* Sidebar Scrollbar - Hidden by default, visible on hover (VS Code style) */
@@ -174,10 +174,10 @@ select {
   cursor: pointer;
 }
 
-/* Estilizar as opções do select para melhor visibilidade */
+/* Estilizar as opções do select para tema light */
 select option {
-  background-color: #1f2937 !important; /* gray-800 - fundo escuro */
-  color: #ffffff !important; /* texto branco */
+  background-color: #ffffff !important; /* branco */
+  color: #374151 !important; /* gray-700 */
   padding: 12px 16px !important;
   font-size: 14px !important;
   border-radius: 0 !important;
@@ -187,16 +187,16 @@ select option {
 /* Opção selecionada (destaque) */
 select option:checked,
 select option:hover {
-  background-color: #f97316 !important; /* laranja ao selecionar */
-  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%) !important;
-  color: #ffffff !important;
+  background-color: #fff7ed !important; /* orange-50 */
+  background: linear-gradient(90deg, #fff7ed 0%, #ffedd5 100%) !important;
+  color: #ea580c !important; /* orange-600 */
   font-weight: 500 !important;
 }
 
 /* Estado de foco do select */
 select:focus option:checked {
-  background-color: #f97316 !important;
-  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%) !important;
+  background-color: #fff7ed !important;
+  background: linear-gradient(90deg, #fff7ed 0%, #ffedd5 100%) !important;
 }
 
 /* Para navegadores que suportam, melhorar dropdown */
@@ -207,7 +207,7 @@ select:focus {
 
 /* Estilo para opções desabilitadas */
 select option:disabled {
-  background-color: #374151 !important; /* gray-700 */
+  background-color: #f3f4f6 !important; /* gray-100 */
   color: #9ca3af !important; /* gray-400 */
   cursor: not-allowed !important;
 }

@@ -30,7 +30,7 @@ export default function DataCard({
 
   if (onClick) {
     return (
-      <button onClick={onClick} className={`w-full text-left ${baseClasses} cursor-pointer`}>
+      <button type="button" onClick={onClick} className={`w-full text-left ${baseClasses} cursor-pointer`}>
         {children}
       </button>
     )
