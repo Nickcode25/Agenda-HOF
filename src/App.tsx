@@ -229,7 +229,8 @@ export default function App() {
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700">
             <NavLink to="/app" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <h1 className="font-bold text-lg whitespace-nowrap"><span className="text-white">Agenda</span> <span className="text-orange-500">HOF</span></h1>
+              <img src="/logo-agenda-hof.png" alt="Agenda HOF" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+              <h1 className={`font-bold text-lg whitespace-nowrap transition-all duration-500 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}><span className="text-white">Agenda</span> <span style={{color: '#ff6b1a'}}>HOF</span></h1>
             </NavLink>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-white flex-shrink-0">
               <X size={20} />
