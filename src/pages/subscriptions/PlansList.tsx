@@ -1,12 +1,47 @@
+import { useEffect, useState, memo } from 'react'
 import { Plus, Edit, Trash2, Check, X, CreditCard, Users, DollarSign, Calendar, Crown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { useConfirm } from '@/hooks/useConfirm'
 import { formatCurrency } from '@/utils/currency'
 
+// Skeleton loader
+const PlanSkeleton = memo(() => (
+  <div className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex-1">
+        <div className="h-6 w-40 bg-gray-200 rounded mb-2" />
+        <div className="h-4 w-full bg-gray-100 rounded" />
+      </div>
+      <div className="h-9 w-9 bg-gray-100 rounded-lg" />
+    </div>
+    <div className="mb-4 flex items-center gap-2">
+      <div className="h-4 w-24 bg-gray-100 rounded" />
+    </div>
+    <div className="space-y-2 mb-6">
+      <div className="h-4 w-full bg-gray-100 rounded" />
+      <div className="h-4 w-3/4 bg-gray-100 rounded" />
+    </div>
+    <div className="flex gap-2 pt-4 border-t border-gray-100">
+      <div className="flex-1 h-9 bg-gray-100 rounded-lg" />
+      <div className="h-9 w-12 bg-gray-100 rounded-lg" />
+    </div>
+  </div>
+))
+
 export default function PlansList() {
-  const { plans, subscriptions, deletePlan, updatePlan } = useSubscriptionStore()
+  const { plans, subscriptions, deletePlan, updatePlan, fetchPlans, fetchSubscriptions } = useSubscriptionStore()
   const { confirm, ConfirmDialog } = useConfirm()
+  const [hasFetched, setHasFetched] = useState(false)
+
+  // Carregar dados ao montar o componente
+  useEffect(() => {
+    const loadData = async () => {
+      await Promise.all([fetchPlans(), fetchSubscriptions()])
+      setHasFetched(true)
+    }
+    loadData()
+  }, [])
 
   const handleToggleActive = (planId: string, currentStatus: boolean) => {
     updatePlan(planId, { active: !currentStatus })
@@ -110,7 +145,13 @@ export default function PlansList() {
         </div>
 
         {/* Lista de Planos */}
-        {plans.length === 0 ? (
+        {!hasFetched ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <PlanSkeleton key={i} />
+            ))}
+          </div>
+        ) : plans.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-200">
               <CreditCard size={32} className="text-orange-500" />

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback, memo } from 'react'
 import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit, BarChart3 } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
@@ -10,16 +10,47 @@ import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import { formatInSaoPaulo } from '@/utils/timezone'
 import { useConfirm } from '@/hooks/useConfirm'
 
+// Skeleton loader para vendas
+const SaleSkeleton = memo(() => (
+  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden border-l-4 border-l-amber-400 animate-pulse">
+    <div className="bg-orange-50 px-6 py-4 border-b border-orange-100">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-gray-200 rounded-full" />
+        <div>
+          <div className="h-5 w-32 bg-gray-200 rounded mb-1" />
+          <div className="h-4 w-16 bg-gray-100 rounded" />
+        </div>
+      </div>
+    </div>
+    <div className="px-6 py-4 bg-white border-l-4 border-l-amber-100">
+      <div className="py-3">
+        <div className="h-4 w-40 bg-gray-100 rounded mb-2" />
+        <div className="h-3 w-24 bg-gray-100 rounded" />
+      </div>
+    </div>
+    <div className="bg-orange-50 px-6 py-3 border-t border-orange-100">
+      <div className="flex justify-between">
+        <div className="h-4 w-40 bg-gray-100 rounded" />
+        <div className="h-4 w-20 bg-gray-100 rounded" />
+      </div>
+    </div>
+  </div>
+))
+
 export default function SalesList() {
-  const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale } = useSales()
+  const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale, loading } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const { hasActiveSubscription } = useSubscription()
   const { confirm, ConfirmDialog } = useConfirm()
+  const [hasFetched, setHasFetched] = useState(false)
 
   useEffect(() => {
-    fetchProfessionals()
-    fetchSales()
+    const loadData = async () => {
+      await Promise.all([fetchProfessionals(), fetchSales()])
+      setHasFetched(true)
+    }
+    loadData()
   }, [])
 
   const filtered = useMemo(() => {
@@ -56,7 +87,7 @@ export default function SalesList() {
     }
   }
 
-  const handleDeleteSale = async (saleId: string, saleName: string) => {
+  const handleDeleteSale = useCallback(async (saleId: string, saleName: string) => {
     const confirmed = await confirm({
       title: 'Excluir Venda',
       message: `Tem certeza que deseja excluir a venda para ${saleName}? Esta ação não pode ser desfeita.`,
@@ -67,7 +98,10 @@ export default function SalesList() {
       await removeSale(saleId)
       await fetchSales()
     }
-  }
+  }, [confirm, removeSale, fetchSales])
+
+  // Verificar se está carregando inicialmente
+  const isInitialLoading = loading && !hasFetched
 
   // Calcula estatísticas adicionais
   const stats = useMemo(() => {
@@ -198,7 +232,13 @@ export default function SalesList() {
         </div>
 
         {/* Sales List */}
-        {filtered.length === 0 ? (
+        {isInitialLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <SaleSkeleton key={i} />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-orange-200">
               <ShoppingCart size={32} className="text-orange-500" />

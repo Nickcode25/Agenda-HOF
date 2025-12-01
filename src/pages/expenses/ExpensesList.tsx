@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import { Link } from 'react-router-dom'
 import { useExpenses } from '@/store/expenses'
 import { formatCurrency } from '@/utils/currency'
@@ -14,6 +14,36 @@ import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import SearchableSelect from '@/components/SearchableSelect'
 
+// Skeleton loader para despesas
+const ExpenseSkeleton = memo(() => (
+  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden border-l-4 border-l-red-400 animate-pulse">
+    <div className="px-6 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-gray-200 h-10 w-10" />
+          <div>
+            <div className="h-5 w-40 bg-gray-200 rounded mb-1" />
+            <div className="h-4 w-24 bg-gray-100 rounded" />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="h-6 w-16 bg-gray-100 rounded-full" />
+          <div className="h-7 w-24 bg-gray-200 rounded" />
+        </div>
+      </div>
+    </div>
+    <div className="px-6 py-3 bg-gray-50">
+      <div className="flex justify-between">
+        <div className="h-4 w-40 bg-gray-100 rounded" />
+        <div className="flex gap-2">
+          <div className="h-8 w-8 bg-gray-100 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-100 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  </div>
+))
+
 export default function ExpensesList() {
   const { hasActiveSubscription } = useSubscription()
   const {
@@ -23,7 +53,8 @@ export default function ExpensesList() {
     fetchCategories,
     deleteExpense,
     getTotalExpenses,
-    getExpensesByCategory
+    getExpensesByCategory,
+    loading
   } = useExpenses()
   const { show } = useToast()
 
@@ -32,10 +63,14 @@ export default function ExpensesList() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [hasFetched, setHasFetched] = useState(false)
 
   useEffect(() => {
-    fetchCategories()
-    fetchExpenses()
+    const loadData = async () => {
+      await Promise.all([fetchCategories(), fetchExpenses()])
+      setHasFetched(true)
+    }
+    loadData()
   }, [])
 
   const { confirm, ConfirmDialog } = useConfirm()
@@ -104,7 +139,7 @@ export default function ExpensesList() {
     return methods[method as keyof typeof methods] || method
   }
 
-  const handleDelete = async (id: string, description: string) => {
+  const handleDelete = useCallback(async (id: string, description: string) => {
     const confirmed = await confirm({
       title: 'Excluir Despesa',
       message: `Tem certeza que deseja excluir a despesa "${description}"?`,
@@ -116,7 +151,10 @@ export default function ExpensesList() {
       await fetchExpenses()
       show('Despesa excluída com sucesso!', 'success')
     }
-  }
+  }, [confirm, deleteExpense, fetchExpenses, show])
+
+  // Verificar se está carregando inicialmente
+  const isInitialLoading = loading && !hasFetched
 
   return (
     <>
@@ -253,7 +291,13 @@ export default function ExpensesList() {
         </div>
 
         {/* Expenses List */}
-        {filtered.length === 0 ? (
+        {isInitialLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <ExpenseSkeleton key={i} />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-200">
               <Receipt size={32} className="text-red-500" />

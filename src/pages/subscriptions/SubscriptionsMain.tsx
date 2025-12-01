@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Plus, X, Check, Calendar, Sparkles, CreditCard, Users } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
@@ -7,6 +7,33 @@ import Toast from '../../components/Toast'
 import StatsOverview from './components/StatsOverview'
 import TabsNav from './components/TabsNav'
 import SubscriptionCard from './components/SubscriptionCard'
+
+// Skeleton loaders
+const PlanSkeleton = memo(() => (
+  <div className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+    <div className="flex items-center gap-3 mb-4">
+      <div className="p-2.5 bg-gray-200 rounded-xl h-10 w-10" />
+      <div className="h-6 w-32 bg-gray-200 rounded" />
+    </div>
+    <div className="h-4 w-full bg-gray-100 rounded mb-2" />
+    <div className="h-4 w-3/4 bg-gray-100 rounded mb-4" />
+    <div className="space-y-2 pt-4 border-t border-gray-100">
+      <div className="h-4 w-40 bg-gray-100 rounded" />
+      <div className="h-4 w-36 bg-gray-100 rounded" />
+    </div>
+  </div>
+))
+
+const SubscriptionRowSkeleton = memo(() => (
+  <tr className="animate-pulse border-b border-gray-100">
+    <td className="px-6 py-4"><div className="h-5 w-32 bg-gray-200 rounded" /></td>
+    <td className="px-6 py-4"><div className="h-5 w-24 bg-gray-100 rounded" /></td>
+    <td className="px-6 py-4"><div className="h-5 w-20 bg-gray-100 rounded" /></td>
+    <td className="px-6 py-4"><div className="h-5 w-24 bg-gray-100 rounded" /></td>
+    <td className="px-6 py-4"><div className="h-6 w-16 bg-gray-100 rounded-full" /></td>
+    <td className="px-6 py-4"><div className="h-8 w-20 bg-gray-100 rounded" /></td>
+  </tr>
+))
 
 type ToastState = {
   show: boolean
@@ -34,11 +61,15 @@ export default function SubscriptionsMain() {
   } = useSubscriptionStore()
 
   const { patients } = usePatients()
+  const [hasFetched, setHasFetched] = useState(false)
 
   // Carregar dados ao montar o componente
   useEffect(() => {
-    fetchPlans()
-    fetchSubscriptions()
+    const loadData = async () => {
+      await Promise.all([fetchPlans(), fetchSubscriptions()])
+      setHasFetched(true)
+    }
+    loadData()
   }, [])
 
   const [activeTab, setActiveTab] = useState<'plans' | 'subscribers'>('plans')
@@ -208,11 +239,14 @@ export default function SubscriptionsMain() {
     }
   }
 
-  const getCurrentPayment = (sub: any) => {
+  const getCurrentPayment = useCallback((sub: any) => {
     return sub.payments.find((p: any) => p.status === 'pending' || p.status === 'overdue')
-  }
+  }, [])
 
-  const activePlans = plans.filter(p => p.active)
+  const activePlans = useMemo(() => plans.filter(p => p.active), [plans])
+
+  // Verificar se está carregando inicialmente
+  const isInitialLoading = !hasFetched
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8">
@@ -258,7 +292,13 @@ export default function SubscriptionsMain() {
               </button>
             </div>
 
-            {plans.length === 0 ? (
+            {isInitialLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => (
+                  <PlanSkeleton key={i} />
+                ))}
+              </div>
+            ) : plans.length === 0 ? (
               <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
                 <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
                   <Sparkles className="text-purple-500" size={32} />
@@ -341,7 +381,29 @@ export default function SubscriptionsMain() {
               </button>
             </div>
 
-            {subscriptions.length === 0 ? (
+            {isInitialLoading ? (
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Paciente</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Plano</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Valor</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Próxima Cobrança</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+                        <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <SubscriptionRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : subscriptions.length === 0 ? (
               <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
                 <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-200">
                   <Users className="text-purple-500" size={32} />

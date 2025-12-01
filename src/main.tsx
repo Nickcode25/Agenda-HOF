@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, ComponentType } from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
 
@@ -58,6 +58,12 @@ const PatientEvolution = lazyWithRetry(() => import('./pages/patients/PatientEvo
 const StudentsList = lazyWithRetry(() => import('./pages/students/StudentsList'))
 const StudentForm = lazyWithRetry(() => import('./pages/students/StudentForm'))
 const StudentDetail = lazyWithRetry(() => import('./pages/students/StudentDetail'))
+const StudentEdit = lazyWithRetry(() => import('./pages/students/StudentEdit'))
+
+// Courses
+const CoursesList = lazyWithRetry(() => import('./pages/courses/CoursesList'))
+const CourseDetail = lazyWithRetry(() => import('./pages/courses/CourseDetail'))
+const CourseForm = lazyWithRetry(() => import('./pages/courses/CourseForm'))
 
 // Professionals
 const ProfessionalsList = lazyWithRetry(() => import('./pages/professionals/ProfessionalsList'))
@@ -99,7 +105,7 @@ const PlanDetail = lazyWithRetry(() => import('./pages/subscriptions/PlanDetail'
 const SubscribersList = lazyWithRetry(() => import('./pages/subscriptions/SubscribersList'))
 const SubscriptionForm = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionForm'))
 const SubscriptionReports = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionReports'))
-const SubscriptionsMain = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionsMain'))
+// SubscriptionsMain removed - route now redirects to /app/mensalidades/planos
 
 // Staff
 const StaffManagement = lazyWithRetry(() => import('./pages/staff/StaffManagement'))
@@ -207,6 +213,12 @@ const router = createBrowserRouter([
       { path: 'alunos', element: withSuspense(StudentsList) },
       { path: 'alunos/novo', element: withSuspense(StudentForm) },
       { path: 'alunos/:id', element: withSuspense(StudentDetail) },
+      { path: 'alunos/:id/editar', element: withSuspense(StudentEdit) },
+
+      { path: 'cursos', element: withSuspense(CoursesList) },
+      { path: 'cursos/novo', element: withSuspense(CourseForm) },
+      { path: 'cursos/:id', element: withSuspense(CourseDetail) },
+      { path: 'cursos/:id/editar', element: withSuspense(CourseForm) },
 
       {
         path: 'estoque',
@@ -342,11 +354,7 @@ const router = createBrowserRouter([
 
       {
         path: 'mensalidades',
-        element: (
-          <RoleGuard requireOwner>
-            {withSuspense(SubscriptionsMain)}
-          </RoleGuard>
-        )
+        element: <Navigate to="/app/mensalidades/planos" replace />
       },
       {
         path: 'mensalidades/planos',

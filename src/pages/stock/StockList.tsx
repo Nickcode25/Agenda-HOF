@@ -1,16 +1,36 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { useStock } from '@/store/stock'
 import { formatCurrency } from '@/utils/currency'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback, memo } from 'react'
 import { Search, Plus, Package, AlertTriangle, Edit, Trash2, Tag, CheckCircle } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 
+// Skeleton loader para itens do estoque
+const StockItemSkeleton = memo(() => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 animate-pulse">
+    <div className="flex items-start justify-between mb-3">
+      <div className="flex-1">
+        <div className="h-4 w-20 bg-gray-200 rounded mb-2" />
+        <div className="h-6 w-36 bg-gray-200 rounded" />
+      </div>
+    </div>
+    <div className="h-16 bg-gray-100 rounded-lg mb-4" />
+    <div className="space-y-2">
+      <div className="h-4 w-full bg-gray-100 rounded" />
+      <div className="h-4 w-3/4 bg-gray-100 rounded" />
+    </div>
+    <div className="flex gap-2 pt-3 mt-4 border-t border-gray-100">
+      <div className="h-9 flex-1 bg-gray-100 rounded-lg" />
+      <div className="h-9 flex-1 bg-gray-100 rounded-lg" />
+    </div>
+  </div>
+))
 
 export default function StockList() {
-  const { items, removeItem, generateAlerts, getUnreadAlerts, fetchItems } = useStock()
+  const { items, removeItem, generateAlerts, getUnreadAlerts, fetchItems, loading, fetched } = useStock()
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoria') || '')
@@ -86,11 +106,14 @@ export default function StockList() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (await confirm({ title: 'Confirmação', message: 'Tem certeza que deseja remover este item do estoque?' })) {
       removeItem(id)
     }
-  }
+  }, [confirm, removeItem])
+
+  // Verificar se está carregando inicialmente
+  const isInitialLoading = loading && !fetched
 
   // Estatísticas do estoque
   const stats = useMemo(() => {
@@ -234,7 +257,13 @@ export default function StockList() {
       </div>
 
       {/* Stock Grid */}
-      {filtered.length === 0 ? (
+      {isInitialLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <StockItemSkeleton key={i} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
           <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Package size={32} className="text-orange-500" />

@@ -1,18 +1,46 @@
 import { Link } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback, memo } from 'react'
 import { UserPlus, Stethoscope, Phone, Mail, Award, ToggleLeft, ToggleRight, Users, CheckCircle } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
 
+// Função utilitária movida para fora do componente
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+// Skeleton loader
+const ProfessionalSkeleton = memo(() => (
+  <div className="bg-white rounded-xl border border-gray-100 p-5 animate-pulse">
+    <div className="flex items-center gap-4">
+      <div className="h-14 w-14 rounded-lg bg-gray-200" />
+      <div className="flex-1">
+        <div className="h-5 w-48 bg-gray-200 rounded mb-2" />
+        <div className="flex gap-4">
+          <div className="h-4 w-32 bg-gray-100 rounded" />
+          <div className="h-4 w-28 bg-gray-100 rounded" />
+        </div>
+      </div>
+      <div className="h-8 w-8 bg-gray-100 rounded-lg" />
+    </div>
+  </div>
+))
+
 export default function ProfessionalsList() {
-  const { professionals, toggleActive, fetchAll, loading } = useProfessionals(s => ({
+  const { professionals, toggleActive, fetchAll, loading, fetched } = useProfessionals(s => ({
     professionals: s.professionals,
     toggleActive: s.toggleActive,
     fetchAll: s.fetchAll,
-    loading: s.loading
+    loading: s.loading,
+    fetched: s.fetched
   }))
   const [q, setQ] = useState('')
   const { hasActiveSubscription } = useSubscription()
@@ -37,14 +65,13 @@ export default function ProfessionalsList() {
     return { total, active }
   }, [professionals])
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase()
-  }
+  // Toggle callback memoizado
+  const handleToggleActive = useCallback((id: string) => {
+    toggleActive(id)
+  }, [toggleActive])
+
+  // Verificar se está carregando inicialmente
+  const isInitialLoading = loading && !fetched
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
@@ -77,7 +104,14 @@ export default function ProfessionalsList() {
       </div>
 
       {/* Professionals List */}
-      {filtered.length === 0 ? (
+      {isInitialLoading ? (
+        <div className="space-y-4">
+          <div className="text-sm text-gray-400 px-1 animate-pulse">Carregando profissionais...</div>
+          {[...Array(5)].map((_, i) => (
+            <ProfessionalSkeleton key={i} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={Stethoscope}
           title="Nenhum profissional encontrado"
@@ -150,7 +184,7 @@ export default function ProfessionalsList() {
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      toggleActive(prof.id)
+                      handleToggleActive(prof.id)
                     }}
                     className={`p-2 rounded-lg transition-all ${prof.active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
                     title={prof.active ? 'Desativar' : 'Ativar'}

@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
-import { Stethoscope, Award, Phone, Mail, ArrowLeft, Trash2, FileText, MapPin, Edit } from 'lucide-react'
+import { Stethoscope, Award, Phone, Mail, ArrowLeft, Trash2, FileText, MapPin, Edit, User } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useEffect } from 'react'
 
@@ -15,7 +15,6 @@ export default function ProfessionalDetail() {
   const { confirm, ConfirmDialog } = useConfirm()
   const professional = professionals.find(p => p.id === id)
 
-  // Listener para tecla ESC
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -27,9 +26,11 @@ export default function ProfessionalDetail() {
   }, [navigate])
 
   if (!professional) return (
-    <div>
-      <p className="text-gray-400">Profissional não encontrado.</p>
-      <Link to="/app/profissionais" className="text-orange-500 hover:text-orange-400 hover:underline">Voltar</Link>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-gray-500 mb-4">Profissional não encontrado.</p>
+        <Link to="/app/profissionais" className="text-orange-500 hover:text-orange-600 hover:underline">Voltar para lista</Link>
+      </div>
     </div>
   )
 
@@ -40,90 +41,138 @@ export default function ProfessionalDetail() {
     }
   }
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
+  }
+
   return (
     <>
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/app/profissionais" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-          <ArrowLeft size={20} className="text-gray-400" />
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Link to="/app/profissionais" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <ArrowLeft size={20} className="text-gray-500" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Detalhes do Profissional</h1>
+            <p className="text-sm text-gray-500">Visualize as informações do profissional</p>
+          </div>
+        </div>
 
-      {/* Profile Card */}
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row items-start gap-6">
-          {/* Photo */}
-          {professional.photoUrl ? (
-            <img src={professional.photoUrl} className="h-32 w-32 rounded-xl object-cover border-2 border-orange-500" alt={professional.name} />
-          ) : (
-            <div className="h-32 w-32 rounded-xl bg-gray-700 flex items-center justify-center border-2 border-gray-700">
-              <Stethoscope size={48} className="text-gray-500" />
+        {/* Profile Card */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          {/* Header com foto */}
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-8">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              {/* Photo */}
+              {professional.photoUrl ? (
+                <img
+                  src={professional.photoUrl}
+                  className="h-28 w-28 rounded-xl object-cover border-4 border-white shadow-lg"
+                  alt={professional.name}
+                />
+              ) : (
+                <div className="h-28 w-28 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border-4 border-white/30">
+                  <span className="text-white font-bold text-3xl">{getInitials(professional.name)}</span>
+                </div>
+              )}
+
+              {/* Name and Status */}
+              <div className="text-center sm:text-left">
+                <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold text-white">{professional.name}</h2>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                    professional.active
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {professional.active ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+                <p className="text-white/80">{professional.specialty}</p>
+              </div>
             </div>
-          )}
-          
+          </div>
+
           {/* Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold text-white">{professional.name}</h2>
-              <span className={`text-xs px-3 py-1 rounded-lg border ${professional.active ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
-                {professional.active ? 'Ativo' : 'Inativo'}
-              </span>
-            </div>
-            
-            <div className="space-y-3 mt-4">
-              <div className="flex items-center gap-3">
-                <Award size={18} className="text-orange-500" />
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Especialidade */}
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <Award size={18} className="text-orange-500" />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-400">Especialidade</p>
-                  <p className="text-white font-medium">{professional.specialty}</p>
+                  <p className="text-xs text-gray-500 mb-0.5">Especialidade</p>
+                  <p className="text-gray-900 font-medium">{professional.specialty}</p>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <Award size={18} className="text-orange-500" />
+
+              {/* Registro */}
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                  <Award size={18} className="text-orange-500" />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-400">Registro</p>
-                  <p className="text-white font-medium">{professional.registrationNumber}</p>
+                  <p className="text-xs text-gray-500 mb-0.5">Registro</p>
+                  <p className="text-gray-900 font-medium">{professional.registrationNumber}</p>
                 </div>
               </div>
-              
+
+              {/* CPF */}
               {professional.cpf && (
-                <div className="flex items-center gap-3">
-                  <FileText size={18} className="text-orange-500" />
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                    <FileText size={18} className="text-orange-500" />
+                  </div>
                   <div>
-                    <p className="text-xs text-gray-400">CPF</p>
-                    <p className="text-white font-medium">{professional.cpf}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">CPF</p>
+                    <p className="text-gray-900 font-medium">{professional.cpf}</p>
                   </div>
                 </div>
               )}
-              
+
+              {/* Telefone */}
               {professional.phone && (
-                <div className="flex items-center gap-3">
-                  <Phone size={18} className="text-orange-500" />
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                    <Phone size={18} className="text-orange-500" />
+                  </div>
                   <div>
-                    <p className="text-xs text-gray-400">Telefone</p>
-                    <p className="text-white font-medium">{professional.phone}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">Telefone</p>
+                    <p className="text-gray-900 font-medium">{professional.phone}</p>
                   </div>
                 </div>
               )}
-              
+
+              {/* Email */}
               {professional.email && (
-                <div className="flex items-center gap-3">
-                  <Mail size={18} className="text-orange-500" />
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                    <Mail size={18} className="text-orange-500" />
+                  </div>
                   <div>
-                    <p className="text-xs text-gray-400">E-mail</p>
-                    <p className="text-white font-medium">{professional.email}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">E-mail</p>
+                    <p className="text-gray-900 font-medium">{professional.email}</p>
                   </div>
                 </div>
               )}
-              
+
+              {/* Endereço */}
               {(professional.street || professional.cep) && (
-                <div className="flex items-center gap-3">
-                  <MapPin size={18} className="text-orange-500" />
+                <div className="flex items-start gap-3 md:col-span-2">
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                    <MapPin size={18} className="text-orange-500" />
+                  </div>
                   <div>
-                    <p className="text-xs text-gray-400">Endereço</p>
-                    <p className="text-white font-medium">
+                    <p className="text-xs text-gray-500 mb-0.5">Endereço</p>
+                    <p className="text-gray-900 font-medium">
                       {[
                         professional.street,
                         professional.number,
@@ -139,35 +188,38 @@ export default function ProfessionalDetail() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 mt-8 pt-6 border-t border-gray-700">
-          <Link
-            to={`/app/profissionais/${professional.id}/editar`}
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-          >
-            <Edit size={18} />
-            Editar
-          </Link>
-          <button
-            onClick={() => toggleActive(professional.id)}
-            className={`px-6 py-3 rounded-xl font-medium transition-colors ${professional.active ? 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30'}`}
-          >
-            {professional.active ? 'Desativar' : 'Ativar'}
-          </button>
-          <button
-            onClick={handleDelete}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl font-medium transition-colors border border-red-500/30"
-          >
-            <Trash2 size={18} />
-            Remover
-          </button>
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+            <Link
+              to={`/app/profissionais/${professional.id}/editar`}
+              className="flex-1 inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-all"
+            >
+              <Edit size={18} />
+              Editar
+            </Link>
+            <button
+              onClick={() => toggleActive(professional.id)}
+              className={`px-5 py-2.5 rounded-lg font-medium transition-colors border ${
+                professional.active
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
+                  : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200'
+              }`}
+            >
+              {professional.active ? 'Desativar' : 'Ativar'}
+            </button>
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors border border-red-200"
+            >
+              <Trash2 size={18} />
+              Remover
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    {/* Modal de Confirmação */}
     <ConfirmDialog />
     </>
   )

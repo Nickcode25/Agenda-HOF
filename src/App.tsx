@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, Menu, X, Stethoscope, Scissors, Package, ShoppingCart, BarChart3, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, Crown, GraduationCap } from 'lucide-react'
+import { Calendar, Users, Menu, X, Syringe, Package, ShoppingCart, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, GraduationCap, BookOpen, CircleUserRound } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -142,6 +142,17 @@ export default function App() {
             data = result.data
             if (data) newEntityNames[id] = data.name
           }
+
+          // Cursos
+          else if (path === 'cursos') {
+            const result = await supabase
+              .from('courses')
+              .select('name')
+              .eq('id', id)
+              .single()
+            data = result.data
+            if (data) newEntityNames[id] = data.name
+          }
         } catch (err) {
           console.error(`Erro ao buscar nome para ${path}/${id}:`, err)
         }
@@ -168,6 +179,7 @@ export default function App() {
       'agenda': 'Agenda',
       'pacientes': 'Pacientes',
       'alunos': 'Alunos',
+      'cursos': 'Cursos',
       'profissionais': 'Profissionais',
       'procedimentos': 'Procedimentos',
       'categorias': 'Categorias',
@@ -175,7 +187,7 @@ export default function App() {
       'vendas': 'Vendas',
       'despesas': 'Despesas',
       'financeiro': 'Relatório Financeiro',
-      'mensalidades': 'Mensalidades',
+      'mensalidades': 'Planos',
       'funcionarios': 'Funcionários',
       'notificacoes': 'Notificações',
       'configuracoes': 'Configurações',
@@ -193,7 +205,16 @@ export default function App() {
       'profissionais-lista': 'Profissionais',
     }
 
-    return paths.map((path, index) => {
+    // Filtrar paths para evitar duplicação no breadcrumb (ex: mensalidades/planos -> apenas Planos)
+    const filteredPaths = paths.filter((path, index) => {
+      // Se for 'mensalidades' e o próximo for 'planos', omitir 'mensalidades'
+      if (path === 'mensalidades' && paths[index + 1] === 'planos') {
+        return false
+      }
+      return true
+    })
+
+    return filteredPaths.map((path, index) => {
       // Verificar se é um UUID
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -204,10 +225,12 @@ export default function App() {
         displayName = entityNames[path]
       }
 
+      // Reconstruir o path original para navegação
+      const originalIndex = paths.indexOf(path)
       return {
         name: displayName,
-        path: '/' + paths.slice(0, index + 1).join('/'),
-        isLast: index === paths.length - 1
+        path: '/' + paths.slice(0, originalIndex + 1).join('/'),
+        isLast: index === filteredPaths.length - 1
       }
     })
   }
@@ -270,40 +293,40 @@ export default function App() {
 
           {/* Navigation */}
           <nav className="flex-1 py-4 px-2.5 space-y-0.5">
-            {/* Seção de Agendamento */}
-            {isExpanded && <div className="pt-3 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Agendamento</p></div>}
+            {/* Seção: Gestão de Atendimento */}
+            {isExpanded && <div className="pt-3 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Gestão de Atendimento</p></div>}
             <NavLink to="/app/agenda" end className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Agenda">
               <Calendar size={20} className="flex-shrink-0"/>
               <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Agenda</span>
             </NavLink>
-
-            {/* Seção de Cadastros */}
-            {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Cadastros</p></div>}
             <NavLink to="/app/pacientes" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Pacientes">
               <Users size={20} className="flex-shrink-0"/>
               <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Pacientes</span>
             </NavLink>
             <NavLink to="/app/profissionais" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Profissionais">
-              <Stethoscope size={20} className="flex-shrink-0"/>
+              <CircleUserRound size={20} className="flex-shrink-0"/>
               <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Profissionais</span>
             </NavLink>
             <NavLink to="/app/procedimentos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Procedimentos">
-              <Scissors size={20} className="flex-shrink-0"/>
+              <Syringe size={20} className="flex-shrink-0"/>
               <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Procedimentos</span>
             </NavLink>
+
+            {/* Seção: Educação & Treinamentos */}
+            {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Educação & Treinamentos</p></div>}
             <NavLink to="/app/alunos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Alunos">
               <GraduationCap size={20} className="flex-shrink-0"/>
               <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Alunos</span>
             </NavLink>
+            <NavLink to="/app/cursos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Cursos">
+              <BookOpen size={20} className="flex-shrink-0"/>
+              <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Cursos</span>
+            </NavLink>
 
-            {/* Seção Estoque & Vendas - só para owner */}
+            {/* Seção: Financeiro - só para owner */}
             {currentProfile?.role === 'owner' && (
               <>
-                {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Estoque & Vendas</p></div>}
-                <NavLink to="/app/estoque" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Estoque">
-                  <Package size={20} className="flex-shrink-0"/>
-                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Estoque</span>
-                </NavLink>
+                {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Financeiro</p></div>}
                 <NavLink to="/app/vendas" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Venda de Produtos">
                   <ShoppingCart size={20} className="flex-shrink-0"/>
                   <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Venda de Produtos</span>
@@ -312,15 +335,20 @@ export default function App() {
                   <Receipt size={20} className="flex-shrink-0"/>
                   <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
                 </NavLink>
-
-                {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Financeiro & Gestão</p></div>}
                 <NavLink to="/app/financeiro" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Relatório Financeiro">
                   <TrendingUp size={20} className="flex-shrink-0"/>
                   <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Relatório Financeiro</span>
                 </NavLink>
-                <NavLink to="/app/mensalidades/planos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Mensalidades">
+                <NavLink to="/app/mensalidades/planos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Planos">
                   <CreditCard size={20} className="flex-shrink-0"/>
-                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Mensalidades</span>
+                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Planos</span>
+                </NavLink>
+
+                {/* Seção: Administração Interna */}
+                {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Administração Interna</p></div>}
+                <NavLink to="/app/estoque" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Estoque">
+                  <Package size={20} className="flex-shrink-0"/>
+                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Estoque</span>
                 </NavLink>
                 <NavLink to="/app/funcionarios" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Funcionários">
                   <UserCog size={20} className="flex-shrink-0"/>

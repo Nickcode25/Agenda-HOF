@@ -1,22 +1,57 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback, memo } from 'react'
 import { Link } from 'react-router-dom'
 import { useStudents } from '@/store/students'
 import { GraduationCap, UserPlus, Phone, MapPin, MessageCircle, ChevronRight, CheckSquare, BookOpen } from 'lucide-react'
 import { formatCurrency } from '@/utils/currency'
 import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
 
+// Função utilitária movida para fora do componente
+const removeAccents = (str: string) => {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+// Skeleton loader
+const StudentSkeleton = memo(() => (
+  <div className="bg-white rounded-xl border border-gray-100 overflow-hidden animate-pulse">
+    <div className="p-5">
+      <div className="flex items-start gap-4">
+        <div className="h-14 w-14 rounded-lg bg-gray-200" />
+        <div className="flex-1">
+          <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
+          <div className="flex gap-2 mb-2">
+            <div className="h-5 w-20 bg-gray-100 rounded" />
+            <div className="h-5 w-24 bg-gray-100 rounded" />
+          </div>
+          <div className="h-4 w-32 bg-gray-100 rounded" />
+        </div>
+        <div className="h-5 w-5 bg-gray-100 rounded" />
+      </div>
+    </div>
+    <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
+      <div className="flex justify-between">
+        <div className="h-4 w-28 bg-gray-100 rounded" />
+        <div className="h-8 w-8 bg-gray-100 rounded-lg" />
+      </div>
+    </div>
+  </div>
+))
+
 export default function StudentsList() {
-  const { students, loading, fetchAll } = useStudents()
+  const { students, loading, fetchAll, fetched } = useStudents()
   const [q, setQ] = useState('')
 
   useEffect(() => {
     fetchAll()
   }, [])
-
-  // Função para remover acentos
-  const removeAccents = (str: string) => {
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  }
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
@@ -49,27 +84,21 @@ export default function StudentsList() {
   }, [students])
 
   // Calcular total de mentorias por aluno
-  const getStudentMentorshipsTotal = (student: typeof students[0]) => {
+  const getStudentMentorshipsTotal = useCallback((student: typeof students[0]) => {
     if (!student.plannedMentorships) return 0
     return student.plannedMentorships
       .filter(m => m.status === 'completed')
       .reduce((sum, m) => sum + m.totalValue, 0)
-  }
+  }, [])
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase()
-  }
-
-  const handleWhatsApp = (phone?: string) => {
+  const handleWhatsApp = useCallback((phone?: string) => {
     if (!phone) return
     const cleanPhone = phone.replace(/\D/g, '')
     window.open(`https://wa.me/55${cleanPhone}`, '_blank')
-  }
+  }, [])
+
+  // Verificar se está carregando inicialmente
+  const isInitialLoading = loading && !fetched
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6">
@@ -101,10 +130,14 @@ export default function StudentsList() {
       </div>
 
       {/* Students List */}
-      {loading ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-500">Carregando alunos...</p>
+      {isInitialLoading ? (
+        <div className="space-y-4">
+          <div className="text-sm text-gray-400 px-1 animate-pulse">Carregando alunos...</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <StudentSkeleton key={i} />
+            ))}
+          </div>
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState

@@ -69,6 +69,19 @@ export function formatDateTimeBR(date: Date | string | number, includeTime: bool
 }
 
 /**
+ * Formata uma data no formato YYYY-MM-DD para DD/MM/YYYY
+ * Esta função não faz conversão de timezone, apenas reformata a string
+ * Útil para datas que vêm do banco de dados sem componente de hora
+ * @param dateStr - Data no formato YYYY-MM-DD
+ */
+export function formatDateOnlyBR(dateStr: string): string {
+  if (!dateStr) return ''
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  return `${parts[2]}/${parts[1]}/${parts[0]}`
+}
+
+/**
  * Formata apenas a hora no formato brasileiro
  * @param date - Data/hora a ser formatada
  */

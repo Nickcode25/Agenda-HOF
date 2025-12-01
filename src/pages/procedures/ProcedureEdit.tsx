@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
-import { Save, ArrowLeft, Plus } from 'lucide-react'
+import { Save, ArrowLeft, Plus, FileText, DollarSign, Clock } from 'lucide-react'
 import CreateCategoryModal from '@/components/CreateCategoryModal'
 import SearchableSelect from '@/components/SearchableSelect'
 
@@ -43,6 +43,16 @@ export default function ProcedureEdit() {
       setCardValue(procedure.cardValue ? formatCurrency(procedure.cardValue) : '')
     }
   }, [procedure])
+
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        navigate('/app/procedimentos')
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [navigate])
 
   function formatCurrency(val: string | number) {
     // Se for número (vindo do banco), formata diretamente
@@ -106,148 +116,195 @@ export default function ProcedureEdit() {
 
   if (!procedure) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Link to="/app/procedimentos" className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-            <ArrowLeft size={20} className="text-gray-400" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">Procedimento não encontrado.</p>
+          <Link to="/app/procedimentos" className="text-orange-500 hover:text-orange-600 hover:underline">
+            Voltar para lista
           </Link>
-        </div>
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-12 text-center">
-          <p className="text-gray-400">Procedimento não encontrado.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Form com Header Integrado */}
-      <form onSubmit={onSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4 border-b border-gray-700 flex items-center gap-4">
-          <Link
-            to="/app/procedimentos"
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-            title="Voltar"
-          >
-            <ArrowLeft size={20} className="text-gray-400 hover:text-white" />
+        <div className="flex items-center gap-4">
+          <Link to="/app/procedimentos" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <ArrowLeft size={20} className="text-gray-500" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white">Editar Procedimento</h1>
-            <p className="text-sm text-gray-400">Atualize os dados do procedimento</p>
+            <h1 className="text-2xl font-bold text-gray-900">Editar Procedimento</h1>
+            <p className="text-sm text-gray-500">Atualize os dados do procedimento</p>
           </div>
         </div>
 
-        {/* Form Content */}
-        <div className="p-6 lg:p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Procedimento *</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Ex: Botox, Preenchimento Labial..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
+        {/* Form */}
+        <form onSubmit={onSubmit} className="space-y-6">
+          {/* Informações Básicas */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <FileText size={18} className="text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Informações Básicas</h3>
+                <p className="text-xs text-gray-500">Dados principais do procedimento</p>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Procedimento *</label>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    placeholder="Ex: Botox, Preenchimento Labial..."
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria do Procedimento</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <SearchableSelect
+                        options={procedureCategories.map(cat => ({
+                          value: cat,
+                          label: cat
+                        }))}
+                        value={category}
+                        onChange={setCategory}
+                        placeholder="Selecione uma categoria"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryModal(true)}
+                      className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-all flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <Plus size={18} />
+                      Nova
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Selecione a categoria de produto deste procedimento ou crie uma nova
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Descreva o procedimento..."
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Categoria do Procedimento</label>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <SearchableSelect
-                  options={procedureCategories.map(cat => ({
-                    value: cat,
-                    label: cat
-                  }))}
-                  value={category}
-                  onChange={setCategory}
-                  placeholder="Selecione uma categoria"
+          {/* Valores */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <DollarSign size={18} className="text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Valores</h3>
+                <p className="text-xs text-gray-500">Preços do procedimento</p>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor à Vista</label>
+                  <input
+                    value={value}
+                    onChange={handleValueChange}
+                    placeholder="R$ 0,00"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Valor principal (à vista)</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor com Desconto</label>
+                  <input
+                    value={cashValue}
+                    onChange={handleCashValueChange}
+                    placeholder="R$ 0,00"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Desconto especial (opcional)</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor Parcelado</label>
+                  <input
+                    value={cardValue}
+                    onChange={handleCardValueChange}
+                    placeholder="R$ 0,00"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Cartão parcelado (opcional)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Duração */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Clock size={18} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Duração</h3>
+                <p className="text-xs text-gray-500">Tempo estimado do procedimento</p>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Duração (minutos)</label>
+                <input
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  type="number"
+                  min="0"
+                  placeholder="Ex: 30, 60, 90..."
+                  className="w-full max-w-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCategoryModal(true)}
-                className="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 flex items-center gap-2 whitespace-nowrap"
-              >
-                <Plus size={18} />
-                Nova
-              </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Selecione a categoria de produto deste procedimento ou crie uma nova
-            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Valor à Vista</label>
-            <input
-              value={value}
-              onChange={handleValueChange}
-              placeholder="R$ 0,00"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-            />
-            <p className="text-xs text-gray-400 mt-1">Valor principal do procedimento (à vista) - opcional</p>
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="submit"
+              className="flex-1 inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition-all"
+            >
+              <Save size={18} />
+              Salvar Alterações
+            </button>
+            <Link
+              to="/app/procedimentos"
+              className="px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </Link>
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Duração (minutos)</label>
-            <input 
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              type="number"
-              min="0"
-              placeholder="Ex: 30, 60, 90..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Valor com Desconto Adicional</label>
-            <input 
-              value={cashValue}
-              onChange={handleCashValueChange}
-              placeholder="R$ 0,00"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            />
-            <p className="text-xs text-gray-400 mt-1">Valor com desconto especial à vista (opcional)</p>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Valor Parcelado</label>
-            <input 
-              value={cardValue}
-              onChange={handleCardValueChange}
-              placeholder="R$ 0,00"
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-            />
-            <p className="text-xs text-gray-400 mt-1">Valor para pagamento parcelado no cartão (opcional)</p>
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
-            <textarea 
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva o procedimento..."
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all" 
-              rows={4}
-            />
-          </div>
-        </div>
-        
-        <div className="flex gap-3 mt-8">
-          <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40">
-            <Save size={20} />
-            Salvar Alterações
-          </button>
-          <Link to="/app/procedimentos" className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors">
-            Cancelar
-          </Link>
-        </div>
-        </div>
-      </form>
+        </form>
+      </div>
 
       {/* Modal de Criar Categoria */}
       <CreateCategoryModal

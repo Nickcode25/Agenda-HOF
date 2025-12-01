@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useExpenses } from '@/store/expenses'
 import { usePatients } from '@/store/patients'
 import { useSales } from '@/store/sales'
+import { useEnrollments } from '@/store/enrollments'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/utils/currency'
 import { formatDateBR } from '@/utils/dateHelpers'
@@ -17,13 +18,18 @@ import {
   TrendingDown,
   Receipt,
   Package,
-  X
+  X,
+  GraduationCap,
+  Edit2,
+  Trash2
 } from 'lucide-react'
 import { PaymentMethod } from '@/types/cash'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
+import { useToast } from '@/hooks/useToast'
+import { useConfirm } from '@/hooks/useConfirm'
 
-type DetailModalType = 'procedures' | 'sales' | 'subscriptions' | 'other' | 'expenses' | 'total' | null
+type DetailModalType = 'procedures' | 'sales' | 'subscriptions' | 'courses' | 'other' | 'expenses' | 'total' | null
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
@@ -32,13 +38,15 @@ type TransactionItem = {
   id: string
   amount: number
   description: string
-  category: 'procedure' | 'sale' | 'subscription' | 'expense' | 'other'
+  category: 'procedure' | 'sale' | 'subscription' | 'course' | 'expense' | 'other'
   createdAt: string
   paymentMethod: PaymentMethod
   paymentType?: 'cash' | 'installment'
   installments?: number
   patientName?: string
+  patientId?: string
   professionalName?: string
+  studentId?: string
   items?: Array<{ quantity: number; name: string; price: number }>
 }
 
@@ -83,10 +91,14 @@ function formatPaymentDescription(item: TransactionItem): string {
 }
 
 export default function FinancialReport() {
-  const { expenses, fetchExpenses } = useExpenses()
-  const { patients, fetchAll: fetchPatients } = usePatients()
-  const { sales, fetchSales } = useSales()
+  const navigate = useNavigate()
+  const { expenses, fetchExpenses, deleteExpense } = useExpenses()
+  const { patients, fetchAll: fetchPatients, update: updatePatient } = usePatients()
+  const { sales, fetchSales, removeSale } = useSales()
+  const { enrollments, fetchAll: fetchEnrollments, fetched: enrollmentsFetched, remove: removeEnrollment } = useEnrollments()
   const { hasActiveSubscription } = useSubscription()
+  const { show: showToast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
   const today = new Date().toISOString().split('T')[0]
   const [startDate, setStartDate] = useState(today)
@@ -172,7 +184,10 @@ export default function FinancialReport() {
     fetchPatients()
     fetchSales()
     fetchSubscriptionPayments()
-  }, [])
+    if (!enrollmentsFetched) {
+      fetchEnrollments()
+    }
+  }, [enrollmentsFetched])
 
   // Função para filtrar por período
   const filterByPeriod = (itemDate: Date | string): boolean => {
@@ -213,7 +228,8 @@ export default function FinancialReport() {
               paymentMethod: split.method as PaymentMethod,
               paymentType: split.installments && split.installments > 1 ? 'installment' : 'cash',
               installments: split.installments,
-              patientName: patient.name
+              patientName: patient.name,
+              patientId: patient.id
             })
           })
         } else {
@@ -227,7 +243,8 @@ export default function FinancialReport() {
             paymentMethod: proc.paymentMethod as PaymentMethod,
             paymentType: proc.paymentType,
             installments: proc.installments,
-            patientName: patient.name
+            patientName: patient.name,
+            patientId: patient.id
           })
         }
       })
@@ -282,13 +299,42 @@ export default function FinancialReport() {
     return { total, count: items.length, items }
   }, [subscriptionPayments, startDate, endDate])
 
+  // Receitas de cursos (matrículas e inscrições)
+  const coursesRevenue = useMemo(() => {
+    const paidEnrollments = enrollments.filter(
+      enrollment => {
+        // Somente matrículas com valor pago
+        if (!enrollment.amount_paid || enrollment.amount_paid <= 0) return false
+        // Verificar data de matrícula
+        return filterByPeriod(enrollment.enrollment_date)
+      }
+    )
+
+    const items: TransactionItem[] = paidEnrollments.map(enrollment => {
+      const isEnrollmentFee = enrollment.notes?.includes('[Inscrição Curso]')
+      return {
+        id: enrollment.id,
+        amount: enrollment.amount_paid || 0,
+        description: `${isEnrollmentFee ? 'Inscrição' : 'Matrícula'} - ${enrollment.course_name || 'Curso'}`,
+        category: 'course' as const,
+        createdAt: enrollment.enrollment_date,
+        paymentMethod: 'pix' as PaymentMethod, // Default
+        patientName: undefined,
+        studentId: enrollment.student_id
+      }
+    })
+
+    const total = items.reduce((sum, item) => sum + item.amount, 0)
+    return { total, count: items.length, items }
+  }, [enrollments, startDate, endDate])
+
   // Outras receitas - por enquanto vazio (pode ser implementado futuramente)
   const otherRevenue = useMemo(() => {
     return { total: 0, count: 0, items: [] as TransactionItem[] }
   }, [])
 
-  const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total + otherRevenue.total
-  const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count + otherRevenue.count
+  const totalRevenue = procedureRevenue.total + salesRevenue.total + subscriptionRevenue.total + coursesRevenue.total + otherRevenue.total
+  const totalTransactions = procedureRevenue.count + salesRevenue.count + subscriptionRevenue.count + coursesRevenue.count + otherRevenue.count
 
   // Despesas do período
   const expenseItems = useMemo(() => {
@@ -319,6 +365,7 @@ export default function FinancialReport() {
   const procedurePercentage = totalRevenue > 0 ? (procedureRevenue.total / totalRevenue) * 100 : 0
   const salesPercentage = totalRevenue > 0 ? (salesRevenue.total / totalRevenue) * 100 : 0
   const subscriptionPercentage = totalRevenue > 0 ? (subscriptionRevenue.total / totalRevenue) * 100 : 0
+  const coursesPercentage = totalRevenue > 0 ? (coursesRevenue.total / totalRevenue) * 100 : 0
   const otherPercentage = totalRevenue > 0 ? (otherRevenue.total / totalRevenue) * 100 : 0
 
   const getPeriodLabel = () => {
@@ -327,6 +374,114 @@ export default function FinancialReport() {
     const start = new Date(startYear, startMonth - 1, startDay)
     const end = new Date(endYear, endMonth - 1, endDay)
     return `${start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${end.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+  }
+
+  // Função para editar transação
+  const handleEditTransaction = (item: TransactionItem) => {
+    switch (item.category) {
+      case 'procedure':
+        if (item.patientId) {
+          navigate(`/app/pacientes/${item.patientId}`)
+        }
+        break
+      case 'sale':
+        navigate(`/app/vendas/${item.id}/editar`)
+        break
+      case 'subscription':
+        // Mensalidades não tem página de edição individual, ir para planos
+        navigate('/app/mensalidades/planos')
+        break
+      case 'course':
+        if (item.studentId) {
+          navigate(`/app/alunos/${item.studentId}`)
+        }
+        break
+      case 'expense':
+        navigate(`/app/despesas/${item.id}/editar`)
+        break
+    }
+  }
+
+  // Função para excluir transação
+  const handleDeleteTransaction = async (item: TransactionItem) => {
+    const categoryLabels: Record<string, string> = {
+      procedure: 'procedimento',
+      sale: 'venda',
+      subscription: 'pagamento de mensalidade',
+      course: 'matrícula de curso',
+      expense: 'despesa'
+    }
+
+    const confirmed = await confirm({
+      title: 'Excluir Transação',
+      message: `Tem certeza que deseja excluir este(a) ${categoryLabels[item.category]}? Esta ação não pode ser desfeita.`,
+      confirmText: 'Excluir',
+      confirmButtonClass: 'bg-red-500 hover:bg-red-600'
+    })
+
+    if (!confirmed) return
+
+    try {
+      let success = false
+
+      switch (item.category) {
+        case 'procedure':
+          // Procedimentos: remover do array de procedimentos do paciente
+          if (item.patientId) {
+            const patient = patients.find(p => p.id === item.patientId)
+            if (patient) {
+              // Extrair o ID real do procedimento (sem o sufixo -split-X)
+              const procId = item.id.includes('-split-') ? item.id.split('-split-')[0] : item.id
+              const updatedProcedures = (patient.plannedProcedures || []).filter(p => p.id !== procId)
+              await updatePatient(patient.id, { plannedProcedures: updatedProcedures })
+              success = true
+            }
+          }
+          break
+
+        case 'sale':
+          await removeSale(item.id)
+          success = true
+          break
+
+        case 'subscription':
+          // Excluir pagamento de mensalidade direto no Supabase
+          const { error: subError } = await supabase
+            .from('subscription_payments')
+            .delete()
+            .eq('id', item.id)
+          success = !subError
+          if (success) {
+            // Atualizar lista local
+            setSubscriptionPayments(prev => prev.filter(p => p.id !== item.id))
+          }
+          break
+
+        case 'course':
+          success = await removeEnrollment(item.id)
+          break
+
+        case 'expense':
+          await deleteExpense(item.id)
+          success = true
+          break
+      }
+
+      if (success) {
+        showToast('Transação excluída com sucesso!', 'success')
+        // Recarregar dados
+        fetchPatients()
+        fetchSales()
+        fetchEnrollments()
+        fetchExpenses()
+        fetchSubscriptionPayments()
+      } else {
+        showToast('Erro ao excluir transação. Tente novamente.', 'error')
+      }
+    } catch (error) {
+      console.error('Erro ao excluir transação:', error)
+      showToast('Erro ao excluir transação. Tente novamente.', 'error')
+    }
   }
 
   return (
@@ -431,8 +586,8 @@ export default function FinancialReport() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+        {/* KPI Cards - Linha 1: Receitas principais */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           {/* Receita Total */}
           <button
             type="button"
@@ -488,6 +643,23 @@ export default function FinancialReport() {
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(subscriptionRevenue.total)}</div>
             <div className="text-sm text-gray-500">{subscriptionRevenue.count} pagamentos</div>
           </button>
+        </div>
+
+        {/* KPI Cards - Linha 2: Outras receitas e despesas */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
+          {/* Cursos */}
+          <button
+            type="button"
+            onClick={() => setDetailModal('courses')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-orange-500 hover:shadow-md hover:border-orange-300 transition-all text-left cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-orange-600">Cursos</span>
+              <GraduationCap size={18} className="text-orange-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(coursesRevenue.total)}</div>
+            <div className="text-sm text-gray-500">{coursesRevenue.count} matrículas</div>
+          </button>
 
           {/* Outras Receitas */}
           <button
@@ -507,7 +679,7 @@ export default function FinancialReport() {
           <button
             type="button"
             onClick={() => setDetailModal('expenses')}
-            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500 hover:shadow-md hover:border-red-300 transition-all text-left cursor-pointer"
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500 hover:shadow-md hover:border-red-300 transition-all text-left cursor-pointer col-span-2 lg:col-span-1"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-red-600">Despesas</span>
@@ -595,6 +767,26 @@ export default function FinancialReport() {
                 <div
                   className="bg-purple-500 h-3 rounded-full transition-all duration-500"
                   style={{ width: `${subscriptionPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Cursos */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <GraduationCap size={16} className="text-orange-600" />
+                  <span className="text-gray-900 font-medium">Cursos</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-orange-600 font-bold">{formatCurrency(coursesRevenue.total)}</span>
+                  <span className="text-gray-500 text-sm ml-2">({coursesPercentage.toFixed(1)}%)</span>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-orange-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${coursesPercentage}%` }}
                 ></div>
               </div>
             </div>
@@ -712,28 +904,30 @@ export default function FinancialReport() {
 
           {totalTransactions > 0 || expenseItems.length > 0 ? (
             <div className="space-y-3">
-              {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items, ...expenseItems]
+              {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...coursesRevenue.items, ...otherRevenue.items, ...expenseItems]
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                 .map((item) => {
-                  const categoryColors = {
+                  const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
                     procedure: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
                     sale: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
                     subscription: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
+                    course: { bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' },
                     expense: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' },
                     other: { bg: 'bg-cyan-50', text: 'text-cyan-600', border: 'border-cyan-200' }
                   }
                   const colorScheme = categoryColors[item.category] || { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' }
 
-                  const categoryLabels = {
+                  const categoryLabels: Record<string, string> = {
                     procedure: 'Procedimento',
                     sale: 'Venda',
                     subscription: 'Mensalidade',
+                    course: 'Curso',
                     expense: 'Despesa',
                     other: 'Outra Receita'
                   }
 
                   return (
-                    <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50/30 transition-all">
+                    <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50/30 transition-all group">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -770,9 +964,30 @@ export default function FinancialReport() {
                             </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 mb-1">Valor</p>
-                          <p className={`text-xl font-bold ${colorScheme.text}`}>{formatCurrency(Math.abs(item.amount))}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 mb-1">Valor</p>
+                            <p className={`text-xl font-bold ${colorScheme.text}`}>{formatCurrency(Math.abs(item.amount))}</p>
+                          </div>
+                          {/* Botões de ação */}
+                          <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => handleEditTransaction(item)}
+                              className="p-2 bg-white hover:bg-blue-50 text-blue-600 rounded-lg border border-gray-200 hover:border-blue-300 transition-all"
+                              title="Editar"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTransaction(item)}
+                              className="p-2 bg-white hover:bg-red-50 text-red-600 rounded-lg border border-gray-200 hover:border-red-300 transition-all"
+                              title="Excluir"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -795,6 +1010,7 @@ export default function FinancialReport() {
                   {detailModal === 'procedures' && <Activity size={24} className="text-blue-600" />}
                   {detailModal === 'sales' && <ShoppingCart size={24} className="text-amber-600" />}
                   {detailModal === 'subscriptions' && <CreditCard size={24} className="text-purple-600" />}
+                  {detailModal === 'courses' && <GraduationCap size={24} className="text-orange-600" />}
                   {detailModal === 'other' && <Receipt size={24} className="text-cyan-600" />}
                   {detailModal === 'expenses' && <TrendingDown size={24} className="text-red-600" />}
                   <div>
@@ -803,6 +1019,7 @@ export default function FinancialReport() {
                       {detailModal === 'procedures' && 'Procedimentos'}
                       {detailModal === 'sales' && 'Vendas'}
                       {detailModal === 'subscriptions' && 'Mensalidades'}
+                      {detailModal === 'courses' && 'Cursos'}
                       {detailModal === 'other' && 'Outras Receitas'}
                       {detailModal === 'expenses' && 'Despesas'}
                     </h2>
@@ -821,7 +1038,7 @@ export default function FinancialReport() {
                   let colorScheme = { text: 'text-gray-600', bg: 'bg-gray-50' }
 
                   if (detailModal === 'total') {
-                    items = [...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...otherRevenue.items]
+                    items = [...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...coursesRevenue.items, ...otherRevenue.items]
                     colorScheme = { text: 'text-green-600', bg: 'bg-green-50' }
                   } else if (detailModal === 'procedures') {
                     items = procedureRevenue.items
@@ -832,6 +1049,9 @@ export default function FinancialReport() {
                   } else if (detailModal === 'subscriptions') {
                     items = subscriptionRevenue.items
                     colorScheme = { text: 'text-purple-600', bg: 'bg-purple-50' }
+                  } else if (detailModal === 'courses') {
+                    items = coursesRevenue.items
+                    colorScheme = { text: 'text-orange-600', bg: 'bg-orange-50' }
                   } else if (detailModal === 'other') {
                     items = otherRevenue.items
                     colorScheme = { text: 'text-cyan-600', bg: 'bg-cyan-50' }
@@ -915,6 +1135,8 @@ export default function FinancialReport() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog />
     </div>
   )
 }
