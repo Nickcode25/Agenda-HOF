@@ -18,6 +18,7 @@ interface AddProcedureModalProps {
   installments: number
   customValue: string
   isEditingValue: boolean
+  performedAt: string
   procedures: Procedure[]
   stockItems: StockItem[]
   onProcedureChange: (value: string) => void
@@ -29,6 +30,7 @@ interface AddProcedureModalProps {
   onInstallmentsChange: (value: number) => void
   onCustomValueFocus: () => void
   onCustomValueChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onPerformedAtChange: (value: string) => void
   onClose: () => void
   onAdd: (paymentSplits?: PaymentSplit[]) => void
   // Props para modo de edição
@@ -47,6 +49,7 @@ export default function AddProcedureModal({
   installments,
   customValue,
   isEditingValue,
+  performedAt,
   procedures,
   stockItems,
   onProcedureChange,
@@ -58,6 +61,7 @@ export default function AddProcedureModal({
   onInstallmentsChange,
   onCustomValueFocus,
   onCustomValueChange,
+  onPerformedAtChange,
   onClose,
   onAdd,
   isEditMode = false,
@@ -192,6 +196,17 @@ export default function AddProcedureModal({
                   onBlur={onQuantityBlur}
                   className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Realização</label>
+                <input
+                  type="date"
+                  value={performedAt}
+                  onChange={(e) => onPerformedAtChange(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-1">Informe a data em que o procedimento foi realizado para o relatório financeiro</p>
               </div>
 
               <div className="md:col-span-2">

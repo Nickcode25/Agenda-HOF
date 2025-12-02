@@ -34,6 +34,7 @@ export type PlannedProcedure = {
   notes?: string
   createdAt: string
   completedAt?: string
+  performedAt?: string // data em que o procedimento foi realizado (para relatório financeiro)
   usedProductId?: string // ID do produto usado do estoque
   usedProductName?: string // Nome do produto usado
   photos?: ProcedurePhoto[] // Fotos antes/depois do procedimento

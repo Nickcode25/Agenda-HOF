@@ -33,6 +33,7 @@ export default function PatientDetail() {
   const [installments, setInstallments] = useState(1)
   const [customValue, setCustomValue] = useState('')
   const [isEditingValue, setIsEditingValue] = useState(false)
+  const [performedAt, setPerformedAt] = useState(() => new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     fetchProcedures()
@@ -92,6 +93,7 @@ export default function PatientDetail() {
     setInstallments(1)
     setCustomValue('')
     setIsEditingValue(false)
+    setPerformedAt(new Date().toISOString().split('T')[0])
     setShowProcedureModal(false)
     setIsEditMode(false)
     setEditingProcedureId(null)
@@ -111,6 +113,9 @@ export default function PatientDetail() {
       totalValue = procedureQuantity * unitValue
     }
 
+    // Converter a data para ISO string com horário do meio-dia para evitar problemas de timezone
+    const performedAtISO = performedAt ? new Date(performedAt + 'T12:00:00').toISOString() : new Date().toISOString()
+
     // Modo de edição - atualizar procedimento existente
     if (isEditMode && editingProcedureId) {
       const updated = (patient.plannedProcedures || []).map(p =>
@@ -124,7 +129,8 @@ export default function PatientDetail() {
           paymentMethod,
           installments,
           paymentSplits: paymentSplits || p.paymentSplits,
-          notes: procedureNotes
+          notes: procedureNotes,
+          performedAt: performedAtISO
         } : p
       )
 
@@ -147,7 +153,8 @@ export default function PatientDetail() {
       paymentSplits, // Adicionar os pagamentos múltiplos se fornecidos
       status: 'pending',
       notes: procedureNotes,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      performedAt: performedAtISO
     }
 
     const currentPlanned = patient.plannedProcedures || []
@@ -233,6 +240,9 @@ export default function PatientDetail() {
     setInstallments(proc.installments || 1)
     setCustomValue(formatCurrency(proc.totalValue))
     setIsEditingValue(true)
+    // Carregar a data de realização existente ou usar a data atual
+    const existingDate = proc.performedAt || proc.completedAt || proc.createdAt
+    setPerformedAt(existingDate ? new Date(existingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
     setEditingProcedureId(proc.id)
     setIsEditMode(true)
     setShowProcedureModal(true)
@@ -460,7 +470,7 @@ export default function PatientDetail() {
               {completedProcedures.length > 0 ? (
                 <div className="space-y-4">
                   {completedProcedures
-                    .sort((a, b) => new Date(b.completedAt || b.createdAt).getTime() - new Date(a.completedAt || a.createdAt).getTime())
+                    .sort((a, b) => new Date(b.performedAt || b.completedAt || b.createdAt).getTime() - new Date(a.performedAt || a.completedAt || a.createdAt).getTime())
                     .map(proc => (
                     <div key={proc.id} className="bg-gray-50 rounded-lg border-l-4 border-green-500 p-3 sm:p-4">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
@@ -509,7 +519,7 @@ export default function PatientDetail() {
                                 </span>
                               </div>
                             ) : null}
-                            <span>Realizado em: {formatDateTimeBRSafe(proc.completedAt || proc.createdAt)}</span>
+                            <span>Realizado em: {formatDateTimeBRSafe(proc.performedAt || proc.completedAt || proc.createdAt)}</span>
                           </div>
 
                           {proc.photos && proc.photos.length > 0 && (
@@ -586,6 +596,7 @@ export default function PatientDetail() {
         installments={installments}
         customValue={customValue}
         isEditingValue={isEditingValue}
+        performedAt={performedAt}
         procedures={procedures}
         stockItems={stockItems}
         onProcedureChange={setSelectedProcedure}
@@ -625,6 +636,7 @@ export default function PatientDetail() {
           }
         }}
         onCustomValueChange={handleCustomValueChange}
+        onPerformedAtChange={setPerformedAt}
         onClose={resetProcedureModal}
         onAdd={handleAddProcedure}
         isEditMode={isEditMode}

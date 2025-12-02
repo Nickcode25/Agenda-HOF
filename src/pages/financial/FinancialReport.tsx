@@ -211,11 +211,16 @@ export default function FinancialReport() {
     const items: TransactionItem[] = []
 
     patients.forEach(patient => {
-      const completedProcedures = (patient.plannedProcedures || []).filter(
-        proc => proc.status === 'completed' && proc.completedAt && filterByPeriod(proc.completedAt)
-      )
+      const completedProcedures = (patient.plannedProcedures || []).filter(proc => {
+        // Usar performedAt como data principal, com fallback para completedAt
+        const procedureDate = proc.performedAt || proc.completedAt
+        return proc.status === 'completed' && procedureDate && filterByPeriod(procedureDate)
+      })
 
       completedProcedures.forEach(proc => {
+        // Usar performedAt como data principal, com fallback para completedAt
+        const procedureDate = proc.performedAt || proc.completedAt!
+
         // Se tem múltiplas formas de pagamento, criar entrada para cada uma
         if (proc.paymentSplits && proc.paymentSplits.length > 0) {
           proc.paymentSplits.forEach((split, idx) => {
@@ -224,7 +229,7 @@ export default function FinancialReport() {
               amount: split.amount,
               description: `${proc.procedureName} - ${patient.name}`,
               category: 'procedure',
-              createdAt: proc.completedAt!,
+              createdAt: procedureDate,
               paymentMethod: split.method as PaymentMethod,
               paymentType: split.installments && split.installments > 1 ? 'installment' : 'cash',
               installments: split.installments,
@@ -239,7 +244,7 @@ export default function FinancialReport() {
             amount: proc.totalValue,
             description: `${proc.procedureName} - ${patient.name}`,
             category: 'procedure',
-            createdAt: proc.completedAt!,
+            createdAt: procedureDate,
             paymentMethod: proc.paymentMethod as PaymentMethod,
             paymentType: proc.paymentType,
             installments: proc.installments,
