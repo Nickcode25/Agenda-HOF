@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { Patient, PlannedProcedure } from '@/types/patient'
 import { getErrorMessage } from '@/types/errors'
 
@@ -46,7 +46,7 @@ export const usePatients = create<PatientsState>()((set, get) => ({
 
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         throw new Error('Usuário não autenticado')
       }
@@ -95,7 +95,7 @@ export const usePatients = create<PatientsState>()((set, get) => ({
 
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       // Sanitizar query para evitar SQL Injection - escapar caracteres especiais do LIKE
@@ -141,7 +141,7 @@ export const usePatients = create<PatientsState>()((set, get) => ({
   add: async (p) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error} = await supabase

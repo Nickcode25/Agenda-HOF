@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 
 export interface Category {
   id: string
@@ -33,7 +33,7 @@ export const useCategories = create<CategoriesState>((set, get) => ({
   fetchCategories: async () => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         set({ loading: false })
         return
@@ -57,7 +57,7 @@ export const useCategories = create<CategoriesState>((set, get) => ({
   addCategory: async (name: string, type: 'procedure' | 'stock' | 'both') => {
     set({ error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       // Verificar se já existe

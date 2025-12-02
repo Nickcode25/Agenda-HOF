@@ -78,7 +78,7 @@ const PatientCard = memo(({
   const [procedureNotes, setProcedureNotes] = useState('')
   const [procedureQuantity, setProcedureQuantity] = useState(1)
   const [paymentType, setPaymentType] = useState<'cash' | 'installment'>('cash')
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'pix' | 'card'>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'pix' | 'card' | 'credit_card_1x' | 'debit_card'>('cash')
   const [installments, setInstallments] = useState(1)
 
   const patientProcedures = useMemo(() =>
@@ -331,11 +331,14 @@ const PatientCard = memo(({
 })
 
 export default function PatientsList() {
-  const patients = usePatients(s => s.patients)
-  const loading = usePatients(s => s.loading)
-  const fetched = usePatients(s => s.fetched)
-  const update = usePatients(s => s.update)
-  const fetchPatients = usePatients(s => s.fetchAll)
+  // Consolidar selectors para evitar múltiplos re-renders
+  const { patients, loading, fetched, update, fetchPatients } = usePatients(s => ({
+    patients: s.patients,
+    loading: s.loading,
+    fetched: s.fetched,
+    update: s.update,
+    fetchPatients: s.fetchAll
+  }))
   const procedures = useProcedures(s => s.procedures)
   const fetchProcedures = useProcedures(s => s.fetchAll)
   const { hasActiveSubscription } = useSubscription()

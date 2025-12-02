@@ -10,12 +10,11 @@ import { useNotifications } from '@/store/notifications'
  * - Verifica procedimentos planejados não realizados
  *
  * Executa:
- * - Ao montar o componente
+ * - Após 3 segundos do mount (para não bloquear carregamento inicial)
  * - A cada 5 minutos
  */
 export function useNotificationChecker() {
   const { checkAndCreateReminders, fetchNotifications, fetchPreferences } = useNotifications()
-  const hasCheckedRef = useRef(false)
   const isInitializedRef = useRef(false)
 
   // Memoizar as funções para evitar re-renders desnecessários
@@ -23,30 +22,32 @@ export function useNotificationChecker() {
     if (isInitializedRef.current) return
     isInitializedRef.current = true
 
-    console.log('🔔 Inicializando sistema de notificações...')
-    await fetchPreferences()
-    await fetchNotifications()
+    // Não bloqueia - executar em background
+    fetchPreferences().catch(() => {})
+    fetchNotifications().catch(() => {})
 
-    // Verificar lembretes na primeira vez
-    if (!hasCheckedRef.current) {
-      hasCheckedRef.current = true
-      console.log('🔔 Primeira verificação de lembretes...')
-      await checkAndCreateReminders()
-    }
+    // Verificar lembretes com delay para não afetar o carregamento inicial
+    setTimeout(() => {
+      checkAndCreateReminders().catch(() => {})
+    }, 5000) // 5 segundos após inicialização
   }, [fetchPreferences, fetchNotifications, checkAndCreateReminders])
 
   const checkReminders = useCallback(async () => {
-    console.log('🔔 Verificação periódica de lembretes...')
-    await checkAndCreateReminders()
-    await fetchNotifications()
+    // Executar em background sem bloquear
+    checkAndCreateReminders().catch(() => {})
+    fetchNotifications().catch(() => {})
   }, [checkAndCreateReminders, fetchNotifications])
 
   useEffect(() => {
-    initialize()
+    // Delay inicial para não afetar o carregamento da página
+    const initTimeout = setTimeout(initialize, 2000)
 
     // Configurar verificação periódica (a cada 5 minutos)
-    const interval = setInterval(checkReminders, 5 * 60 * 1000) // 5 minutos
+    const interval = setInterval(checkReminders, 5 * 60 * 1000)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(initTimeout)
+      clearInterval(interval)
+    }
   }, [initialize, checkReminders])
 }

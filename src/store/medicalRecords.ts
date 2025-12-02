@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import type {
   ClinicalEvolution,
   MedicalPhoto,
@@ -38,7 +38,7 @@ export const useMedicalRecords = create<MedicalRecordsState>((set, get) => ({
   fetchClinicalEvolutionsByPatient: async (patientId: string) => {
     set({ loading: true })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Não autenticado')
 
       const { data, error } = await supabase
@@ -60,7 +60,7 @@ export const useMedicalRecords = create<MedicalRecordsState>((set, get) => ({
 
   createClinicalEvolution: async (patientId: string, formData: ClinicalEvolutionFormData) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Não autenticado')
 
       const { error } = await supabase
@@ -129,7 +129,7 @@ export const useMedicalRecords = create<MedicalRecordsState>((set, get) => ({
   fetchMedicalPhotosByPatient: async (patientId: string) => {
     set({ loading: true })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Não autenticado')
 
       const { data, error } = await supabase
@@ -151,7 +151,7 @@ export const useMedicalRecords = create<MedicalRecordsState>((set, get) => ({
 
   uploadMedicalPhoto: async (patientId: string, file: File, formData: MedicalPhotoFormData) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Não autenticado')
 
       // Upload da foto para o Storage

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { SubscriptionPlan, Subscription, SubscriptionPayment } from '../types/subscription'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { sendSubscriptionConfirmation } from '@/services/email/resend.service'
 import { formatCurrency } from '@/utils/currency'
 
@@ -51,7 +51,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   fetchPlans: async () => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -83,7 +83,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   fetchSubscriptions: async () => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       // Buscar assinaturas
@@ -154,7 +154,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   addPlan: async (planData) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase
@@ -183,7 +183,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   updatePlan: async (id, planData) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const updateData: any = {}
@@ -214,7 +214,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   deletePlan: async (id) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase
@@ -244,7 +244,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   addSubscription: async (subscriptionData) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -310,7 +310,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   updateSubscription: async (id, subscriptionData) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const updateData: any = {}
@@ -342,7 +342,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   removeSubscription: async (id) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase
@@ -368,7 +368,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   addPayment: async (subscriptionId, paymentData, skipFetch = false) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const insertData: any = {
@@ -403,7 +403,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
   confirmPayment: async (subscriptionId, paymentId, paymentMethod) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const now = new Date().toISOString()

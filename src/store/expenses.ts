@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { Expense, ExpenseCategory, DEFAULT_EXPENSE_CATEGORIES } from '@/types/cash'
 
 interface ExpensesStore {
@@ -42,7 +42,7 @@ export const useExpenses = create<ExpensesStore>()(
       fetchCategories: async () => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -73,7 +73,7 @@ export const useExpenses = create<ExpensesStore>()(
 
       initializeDefaultCategories: async () => {
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) return
 
           // Verificar se já tem categorias
@@ -104,7 +104,7 @@ export const useExpenses = create<ExpensesStore>()(
       addCategory: async (categoryData) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -134,7 +134,7 @@ export const useExpenses = create<ExpensesStore>()(
       updateCategory: async (id, updates) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const updateData: any = { updated_at: new Date().toISOString() }
@@ -162,7 +162,7 @@ export const useExpenses = create<ExpensesStore>()(
       deleteCategory: async (id) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { error } = await supabase
@@ -186,7 +186,7 @@ export const useExpenses = create<ExpensesStore>()(
       fetchExpenses: async () => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -228,7 +228,7 @@ export const useExpenses = create<ExpensesStore>()(
       addExpense: async (expenseData) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -332,7 +332,7 @@ export const useExpenses = create<ExpensesStore>()(
       updateExpense: async (id, updates) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const updateData: any = { updated_at: new Date().toISOString() }
@@ -364,7 +364,7 @@ export const useExpenses = create<ExpensesStore>()(
       deleteExpense: async (id) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { error } = await supabase

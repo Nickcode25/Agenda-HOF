@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { Mentorship } from '@/types/mentorship'
 
 export type MentorshipsState = {
@@ -28,7 +28,7 @@ export const useMentorships = create<MentorshipsState>()((set, get) => ({
 
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         throw new Error('Usuário não autenticado')
       }
@@ -64,7 +64,7 @@ export const useMentorships = create<MentorshipsState>()((set, get) => ({
   add: async (m) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error} = await supabase

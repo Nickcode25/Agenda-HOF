@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import type { UserProfile, CreateStaffData } from '@/types/user'
 
 type UserProfileState = {
@@ -28,9 +28,9 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
     try {
       set({ loading: true, error: null })
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const user = await getCachedUser()
 
-      if (authError || !user) {
+      if (!user) {
         set({ currentProfile: null, loading: false })
         return
       }
@@ -89,8 +89,8 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
     try {
       set({ loading: true, error: null })
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError || !user) {
+      const user = await getCachedUser()
+      if (!user) {
         set({ staffMembers: [], loading: false })
         return
       }
@@ -127,7 +127,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
   createStaff: async (data: CreateStaffData) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Não autenticado')
 
       // Verificar se é owner

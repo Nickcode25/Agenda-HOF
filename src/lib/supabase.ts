@@ -1,7 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, User } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+// Cache do usuário para evitar múltiplas chamadas à API
+let cachedUser: User | null = null
+let cacheTimestamp = 0
+const CACHE_DURATION = 60000 // 1 minuto
 
 // Validação detalhada das variáveis de ambiente
 if (!supabaseUrl) {
@@ -31,4 +36,43 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       'Content-Type': 'application/json',
     },
   },
+})
+
+/**
+ * Obtém o usuário atual de forma otimizada usando cache
+ * Usa getSession() que é mais rápido que getUser()
+ */
+export async function getCachedUser(): Promise<User | null> {
+  const now = Date.now()
+
+  // Retornar cache se ainda válido
+  if (cachedUser && (now - cacheTimestamp) < CACHE_DURATION) {
+    return cachedUser
+  }
+
+  // Usar getSession que é mais rápido (não faz chamada de rede se já tem sessão local)
+  const { data: { session } } = await supabase.auth.getSession()
+
+  cachedUser = session?.user || null
+  cacheTimestamp = now
+
+  return cachedUser
+}
+
+/**
+ * Invalida o cache do usuário (chamar no logout)
+ */
+export function invalidateUserCache() {
+  cachedUser = null
+  cacheTimestamp = 0
+}
+
+// Listener para atualizar cache quando auth mudar
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    invalidateUserCache()
+  } else if (session?.user) {
+    cachedUser = session.user
+    cacheTimestamp = Date.now()
+  }
 })

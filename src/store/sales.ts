@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Professional, Sale, SaleItem, SalesReport } from '@/types/sales'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { removeCashMovementByReference } from './cash'
 
 interface SalesStore {
@@ -48,7 +48,7 @@ export const useSales = create<SalesStore>()(
       fetchSales: async () => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -87,7 +87,7 @@ export const useSales = create<SalesStore>()(
       fetchProfessionals: async () => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -129,7 +129,7 @@ export const useSales = create<SalesStore>()(
       addProfessional: async (professionalData) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -170,7 +170,7 @@ export const useSales = create<SalesStore>()(
       updateProfessional: async (id, updates) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const updateData: any = {}
@@ -211,7 +211,7 @@ export const useSales = create<SalesStore>()(
       removeProfessional: async (id) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { error } = await supabase
@@ -236,7 +236,7 @@ export const useSales = create<SalesStore>()(
       createSale: async (saleData) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -275,7 +275,7 @@ export const useSales = create<SalesStore>()(
       updateSale: async (id, updates) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const updateData: any = {}
@@ -312,7 +312,7 @@ export const useSales = create<SalesStore>()(
       removeSale: async (id) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           // Remover movimentações de caixa associadas a esta venda

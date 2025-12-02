@@ -19,6 +19,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile sidebar
   const [sidebarHovered, setSidebarHovered] = useState(false) // Desktop hover
   const [entityNames, setEntityNames] = useState<Record<string, string>>({})
+  const entityNamesCache = useState<Record<string, string>>(() => ({}))[0] // Cache persistente
   const { professionals } = useProfessionals()
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
@@ -51,8 +52,9 @@ export default function App() {
       const paths = location.pathname.split('/').filter(Boolean)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       const newEntityNames: Record<string, string> = {}
+      const idsToFetch: Array<{ id: string; path: string; table: string; column: string }> = []
 
-      // Identificar contexto e UUIDs
+      // Identificar contexto e UUIDs - verificar cache primeiro
       for (let i = 0; i < paths.length; i++) {
         const path = paths[i]
         const nextPath = paths[i + 1]
@@ -61,108 +63,56 @@ export default function App() {
 
         const id = nextPath
 
-        try {
-          let data = null
+        // Se já está no cache, usar o cache
+        if (entityNamesCache[id]) {
+          newEntityNames[id] = entityNamesCache[id]
+          continue
+        }
 
-          // Pacientes
-          if (path === 'pacientes') {
-            const result = await supabase
-              .from('patients')
-              .select('name')
-              .eq('id', id)
-              .single()
-            data = result.data
-            if (data) newEntityNames[id] = data.name
-          }
-
-          // Alunos
-          else if (path === 'alunos') {
-            const result = await supabase
-              .from('students')
-              .select('name')
-              .eq('id', id)
-              .single()
-            data = result.data
-            if (data) newEntityNames[id] = data.name
-          }
-
-          // Procedimentos
-          else if (path === 'procedimentos') {
-            const result = await supabase
-              .from('procedures')
-              .select('name')
-              .eq('id', id)
-              .single()
-            data = result.data
-            if (data) newEntityNames[id] = data.name
-          }
-
-          // Profissionais (da clínica)
-          else if (path === 'profissionais' && !paths.includes('vendas')) {
-            const result = await supabase
-              .from('professionals')
-              .select('name')
-              .eq('id', id)
-              .single()
-            data = result.data
-            if (data) newEntityNames[id] = data.name
-          }
-
-          // Profissionais de Vendas (dentro de vendas/profissionais/editar/ID)
-          else if (path === 'editar' && paths.includes('vendas') && paths.includes('profissionais')) {
-            const result = await supabase
-              .from('sales_professionals')
-              .select('name')
-              .eq('id', id)
-              .single()
-            data = result.data
-            if (data) newEntityNames[id] = data.name
-          }
-
-          // Planos de mensalidades
-          else if (path === 'plano') {
-            const result = await supabase
-              .from('subscription_plans')
-              .select('id, created_at')
-              .eq('id', id)
-              .single()
-            if (result.data) {
-              const date = new Date(result.data.created_at).toLocaleDateString('pt-BR')
-              newEntityNames[id] = `Sessão ${date}`
-            }
-          }
-
-          // Planos de mensalidade (criados pelos usuários)
-          else if (path === 'planos') {
-            const result = await supabase
-              .from('user_monthly_plans')
-              .select('name')
-              .eq('id', id)
-              .single()
-            data = result.data
-            if (data) newEntityNames[id] = data.name
-          }
-
-          // Cursos
-          else if (path === 'cursos') {
-            const result = await supabase
-              .from('courses')
-              .select('name')
-              .eq('id', id)
-              .single()
-            data = result.data
-            if (data) newEntityNames[id] = data.name
-          }
-        } catch (err) {
-          console.error(`Erro ao buscar nome para ${path}/${id}:`, err)
+        // Definir qual tabela buscar
+        if (path === 'pacientes') {
+          idsToFetch.push({ id, path, table: 'patients', column: 'name' })
+        } else if (path === 'alunos') {
+          idsToFetch.push({ id, path, table: 'students', column: 'name' })
+        } else if (path === 'procedimentos') {
+          idsToFetch.push({ id, path, table: 'procedures', column: 'name' })
+        } else if (path === 'profissionais' && !paths.includes('vendas')) {
+          idsToFetch.push({ id, path, table: 'professionals', column: 'name' })
+        } else if (path === 'editar' && paths.includes('vendas') && paths.includes('profissionais')) {
+          idsToFetch.push({ id, path, table: 'sales_professionals', column: 'name' })
+        } else if (path === 'planos') {
+          idsToFetch.push({ id, path, table: 'user_monthly_plans', column: 'name' })
+        } else if (path === 'cursos') {
+          idsToFetch.push({ id, path, table: 'courses', column: 'name' })
         }
       }
 
-      setEntityNames(newEntityNames)
+      // Buscar apenas os que não estão em cache (em paralelo)
+      if (idsToFetch.length > 0) {
+        const results = await Promise.allSettled(
+          idsToFetch.map(async ({ id, table, column }) => {
+            const { data } = await supabase
+              .from(table)
+              .select(column)
+              .eq('id', id)
+              .single()
+            return { id, name: (data as Record<string, string> | null)?.[column] }
+          })
+        )
+
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value.name) {
+            newEntityNames[result.value.id] = result.value.name
+            entityNamesCache[result.value.id] = result.value.name // Atualizar cache
+          }
+        })
+      }
+
+      setEntityNames(prev => ({ ...prev, ...newEntityNames }))
     }
 
     fetchEntityNames()
-  }, [location.pathname])
+  }, [location.pathname, entityNamesCache])
 
   const handleLogout = async () => {
     await signOut()

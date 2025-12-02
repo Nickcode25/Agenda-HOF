@@ -1,7 +1,7 @@
 import { useEffect, useState, createContext, useContext, useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/store/auth'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { Lock } from 'lucide-react'
 import UpgradeOverlay from './UpgradeOverlay'
 
@@ -122,14 +122,14 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
 
       try {
         // Buscar todas as informações em paralelo (mais rápido)
-        const [subscriptionResult, userDataResult, courtesyResult] = await Promise.all([
+        const [subscriptionResult, cachedUser, courtesyResult] = await Promise.all([
           supabase
             .from('user_subscriptions')
             .select('*')
             .eq('user_id', user.id)
             .eq('status', 'active')
             .maybeSingle(),
-          supabase.auth.getUser(),
+          getCachedUser(),
           supabase
             .from('courtesy_users')
             .select('*')
@@ -139,7 +139,6 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         ])
 
         const subscription = subscriptionResult.data
-        const userData = userDataResult.data
         const courtesyUser = courtesyResult.data
 
         // 1. Verificar se usuário tem assinatura ativa
@@ -170,12 +169,12 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         }
 
         // 2. Se não tem subscription, verificar período de trial (7 dias grátis)
-        let trialEndDate = userData.user?.user_metadata?.trial_end_date
+        let trialEndDate = cachedUser?.user_metadata?.trial_end_date
 
         // Se não tem trial_end_date definido, calcular com base na data de criação da conta
         // Isso permite que usuários cadastrados manualmente também tenham trial
-        if (!trialEndDate && userData.user?.created_at) {
-          const createdAt = new Date(userData.user.created_at)
+        if (!trialEndDate && cachedUser?.created_at) {
+          const createdAt = new Date(cachedUser.created_at)
           const calculatedTrialEnd = new Date(createdAt)
           calculatedTrialEnd.setDate(calculatedTrialEnd.getDate() + 7) // 7 dias de trial
           trialEndDate = calculatedTrialEnd.toISOString()

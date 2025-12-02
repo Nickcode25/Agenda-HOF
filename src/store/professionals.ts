@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { Professional } from '@/types/professional'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 
 export type ProfessionalsState = {
   professionals: Professional[]
@@ -28,11 +28,10 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
 
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         throw new Error('Usuário não autenticado')
       }
-
 
       const { data, error } = await supabase
         .from('professionals')
@@ -74,7 +73,7 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
   add: async (p) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -119,7 +118,7 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
   update: async (id, patch) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const updateData: any = {}
@@ -157,7 +156,7 @@ export const useProfessionals = create<ProfessionalsState>((set, get) => ({
   remove: async (id) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase

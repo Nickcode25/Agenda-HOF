@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import type { Notification, NotificationPreferences, NotificationType, NotificationPriority } from '@/types/notification'
 
 type NotificationsState = {
@@ -47,7 +47,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
   fetchNotifications: async () => {
     try {
       set({ loading: true, error: null })
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -83,7 +83,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   fetchPreferences: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -141,7 +141,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   markAllAsRead: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase
@@ -193,7 +193,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   createNotification: async (data) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase
@@ -220,7 +220,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   updatePreferences: async (prefs) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const updateData: any = {}
@@ -291,7 +291,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
     console.log('🔔 Verificando lembretes automáticos...')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) return
 
       // 1. Verificar estoque baixo
@@ -310,7 +310,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   checkLowStock: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) return
 
       const prefs = get().preferences
@@ -347,7 +347,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   checkOverduePayments: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) return
 
       // Buscar vendas com pagamento pendente e vencidas
@@ -395,7 +395,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   checkPlannedProcedures: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) return
 
       // Buscar pacientes com procedimentos planejados não realizados há mais de 7 dias

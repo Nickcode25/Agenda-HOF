@@ -38,7 +38,7 @@ const SaleSkeleton = memo(() => (
 ))
 
 export default function SalesList() {
-  const { sales, professionals, getTotalRevenue, getTotalProfit, fetchProfessionals, fetchSales, removeSale, loading } = useSales()
+  const { sales, fetchProfessionals, fetchSales, removeSale, loading } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const { hasActiveSubscription } = useSubscription()
@@ -71,8 +71,6 @@ export default function SalesList() {
     return result.sort((a, b) => new Date(b.soldAt || b.createdAt).getTime() - new Date(a.soldAt || a.createdAt).getTime())
   }, [sales, searchQuery, statusFilter])
 
-  const totalRevenue = getTotalRevenue()
-  const totalProfit = getTotalProfit()
 
   const getPaymentStatusConfig = (status: string) => {
     switch (status) {
@@ -103,18 +101,88 @@ export default function SalesList() {
   // Verificar se está carregando inicialmente
   const isInitialLoading = loading && !hasFetched
 
-  // Calcula estatísticas adicionais
+  // Calcula estatísticas reais baseadas nas vendas
   const stats = useMemo(() => {
-    const lastMonthRevenue = totalRevenue * 0.9 // Simulação
-    const lastWeekSales = Math.floor(sales.length * 0.95) // Simulação
-    const revenueGrowth = lastMonthRevenue > 0 ? ((totalRevenue - lastMonthRevenue) / lastMonthRevenue * 100).toFixed(0) : 0
-    const salesGrowth = lastWeekSales > 0 ? ((sales.length - lastWeekSales) / lastWeekSales * 100).toFixed(0) : 0
+    const now = new Date()
+
+    // Início e fim do mês atual
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+
+    // Início e fim do mês anterior
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+
+    // Início e fim da semana atual (domingo a sábado)
+    const currentWeekStart = new Date(now)
+    currentWeekStart.setDate(now.getDate() - now.getDay())
+    currentWeekStart.setHours(0, 0, 0, 0)
+    const currentWeekEnd = new Date(currentWeekStart)
+    currentWeekEnd.setDate(currentWeekStart.getDate() + 6)
+    currentWeekEnd.setHours(23, 59, 59, 999)
+
+    // Início e fim da semana anterior
+    const lastWeekStart = new Date(currentWeekStart)
+    lastWeekStart.setDate(currentWeekStart.getDate() - 7)
+    const lastWeekEnd = new Date(currentWeekStart)
+    lastWeekEnd.setDate(currentWeekStart.getDate() - 1)
+    lastWeekEnd.setHours(23, 59, 59, 999)
+
+    // Filtrar vendas por período
+    const getSaleDate = (sale: typeof sales[0]) => new Date(sale.soldAt || sale.createdAt)
+
+    const currentMonthSales = sales.filter(sale => {
+      const date = getSaleDate(sale)
+      return date >= currentMonthStart && date <= currentMonthEnd
+    })
+
+    const lastMonthSales = sales.filter(sale => {
+      const date = getSaleDate(sale)
+      return date >= lastMonthStart && date <= lastMonthEnd
+    })
+
+    const currentWeekSalesCount = sales.filter(sale => {
+      const date = getSaleDate(sale)
+      return date >= currentWeekStart && date <= currentWeekEnd
+    }).length
+
+    const lastWeekSalesCount = sales.filter(sale => {
+      const date = getSaleDate(sale)
+      return date >= lastWeekStart && date <= lastWeekEnd
+    }).length
+
+    // Calcular faturamento e lucro por período
+    const currentMonthRevenue = currentMonthSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+    const lastMonthRevenue = lastMonthSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+
+    const currentMonthProfit = currentMonthSales.reduce((sum, sale) => sum + sale.totalProfit, 0)
+    const lastMonthProfit = lastMonthSales.reduce((sum, sale) => sum + sale.totalProfit, 0)
+
+    // Calcular crescimento
+    const revenueGrowth = lastMonthRevenue > 0
+      ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100)
+      : currentMonthRevenue > 0 ? 100 : 0
+
+    const profitGrowth = lastMonthProfit > 0
+      ? ((currentMonthProfit - lastMonthProfit) / lastMonthProfit * 100)
+      : currentMonthProfit > 0 ? 100 : 0
+
+    const salesGrowth = lastWeekSalesCount > 0
+      ? ((currentWeekSalesCount - lastWeekSalesCount) / lastWeekSalesCount * 100)
+      : currentWeekSalesCount > 0 ? 100 : 0
 
     return {
-      revenueGrowth: Number(revenueGrowth),
-      salesGrowth: Number(salesGrowth)
+      currentMonthRevenue,
+      lastMonthRevenue,
+      currentMonthProfit,
+      lastMonthProfit,
+      currentWeekSalesCount,
+      lastWeekSalesCount,
+      revenueGrowth: Math.round(revenueGrowth),
+      profitGrowth: Math.round(profitGrowth),
+      salesGrowth: Math.round(salesGrowth)
     }
-  }, [totalRevenue, sales.length])
+  }, [sales])
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 relative">
@@ -159,48 +227,51 @@ export default function SalesList() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          {/* Faturamento Total */}
+          {/* Faturamento do Mês */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-orange-600">Faturamento Total</span>
+              <span className="text-sm font-medium text-orange-600">Faturamento do Mês</span>
               <DollarSign size={18} className="text-orange-500" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(totalRevenue)}</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.currentMonthRevenue)}</div>
             <div className="flex items-center gap-1 text-sm">
               <TrendingUp size={14} className={stats.revenueGrowth >= 0 ? 'text-green-500' : 'text-red-500'} />
               <span className={stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
                 {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth}%
               </span>
-              <span className="text-gray-500">(vs mês anterior)</span>
+              <span className="text-gray-500">vs {formatCurrency(stats.lastMonthRevenue)}</span>
             </div>
           </div>
 
-          {/* Lucro Total */}
+          {/* Lucro do Mês */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-green-600">Lucro Total</span>
+              <span className="text-sm font-medium text-green-600">Lucro do Mês</span>
               <BarChart3 size={18} className="text-green-500" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(totalProfit)}</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.currentMonthProfit)}</div>
             <div className="flex items-center gap-1 text-sm">
-              <BarChart3 size={14} className="text-green-500" />
-              <span className="text-green-600">Trending</span>
+              <TrendingUp size={14} className={stats.profitGrowth >= 0 ? 'text-green-500' : 'text-red-500'} />
+              <span className={stats.profitGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
+                {stats.profitGrowth >= 0 ? '+' : ''}{stats.profitGrowth}%
+              </span>
+              <span className="text-gray-500">vs {formatCurrency(stats.lastMonthProfit)}</span>
             </div>
           </div>
 
-          {/* Total de Vendas */}
+          {/* Vendas da Semana */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-blue-600">Total de Vendas</span>
+              <span className="text-sm font-medium text-blue-600">Vendas da Semana</span>
               <ShoppingCart size={18} className="text-blue-500" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{sales.length}</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{stats.currentWeekSalesCount}</div>
             <div className="flex items-center gap-1 text-sm">
               <TrendingUp size={14} className={stats.salesGrowth >= 0 ? 'text-green-500' : 'text-red-500'} />
               <span className={stats.salesGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
                 {stats.salesGrowth >= 0 ? '+' : ''}{stats.salesGrowth}%
               </span>
-              <span className="text-gray-500">(vs semana anterior)</span>
+              <span className="text-gray-500">vs {stats.lastWeekSalesCount} semana anterior</span>
             </div>
           </div>
         </div>

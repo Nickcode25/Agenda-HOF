@@ -29,7 +29,7 @@ export default function PatientDetail() {
   const [procedureQuantity, setProcedureQuantity] = useState(1)
   const [quantityInput, setQuantityInput] = useState('1')
   const [paymentType, setPaymentType] = useState<'cash' | 'installment'>('cash')
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'pix' | 'card'>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'pix' | 'card' | 'credit_card_1x' | 'debit_card'>('cash')
   const [installments, setInstallments] = useState(1)
   const [customValue, setCustomValue] = useState('')
   const [isEditingValue, setIsEditingValue] = useState(false)
@@ -505,6 +505,8 @@ export default function PatientDetail() {
                                     {formatCurrency(split.amount)} {
                                       split.method === 'cash' ? 'Dinheiro' :
                                       split.method === 'pix' ? 'PIX' :
+                                      split.method === 'credit_card_1x' ? 'Crédito 1x' :
+                                      split.method === 'debit_card' ? 'Débito' :
                                       split.installments && split.installments > 1 ? `Cartão ${split.installments}x` : 'Cartão à Vista'
                                     }
                                   </span>
@@ -515,6 +517,8 @@ export default function PatientDetail() {
                                 <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded font-medium text-xs">
                                   {proc.paymentMethod === 'cash' ? 'Dinheiro' :
                                    proc.paymentMethod === 'pix' ? 'PIX' :
+                                   proc.paymentMethod === 'credit_card_1x' ? 'Crédito 1x (à vista)' :
+                                   proc.paymentMethod === 'debit_card' ? 'Débito (à vista)' :
                                    proc.installments > 1 ? `Cartão ${proc.installments}x` : 'Cartão à Vista'}
                                 </span>
                               </div>

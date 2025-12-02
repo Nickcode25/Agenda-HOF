@@ -111,21 +111,6 @@ export default function ProfessionalForm() {
       return
     }
 
-    if (!cpf.trim()) {
-      showToast('CPF é obrigatório', 'error')
-      return
-    }
-
-    if (!phone.trim()) {
-      showToast('Telefone é obrigatório', 'error')
-      return
-    }
-
-    if (!specialty) {
-      showToast('Especialidade é obrigatória', 'error')
-      return
-    }
-
     setLoading(true)
     try {
       const professionalData = {
@@ -162,7 +147,7 @@ export default function ProfessionalForm() {
     }
   }
 
-  const canSubmit = name.trim() && cpf.trim() && phone.trim() && specialty
+  const canSubmit = name.trim()
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8">
@@ -227,14 +212,13 @@ export default function ProfessionalForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CPF <span className="text-red-500">*</span>
+                  CPF
                 </label>
                 <input
                   value={cpf}
                   onChange={(e) => setCpf(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
                   maxLength={14}
-                  required
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Apenas números</p>
@@ -242,14 +226,13 @@ export default function ProfessionalForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone <span className="text-red-500">*</span>
+                  Telefone
                 </label>
                 <input
                   value={phone}
                   onChange={(e) => setPhone(formatPhone(e.target.value))}
                   placeholder="(11) 99999-9999"
                   maxLength={15}
-                  required
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Celular ou fixo</p>
@@ -268,7 +251,7 @@ export default function ProfessionalForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Especialidade <span className="text-red-500">*</span>
+                  Especialidade
                 </label>
                 <SearchableSelect
                   options={[
@@ -328,7 +311,7 @@ export default function ProfessionalForm() {
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CEP <span className="text-red-500">*</span>
+                  CEP
                 </label>
                 <div className="relative">
                   <input

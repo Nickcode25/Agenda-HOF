@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { RecurringBlock } from '@/types/recurring'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { getErrorMessage } from '@/types/errors'
 
 export type RecurringState = {
@@ -24,7 +24,7 @@ export const useRecurring = create<RecurringState>((set, get) => ({
   fetchBlocks: async () => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -54,7 +54,7 @@ export const useRecurring = create<RecurringState>((set, get) => ({
   addBlock: async (block) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -84,7 +84,7 @@ export const useRecurring = create<RecurringState>((set, get) => ({
   updateBlock: async (id, patch) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const updateData: any = {}
@@ -112,7 +112,7 @@ export const useRecurring = create<RecurringState>((set, get) => ({
   removeBlock: async (id) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase

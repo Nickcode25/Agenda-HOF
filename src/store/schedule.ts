@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Appointment, WaitlistItem } from '@/types/schedule'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { useStock } from './stock'
 import { getErrorMessage } from '@/types/errors'
 
@@ -39,7 +39,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   fetchAppointments: async () => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -76,7 +76,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   fetchAppointmentsByDateRange: async (startDate: string, endDate: string) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       // Validar parâmetros antes de usar
@@ -120,7 +120,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   addAppointment: async (a) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const insertData = {
@@ -160,7 +160,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   updateAppointment: async (id, patch) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const updateData: any = {}
@@ -196,7 +196,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   removeAppointment: async (id) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase
@@ -274,7 +274,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   fetchWaitlist: async () => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -302,7 +302,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   addWait: async (w) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -330,7 +330,7 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   removeWait: async (id) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { error } = await supabase

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { Student } from '@/types/student'
 
 export type StudentsState = {
@@ -30,7 +30,7 @@ export const useStudents = create<StudentsState>()((set, get) => ({
 
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         throw new Error('Usuário não autenticado')
       }
@@ -78,7 +78,7 @@ export const useStudents = create<StudentsState>()((set, get) => ({
 
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
       const { data, error } = await supabase
@@ -118,7 +118,7 @@ export const useStudents = create<StudentsState>()((set, get) => ({
   add: async (s) => {
     set({ loading: true, error: null })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         console.error('❌ [STUDENTS] Usuário não autenticado')
         throw new Error('Usuário não autenticado')

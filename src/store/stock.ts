@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { StockItem, StockMovement, StockAlert } from '@/types/stock'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 
 interface StockStore {
   items: StockItem[]
@@ -54,7 +54,7 @@ export const useStock = create<StockStore>()(
 
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) {
             console.error('❌ [STOCK] Usuário não autenticado')
             throw new Error('Usuário não autenticado')
@@ -101,7 +101,7 @@ export const useStock = create<StockStore>()(
       addItem: async (itemData) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -137,7 +137,7 @@ export const useStock = create<StockStore>()(
       updateItem: async (id, updates) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const updateData: any = {}
@@ -186,7 +186,7 @@ export const useStock = create<StockStore>()(
       removeItem: async (id) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { error } = await supabase

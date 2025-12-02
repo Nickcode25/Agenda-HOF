@@ -14,7 +14,7 @@ interface AddProcedureModalProps {
   procedureQuantity: number
   quantityInput: string
   paymentType: 'cash' | 'installment'
-  paymentMethod: 'cash' | 'pix' | 'card'
+  paymentMethod: 'cash' | 'pix' | 'card' | 'credit_card_1x' | 'debit_card'
   installments: number
   customValue: string
   isEditingValue: boolean
@@ -26,7 +26,7 @@ interface AddProcedureModalProps {
   onQuantityChange: (value: string) => void
   onQuantityBlur: () => void
   onPaymentTypeChange: (type: 'cash' | 'installment') => void
-  onPaymentMethodChange: (method: 'cash' | 'pix' | 'card') => void
+  onPaymentMethodChange: (method: 'cash' | 'pix' | 'card' | 'credit_card_1x' | 'debit_card') => void
   onInstallmentsChange: (value: number) => void
   onCustomValueFocus: () => void
   onCustomValueChange: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -244,10 +244,12 @@ export default function AddProcedureModal({
                       <SearchableSelect
                         options={[
                           { value: 'cash', label: 'Dinheiro' },
-                          { value: 'pix', label: 'PIX' }
+                          { value: 'pix', label: 'PIX' },
+                          { value: 'credit_card_1x', label: 'Cartão de Crédito 1x (à vista)' },
+                          { value: 'debit_card', label: 'Cartão de Débito (à vista)' }
                         ]}
                         value={paymentMethod}
-                        onChange={(value) => onPaymentMethodChange(value as 'cash' | 'pix' | 'card')}
+                        onChange={(value) => onPaymentMethodChange(value as 'cash' | 'pix' | 'card' | 'credit_card_1x' | 'debit_card')}
                         placeholder="Selecione o método"
                       />
                     </div>

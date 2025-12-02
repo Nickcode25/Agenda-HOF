@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { useNotifications } from '@/store/notifications'
 
 /**
@@ -6,7 +6,7 @@ import { useNotifications } from '@/store/notifications'
  */
 export async function checkUpcomingAppointments() {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCachedUser()
     if (!user) return
 
     // Buscar preferências
@@ -66,7 +66,7 @@ export async function checkUpcomingAppointments() {
  */
 export async function checkLowStock() {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCachedUser()
     if (!user) return
 
     // Buscar preferências

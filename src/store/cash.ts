@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 import { CashRegister, CashSession, CashMovement } from '@/types/cash'
 
 interface CashStore {
@@ -54,7 +54,7 @@ export const useCash = create<CashStore>()(
       fetchRegisters: async () => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -84,7 +84,7 @@ export const useCash = create<CashStore>()(
       addRegister: async (registerData) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { data, error } = await supabase
@@ -112,7 +112,7 @@ export const useCash = create<CashStore>()(
       updateRegister: async (id, updates) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const updateData: any = { updated_at: new Date().toISOString() }
@@ -138,7 +138,7 @@ export const useCash = create<CashStore>()(
       deleteRegister: async (id) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const { error } = await supabase
@@ -166,7 +166,7 @@ export const useCash = create<CashStore>()(
       fetchSessions: async (registerId) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           let query = supabase
@@ -206,7 +206,7 @@ export const useCash = create<CashStore>()(
 
       getCurrentSession: async (registerId) => {
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) return null
 
           const { data, error } = await supabase
@@ -254,7 +254,7 @@ export const useCash = create<CashStore>()(
         try {
           console.log('[CASH] openSession iniciado', { registerId, openingBalance })
 
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
           console.log('[CASH] Usuário autenticado:', user.id)
 
@@ -271,8 +271,8 @@ export const useCash = create<CashStore>()(
           console.log('[CASH] Caixa encontrado:', register.name)
 
           // Buscar dados do usuário para opened_by
-          const { data: userData } = await supabase.auth.getUser()
-          const userName = userData.user?.user_metadata?.name || userData.user?.email || 'Usuário'
+          const cachedUser = await getCachedUser()
+          const userName = cachedUser?.user_metadata?.name || cachedUser?.email || 'Usuário'
 
           console.log('[CASH] Inserindo sessão no banco...', {
             user_id: user.id,
@@ -318,7 +318,7 @@ export const useCash = create<CashStore>()(
       closeSession: async (sessionId, closingBalance) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           console.log('[CASH] Fechando sessão:', sessionId)
@@ -425,7 +425,7 @@ export const useCash = create<CashStore>()(
       fetchMovements: async (sessionId) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           let query = supabase
@@ -465,7 +465,7 @@ export const useCash = create<CashStore>()(
       addMovement: async (movementData) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           // Buscar a sessão para obter o cash_register_id
@@ -533,7 +533,7 @@ export const useCash = create<CashStore>()(
       updateMovement: async (id, updates) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const movement = get().getMovement(id)
@@ -565,7 +565,7 @@ export const useCash = create<CashStore>()(
       deleteMovement: async (id) => {
         set({ loading: true, error: null })
         try {
-          const { data: { user } } = await supabase.auth.getUser()
+          const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
           const movement = get().getMovement(id)
@@ -653,7 +653,7 @@ export const autoRegisterCashMovement = async (params: {
   description: string
 }) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCachedUser()
     if (!user) return
 
     // Buscar todas as sessões abertas (pode ter vários caixas abertos)
@@ -703,7 +703,7 @@ export const autoRegisterCashMovement = async (params: {
 // ============================================
 export const removeCashMovementByReference = async (referenceId: string) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCachedUser()
     if (!user) return
 
     // Buscar movimentações com este referenceId

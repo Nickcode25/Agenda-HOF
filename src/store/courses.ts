@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
+import { supabase, getCachedUser } from '@/lib/supabase'
 
 export interface Course {
   id: string
@@ -48,7 +48,7 @@ export const useCourses = create<CoursesState>((set, get) => ({
   fetchAll: async () => {
     set({ loading: true })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         set({ loading: false })
         return
@@ -73,7 +73,7 @@ export const useCourses = create<CoursesState>((set, get) => ({
   add: async (courseInput) => {
     set({ loading: true })
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCachedUser()
       if (!user) {
         set({ loading: false })
         return null
