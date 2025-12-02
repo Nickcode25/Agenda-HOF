@@ -28,6 +28,7 @@ import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
+import DateInput from '@/components/DateInput'
 
 type DetailModalType = 'procedures' | 'sales' | 'subscriptions' | 'courses' | 'other' | 'expenses' | 'total' | null
 
@@ -40,6 +41,7 @@ type TransactionItem = {
   description: string
   category: 'procedure' | 'sale' | 'subscription' | 'course' | 'expense' | 'other'
   createdAt: string
+  sortTimestamp: string // Timestamp completo para ordenação precisa (ISO com hora)
   paymentMethod: PaymentMethod
   paymentType?: 'cash' | 'installment'
   installments?: number
@@ -220,6 +222,8 @@ export default function FinancialReport() {
       completedProcedures.forEach(proc => {
         // Usar performedAt como data principal, com fallback para completedAt
         const procedureDate = proc.performedAt || proc.completedAt!
+        // Usar createdAt real do procedimento para ordenação precisa
+        const sortTimestamp = proc.createdAt || procedureDate
 
         // Se tem múltiplas formas de pagamento, criar entrada para cada uma
         if (proc.paymentSplits && proc.paymentSplits.length > 0) {
@@ -230,6 +234,7 @@ export default function FinancialReport() {
               description: `${proc.procedureName} - ${patient.name}`,
               category: 'procedure',
               createdAt: procedureDate,
+              sortTimestamp,
               paymentMethod: split.method as PaymentMethod,
               paymentType: split.installments && split.installments > 1 ? 'installment' : 'cash',
               installments: split.installments,
@@ -245,6 +250,7 @@ export default function FinancialReport() {
             description: `${proc.procedureName} - ${patient.name}`,
             category: 'procedure',
             createdAt: procedureDate,
+            sortTimestamp,
             paymentMethod: proc.paymentMethod as PaymentMethod,
             paymentType: proc.paymentType,
             installments: proc.installments,
@@ -277,6 +283,7 @@ export default function FinancialReport() {
         description: `Venda - ${sale.professionalName || 'Sem profissional'}`,
         category: 'sale' as const,
         createdAt: saleDate,
+        sortTimestamp: sale.createdAt, // Usar createdAt real para ordenação precisa
         paymentMethod: sale.paymentMethod as PaymentMethod,
         professionalName: sale.professionalName,
         items: sale.items.map(item => ({
@@ -303,6 +310,7 @@ export default function FinancialReport() {
       description: `Mensalidade - ${payment.patient_name || 'Paciente'} (${payment.plan_name || 'Plano'})`,
       category: 'subscription' as const,
       createdAt: payment.paid_at!,
+      sortTimestamp: payment.created_at || payment.paid_at!, // Usar created_at real para ordenação precisa
       paymentMethod: (payment.payment_method || 'pix') as PaymentMethod,
       patientName: payment.patient_name
     }))
@@ -330,6 +338,7 @@ export default function FinancialReport() {
         description: `${isEnrollmentFee ? 'Inscrição' : 'Matrícula'} - ${enrollment.course_name || 'Curso'}`,
         category: 'course' as const,
         createdAt: enrollment.enrollment_date,
+        sortTimestamp: enrollment.created_at || enrollment.enrollment_date, // Usar created_at real para ordenação precisa
         paymentMethod: 'pix' as PaymentMethod, // Default
         patientName: undefined,
         studentId: enrollment.student_id
@@ -360,7 +369,8 @@ export default function FinancialReport() {
       amount: -expense.amount,
       description: expense.description,
       category: 'expense' as const,
-      createdAt: expense.createdAt, // Usar data de criação real para ordenação
+      createdAt: expense.paidAt || expense.dueDate || expense.createdAt, // Data para exibição
+      sortTimestamp: expense.createdAt, // Usar data de criação real para ordenação precisa
       paymentMethod: expense.paymentMethod,
       expenseCategory: expense.categoryName
     }))
@@ -578,19 +588,17 @@ export default function FinancialReport() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Data Inicial</label>
-                <input
-                  type="date"
+                <DateInput
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={setStartDate}
                   className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Data Final</label>
-                <input
-                  type="date"
+                <DateInput
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={setEndDate}
                   className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>
@@ -917,7 +925,7 @@ export default function FinancialReport() {
           {totalTransactions > 0 || expenseItems.length > 0 ? (
             <div className="space-y-3">
               {[...procedureRevenue.items, ...salesRevenue.items, ...subscriptionRevenue.items, ...coursesRevenue.items, ...otherRevenue.items, ...expenseItems]
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .sort((a, b) => new Date(b.sortTimestamp).getTime() - new Date(a.sortTimestamp).getTime())
                 .map((item) => {
                   const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
                     procedure: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
@@ -1091,7 +1099,7 @@ export default function FinancialReport() {
                       </div>
                       <div className="space-y-3">
                         {items
-                          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                          .sort((a, b) => new Date(b.sortTimestamp).getTime() - new Date(a.sortTimestamp).getTime())
                           .map((item) => (
                             <div key={item.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
                               <div className="flex items-center justify-between gap-4">

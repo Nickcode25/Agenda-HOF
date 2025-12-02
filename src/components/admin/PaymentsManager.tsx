@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe, parseLocalDate } from '@/utils/dateHelpers'
 import { useConfirm } from '@/hooks/useConfirm'
+import DateInput from '@/components/DateInput'
 
 interface Payment {
   id: string
@@ -234,17 +235,15 @@ export default function PaymentsManager() {
         </div>
 
         <div className="flex gap-2">
-          <input
-            type="date"
+          <DateInput
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={setStartDate}
             className="px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Data inicial"
           />
-          <input
-            type="date"
+          <DateInput
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={setEndDate}
             className="px-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Data final"
           />

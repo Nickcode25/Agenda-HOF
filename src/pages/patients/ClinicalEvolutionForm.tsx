@@ -6,6 +6,7 @@ import { useProfessionals } from '@/store/professionals'
 import { ArrowLeft, Save, Activity, Calendar, User, FileText, Stethoscope, AlertCircle } from 'lucide-react'
 import type { EvolutionType } from '@/types/medicalRecords'
 import { useToast } from '@/hooks/useToast'
+import DateInput from '@/components/DateInput'
 
 export default function ClinicalEvolutionForm() {
   const { id } = useParams<{ id: string }>()
@@ -130,10 +131,9 @@ export default function ClinicalEvolutionForm() {
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data *</label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={setDate}
                     required
                     className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
@@ -351,10 +351,9 @@ export default function ClinicalEvolutionForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Próxima Consulta</label>
-                <input
-                  type="date"
+                <DateInput
                   value={nextAppointmentDate}
-                  onChange={(e) => setNextAppointmentDate(e.target.value)}
+                  onChange={setNextAppointmentDate}
                   className="w-full max-w-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
               </div>

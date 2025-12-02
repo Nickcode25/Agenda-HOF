@@ -5,6 +5,7 @@ import { Upload, X, Save, User, Phone as PhoneIcon, Home, FileText } from 'lucid
 import { useToast } from '@/hooks/useToast'
 import { getViaCepUrl } from '@/utils/env'
 import { validatePhotoFile, fileToBase64 } from '@/utils/upload'
+import DateInput from '@/components/DateInput'
 
 export default function PatientForm() {
   const add = usePatients(s => s.add)
@@ -299,10 +300,9 @@ export default function PatientForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
-                <input
-                  type="date"
+                <DateInput
                   value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
+                  onChange={setBirthDate}
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Opcional</p>

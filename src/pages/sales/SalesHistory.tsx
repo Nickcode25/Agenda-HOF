@@ -7,6 +7,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import DateInput from '@/components/DateInput'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
 
@@ -295,12 +296,11 @@ export default function SalesHistory() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data Inicial</label>
                 <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
+                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                  <DateInput
                     value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value)
+                    onChange={(value) => {
+                      setStartDate(value)
                       if (periodFilter !== 'custom') setPeriodFilter('custom')
                     }}
                     className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
@@ -310,12 +310,11 @@ export default function SalesHistory() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data Final</label>
                 <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
+                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                  <DateInput
                     value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value)
+                    onChange={(value) => {
+                      setEndDate(value)
                       if (periodFilter !== 'custom') setPeriodFilter('custom')
                     }}
                     className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"

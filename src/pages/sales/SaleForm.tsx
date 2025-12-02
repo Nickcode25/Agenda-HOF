@@ -7,6 +7,7 @@ import { SaleItem } from '@/types/sales'
 import { Save, Plus, Trash2, User, ShoppingCart, CreditCard, Package } from 'lucide-react'
 import SearchableSelect from '@/components/SearchableSelect'
 import { useToast } from '@/hooks/useToast'
+import DateInput from '@/components/DateInput'
 
 export default function SaleForm() {
   const { id } = useParams<{ id: string }>()
@@ -402,10 +403,9 @@ export default function SaleForm() {
             <div className="p-6">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Data da Venda</label>
-                <input
-                  type="date"
+                <DateInput
                   value={soldAt}
-                  onChange={(e) => setSoldAt(e.target.value)}
+                  onChange={setSoldAt}
                   className="w-full md:w-1/3 bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
                 />
                 <p className="text-xs text-gray-500 mt-1">Informe a data em que a venda foi realizada para o relatório financeiro</p>
@@ -444,10 +444,9 @@ export default function SaleForm() {
                 {paymentStatus === 'pending' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Data de Vencimento</label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
+                      onChange={setDueDate}
                       className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
                     />
                   </div>

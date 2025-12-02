@@ -7,6 +7,7 @@ import { Receipt, Save, Calendar, DollarSign, Tag, Repeat } from 'lucide-react'
 import type { RecurringFrequency } from '@/types/cash'
 import { useToast } from '@/hooks/useToast'
 import SearchableSelect from '@/components/SearchableSelect'
+import DateInput from '@/components/DateInput'
 
 export default function ExpenseForm() {
   const navigate = useNavigate()
@@ -228,10 +229,9 @@ export default function ExpenseForm() {
               <Calendar size={16} className="inline mr-2" />
               Data de Vencimento
             </label>
-            <input
-              type="date"
+            <DateInput
               value={formData.dueDate}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, dueDate: value })}
               className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
             />
           </div>
@@ -241,10 +241,9 @@ export default function ExpenseForm() {
               <Calendar size={16} className="inline mr-2" />
               Data de Pagamento {formData.paymentStatus === 'paid' && '*'}
             </label>
-            <input
-              type="date"
+            <DateInput
               value={formData.paidAt}
-              onChange={(e) => setFormData({ ...formData, paidAt: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, paidAt: value })}
               required={formData.paymentStatus === 'paid'}
               className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
             />
@@ -309,10 +308,9 @@ export default function ExpenseForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Data de Término (opcional)
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={formData.recurringEndDate}
-                  onChange={(e) => setFormData({ ...formData, recurringEndDate: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, recurringEndDate: value })}
                   className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
                 />
               </div>

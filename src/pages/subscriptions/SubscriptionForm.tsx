@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Calendar, CreditCard, User, FileText } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
+import DateInput from '@/components/DateInput'
 
 export default function SubscriptionForm() {
   const navigate = useNavigate()
@@ -162,12 +163,11 @@ export default function SubscriptionForm() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data de Início *</label>
                 <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="date"
+                  <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={18} />
+                  <DateInput
                     required
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={setStartDate}
                     className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-12 pr-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
                 </div>

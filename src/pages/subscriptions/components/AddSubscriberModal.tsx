@@ -1,6 +1,7 @@
 import { X, Search, CheckCircle, Users, Calendar, CreditCard, DollarSign, UserPlus, CalendarClock } from 'lucide-react'
 import { Patient } from '@/types/patient'
 import CurrencyInput from '@/components/CurrencyInput'
+import DateInput from '@/components/DateInput'
 
 interface AddSubscriberModalProps {
   isOpen: boolean
@@ -202,11 +203,10 @@ export default function AddSubscriberModal({
                         Data do Pagamento
                       </span>
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       required
                       value={paymentDate}
-                      onChange={(e) => onPaymentDateChange(e.target.value)}
+                      onChange={onPaymentDateChange}
                       className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                     <p className="text-xs text-gray-500 mt-1">Quando o pagamento foi realizado</p>
@@ -219,11 +219,10 @@ export default function AddSubscriberModal({
                         Data de Início da Assinatura
                       </span>
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       required
                       value={subscriptionStartDate}
-                      onChange={(e) => onSubscriptionStartDateChange(e.target.value)}
+                      onChange={onSubscriptionStartDateChange}
                       className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                     <p className="text-xs text-gray-500 mt-1">Quando a assinatura começa a valer</p>

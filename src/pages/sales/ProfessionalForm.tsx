@@ -4,6 +4,7 @@ import { useSales } from '@/store/sales'
 import { Save, User, Home, FileText } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import SearchableSelect from '@/components/SearchableSelect'
+import DateInput from '@/components/DateInput'
 
 export default function ProfessionalForm() {
   const { addProfessional } = useSales()
@@ -240,10 +241,9 @@ export default function ProfessionalForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
-                <input
-                  type="date"
+                <DateInput
                   value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
+                  onChange={setBirthDate}
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Opcional</p>

@@ -6,6 +6,7 @@ import { StockItem } from '@/types/stock'
 import { PaymentSplit } from '@/types/patient'
 import { formatCurrency, parseCurrency } from '@/utils/currency'
 import SearchableSelect from '@/components/SearchableSelect'
+import DateInput from '@/components/DateInput'
 
 interface AddProcedureModalProps {
   isOpen: boolean
@@ -200,10 +201,9 @@ export default function AddProcedureModal({
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Data de Realização</label>
-                <input
-                  type="date"
+                <DateInput
                   value={performedAt}
-                  onChange={(e) => onPerformedAtChange(e.target.value)}
+                  onChange={onPerformedAtChange}
                   className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
                 <p className="text-xs text-gray-500 mt-1">Informe a data em que o procedimento foi realizado para o relatório financeiro</p>

@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useStudents } from '@/store/students'
 import { Save, User, Phone as PhoneIcon, FileText } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import DateInput from '@/components/DateInput'
 
 // Mask functions
 function maskCPF(value: string) {
@@ -162,10 +163,9 @@ export default function StudentEdit() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
-                <input
-                  type="date"
+                <DateInput
                   value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
+                  onChange={setBirthDate}
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                 />
               </div>

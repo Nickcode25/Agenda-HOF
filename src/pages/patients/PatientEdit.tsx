@@ -4,6 +4,7 @@ import { usePatients } from '@/store/patients'
 import { Save, ArrowLeft, User, MapPin, FileText, Camera, Phone, Calendar, CreditCard, Heart } from 'lucide-react'
 import FileInput from '@/components/FileInput'
 import { useToast } from '@/hooks/useToast'
+import DateInput from '@/components/DateInput'
 
 export default function PatientEdit() {
   const { id } = useParams()
@@ -284,10 +285,9 @@ export default function PatientEdit() {
                         Data de Nascimento
                       </span>
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={birthDate}
-                      onChange={(e) => setBirthDate(e.target.value)}
+                      onChange={setBirthDate}
                       className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                   </div>

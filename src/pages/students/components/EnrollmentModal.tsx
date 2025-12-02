@@ -5,6 +5,7 @@ import { Enrollment } from '@/store/enrollments'
 import { formatCurrency } from '@/utils/currency'
 import { getTodayInSaoPaulo } from '@/utils/timezone'
 import SearchableSelect from '@/components/SearchableSelect'
+import DateInput from '@/components/DateInput'
 
 type PaymentSplit = {
   method: 'cash' | 'pix' | 'card'
@@ -264,10 +265,9 @@ export default function EnrollmentModal({ show, courseType = 'enrollment', enrol
               <Calendar size={14} className="inline mr-1" />
               Data da Matrícula
             </label>
-            <input
-              type="date"
+            <DateInput
               value={enrollmentDate}
-              onChange={(e) => setEnrollmentDate(e.target.value)}
+              onChange={setEnrollmentDate}
               className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>

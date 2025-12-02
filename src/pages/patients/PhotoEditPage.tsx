@@ -5,6 +5,7 @@ import { useMedicalRecords } from '@/store/medicalRecords'
 import { ArrowLeft, Save, Image as ImageIcon, FileText } from 'lucide-react'
 import type { PhotoType } from '@/types/medicalRecords'
 import { useToast } from '@/hooks/useToast'
+import DateInput from '@/components/DateInput'
 
 export default function PhotoEditPage() {
   const { id, photoId } = useParams<{ id: string; photoId: string }>()
@@ -182,10 +183,9 @@ export default function PhotoEditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={takenAt}
-                    onChange={(e) => setTakenAt(e.target.value)}
+                    onChange={setTakenAt}
                     className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
