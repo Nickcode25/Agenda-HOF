@@ -74,12 +74,12 @@ export default function SalesHistory() {
 
     if (startDate && endDate) {
       result = result.filter(sale => {
-        const saleDateStr = sale.createdAt.split('T')[0]
+        const saleDateStr = (sale.soldAt || sale.createdAt).split('T')[0]
         return saleDateStr >= startDate && saleDateStr <= endDate
       })
     }
 
-    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    return result.sort((a, b) => new Date(b.soldAt || b.createdAt).getTime() - new Date(a.soldAt || a.createdAt).getTime())
   }, [sales, searchQuery, statusFilter, startDate, endDate])
 
   const periodTotals = useMemo(() => {
@@ -147,7 +147,7 @@ export default function SalesHistory() {
       const statusLabel = getPaymentStatusConfig(sale.paymentStatus).label
 
       return [
-        formatDateTimeBRSafe(sale.createdAt),
+        formatDateTimeBRSafe(sale.soldAt || sale.createdAt),
         sale.professionalName,
         products,
         getPaymentMethodLabel(sale.paymentMethod),
@@ -413,7 +413,7 @@ export default function SalesHistory() {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5 text-sm text-gray-600">
                           <Calendar size={14} />
-                          <span>{formatDateTimeBRSafe(sale.createdAt)}</span>
+                          <span>{formatDateTimeBRSafe(sale.soldAt || sale.createdAt)}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-sm">
                           <DollarSign size={14} className="text-green-500" />

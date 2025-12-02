@@ -68,7 +68,7 @@ export default function SalesList() {
       result = result.filter(sale => sale.paymentStatus === statusFilter)
     }
 
-    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    return result.sort((a, b) => new Date(b.soldAt || b.createdAt).getTime() - new Date(a.soldAt || a.createdAt).getTime())
   }, [sales, searchQuery, statusFilter])
 
   const totalRevenue = getTotalRevenue()
@@ -305,7 +305,7 @@ export default function SalesList() {
                         <div className="flex items-center gap-1.5">
                           <Calendar size={14} className="text-orange-600" />
                           <span className="text-orange-700 font-medium">Data:</span>
-                          <span className="text-gray-900">{formatDateTimeBRSafe(sale.createdAt)}</span>
+                          <span className="text-gray-900">{formatDateTimeBRSafe(sale.soldAt || sale.createdAt)}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <DollarSign size={14} className="text-green-600" />
@@ -316,7 +316,7 @@ export default function SalesList() {
                       <div className="flex items-center gap-1.5">
                         <Clock size={14} className="text-gray-600" />
                         <span className="text-gray-700 font-medium">Hora:</span>
-                        <span className="text-gray-900">{formatInSaoPaulo(sale.createdAt, 'HH:mm')}</span>
+                        <span className="text-gray-900">{formatInSaoPaulo(sale.soldAt || sale.createdAt, 'HH:mm')}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 mt-2">

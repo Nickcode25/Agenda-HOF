@@ -139,8 +139,10 @@ export default function SaleForm() {
       profit: item.profit
     }))
 
-    // Converter a data para ISO string com horário do meio-dia para evitar problemas de timezone
-    const soldAtISO = soldAt ? new Date(soldAt + 'T12:00:00').toISOString() : new Date().toISOString()
+    // Converter a data para ISO string mantendo o horário atual
+    const now = new Date()
+    const currentTime = now.toTimeString().split(' ')[0] // HH:MM:SS
+    const soldAtISO = soldAt ? new Date(soldAt + 'T' + currentTime).toISOString() : now.toISOString()
 
     try {
       if (isEditing && id) {
