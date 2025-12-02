@@ -193,10 +193,10 @@ export default function SalesList() {
       return date >= lastMonthStart && date <= lastMonthEnd
     })
 
-    const currentWeekSalesCount = sales.filter(sale => {
+    const currentWeekSales = sales.filter(sale => {
       const date = getSaleDate(sale)
       return date >= currentWeekStart && date <= currentWeekEnd
-    }).length
+    })
 
     const lastWeekSalesCount = sales.filter(sale => {
       const date = getSaleDate(sale)
@@ -210,6 +210,24 @@ export default function SalesList() {
     const currentMonthProfit = currentMonthSales.reduce((sum, sale) => sum + sale.totalProfit, 0)
     const lastMonthProfit = lastMonthSales.reduce((sum, sale) => sum + sale.totalProfit, 0)
 
+    // Vendas pendentes (todas)
+    const pendingSales = sales.filter(sale => sale.paymentStatus === 'pending')
+    const pendingTotal = pendingSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+
+    // Vendas pagas no mês
+    const paidThisMonth = currentMonthSales.filter(sale => sale.paymentStatus === 'paid')
+    const paidThisMonthTotal = paidThisMonth.reduce((sum, sale) => sum + sale.totalAmount, 0)
+
+    // Ticket médio do mês
+    const avgTicket = currentMonthSales.length > 0
+      ? currentMonthRevenue / currentMonthSales.length
+      : 0
+
+    // Margem de lucro do mês
+    const profitMargin = currentMonthRevenue > 0
+      ? (currentMonthProfit / currentMonthRevenue) * 100
+      : 0
+
     // Calcular crescimento
     const revenueGrowth = lastMonthRevenue > 0
       ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100)
@@ -220,19 +238,33 @@ export default function SalesList() {
       : currentMonthProfit > 0 ? 100 : 0
 
     const salesGrowth = lastWeekSalesCount > 0
-      ? ((currentWeekSalesCount - lastWeekSalesCount) / lastWeekSalesCount * 100)
-      : currentWeekSalesCount > 0 ? 100 : 0
+      ? ((currentWeekSales.length - lastWeekSalesCount) / lastWeekSalesCount * 100)
+      : currentWeekSales.length > 0 ? 100 : 0
+
+    // Total de itens vendidos no mês
+    const totalItemsSold = currentMonthSales.reduce((sum, sale) =>
+      sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+    )
 
     return {
       currentMonthRevenue,
       lastMonthRevenue,
       currentMonthProfit,
       lastMonthProfit,
-      currentWeekSalesCount,
+      currentWeekSalesCount: currentWeekSales.length,
+      currentWeekRevenue: currentWeekSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
       lastWeekSalesCount,
       revenueGrowth: Math.round(revenueGrowth),
       profitGrowth: Math.round(profitGrowth),
-      salesGrowth: Math.round(salesGrowth)
+      salesGrowth: Math.round(salesGrowth),
+      pendingCount: pendingSales.length,
+      pendingTotal,
+      paidThisMonthCount: paidThisMonth.length,
+      paidThisMonthTotal,
+      avgTicket,
+      profitMargin: Math.round(profitMargin),
+      totalItemsSold,
+      currentMonthSalesCount: currentMonthSales.length
     }
   }, [sales])
 
@@ -277,8 +309,8 @@ export default function SalesList() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Stats Cards - Linha 1 */}
+        <div className="grid gap-4 md:grid-cols-4">
           {/* Faturamento do Mês */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500">
             <div className="flex items-center justify-between mb-3">
@@ -291,7 +323,7 @@ export default function SalesList() {
               <span className={stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
                 {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth}%
               </span>
-              <span className="text-gray-500">vs {formatCurrency(stats.lastMonthRevenue)}</span>
+              <span className="text-gray-500">vs mês anterior</span>
             </div>
           </div>
 
@@ -303,14 +335,40 @@ export default function SalesList() {
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.currentMonthProfit)}</div>
             <div className="flex items-center gap-1 text-sm">
-              <TrendingUp size={14} className={stats.profitGrowth >= 0 ? 'text-green-500' : 'text-red-500'} />
-              <span className={stats.profitGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
-                {stats.profitGrowth >= 0 ? '+' : ''}{stats.profitGrowth}%
-              </span>
-              <span className="text-gray-500">vs {formatCurrency(stats.lastMonthProfit)}</span>
+              <span className="text-gray-500">Margem: {stats.profitMargin}%</span>
             </div>
           </div>
 
+          {/* Vendas Pendentes */}
+          <div className={`bg-white rounded-xl border border-gray-200 p-5 border-l-4 ${stats.pendingCount > 0 ? 'border-l-yellow-500' : 'border-l-gray-300'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <span className={`text-sm font-medium ${stats.pendingCount > 0 ? 'text-yellow-600' : 'text-gray-500'}`}>Pendentes</span>
+              <Clock size={18} className={stats.pendingCount > 0 ? 'text-yellow-500' : 'text-gray-400'} />
+            </div>
+            <div className={`text-2xl font-bold mb-1 ${stats.pendingCount > 0 ? 'text-yellow-600' : 'text-gray-900'}`}>
+              {formatCurrency(stats.pendingTotal)}
+            </div>
+            <div className="text-sm text-gray-500">
+              {stats.pendingCount > 0
+                ? `${stats.pendingCount} ${stats.pendingCount === 1 ? 'venda pendente' : 'vendas pendentes'}`
+                : 'Nenhuma venda pendente'
+              }
+            </div>
+          </div>
+
+          {/* Ticket Médio */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-purple-600">Ticket Médio</span>
+              <BarChart3 size={18} className="text-purple-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.avgTicket)}</div>
+            <div className="text-sm text-gray-500">Por venda este mês</div>
+          </div>
+        </div>
+
+        {/* Stats Cards - Linha 2 */}
+        <div className="grid gap-4 md:grid-cols-4">
           {/* Vendas da Semana */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
             <div className="flex items-center justify-between mb-3">
@@ -323,8 +381,38 @@ export default function SalesList() {
               <span className={stats.salesGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
                 {stats.salesGrowth >= 0 ? '+' : ''}{stats.salesGrowth}%
               </span>
-              <span className="text-gray-500">vs {stats.lastWeekSalesCount} semana anterior</span>
+              <span className="text-gray-500">vs semana anterior</span>
             </div>
+          </div>
+
+          {/* Receita da Semana */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-cyan-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-cyan-600">Receita da Semana</span>
+              <DollarSign size={18} className="text-cyan-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.currentWeekRevenue)}</div>
+            <div className="text-sm text-gray-500">{stats.currentWeekSalesCount} {stats.currentWeekSalesCount === 1 ? 'venda' : 'vendas'}</div>
+          </div>
+
+          {/* Vendas do Mês */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-indigo-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-indigo-600">Vendas do Mês</span>
+              <ShoppingCart size={18} className="text-indigo-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{stats.currentMonthSalesCount}</div>
+            <div className="text-sm text-gray-500">{stats.totalItemsSold} {stats.totalItemsSold === 1 ? 'item vendido' : 'itens vendidos'}</div>
+          </div>
+
+          {/* Pagas no Mês */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-emerald-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-emerald-600">Recebido no Mês</span>
+              <CheckCircle size={18} className="text-emerald-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.paidThisMonthTotal)}</div>
+            <div className="text-sm text-gray-500">{stats.paidThisMonthCount} {stats.paidThisMonthCount === 1 ? 'venda paga' : 'vendas pagas'}</div>
           </div>
         </div>
 

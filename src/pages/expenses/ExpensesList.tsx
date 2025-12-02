@@ -155,6 +155,69 @@ export default function ExpensesList() {
   const totalExpenses = getTotalExpenses(startDate, endDate)
   const byCategory = getExpensesByCategory()
 
+  // Estatísticas melhoradas
+  const stats = useMemo(() => {
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+
+    // Despesas do período filtrado
+    const periodExpenses = expenses.filter(e => {
+      const expenseDate = (e.paidAt || e.dueDate)?.split('T')[0]
+      return expenseDate && expenseDate >= startDate && expenseDate <= endDate
+    })
+
+    // Total pago no período
+    const paidInPeriod = periodExpenses
+      .filter(e => e.paymentStatus === 'paid')
+      .reduce((sum, e) => sum + e.amount, 0)
+
+    // Total pendente no período
+    const pendingInPeriod = periodExpenses
+      .filter(e => e.paymentStatus === 'pending')
+      .reduce((sum, e) => sum + e.amount, 0)
+
+    // Quantidade pendente
+    const pendingCount = periodExpenses.filter(e => e.paymentStatus === 'pending').length
+
+    // Despesas vencidas (todas, não só do período)
+    const overdueExpenses = expenses.filter(e => {
+      if (e.paymentStatus === 'paid') return false
+      const dueDate = e.dueDate?.split('T')[0]
+      return dueDate && dueDate < today
+    })
+    const overdueTotal = overdueExpenses.reduce((sum, e) => sum + e.amount, 0)
+    const overdueCount = overdueExpenses.length
+
+    // Média mensal (últimos 12 meses)
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+    const lastYearExpenses = expenses.filter(e => {
+      if (e.paymentStatus !== 'paid') return false
+      const paidDate = e.paidAt?.split('T')[0]
+      return paidDate && new Date(paidDate) >= twelveMonthsAgo
+    })
+    const totalLastYear = lastYearExpenses.reduce((sum, e) => sum + e.amount, 0)
+    const monthlyAverage = totalLastYear / 12
+
+    // Despesas recorrentes
+    const recurringCount = expenses.filter(e => e.isRecurring).length
+    const recurringTotal = expenses
+      .filter(e => e.isRecurring && e.paymentStatus !== 'paid')
+      .reduce((sum, e) => sum + e.amount, 0)
+
+    return {
+      paidInPeriod,
+      pendingInPeriod,
+      pendingCount,
+      overdueTotal,
+      overdueCount,
+      monthlyAverage,
+      recurringCount,
+      recurringTotal,
+      periodCount: periodExpenses.length,
+      paidCount: periodExpenses.filter(e => e.paymentStatus === 'paid').length
+    }
+  }, [expenses, startDate, endDate])
+
   const getPaymentStatusConfig = (status: string) => {
     switch (status) {
       case 'paid':
@@ -233,37 +296,92 @@ export default function ExpensesList() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {/* Total de Despesas */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500">
+        {/* Stats Cards - Linha 1 */}
+        <div className="grid gap-4 md:grid-cols-4">
+          {/* Pagas no Período */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-red-600">Total de Despesas</span>
-              <TrendingDown size={18} className="text-red-500" />
+              <span className="text-sm font-medium text-green-600">Pagas no Período</span>
+              <CheckCircle size={18} className="text-green-500" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(totalExpenses)}</div>
-            <div className="text-sm text-gray-500">Despesas pagas</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.paidInPeriod)}</div>
+            <div className="text-sm text-gray-500">{stats.paidCount} {stats.paidCount === 1 ? 'despesa' : 'despesas'}</div>
           </div>
 
-          {/* Total de Lançamentos */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-orange-500">
+          {/* Pendentes no Período */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-yellow-500">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-orange-600">Total de Lançamentos</span>
-              <Receipt size={18} className="text-orange-500" />
+              <span className="text-sm font-medium text-yellow-600">Pendentes no Período</span>
+              <Clock size={18} className="text-yellow-500" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{expenses.length}</div>
-            <div className="text-sm text-gray-500">Despesas cadastradas</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.pendingInPeriod)}</div>
+            <div className="text-sm text-gray-500">{stats.pendingCount} {stats.pendingCount === 1 ? 'despesa' : 'despesas'}</div>
+          </div>
+
+          {/* Vencidas */}
+          <div className={`bg-white rounded-xl border border-gray-200 p-5 border-l-4 ${stats.overdueCount > 0 ? 'border-l-red-500' : 'border-l-gray-300'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <span className={`text-sm font-medium ${stats.overdueCount > 0 ? 'text-red-600' : 'text-gray-500'}`}>Vencidas</span>
+              <AlertCircle size={18} className={stats.overdueCount > 0 ? 'text-red-500' : 'text-gray-400'} />
+            </div>
+            <div className={`text-2xl font-bold mb-1 ${stats.overdueCount > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              {formatCurrency(stats.overdueTotal)}
+            </div>
+            <div className="text-sm text-gray-500">
+              {stats.overdueCount > 0
+                ? `${stats.overdueCount} ${stats.overdueCount === 1 ? 'despesa atrasada' : 'despesas atrasadas'}`
+                : 'Nenhuma despesa vencida'
+              }
+            </div>
+          </div>
+
+          {/* Média Mensal */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-blue-600">Média Mensal</span>
+              <TrendingDown size={18} className="text-blue-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.monthlyAverage)}</div>
+            <div className="text-sm text-gray-500">Últimos 12 meses</div>
+          </div>
+        </div>
+
+        {/* Stats Cards - Linha 2 */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Total no Período */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-red-600">Total no Período</span>
+              <Receipt size={18} className="text-red-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(stats.paidInPeriod + stats.pendingInPeriod)}</div>
+            <div className="text-sm text-gray-500">{stats.periodCount} {stats.periodCount === 1 ? 'lançamento' : 'lançamentos'}</div>
+          </div>
+
+          {/* Recorrentes */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-purple-600">Despesas Recorrentes</span>
+              <Receipt size={18} className="text-purple-500" />
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{stats.recurringCount}</div>
+            <div className="text-sm text-gray-500">
+              {stats.recurringTotal > 0
+                ? `${formatCurrency(stats.recurringTotal)} pendentes`
+                : 'Todas em dia'
+              }
+            </div>
           </div>
 
           {/* Categorias */}
           <Link to="/app/despesas/categorias">
-            <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 hover:shadow-md transition-all cursor-pointer">
+            <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-orange-500 hover:shadow-md transition-all cursor-pointer h-full">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-purple-600">Categorias</span>
-                <Tag size={18} className="text-purple-500" />
+                <span className="text-sm font-medium text-orange-600">Categorias</span>
+                <Tag size={18} className="text-orange-500" />
               </div>
               <div className="text-2xl font-bold text-gray-900 mb-1">{categories.filter(c => c.isActive).length}</div>
-              <div className="text-sm text-gray-500">Ativas</div>
+              <div className="text-sm text-gray-500">Categorias ativas</div>
             </div>
           </Link>
         </div>
