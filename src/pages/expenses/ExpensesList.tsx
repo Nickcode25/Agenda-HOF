@@ -5,7 +5,7 @@ import { formatCurrency } from '@/utils/currency'
 import { formatDateBR } from '@/utils/dateHelpers'
 import {
   Plus, Receipt, Search, Calendar, DollarSign, TrendingDown,
-  CheckCircle, Clock, AlertCircle, Edit, Trash2, Tag, Filter
+  CheckCircle, Clock, AlertCircle, Edit, Trash2, Tag, Filter, X
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -13,6 +13,9 @@ import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import SearchableSelect from '@/components/SearchableSelect'
+
+// Tipos para o modal de detalhes
+type DetailModalType = 'paidPeriod' | 'pendingPeriod' | 'overdue' | 'monthlyAvg' | 'totalPeriod' | 'recurring' | null
 
 // Skeleton loader para despesas
 const ExpenseSkeleton = memo(() => (
@@ -68,6 +71,7 @@ export default function ExpensesList() {
   const [startDate, setStartDate] = useState(today)
   const [endDate, setEndDate] = useState(today)
   const [hasFetched, setHasFetched] = useState(false)
+  const [detailModal, setDetailModal] = useState<DetailModalType>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -204,6 +208,11 @@ export default function ExpensesList() {
       .filter(e => e.isRecurring && e.paymentStatus !== 'paid')
       .reduce((sum, e) => sum + e.amount, 0)
 
+    // Listas para o modal
+    const paidList = periodExpenses.filter(e => e.paymentStatus === 'paid')
+    const pendingList = periodExpenses.filter(e => e.paymentStatus === 'pending')
+    const recurringList = expenses.filter(e => e.isRecurring)
+
     return {
       paidInPeriod,
       pendingInPeriod,
@@ -214,7 +223,13 @@ export default function ExpensesList() {
       recurringCount,
       recurringTotal,
       periodCount: periodExpenses.length,
-      paidCount: periodExpenses.filter(e => e.paymentStatus === 'paid').length
+      paidCount: paidList.length,
+      // Listas para o modal
+      paidList,
+      pendingList,
+      overdueList: overdueExpenses,
+      periodList: periodExpenses,
+      recurringList
     }
   }, [expenses, startDate, endDate])
 
@@ -299,7 +314,10 @@ export default function ExpensesList() {
         {/* Stats Cards - Linha 1 */}
         <div className="grid gap-4 md:grid-cols-4">
           {/* Pagas no Período */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
+          <div
+            onClick={() => setDetailModal('paidPeriod')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500 cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-green-600">Pagas no Período</span>
               <CheckCircle size={18} className="text-green-500" />
@@ -309,7 +327,10 @@ export default function ExpensesList() {
           </div>
 
           {/* Pendentes no Período */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-yellow-500">
+          <div
+            onClick={() => setDetailModal('pendingPeriod')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-yellow-500 cursor-pointer hover:shadow-md hover:border-yellow-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-yellow-600">Pendentes no Período</span>
               <Clock size={18} className="text-yellow-500" />
@@ -319,7 +340,10 @@ export default function ExpensesList() {
           </div>
 
           {/* Vencidas */}
-          <div className={`bg-white rounded-xl border border-gray-200 p-5 border-l-4 ${stats.overdueCount > 0 ? 'border-l-red-500' : 'border-l-gray-300'}`}>
+          <div
+            onClick={() => setDetailModal('overdue')}
+            className={`bg-white rounded-xl border border-gray-200 p-5 border-l-4 cursor-pointer hover:shadow-md transition-all ${stats.overdueCount > 0 ? 'border-l-red-500 hover:border-red-300' : 'border-l-gray-300 hover:border-gray-400'}`}
+          >
             <div className="flex items-center justify-between mb-3">
               <span className={`text-sm font-medium ${stats.overdueCount > 0 ? 'text-red-600' : 'text-gray-500'}`}>Vencidas</span>
               <AlertCircle size={18} className={stats.overdueCount > 0 ? 'text-red-500' : 'text-gray-400'} />
@@ -336,7 +360,10 @@ export default function ExpensesList() {
           </div>
 
           {/* Média Mensal */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+          <div
+            onClick={() => setDetailModal('monthlyAvg')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-blue-600">Média Mensal</span>
               <TrendingDown size={18} className="text-blue-500" />
@@ -349,7 +376,10 @@ export default function ExpensesList() {
         {/* Stats Cards - Linha 2 */}
         <div className="grid gap-4 md:grid-cols-3">
           {/* Total no Período */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500">
+          <div
+            onClick={() => setDetailModal('totalPeriod')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500 cursor-pointer hover:shadow-md hover:border-red-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-red-600">Total no Período</span>
               <Receipt size={18} className="text-red-500" />
@@ -359,7 +389,10 @@ export default function ExpensesList() {
           </div>
 
           {/* Recorrentes */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+          <div
+            onClick={() => setDetailModal('recurring')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-purple-600">Despesas Recorrentes</span>
               <Receipt size={18} className="text-purple-500" />
@@ -615,6 +648,160 @@ export default function ExpensesList() {
 
     {/* Modal de Confirmação */}
     <ConfirmDialog />
+
+    {/* Modal de Detalhes dos Cards */}
+    {detailModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDetailModal(null)}>
+        <div
+          className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header do Modal */}
+          <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-lg font-bold text-gray-900">
+              {detailModal === 'paidPeriod' && 'Despesas Pagas no Período'}
+              {detailModal === 'pendingPeriod' && 'Despesas Pendentes no Período'}
+              {detailModal === 'overdue' && 'Despesas Vencidas'}
+              {detailModal === 'monthlyAvg' && 'Média Mensal de Despesas'}
+              {detailModal === 'totalPeriod' && 'Total de Despesas no Período'}
+              {detailModal === 'recurring' && 'Despesas Recorrentes'}
+            </h2>
+            <button
+              onClick={() => setDetailModal(null)}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <X size={20} className="text-gray-600" />
+            </button>
+          </div>
+
+          {/* Conteúdo do Modal */}
+          <div className="p-5 overflow-y-auto max-h-[60vh]">
+            {/* Resumo */}
+            <div className="bg-red-50 rounded-xl p-4 mb-4 border border-red-200">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm text-red-600 font-medium">Total</span>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {detailModal === 'paidPeriod' && formatCurrency(stats.paidInPeriod)}
+                    {detailModal === 'pendingPeriod' && formatCurrency(stats.pendingInPeriod)}
+                    {detailModal === 'overdue' && formatCurrency(stats.overdueTotal)}
+                    {detailModal === 'monthlyAvg' && formatCurrency(stats.monthlyAverage)}
+                    {detailModal === 'totalPeriod' && formatCurrency(stats.paidInPeriod + stats.pendingInPeriod)}
+                    {detailModal === 'recurring' && formatCurrency(stats.recurringTotal)}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm text-red-600 font-medium">Quantidade</span>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {detailModal === 'paidPeriod' && `${stats.paidCount} despesas`}
+                    {detailModal === 'pendingPeriod' && `${stats.pendingCount} despesas`}
+                    {detailModal === 'overdue' && `${stats.overdueCount} despesas`}
+                    {detailModal === 'monthlyAvg' && 'Últimos 12 meses'}
+                    {detailModal === 'totalPeriod' && `${stats.periodCount} despesas`}
+                    {detailModal === 'recurring' && `${stats.recurringCount} despesas`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de despesas */}
+            <div className="space-y-3">
+              {(() => {
+                let expensesList: typeof expenses = []
+                if (detailModal === 'paidPeriod') {
+                  expensesList = stats.paidList
+                } else if (detailModal === 'pendingPeriod') {
+                  expensesList = stats.pendingList
+                } else if (detailModal === 'overdue') {
+                  expensesList = stats.overdueList
+                } else if (detailModal === 'totalPeriod') {
+                  expensesList = stats.periodList
+                } else if (detailModal === 'recurring') {
+                  expensesList = stats.recurringList
+                } else if (detailModal === 'monthlyAvg') {
+                  // Para média mensal, mostrar todas as despesas pagas
+                  expensesList = stats.paidList
+                }
+
+                if (expensesList.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-gray-500">
+                      <Receipt size={40} className="mx-auto mb-3 text-gray-300" />
+                      <p>Nenhuma despesa encontrada</p>
+                    </div>
+                  )
+                }
+
+                return expensesList.map((expense) => {
+                  const category = categories.find(c => c.id === expense.categoryId)
+                  return (
+                    <Link
+                      key={expense.id}
+                      to={`/app/despesas/editar/${expense.id}`}
+                      className="block bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-red-300 hover:bg-red-50/30 transition-all"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {category && (
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: `${category.color}20` }}
+                            >
+                              <Tag size={14} style={{ color: category.color }} />
+                            </div>
+                          )}
+                          <div>
+                            <span className="font-semibold text-gray-900">{expense.description}</span>
+                            <span className="text-xs text-gray-500 block">{expense.categoryName}</span>
+                          </div>
+                        </div>
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          expense.paymentStatus === 'paid'
+                            ? 'bg-green-100 text-green-700'
+                            : expense.paymentStatus === 'pending'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {expense.paymentStatus === 'paid' ? 'Pago' : expense.paymentStatus === 'pending' ? 'Pendente' : 'Vencido'}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="text-gray-500">
+                          <Calendar size={14} className="inline mr-1" />
+                          {expense.paidAt
+                            ? `Pago em ${formatDateBR(expense.paidAt.split('T')[0])}`
+                            : expense.dueDate
+                            ? `Vence em ${formatDateBR(expense.dueDate.split('T')[0])}`
+                            : 'Sem data'}
+                        </div>
+                        <span className="text-red-600 font-semibold">
+                          {formatCurrency(expense.amount)}
+                        </span>
+                      </div>
+                      {expense.isRecurring && (
+                        <div className="mt-2">
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Recorrente</span>
+                        </div>
+                      )}
+                    </Link>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+
+          {/* Footer do Modal */}
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
+            <button
+              onClick={() => setDetailModal(null)}
+              className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   )
 }

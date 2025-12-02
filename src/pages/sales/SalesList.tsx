@@ -2,13 +2,16 @@ import { Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect, useCallback, memo } from 'react'
-import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit, BarChart3, Filter } from 'lucide-react'
+import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit, BarChart3, Filter, X } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
-import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import { formatDateTimeBRSafe, formatDateBR } from '@/utils/dateHelpers'
 import { formatInSaoPaulo } from '@/utils/timezone'
 import { useConfirm } from '@/hooks/useConfirm'
+
+// Tipos para o modal de detalhes
+type DetailModalType = 'monthRevenue' | 'monthProfit' | 'pending' | 'avgTicket' | 'weekSales' | 'weekRevenue' | 'monthSales' | 'paidMonth' | null
 
 // Skeleton loader para vendas
 const SaleSkeleton = memo(() => (
@@ -46,6 +49,7 @@ export default function SalesList() {
   const { hasActiveSubscription } = useSubscription()
   const { confirm, ConfirmDialog } = useConfirm()
   const [hasFetched, setHasFetched] = useState(false)
+  const [detailModal, setDetailModal] = useState<DetailModalType>(null)
 
   // Filtros de período
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
@@ -264,7 +268,12 @@ export default function SalesList() {
       avgTicket,
       profitMargin: Math.round(profitMargin),
       totalItemsSold,
-      currentMonthSalesCount: currentMonthSales.length
+      currentMonthSalesCount: currentMonthSales.length,
+      // Listas para o modal de detalhes
+      currentMonthSalesList: currentMonthSales,
+      currentWeekSalesList: currentWeekSales,
+      pendingSalesList: pendingSales,
+      paidThisMonthList: paidThisMonth
     }
   }, [sales])
 
@@ -312,7 +321,10 @@ export default function SalesList() {
         {/* Stats Cards - Linha 1 */}
         <div className="grid gap-4 md:grid-cols-4">
           {/* Faturamento do Mês */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500">
+          <div
+            onClick={() => setDetailModal('monthRevenue')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-amber-500 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-orange-600">Faturamento do Mês</span>
               <DollarSign size={18} className="text-orange-500" />
@@ -328,7 +340,10 @@ export default function SalesList() {
           </div>
 
           {/* Lucro do Mês */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
+          <div
+            onClick={() => setDetailModal('monthProfit')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500 cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-green-600">Lucro do Mês</span>
               <BarChart3 size={18} className="text-green-500" />
@@ -340,7 +355,10 @@ export default function SalesList() {
           </div>
 
           {/* Vendas Pendentes */}
-          <div className={`bg-white rounded-xl border border-gray-200 p-5 border-l-4 ${stats.pendingCount > 0 ? 'border-l-yellow-500' : 'border-l-gray-300'}`}>
+          <div
+            onClick={() => setDetailModal('pending')}
+            className={`bg-white rounded-xl border border-gray-200 p-5 border-l-4 cursor-pointer hover:shadow-md transition-all ${stats.pendingCount > 0 ? 'border-l-yellow-500 hover:border-yellow-300' : 'border-l-gray-300 hover:border-gray-400'}`}
+          >
             <div className="flex items-center justify-between mb-3">
               <span className={`text-sm font-medium ${stats.pendingCount > 0 ? 'text-yellow-600' : 'text-gray-500'}`}>Pendentes</span>
               <Clock size={18} className={stats.pendingCount > 0 ? 'text-yellow-500' : 'text-gray-400'} />
@@ -357,7 +375,10 @@ export default function SalesList() {
           </div>
 
           {/* Ticket Médio */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+          <div
+            onClick={() => setDetailModal('avgTicket')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-purple-600">Ticket Médio</span>
               <BarChart3 size={18} className="text-purple-500" />
@@ -370,7 +391,10 @@ export default function SalesList() {
         {/* Stats Cards - Linha 2 */}
         <div className="grid gap-4 md:grid-cols-4">
           {/* Vendas da Semana */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+          <div
+            onClick={() => setDetailModal('weekSales')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-blue-600">Vendas da Semana</span>
               <ShoppingCart size={18} className="text-blue-500" />
@@ -386,7 +410,10 @@ export default function SalesList() {
           </div>
 
           {/* Receita da Semana */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-cyan-500">
+          <div
+            onClick={() => setDetailModal('weekRevenue')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-cyan-500 cursor-pointer hover:shadow-md hover:border-cyan-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-cyan-600">Receita da Semana</span>
               <DollarSign size={18} className="text-cyan-500" />
@@ -396,7 +423,10 @@ export default function SalesList() {
           </div>
 
           {/* Vendas do Mês */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-indigo-500">
+          <div
+            onClick={() => setDetailModal('monthSales')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-indigo-500 cursor-pointer hover:shadow-md hover:border-indigo-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-indigo-600">Vendas do Mês</span>
               <ShoppingCart size={18} className="text-indigo-500" />
@@ -406,7 +436,10 @@ export default function SalesList() {
           </div>
 
           {/* Pagas no Mês */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-emerald-500">
+          <div
+            onClick={() => setDetailModal('paidMonth')}
+            className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-emerald-500 cursor-pointer hover:shadow-md hover:border-emerald-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-emerald-600">Recebido no Mês</span>
               <CheckCircle size={18} className="text-emerald-500" />
@@ -640,6 +673,145 @@ export default function SalesList() {
 
       {/* Modal de Confirmação */}
       <ConfirmDialog />
+
+      {/* Modal de Detalhes dos Cards */}
+      {detailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDetailModal(null)}>
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50">
+              <h2 className="text-lg font-bold text-gray-900">
+                {detailModal === 'monthRevenue' && 'Faturamento do Mês'}
+                {detailModal === 'monthProfit' && 'Lucro do Mês'}
+                {detailModal === 'pending' && 'Vendas Pendentes'}
+                {detailModal === 'avgTicket' && 'Detalhes do Ticket Médio'}
+                {detailModal === 'weekSales' && 'Vendas da Semana'}
+                {detailModal === 'weekRevenue' && 'Receita da Semana'}
+                {detailModal === 'monthSales' && 'Vendas do Mês'}
+                {detailModal === 'paidMonth' && 'Recebido no Mês'}
+              </h2>
+              <button
+                onClick={() => setDetailModal(null)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-600" />
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="p-5 overflow-y-auto max-h-[60vh]">
+              {/* Resumo */}
+              <div className="bg-orange-50 rounded-xl p-4 mb-4 border border-orange-200">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm text-orange-600 font-medium">Total</span>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {(detailModal === 'monthRevenue' || detailModal === 'monthSales') && formatCurrency(stats.currentMonthRevenue)}
+                      {detailModal === 'monthProfit' && formatCurrency(stats.currentMonthProfit)}
+                      {detailModal === 'pending' && formatCurrency(stats.pendingTotal)}
+                      {detailModal === 'avgTicket' && formatCurrency(stats.avgTicket)}
+                      {(detailModal === 'weekSales' || detailModal === 'weekRevenue') && formatCurrency(stats.currentWeekRevenue)}
+                      {detailModal === 'paidMonth' && formatCurrency(stats.paidThisMonthTotal)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-orange-600 font-medium">Quantidade</span>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {(detailModal === 'monthRevenue' || detailModal === 'monthProfit' || detailModal === 'monthSales' || detailModal === 'avgTicket') && `${stats.currentMonthSalesCount} vendas`}
+                      {detailModal === 'pending' && `${stats.pendingCount} vendas`}
+                      {(detailModal === 'weekSales' || detailModal === 'weekRevenue') && `${stats.currentWeekSalesCount} vendas`}
+                      {detailModal === 'paidMonth' && `${stats.paidThisMonthCount} vendas`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de vendas */}
+              <div className="space-y-3">
+                {(() => {
+                  let salesList: typeof sales = []
+                  if (detailModal === 'monthRevenue' || detailModal === 'monthProfit' || detailModal === 'monthSales' || detailModal === 'avgTicket') {
+                    salesList = stats.currentMonthSalesList
+                  } else if (detailModal === 'pending') {
+                    salesList = stats.pendingSalesList
+                  } else if (detailModal === 'weekSales' || detailModal === 'weekRevenue') {
+                    salesList = stats.currentWeekSalesList
+                  } else if (detailModal === 'paidMonth') {
+                    salesList = stats.paidThisMonthList
+                  }
+
+                  if (salesList.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-gray-500">
+                        <ShoppingCart size={40} className="mx-auto mb-3 text-gray-300" />
+                        <p>Nenhuma venda encontrada</p>
+                      </div>
+                    )
+                  }
+
+                  return salesList.map((sale) => (
+                    <Link
+                      key={sale.id}
+                      to={`/app/vendas/editar/${sale.id}`}
+                      className="block bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-all"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                            {sale.professionalName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                          </div>
+                          <span className="font-semibold text-gray-900">{sale.professionalName}</span>
+                        </div>
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          sale.paymentStatus === 'paid'
+                            ? 'bg-green-100 text-green-700'
+                            : sale.paymentStatus === 'pending'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {sale.paymentStatus === 'paid' ? 'Pago' : sale.paymentStatus === 'pending' ? 'Pendente' : 'Vencido'}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="text-gray-500">
+                          <Calendar size={14} className="inline mr-1" />
+                          {formatDateBR((sale.soldAt || sale.createdAt)?.split('T')[0] || '')}
+                        </div>
+                        <div className="flex gap-4">
+                          <span className="text-orange-600 font-semibold">
+                            {formatCurrency(sale.totalAmount)}
+                          </span>
+                          {(detailModal === 'monthProfit') && (
+                            <span className="text-green-600 font-semibold">
+                              Lucro: {formatCurrency(sale.totalProfit)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        {sale.items.map(item => item.stockItemName).join(', ')}
+                      </div>
+                    </Link>
+                  ))
+                })()}
+              </div>
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setDetailModal(null)}
+                className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
