@@ -46,6 +46,7 @@ export interface Sale {
   paymentStatus: 'pending' | 'paid' | 'overdue'
   dueDate?: string // Data de vencimento (para vendas a prazo)
   paidAt?: string // Data do pagamento
+  soldAt?: string // Data em que a venda foi realizada (para relatório financeiro)
   notes?: string
   createdAt: string
   createdBy?: string

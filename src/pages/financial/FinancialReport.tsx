@@ -261,24 +261,31 @@ export default function FinancialReport() {
 
   // Receitas de vendas (direto da tabela sales)
   const salesRevenue = useMemo(() => {
-    const paidSales = sales.filter(
-      sale => sale.paymentStatus === 'paid' && filterByPeriod(sale.createdAt)
-    )
+    const paidSales = sales.filter(sale => {
+      // Usar soldAt como data principal, com fallback para createdAt
+      const saleDate = sale.soldAt || sale.createdAt
+      return sale.paymentStatus === 'paid' && filterByPeriod(saleDate)
+    })
 
-    const items: TransactionItem[] = paidSales.map(sale => ({
-      id: sale.id,
-      amount: sale.totalAmount,
-      description: `Venda - ${sale.professionalName || 'Sem profissional'}`,
-      category: 'sale' as const,
-      createdAt: sale.createdAt,
-      paymentMethod: sale.paymentMethod as PaymentMethod,
-      professionalName: sale.professionalName,
-      items: sale.items.map(item => ({
-        quantity: item.quantity,
-        name: item.stockItemName,
-        price: item.totalPrice
-      }))
-    }))
+    const items: TransactionItem[] = paidSales.map(sale => {
+      // Usar soldAt como data principal, com fallback para createdAt
+      const saleDate = sale.soldAt || sale.createdAt
+
+      return {
+        id: sale.id,
+        amount: sale.totalAmount,
+        description: `Venda - ${sale.professionalName || 'Sem profissional'}`,
+        category: 'sale' as const,
+        createdAt: saleDate,
+        paymentMethod: sale.paymentMethod as PaymentMethod,
+        professionalName: sale.professionalName,
+        items: sale.items.map(item => ({
+          quantity: item.quantity,
+          name: item.stockItemName,
+          price: item.totalPrice
+        }))
+      }
+    })
 
     const total = items.reduce((sum, item) => sum + item.amount, 0)
     return { total, count: items.length, items }

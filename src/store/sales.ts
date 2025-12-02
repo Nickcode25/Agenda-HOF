@@ -73,6 +73,7 @@ export const useSales = create<SalesStore>()(
             paymentMethod: row.payment_method,
             paymentStatus: row.payment_status,
             paidAt: row.paid_at || undefined,
+            soldAt: row.sold_at || undefined,
             notes: row.notes || undefined,
             createdAt: row.created_at,
           }))
@@ -254,6 +255,7 @@ export const useSales = create<SalesStore>()(
               payment_method: saleData.paymentMethod,
               payment_status: saleData.paymentStatus,
               paid_at: saleData.paidAt || null,
+              sold_at: saleData.soldAt || null,
               notes: saleData.notes || null,
             })
             .select()
@@ -289,6 +291,7 @@ export const useSales = create<SalesStore>()(
           if (updates.paymentMethod !== undefined) updateData.payment_method = updates.paymentMethod
           if (updates.paymentStatus !== undefined) updateData.payment_status = updates.paymentStatus
           if (updates.paidAt !== undefined) updateData.paid_at = updates.paidAt || null
+          if (updates.soldAt !== undefined) updateData.sold_at = updates.soldAt || null
           if (updates.notes !== undefined) updateData.notes = updates.notes || null
 
           const { error } = await supabase
