@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Plus, DollarSign, Calendar, CheckCircle, AlertCircle, Clock, Trash2, FileText, Users, CreditCard, TrendingUp, AlertTriangle, Search, X } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
 import { format } from 'date-fns'
@@ -28,11 +28,13 @@ export default function PlanDetail() {
   const [selectedPatientId, setSelectedPatientId] = useState('')
   const [searchPatient, setSearchPatient] = useState('')
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState(new Date().toISOString().split('T')[0])
   const [paidAmount, setPaidAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('PIX')
   const [confirmPaymentMethod, setConfirmPaymentMethod] = useState('PIX')
   const { confirm, ConfirmDialog } = useConfirm()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null)
+  const [subscriberSearch, setSubscriberSearch] = useState('')
 
   // Carregar planos, assinaturas e pacientes ao montar o componente (em paralelo)
   useEffect(() => {
@@ -45,6 +47,15 @@ export default function PlanDetail() {
 
   const plan = useMemo(() => plans.find(p => p.id === id), [plans, id])
   const planSubscriptions = useMemo(() => subscriptions.filter(s => s.planId === id), [subscriptions, id])
+
+  // Filtrar assinantes conforme a busca
+  const filteredSubscriptions = useMemo(() => {
+    if (!subscriberSearch.trim()) return planSubscriptions
+
+    return planSubscriptions.filter(sub =>
+      anyWordStartsWithIgnoringAccents(sub.patientName, subscriberSearch)
+    )
+  }, [planSubscriptions, subscriberSearch])
 
   // Filtrar pacientes que ainda não são assinantes deste plano
   const subscribedPatientIds = useMemo(() => planSubscriptions.map(s => s.patientId), [planSubscriptions])
@@ -138,8 +149,8 @@ export default function PlanDetail() {
       return
     }
 
-    // Calcular próxima data de cobrança (mesmo dia do mês seguinte)
-    const [year, month, day] = paymentDate.split('-').map(Number)
+    // Calcular próxima data de cobrança baseada na DATA DE INÍCIO (não na data de pagamento)
+    const [year, month, day] = subscriptionStartDate.split('-').map(Number)
 
     // Adicionar 1 mês mantendo o mesmo dia
     let nextMonth = month + 1
@@ -157,7 +168,7 @@ export default function PlanDetail() {
       planId: plan.id,
       planName: plan.name,
       price: subscriptionPrice,
-      startDate: paymentDate,
+      startDate: subscriptionStartDate, // Usar data de início da assinatura
       nextBillingDate: nextBillingDateStr,
       status: 'active' as const,
       payments: [],
@@ -180,12 +191,12 @@ export default function PlanDetail() {
     // Adicionar pagamentos SEQUENCIALMENTE (evitar condição de corrida)
     // skipFetch=true para evitar múltiplos fetches durante a operação
 
-    // 1. Adicionar o primeiro pagamento como PAGO
+    // 1. Adicionar o primeiro pagamento como PAGO (referente à data de início)
     await addPayment(newSubscriptionId, {
       amount: subscriptionPrice,
-      dueDate: paymentDate,
+      dueDate: subscriptionStartDate, // Data de vencimento = data de início da assinatura
       status: 'paid',
-      paidAt: new Date().toISOString(),
+      paidAt: paymentDate + 'T12:00:00.000Z', // Usar a data real do pagamento
       paymentMethod: paymentMethod,
     }, true) // skipFetch=true
 
@@ -203,6 +214,7 @@ export default function PlanDetail() {
     setSelectedPatientId('')
     setSearchPatient('')
     setPaymentDate(new Date().toISOString().split('T')[0])
+    setSubscriptionStartDate(new Date().toISOString().split('T')[0])
     setPaidAmount('')
     setPaymentMethod('PIX')
   }
@@ -389,8 +401,30 @@ export default function PlanDetail() {
 
         {/* Lista de Assinantes */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold text-gray-900">Assinantes do Plano</h2>
+
+            {/* Barra de Pesquisa */}
+            {planSubscriptions.length > 0 && (
+              <div className="relative w-64">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={subscriberSearch}
+                  onChange={(e) => setSubscriberSearch(e.target.value)}
+                  placeholder="Buscar assinante..."
+                  className="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+                {subscriberSearch && (
+                  <button
+                    onClick={() => setSubscriberSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {planSubscriptions.length === 0 ? (
@@ -408,6 +442,16 @@ export default function PlanDetail() {
                 Adicionar Assinante
               </button>
             </div>
+          ) : filteredSubscriptions.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search size={32} className="text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum resultado encontrado</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Não encontramos assinantes com o nome "{subscriberSearch}"
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -421,7 +465,7 @@ export default function PlanDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  {planSubscriptions.map((sub) => {
+                  {filteredSubscriptions.map((sub) => {
                     const pendingPayment = getPendingPayment(sub)
                     const statusConfig = getSubscriberStatus(sub)
                     const StatusIcon = statusConfig.icon
@@ -521,11 +565,13 @@ export default function PlanDetail() {
           selectedPatientId={selectedPatientId}
           searchPatient={searchPatient}
           paymentDate={paymentDate}
+          subscriptionStartDate={subscriptionStartDate}
           paidAmount={paidAmount}
           paymentMethod={paymentMethod}
           onPatientSelect={setSelectedPatientId}
           onSearchChange={setSearchPatient}
           onPaymentDateChange={setPaymentDate}
+          onSubscriptionStartDateChange={setSubscriptionStartDate}
           onPaidAmountChange={setPaidAmount}
           onPaymentMethodChange={setPaymentMethod}
           onSubmit={handleAddSubscriber}

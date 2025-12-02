@@ -44,6 +44,8 @@ const ExpenseSkeleton = memo(() => (
   </div>
 ))
 
+type PeriodFilter = 'day' | 'week' | 'month' | 'year'
+
 export default function ExpensesList() {
   const { hasActiveSubscription } = useSubscription()
   const {
@@ -61,8 +63,10 @@ export default function ExpensesList() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
+  const today = new Date().toISOString().split('T')[0]
+  const [startDate, setStartDate] = useState(today)
+  const [endDate, setEndDate] = useState(today)
   const [hasFetched, setHasFetched] = useState(false)
 
   useEffect(() => {
@@ -72,6 +76,42 @@ export default function ExpensesList() {
     }
     loadData()
   }, [])
+
+  // Atualizar datas quando o período mudar
+  useEffect(() => {
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
+
+    switch (periodFilter) {
+      case 'day':
+        setStartDate(todayStr)
+        setEndDate(todayStr)
+        break
+
+      case 'week':
+        const weekStart = new Date(now)
+        weekStart.setDate(now.getDate() - now.getDay())
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+        setStartDate(weekStart.toISOString().split('T')[0])
+        setEndDate(weekEnd.toISOString().split('T')[0])
+        break
+
+      case 'month':
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        setStartDate(monthStart.toISOString().split('T')[0])
+        setEndDate(monthEnd.toISOString().split('T')[0])
+        break
+
+      case 'year':
+        const yearStart = new Date(now.getFullYear(), 0, 1)
+        const yearEnd = new Date(now.getFullYear(), 11, 31)
+        setStartDate(yearStart.toISOString().split('T')[0])
+        setEndDate(yearEnd.toISOString().split('T')[0])
+        break
+    }
+  }, [periodFilter])
 
   const { confirm, ConfirmDialog } = useConfirm()
 
@@ -228,9 +268,84 @@ export default function ExpensesList() {
           </Link>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex flex-col gap-4">
+        {/* Filtros */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Filter size={20} className="text-red-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Filtros</h3>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Período</label>
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('day')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'day'
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Dia
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('week')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'week'
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Semana
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('month')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'month'
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Mês
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('year')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'year'
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Ano
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data Inicial</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data Final</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-4 mt-4">
             <div className="relative flex-1">
               <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -266,26 +381,6 @@ export default function ExpensesList() {
                 onChange={setStatusFilter}
                 placeholder="Todos os status"
               />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data Inicial</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data Final</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
-                />
-              </div>
             </div>
           </div>
         </div>

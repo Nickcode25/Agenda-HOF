@@ -400,7 +400,7 @@ export default function FinancialReport() {
         navigate(`/app/vendas/${item.id}/editar`)
         break
       case 'subscription':
-        // Mensalidades não tem página de edição individual, ir para planos
+        // Planos não tem página de edição individual, ir para lista de planos
         navigate('/app/mensalidades/planos')
         break
       case 'course':
@@ -642,14 +642,14 @@ export default function FinancialReport() {
             <div className="text-sm text-gray-500">{salesRevenue.count} realizadas</div>
           </button>
 
-          {/* Mensalidades */}
+          {/* Planos */}
           <button
             type="button"
             onClick={() => setDetailModal('subscriptions')}
             className="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500 hover:shadow-md hover:border-purple-300 transition-all text-left cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-purple-600">Mensalidades</span>
+              <span className="text-sm font-medium text-purple-600">Planos</span>
               <CreditCard size={18} className="text-purple-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(subscriptionRevenue.total)}</div>
@@ -763,12 +763,12 @@ export default function FinancialReport() {
               </div>
             </div>
 
-            {/* Mensalidades */}
+            {/* Planos */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <CreditCard size={16} className="text-purple-600" />
-                  <span className="text-gray-900 font-medium">Mensalidades</span>
+                  <span className="text-gray-900 font-medium">Planos</span>
                 </div>
                 <div className="text-right">
                   <span className="text-purple-600 font-bold">{formatCurrency(subscriptionRevenue.total)}</span>
@@ -1030,7 +1030,7 @@ export default function FinancialReport() {
                       {detailModal === 'total' && 'Receita Total'}
                       {detailModal === 'procedures' && 'Procedimentos'}
                       {detailModal === 'sales' && 'Vendas'}
-                      {detailModal === 'subscriptions' && 'Mensalidades'}
+                      {detailModal === 'subscriptions' && 'Planos'}
                       {detailModal === 'courses' && 'Cursos'}
                       {detailModal === 'other' && 'Outras Receitas'}
                       {detailModal === 'expenses' && 'Despesas'}

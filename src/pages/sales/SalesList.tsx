@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect, useCallback, memo } from 'react'
-import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit, BarChart3 } from 'lucide-react'
+import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit, BarChart3, Filter } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
@@ -37,6 +37,8 @@ const SaleSkeleton = memo(() => (
   </div>
 ))
 
+type PeriodFilter = 'day' | 'week' | 'month' | 'year'
+
 export default function SalesList() {
   const { sales, fetchProfessionals, fetchSales, removeSale, loading } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
@@ -44,6 +46,12 @@ export default function SalesList() {
   const { hasActiveSubscription } = useSubscription()
   const { confirm, ConfirmDialog } = useConfirm()
   const [hasFetched, setHasFetched] = useState(false)
+
+  // Filtros de período
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
+  const today = new Date().toISOString().split('T')[0]
+  const [startDate, setStartDate] = useState(today)
+  const [endDate, setEndDate] = useState(today)
 
   useEffect(() => {
     const loadData = async () => {
@@ -53,8 +61,52 @@ export default function SalesList() {
     loadData()
   }, [])
 
+  // Atualizar datas quando o período mudar
+  useEffect(() => {
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
+
+    switch (periodFilter) {
+      case 'day':
+        setStartDate(todayStr)
+        setEndDate(todayStr)
+        break
+
+      case 'week':
+        const weekStart = new Date(now)
+        weekStart.setDate(now.getDate() - now.getDay())
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+        setStartDate(weekStart.toISOString().split('T')[0])
+        setEndDate(weekEnd.toISOString().split('T')[0])
+        break
+
+      case 'month':
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        setStartDate(monthStart.toISOString().split('T')[0])
+        setEndDate(monthEnd.toISOString().split('T')[0])
+        break
+
+      case 'year':
+        const yearStart = new Date(now.getFullYear(), 0, 1)
+        const yearEnd = new Date(now.getFullYear(), 11, 31)
+        setStartDate(yearStart.toISOString().split('T')[0])
+        setEndDate(yearEnd.toISOString().split('T')[0])
+        break
+    }
+  }, [periodFilter])
+
   const filtered = useMemo(() => {
     let result = sales
+
+    // Filtrar por período (datas)
+    if (startDate && endDate) {
+      result = result.filter(sale => {
+        const saleDate = (sale.soldAt || sale.createdAt)?.split('T')[0]
+        return saleDate && saleDate >= startDate && saleDate <= endDate
+      })
+    }
 
     if (searchQuery.trim()) {
       result = result.filter(sale =>
@@ -69,7 +121,7 @@ export default function SalesList() {
     }
 
     return result.sort((a, b) => new Date(b.soldAt || b.createdAt).getTime() - new Date(a.soldAt || a.createdAt).getTime())
-  }, [sales, searchQuery, statusFilter])
+  }, [sales, searchQuery, statusFilter, startDate, endDate])
 
 
   const getPaymentStatusConfig = (status: string) => {
@@ -276,9 +328,84 @@ export default function SalesList() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        {/* Filtros */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Filter size={20} className="text-orange-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Filtros</h3>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Período</label>
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('day')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'day'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Dia
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('week')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'week'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Semana
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('month')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'month'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Mês
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriodFilter('year')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    periodFilter === 'year'
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  Ano
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data Inicial</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data Final</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <div className="relative flex-1">
               <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input

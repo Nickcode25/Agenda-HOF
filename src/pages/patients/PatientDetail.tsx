@@ -51,11 +51,13 @@ export default function PatientDetail() {
   }, [navigate])
 
   useEffect(() => {
+    // Resetar valor customizado apenas quando procedimento ou quantidade mudam
+    // Não resetar quando forma de pagamento muda para preservar o valor editado
     if (isEditingValue) {
       setIsEditingValue(false)
       setCustomValue('')
     }
-  }, [procedureQuantity, selectedProcedure, paymentType, paymentMethod, installments])
+  }, [procedureQuantity, selectedProcedure])
 
   const [showPhotoGallery, setShowPhotoGallery] = useState(false)
   const [selectedProcedurePhotos, setSelectedProcedurePhotos] = useState<PlannedProcedure | null>(null)
