@@ -69,23 +69,32 @@ type SubscriptionPayment = {
 // Helper para formatar descrição do pagamento
 function formatPaymentDescription(item: TransactionItem): string {
   const methodLabels: Record<string, string> = {
-    card: 'Cartão',
+    card: 'Cartão de Crédito',
     pix: 'PIX',
     cash: 'Dinheiro',
     transfer: 'Transferência',
-    check: 'Cheque'
+    check: 'Cheque',
+    credit_card: 'Cartão de Crédito',
+    credit_card_1x: 'Cartão de Crédito',
+    debit_card: 'Cartão de Débito',
+    'Cartão de Crédito': 'Cartão de Crédito',
+    'Cartão de Débito': 'Cartão de Débito',
+    'Dinheiro': 'Dinheiro',
+    'PIX': 'PIX',
+    'Transferência': 'Transferência',
+    'Cheque': 'Cheque'
   }
 
   const methodLabel = methodLabels[item.paymentMethod] || item.paymentMethod
+  const installments = item.installments || 1
 
-  // Se é parcelado no cartão
-  if (item.paymentType === 'installment' && item.installments && item.installments > 1) {
-    return `Cartão de Crédito - ${item.installments}x`
+  // Cartão de crédito ou débito - mostrar parcelas
+  if (item.paymentMethod === 'card' || item.paymentMethod === 'credit_card' || item.paymentMethod === 'credit_card_1x' || item.paymentMethod === 'Cartão de Crédito') {
+    return `Cartão de Crédito - ${installments}x`
   }
 
-  // Se é cartão à vista
-  if (item.paymentMethod === 'card') {
-    return 'Cartão de Crédito - 1x'
+  if (item.paymentMethod === 'debit_card' || item.paymentMethod === 'Cartão de Débito') {
+    return `Cartão de Débito - 1x`
   }
 
   return methodLabel
