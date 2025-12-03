@@ -446,8 +446,12 @@ export default function WeekGrid({
         scrollPosition = HOUR_HEIGHT // 1 hora após as 7h
       }
 
-      scrollContainerRef.current.scrollTo({
-        top: scrollPosition,
+      // Calcular posição absoluta na página considerando o offset do elemento
+      const elementRect = scrollContainerRef.current.getBoundingClientRect()
+      const absolutePosition = window.scrollY + elementRect.top + scrollPosition
+
+      window.scrollTo({
+        top: absolutePosition - 100, // -100px para dar margem do header
         behavior: 'smooth'
       })
     }, 100)
@@ -748,7 +752,7 @@ export default function WeekGrid({
 
   // Renderizar visualização de dia ou semana
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Header com dias */}
       <div className={`grid ${gridCols} border-b border-gray-200 flex-shrink-0`}>
         {/* Coluna vazia para horários */}
@@ -791,7 +795,7 @@ export default function WeekGrid({
       </div>
 
       {/* Grid de horários e agendamentos */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef}>
         <div ref={gridContainerRef} className={`grid ${gridCols}`}>
           {/* Coluna de horários */}
           <div className="border-r border-gray-200 bg-gray-50">

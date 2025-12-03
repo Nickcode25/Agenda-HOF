@@ -196,7 +196,7 @@ export default function App() {
       <aside
         onMouseEnter={() => setSidebarHovered(true)}
         onMouseLeave={() => setSidebarHovered(false)}
-        className={`fixed lg:sticky top-0 left-0 h-screen bg-gradient-to-b from-white to-gray-50/80 border-r border-gray-100 transition-all duration-500 ease-in-out z-50 ${sidebarOpen ? 'w-64' : 'w-0'} lg:w-20 ${sidebarHovered ? 'lg:w-64 lg:shadow-xl lg:shadow-gray-200/50' : ''} overflow-y-auto overflow-x-hidden scrollbar-hide`}
+        className={`fixed lg:sticky top-0 left-0 h-screen bg-gradient-to-b from-white to-gray-50/80 border-r border-gray-100 transition-all duration-500 ease-in-out z-50 ${sidebarOpen ? 'w-64' : 'w-0'} lg:w-20 ${sidebarHovered ? 'lg:w-64 lg:shadow-xl lg:shadow-gray-200/50' : ''} overflow-y-auto overflow-x-hidden`}
       >
         <div className="flex flex-col min-h-full">
           {/* Logo */}

@@ -83,7 +83,7 @@ export default function NewCalendar({
   }
 
   return (
-    <div className="h-full bg-gray-50 p-6 flex flex-col overflow-hidden">
+    <div className="bg-gray-50 p-6 flex flex-col">
       {/* Header com info do usuário e stats */}
       <div className="flex-shrink-0 mb-4">
         <CalendarHeader
@@ -104,8 +104,8 @@ export default function NewCalendar({
         />
       </div>
 
-      {/* Calendário em tela cheia */}
-      <div className="flex-1 min-h-0">
+      {/* Calendário */}
+      <div>
         <WeekGrid
           currentDate={currentDate}
           appointments={appointments}
