@@ -324,7 +324,7 @@ export default function SaleForm() {
                           value={item.quantity}
                           onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
                           onFocus={(e) => e.target.select()}
-                          className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                          className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                         />
                       </div>
 
@@ -335,7 +335,7 @@ export default function SaleForm() {
                           value={item.salePrice}
                           onChange={(e) => updateItem(index, 'salePrice', e.target.value)}
                           placeholder="R$ 0,00"
-                          className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                          className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                         />
                       </div>
                     </div>
@@ -406,7 +406,7 @@ export default function SaleForm() {
                 <DateInput
                   value={soldAt}
                   onChange={setSoldAt}
-                  className="w-full md:w-1/3 bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                  className="w-full md:w-1/3 bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
                 <p className="text-xs text-gray-500 mt-1">Informe a data em que a venda foi realizada para o relatório financeiro</p>
               </div>
@@ -447,7 +447,7 @@ export default function SaleForm() {
                     <DateInput
                       value={dueDate}
                       onChange={setDueDate}
-                      className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                      className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     />
                   </div>
                 )}
@@ -459,7 +459,7 @@ export default function SaleForm() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Observações sobre a venda..."
-                  className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all resize-none"
+                  className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"
                   rows={3}
                 />
               </div>

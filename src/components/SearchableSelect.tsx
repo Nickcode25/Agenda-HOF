@@ -142,7 +142,7 @@ export default function SearchableSelect({
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar..."
             aria-label="Buscar opção"
-            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
           />
         </div>
       </div>
@@ -169,7 +169,7 @@ export default function SearchableSelect({
               disabled={option.disabled}
               className={`w-full text-left px-4 py-3 transition-colors ${
                 option.value === value
-                  ? 'bg-amber-500 text-white font-medium'
+                  ? 'bg-orange-500 text-white font-medium'
                   : option.disabled
                   ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
                   : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -204,7 +204,7 @@ export default function SearchableSelect({
             }
           }}
           disabled={disabled}
-          className={`w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-left flex items-center justify-between ${
+          className={`w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-left flex items-center justify-between ${
             disabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'cursor-pointer hover:border-gray-400'
           }`}
         >

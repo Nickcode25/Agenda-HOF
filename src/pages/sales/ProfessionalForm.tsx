@@ -206,7 +206,7 @@ export default function ProfessionalForm() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Dr. João Silva"
                   required
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Digite o nome completo do profissional</p>
               </div>
@@ -220,7 +220,7 @@ export default function ProfessionalForm() {
                   onChange={(e) => setCpf(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
                   maxLength={14}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Apenas números</p>
               </div>
@@ -234,7 +234,7 @@ export default function ProfessionalForm() {
                   onChange={(e) => setPhone(formatPhone(e.target.value))}
                   placeholder="(11) 99999-9999"
                   maxLength={15}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Celular ou fixo</p>
               </div>
@@ -244,7 +244,7 @@ export default function ProfessionalForm() {
                 <DateInput
                   value={birthDate}
                   onChange={setBirthDate}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Opcional</p>
               </div>
@@ -277,7 +277,7 @@ export default function ProfessionalForm() {
                   value={registrationNumber}
                   onChange={(e) => setRegistrationNumber(e.target.value)}
                   placeholder="CRO, CRM, COREN, etc"
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Ex: CRO 12345</p>
               </div>
@@ -289,7 +289,7 @@ export default function ProfessionalForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Será usado para notificações</p>
               </div>
@@ -319,7 +319,7 @@ export default function ProfessionalForm() {
                     onChange={(e) => handleCepChange(e.target.value)}
                     placeholder="00000-000"
                     maxLength={9}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                   />
                   {isLoadingCep && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-amber-600 text-xs">
@@ -336,7 +336,7 @@ export default function ProfessionalForm() {
                   value={street}
                   onChange={(e) => setStreet(e.target.value)}
                   placeholder="Rua, Avenida, etc."
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
               </div>
 
@@ -346,7 +346,7 @@ export default function ProfessionalForm() {
                   value={number}
                   onChange={(e) => setNumber(e.target.value)}
                   placeholder="123"
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
               </div>
 
@@ -356,7 +356,7 @@ export default function ProfessionalForm() {
                   value={complement}
                   onChange={(e) => setComplement(e.target.value)}
                   placeholder="Apto, Sala, etc."
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
               </div>
 
@@ -366,7 +366,7 @@ export default function ProfessionalForm() {
                   value={neighborhood}
                   onChange={(e) => setNeighborhood(e.target.value)}
                   placeholder="Centro, Jardins, etc."
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
               </div>
 
@@ -376,7 +376,7 @@ export default function ProfessionalForm() {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="São Paulo"
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
               </div>
 
@@ -387,7 +387,7 @@ export default function ProfessionalForm() {
                   onChange={(e) => setState(e.target.value)}
                   placeholder="SP"
                   maxLength={2}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm"
                 />
               </div>
             </div>
@@ -412,7 +412,7 @@ export default function ProfessionalForm() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Adicione observações sobre o profissional..."
                 rows={4}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder:text-gray-400 text-sm resize-none"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all placeholder:text-gray-400 text-sm resize-none"
               />
               <p className="text-xs text-gray-500 mt-0.5">Opcional - informações relevantes sobre o profissional</p>
             </div>

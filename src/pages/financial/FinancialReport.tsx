@@ -68,6 +68,7 @@ type SubscriptionPayment = {
 
 // Helper para formatar descrição do pagamento
 function formatPaymentDescription(item: TransactionItem): string {
+  const method = item.paymentMethod as string
   const methodLabels: Record<string, string> = {
     card: 'Cartão de Crédito',
     pix: 'PIX',
@@ -85,15 +86,15 @@ function formatPaymentDescription(item: TransactionItem): string {
     'Cheque': 'Cheque'
   }
 
-  const methodLabel = methodLabels[item.paymentMethod] || item.paymentMethod
+  const methodLabel = methodLabels[method] || method
   const installments = item.installments || 1
 
   // Cartão de crédito ou débito - mostrar parcelas
-  if (item.paymentMethod === 'card' || item.paymentMethod === 'credit_card' || item.paymentMethod === 'credit_card_1x' || item.paymentMethod === 'Cartão de Crédito') {
+  if (method === 'card' || method === 'credit_card' || method === 'credit_card_1x' || method === 'Cartão de Crédito') {
     return `Cartão de Crédito - ${installments}x`
   }
 
-  if (item.paymentMethod === 'debit_card' || item.paymentMethod === 'Cartão de Débito') {
+  if (method === 'debit_card' || method === 'Cartão de Débito') {
     return `Cartão de Débito - 1x`
   }
 
