@@ -365,16 +365,17 @@ export default function App() {
             {/* Notifications */}
             <NotificationBell />
 
-            {/* Subscription Badge (Premium/Básico/Trial) */}
-            <SubscriptionBadge />
-
             {/* User Menu */}
             <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-              <div className="text-right">
+              <div>
                 <p className="text-sm text-gray-900 font-medium">{currentProfile?.displayName || user?.email}</p>
-                <p className="text-xs text-gray-500">
-                  {currentProfile?.role === 'owner' ? 'Administrador' : 'Funcionário'}
-                </p>
+                <div className="flex items-center justify-between">
+                  {/* Subscription Badge (Premium/Básico/Trial) */}
+                  <SubscriptionBadge />
+                  <p className="text-xs text-gray-500">
+                    {currentProfile?.role === 'owner' ? 'Administrador' : 'Funcionário'}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <button

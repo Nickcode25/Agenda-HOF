@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Filter, Phone, Activity } from 'lucide-react'
+import { Search, Phone, Activity } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../store/auth'
 import AdminSidebar from './components/AdminSidebar'
@@ -39,53 +39,53 @@ export default function UsersPage() {
 
   const loadClinics = async () => {
     try {
-      const { data: subscriptions, error: viewError } = await supabase
-        .from('subscribers_view')
-        .select('*')
-        .order('subscription_created_at', { ascending: false })
+      // Usar get_all_users para obter todos os usuários
+      const { data: allUsers, error: usersError } = await supabase.rpc('get_all_users')
 
-      if (viewError) {
-        console.error('❌ Erro ao buscar subscribers_view:', viewError)
+      if (usersError) {
+        console.error('Erro ao buscar usuários:', usersError)
         return
       }
 
-      if (!subscriptions) return
+      // Buscar assinaturas para saber status
+      const { data: subscriptions, error: subsError } = await supabase.rpc('get_all_subscriptions')
 
-      const clinicsMap = new Map<string, typeof subscriptions[0]>()
-      subscriptions.forEach(sub => {
-        if (!clinicsMap.has(sub.user_id)) {
-          clinicsMap.set(sub.user_id, sub)
+      if (subsError) {
+        console.error('Erro ao buscar assinaturas:', subsError)
+      }
+
+      // Criar mapa de assinaturas por user_id
+      const subscriptionMap = new Map<string, any>()
+      subscriptions?.forEach((sub: any) => {
+        if (!subscriptionMap.has(sub.user_id) || sub.status === 'active') {
+          subscriptionMap.set(sub.user_id, sub)
         }
       })
 
-      const clinicsData: Clinic[] = await Promise.all(
-        Array.from(clinicsMap.values()).map(async (subscription) => {
-          const userId = subscription.user_id
-          const ownerEmail = subscription.email || 'Email não disponível'
-          const ownerName = subscription.full_name || 'Nome não disponível'
-          const ownerPhone = subscription.phone || null
-          const lastLogin = subscription.last_login
-          const userCreatedAt = subscription.user_created_at || subscription.subscription_created_at
+      const clinicsData: Clinic[] = (allUsers || []).map((user: any) => {
+        const subscription = subscriptionMap.get(user.user_id)
+        const hasActiveSubscription = subscription?.status === 'active'
+        const isCourtesy = subscription?.discount_percentage === 100
 
-          return {
-            id: userId,
-            owner_email: ownerEmail,
-            owner_name: ownerName,
-            owner_phone: ownerPhone,
-            created_at: userCreatedAt,
-            users_count: 0,
-            patients_count: 0,
-            appointments_count: 0,
-            sales_count: 0,
-            total_revenue: 0,
-            subscription_status: subscription.subscription_status === 'active' ? 'active' : 'none',
-            trial_end_date: subscription.trial_end_date,
-            trial_days_remaining: 0,
-            has_active_subscription: subscription.subscription_status === 'active',
-            last_login: lastLogin
-          }
-        })
-      )
+        return {
+          id: user.user_id,
+          owner_email: user.owner_email || 'Email não disponível',
+          owner_name: user.owner_name || 'Nome não disponível',
+          owner_phone: user.owner_phone || null,
+          created_at: user.user_created_at,
+          users_count: 0,
+          patients_count: 0,
+          appointments_count: 0,
+          sales_count: 0,
+          total_revenue: subscription ? parseFloat(subscription.plan_amount || 0) * (1 - (subscription.discount_percentage || 0) / 100) : 0,
+          subscription_status: hasActiveSubscription ? 'active' : 'none',
+          trial_end_date: subscription?.trial_end_date || null,
+          trial_days_remaining: 0,
+          has_active_subscription: hasActiveSubscription,
+          last_login: user.last_login,
+          isCourtesy
+        }
+      })
 
       setClinics(clinicsData)
     } catch (err) {
@@ -113,17 +113,17 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-          <p className="mt-4 text-gray-400">Carregando...</p>
+          <p className="mt-4 text-gray-600">Carregando...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
+    <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar
         activeView="clinics"
         onViewChange={(view) => navigate(`/admin/${view === 'overview' ? 'dashboard' : view === 'clinics' ? 'users' : view}`)}
@@ -133,8 +133,8 @@ export default function UsersPage() {
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Gerenciar Usuários</h1>
-            <p className="text-gray-400">{filteredClinics.length} usuários registrados</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gerenciar Usuários</h1>
+            <p className="text-gray-500">{filteredClinics.length} usuários registrados</p>
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -145,14 +145,14 @@ export default function UsersPage() {
                 placeholder="Buscar por nome ou email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                className="w-full bg-white border border-gray-300 rounded-xl pl-10 pr-4 py-3 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+              className="bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             >
               <option value="all">Todos os status</option>
               <option value="active">Ativos</option>
@@ -162,61 +162,55 @@ export default function UsersPage() {
             </select>
           </div>
 
-          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
             <table className="w-full">
-              <thead className="bg-gray-800/80">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Owner</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Email</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Telefone</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Trial</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Último Login</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-300">Receita</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-300">Cadastro</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Owner</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Email</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Telefone</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Último Login</th>
+                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">Receita</th>
+                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">Cadastro</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/50">
+              <tbody className="divide-y divide-gray-100">
                 {filteredClinics.map((clinic) => (
-                  <tr key={clinic.id} className="hover:bg-gray-700/30 transition-colors">
+                  <tr key={clinic.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-white">{clinic.owner_name}</div>
+                      <div className="font-medium text-gray-900">{clinic.owner_name}</div>
                     </td>
-                    <td className="px-6 py-4 text-gray-300">{clinic.owner_email}</td>
+                    <td className="px-6 py-4 text-gray-700">{clinic.owner_email}</td>
                     <td className="px-6 py-4">
                       {clinic.owner_phone ? (
-                        <div className="flex items-center gap-2 text-gray-300">
+                        <div className="flex items-center gap-2 text-gray-700">
                           <Phone className="w-4 h-4" />
                           {clinic.owner_phone}
                         </div>
                       ) : (
-                        <span className="text-gray-500">-</span>
+                        <span className="text-gray-400">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                         clinic.has_active_subscription
-                          ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                          : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                          ? 'bg-green-100 text-green-700 border border-green-200'
+                          : 'bg-gray-100 text-gray-600 border border-gray-200'
                       }`}>
                         <Activity className="w-3 h-3" />
                         {clinic.has_active_subscription ? 'Ativo' : 'Sem plano'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-300">
-                      {clinic.trial_end_date
-                        ? formatDateTimeBRSafe(clinic.trial_end_date)
-                        : 'Nunca'}
-                    </td>
-                    <td className="px-6 py-4 text-gray-300">
+                    <td className="px-6 py-4 text-gray-700">
                       {clinic.last_login
                         ? formatDateTimeBRSafe(clinic.last_login)
                         : 'Nunca'}
                     </td>
-                    <td className="px-6 py-4 text-right text-green-400 font-medium">
+                    <td className="px-6 py-4 text-right text-green-600 font-medium">
                       R$ {clinic.total_revenue.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 text-right text-gray-400 text-sm">
+                    <td className="px-6 py-4 text-right text-gray-500 text-sm">
                       {formatDateTimeBRSafe(clinic.created_at)}
                     </td>
                   </tr>
@@ -226,7 +220,7 @@ export default function UsersPage() {
 
             {filteredClinics.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-400">Nenhum usuário encontrado</p>
+                <p className="text-gray-500">Nenhum usuário encontrado</p>
               </div>
             )}
           </div>

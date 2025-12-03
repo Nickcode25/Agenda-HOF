@@ -13,7 +13,7 @@ export default function SubscriptionsAdminPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
+    <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar
         activeView="subscriptions"
         onViewChange={(view) => navigate(`/admin/${view === 'overview' ? 'dashboard' : view === 'clinics' ? 'users' : view}`)}

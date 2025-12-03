@@ -1,10 +1,9 @@
-import { useState, useMemo, useEffect } from 'react'
-import { isToday, parseISO, isSameDay, startOfWeek, startOfMonth, endOfMonth, addDays } from 'date-fns'
+import { useState, useMemo } from 'react'
+import { isToday, parseISO, startOfWeek, startOfMonth, endOfMonth, addDays } from 'date-fns'
 import type { Appointment } from '@/types/schedule'
 import type { RecurringBlock } from '@/types/recurring'
 import { toSaoPauloTime } from '@/utils/timezone'
 import { generateRecurringBlocksForPeriod } from '@/utils/recurringBlocks'
-import CalendarHeader from './CalendarHeader'
 import CalendarControls from './CalendarControls'
 import WeekGrid from './WeekGrid'
 
@@ -24,8 +23,6 @@ interface NewCalendarProps {
 export default function NewCalendar({
   appointments,
   recurringBlocks = [],
-  userName,
-  userPlan,
   onAppointmentClick,
   onTimeSlotClick,
   onTimeSlotSelect,
@@ -83,16 +80,7 @@ export default function NewCalendar({
   }
 
   return (
-    <div className="bg-gray-50 p-6 flex flex-col">
-      {/* Header com info do usuário e stats */}
-      <div className="flex-shrink-0 mb-4">
-        <CalendarHeader
-          userName={userName}
-          userPlan={userPlan}
-          appointmentsToday={todayStats.count}
-        />
-      </div>
-
+    <div className="flex flex-col">
       {/* Controles de visualização e navegação */}
       <div className="flex-shrink-0 mb-4">
         <CalendarControls
@@ -101,6 +89,7 @@ export default function NewCalendar({
           currentDate={currentDate}
           onDateChange={setCurrentDate}
           onToday={handleToday}
+          appointmentsToday={todayStats.count}
         />
       </div>
 

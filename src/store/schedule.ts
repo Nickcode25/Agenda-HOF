@@ -120,8 +120,13 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
   addAppointment: async (a) => {
     set({ loading: true, error: null })
     try {
+      console.log('📅 [SCHEDULE] addAppointment chamado')
       const user = await getCachedUser()
-      if (!user) throw new Error('Usuário não autenticado')
+      if (!user) {
+        console.error('❌ [SCHEDULE] Usuário não autenticado')
+        throw new Error('Usuário não autenticado')
+      }
+      console.log('📅 [SCHEDULE] User ID:', user.id)
 
       const insertData = {
         user_id: user.id,
@@ -140,18 +145,25 @@ export const useSchedule = create<ScheduleState>((set, get) => ({
         title: a.title || null,
       }
 
+      console.log('📅 [SCHEDULE] Dados a inserir:', insertData)
+
       const { data, error } = await supabase
         .from('appointments')
         .insert(insertData)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ [SCHEDULE] Erro do Supabase:', error)
+        throw error
+      }
 
+      console.log('✅ [SCHEDULE] Agendamento criado com sucesso:', data.id)
       await get().fetchAppointments()
       set({ loading: false })
       return data.id
     } catch (error) {
+      console.error('❌ [SCHEDULE] Erro ao criar agendamento:', error)
       set({ error: getErrorMessage(error), loading: false })
       return null
     }

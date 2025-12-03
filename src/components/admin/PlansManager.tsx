@@ -193,7 +193,7 @@ export default function PlansManager() {
   }
 
   if (loading) {
-    return <div className="text-white text-center py-8">Carregando...</div>
+    return <div className="text-gray-600 text-center py-8">Carregando...</div>
   }
 
   return (
@@ -201,12 +201,12 @@ export default function PlansManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-white">Gestão de Planos</h3>
-          <p className="text-gray-400 mt-1">{plans.length} planos cadastrados</p>
+          <h3 className="text-2xl font-bold text-gray-900">Gestão de Planos</h3>
+          <p className="text-gray-500 mt-1">{plans.length} planos cadastrados</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg transition-all shadow-sm"
         >
           {showForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
           <span>{showForm ? 'Cancelar' : 'Novo Plano'}</span>
@@ -215,28 +215,28 @@ export default function PlansManager() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-          <h4 className="text-xl font-bold text-white mb-4">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+          <h4 className="text-xl font-bold text-gray-900 mb-4">
             {editingPlan ? 'Editar Plano' : 'Novo Plano'}
           </h4>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nome do Plano *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                   placeholder="Ex: Plano Premium"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Preço Mensal (R$) *
                 </label>
                 <input
@@ -244,21 +244,21 @@ export default function PlansManager() {
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                   placeholder="99.90"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Duração (meses) *
                 </label>
                 <input
                   type="number"
                   value={formData.duration_months}
                   onChange={(e) => setFormData({ ...formData, duration_months: e.target.value })}
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                   placeholder="1"
                   required
                 />
@@ -266,13 +266,13 @@ export default function PlansManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Descrição *
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                 placeholder="Descrição do plano..."
                 rows={3}
                 required
@@ -280,13 +280,13 @@ export default function PlansManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Features (uma por linha) *
               </label>
               <textarea
                 value={formData.features}
                 onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-                className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                 placeholder="Agendamentos ilimitados&#10;Gestão de pacientes&#10;Relatórios financeiros"
                 rows={5}
                 required
@@ -294,8 +294,8 @@ export default function PlansManager() {
             </div>
 
             {/* Trial Configuration */}
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-              <h5 className="text-lg font-semibold text-blue-400 mb-3">Período de Trial</h5>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h5 className="text-lg font-semibold text-blue-700 mb-3">Período de Trial</h5>
 
               <div className="flex items-center gap-3 mb-4">
                 <input
@@ -303,16 +303,16 @@ export default function PlansManager() {
                   id="has_trial"
                   checked={formData.has_trial}
                   onChange={(e) => setFormData({ ...formData, has_trial: e.target.checked })}
-                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                  className="w-5 h-5 bg-white border-gray-300 rounded focus:ring-blue-500 text-blue-500"
                 />
-                <label htmlFor="has_trial" className="text-gray-300 font-medium">
+                <label htmlFor="has_trial" className="text-gray-700 font-medium">
                   Este plano tem período de trial gratuito
                 </label>
               </div>
 
               {formData.has_trial && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dias de Trial Gratuito *
                   </label>
                   <input
@@ -321,7 +321,7 @@ export default function PlansManager() {
                     max="90"
                     value={formData.trial_days}
                     onChange={(e) => setFormData({ ...formData, trial_days: e.target.value })}
-                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="7"
                     required={formData.has_trial}
                   />
@@ -333,11 +333,11 @@ export default function PlansManager() {
             </div>
 
             {/* Billing Configuration */}
-            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-              <h5 className="text-lg font-semibold text-purple-400 mb-3">Configuração de Cobrança</h5>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h5 className="text-lg font-semibold text-purple-700 mb-3">Configuração de Cobrança</h5>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Dia de Cobrança (opcional)
                 </label>
                 <input
@@ -346,7 +346,7 @@ export default function PlansManager() {
                   max="28"
                   value={formData.billing_day}
                   onChange={(e) => setFormData({ ...formData, billing_day: e.target.value })}
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
                   placeholder="Deixe vazio para cobrar 30 dias após assinatura"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -358,8 +358,8 @@ export default function PlansManager() {
             </div>
 
             {/* Retry Configuration */}
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
-              <h5 className="text-lg font-semibold text-orange-400 mb-3">Reprocessamento de Pagamentos Falhados</h5>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <h5 className="text-lg font-semibold text-orange-700 mb-3">Reprocessamento de Pagamentos Falhados</h5>
 
               <div className="flex items-center gap-3 mb-4">
                 <input
@@ -367,9 +367,9 @@ export default function PlansManager() {
                   id="retry_failed_payments"
                   checked={formData.retry_failed_payments}
                   onChange={(e) => setFormData({ ...formData, retry_failed_payments: e.target.checked })}
-                  className="w-5 h-5 bg-gray-700 border-gray-600 rounded focus:ring-orange-500"
+                  className="w-5 h-5 bg-white border-gray-300 rounded focus:ring-orange-500 text-orange-500"
                 />
-                <label htmlFor="retry_failed_payments" className="text-gray-300 font-medium">
+                <label htmlFor="retry_failed_payments" className="text-gray-700 font-medium">
                   Tentar reprocessar pagamentos falhados automaticamente
                 </label>
               </div>
@@ -377,7 +377,7 @@ export default function PlansManager() {
               {formData.retry_failed_payments && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Máximo de Tentativas *
                     </label>
                     <input
@@ -386,14 +386,14 @@ export default function PlansManager() {
                       max="10"
                       value={formData.max_retry_attempts}
                       onChange={(e) => setFormData({ ...formData, max_retry_attempts: e.target.value })}
-                      className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                       placeholder="3"
                       required={formData.retry_failed_payments}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Intervalo entre Tentativas (dias) *
                     </label>
                     <input
@@ -402,7 +402,7 @@ export default function PlansManager() {
                       max="30"
                       value={formData.retry_interval_days}
                       onChange={(e) => setFormData({ ...formData, retry_interval_days: e.target.value })}
-                      className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                       placeholder="3"
                       required={formData.retry_failed_payments}
                     />
@@ -420,7 +420,7 @@ export default function PlansManager() {
             <div className="flex gap-3">
               <button
                 type="submit"
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all shadow-sm"
               >
                 <Save className="w-5 h-5" />
                 <span>Salvar</span>
@@ -428,7 +428,7 @@ export default function PlansManager() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-all"
               >
                 <X className="w-5 h-5" />
                 <span>Cancelar</span>
@@ -439,46 +439,46 @@ export default function PlansManager() {
       )}
 
       {/* Table */}
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/20 bg-white/5">
-                <th className="text-left py-4 px-6 text-gray-300 font-semibold">Plano</th>
-                <th className="text-left py-4 px-6 text-gray-300 font-semibold">Descrição</th>
-                <th className="text-center py-4 px-6 text-gray-300 font-semibold">Preço</th>
-                <th className="text-center py-4 px-6 text-gray-300 font-semibold">Duração</th>
-                <th className="text-center py-4 px-6 text-gray-300 font-semibold">Features</th>
-                <th className="text-center py-4 px-6 text-gray-300 font-semibold">Status</th>
-                <th className="text-center py-4 px-6 text-gray-300 font-semibold">Ações</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left py-4 px-6 text-gray-600 font-semibold">Plano</th>
+                <th className="text-left py-4 px-6 text-gray-600 font-semibold">Descrição</th>
+                <th className="text-center py-4 px-6 text-gray-600 font-semibold">Preço</th>
+                <th className="text-center py-4 px-6 text-gray-600 font-semibold">Duração</th>
+                <th className="text-center py-4 px-6 text-gray-600 font-semibold">Features</th>
+                <th className="text-center py-4 px-6 text-gray-600 font-semibold">Status</th>
+                <th className="text-center py-4 px-6 text-gray-600 font-semibold">Ações</th>
               </tr>
             </thead>
             <tbody>
               {plans.map((plan) => (
-                <tr key={plan.id} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                <tr key={plan.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-6">
-                    <div className="text-white font-medium">{plan.name}</div>
+                    <div className="text-gray-900 font-medium">{plan.name}</div>
                   </td>
-                  <td className="py-4 px-6 text-gray-300 text-sm max-w-xs truncate">
+                  <td className="py-4 px-6 text-gray-600 text-sm max-w-xs truncate">
                     {plan.description}
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="text-green-400 font-bold">R$ {plan.price.toFixed(2)}</span>
+                    <span className="text-green-600 font-bold">R$ {plan.price.toFixed(2)}</span>
                   </td>
-                  <td className="py-4 px-6 text-center text-gray-300">
+                  <td className="py-4 px-6 text-center text-gray-600">
                     {plan.duration_months} {plan.duration_months === 1 ? 'mês' : 'meses'}
                   </td>
-                  <td className="py-4 px-6 text-center text-gray-300">
+                  <td className="py-4 px-6 text-center text-gray-600">
                     {plan.features.length} itens
                   </td>
                   <td className="py-4 px-6 text-center">
                     {plan.is_active ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm border border-green-200">
                         <Power className="w-3 h-3" />
                         Ativo
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-500/20 text-gray-400 rounded-full text-sm">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm border border-gray-200">
                         <PowerOff className="w-3 h-3" />
                         Pausado
                       </span>
@@ -488,7 +488,7 @@ export default function PlansManager() {
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => handleEdit(plan)}
-                        className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-all"
+                        className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-all border border-blue-200"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -497,16 +497,16 @@ export default function PlansManager() {
                         onClick={() => handleToggleActive(plan)}
                         className={`p-2 ${
                           plan.is_active
-                            ? 'bg-orange-500/20 hover:bg-orange-500/30 text-orange-400'
-                            : 'bg-green-500/20 hover:bg-green-500/30 text-green-400'
-                        } rounded-lg transition-all`}
+                            ? 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200'
+                            : 'bg-green-50 hover:bg-green-100 text-green-600 border-green-200'
+                        } rounded-lg transition-all border`}
                         title={plan.is_active ? 'Pausar' : 'Ativar'}
                       >
                         {plan.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => handleDelete(plan)}
-                        className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all"
+                        className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all border border-red-200"
                         title="Deletar"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -519,7 +519,7 @@ export default function PlansManager() {
           </table>
 
           {plans.length === 0 && (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-gray-500">
               <p>Nenhum plano cadastrado ainda.</p>
               <p className="text-sm mt-2">Clique em "Novo Plano" para começar.</p>
             </div>

@@ -64,25 +64,25 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-white flex items-center justify-center p-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-600/5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Card de Login */}
-        <div className="bg-gray-800/50 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-gray-700">
+        <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-200">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl mb-4 shadow-lg">
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Admin Login
             </h1>
-            <p className="text-gray-300">
+            <p className="text-gray-500">
               Área restrita - Administradores da plataforma
             </p>
           </div>
@@ -91,7 +91,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email
               </label>
               <div className="relative">
@@ -100,7 +100,7 @@ export default function AdminLoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="admin@exemplo.com"
                   required
                 />
@@ -109,7 +109,7 @@ export default function AdminLoginPage() {
 
             {/* Senha */}
             <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Senha
               </label>
               <div className="relative">
@@ -118,7 +118,7 @@ export default function AdminLoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="••••••••"
                   required
                 />
@@ -127,8 +127,8 @@ export default function AdminLoginPage() {
 
             {/* Erro */}
             {error && (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 backdrop-blur-sm">
-                <p className="text-red-200 text-sm">{error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
@@ -146,7 +146,7 @@ export default function AdminLoginPage() {
           <div className="mt-6 text-center">
             <button
               onClick={() => navigate('/')}
-              className="text-gray-300 hover:text-white text-sm transition-colors duration-200"
+              className="text-gray-500 hover:text-gray-700 text-sm transition-colors duration-200"
             >
               ← Voltar para o site
             </button>
@@ -155,8 +155,8 @@ export default function AdminLoginPage() {
 
         {/* Aviso de segurança */}
         <div className="mt-6 text-center">
-          <p className="text-gray-400 text-xs">
-            🔒 Esta área é protegida e monitorada. Apenas administradores autorizados podem acessar.
+          <p className="text-gray-500 text-xs">
+            Esta área é protegida e monitorada. Apenas administradores autorizados podem acessar.
           </p>
         </div>
       </div>

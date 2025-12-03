@@ -764,7 +764,7 @@ export default function WeekGrid({
           return (
             <div
               key={index}
-              className={`p-3 ${viewMode === 'day' ? 'text-left pl-6' : 'text-center'} border-r border-gray-200 last:border-r-0 ${
+              className={`p-3 text-center border-r border-gray-200 last:border-r-0 ${
                 isDayToday ? 'bg-[#FFF7ED]' : 'bg-gray-50'
               }`}
             >
@@ -787,7 +787,7 @@ export default function WeekGrid({
                 </>
               )}
               {viewMode === 'day' && isDayToday && (
-                <span className="ml-2 text-xs text-orange-500 font-medium">(Hoje)</span>
+                <div className="text-xs text-orange-500 font-medium">(Hoje)</div>
               )}
             </div>
           )
@@ -888,12 +888,12 @@ export default function WeekGrid({
                   <div
                     key={dynamicKey}
                     style={blockStyle}
-                    className="rounded bg-orange-100 border border-dashed border-gray-200 overflow-hidden z-10 flex flex-col justify-center px-1.5 py-0.5 text-left opacity-90"
+                    className="rounded bg-orange-100 border border-dashed border-gray-200 overflow-hidden z-10 flex flex-col items-center justify-center px-1.5 py-0.5 text-center opacity-90"
                   >
                     <div className="text-[10px] font-medium text-orange-600 leading-tight">
                       {format(parseISO(block.start), 'HH:mm')} - {format(parseISO(block.end), 'HH:mm')}
                     </div>
-                    <div className="text-[11px] font-medium text-orange-700 leading-tight truncate w-full">
+                    <div className="text-[11px] font-medium text-orange-700 leading-tight truncate w-full text-center">
                       {block.title}
                     </div>
                   </div>
@@ -926,7 +926,7 @@ export default function WeekGrid({
                         if (!resizing && !justResizedRef.current) onAppointmentClick(apt)
                       }}
                       style={getAppointmentStyle(apt, dayAppointments, dayRecurringBlocks)}
-                      className={`rounded ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-md overflow-hidden z-10 flex items-center justify-center px-1 border border-white/20 relative ${isBeingResized ? 'ring-2 ring-white/50' : ''} ${showResizeCursor ? 'cursor-ns-resize' : 'cursor-pointer'}`}
+                      className={`rounded ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-md overflow-hidden z-10 flex items-center justify-center px-1 border border-white/20 relative text-center ${isBeingResized ? 'ring-2 ring-white/50' : ''} ${showResizeCursor ? 'cursor-ns-resize' : 'cursor-pointer'}`}
                     >
                       {/* Conteúdo do card - centralizado */}
                       <span className="text-[10px] font-medium opacity-90 whitespace-nowrap">

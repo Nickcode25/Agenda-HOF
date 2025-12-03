@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle, Check, XCircle, Pencil, CalendarOff } from 'lucide-react'
+import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle, Check, XCircle, Pencil, CalendarOff, UserCircle } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
 import { useConfirm } from '@/hooks/useConfirm'
 import { usePatients } from '@/store/patients'
@@ -273,6 +273,20 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
               >
                 <MessageCircle size={18} />
                 WhatsApp
+              </button>
+            )}
+            {!appointment.isPersonal && appointment.patientId && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  navigate(`/app/pacientes/${appointment.patientId}`)
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg font-medium transition-colors border border-purple-200"
+                title="Ver perfil do paciente"
+              >
+                <UserCircle size={18} />
+                Paciente
               </button>
             )}
           </div>

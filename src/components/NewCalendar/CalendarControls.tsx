@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react'
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addMonths, subMonths, addDays, subDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { Link } from 'react-router-dom'
 
 type ViewMode = 'day' | 'week' | 'month'
 
@@ -10,6 +11,7 @@ interface CalendarControlsProps {
   currentDate: Date
   onDateChange: (date: Date) => void
   onToday: () => void
+  appointmentsToday?: number
 }
 
 export default function CalendarControls({
@@ -17,7 +19,8 @@ export default function CalendarControls({
   onViewModeChange,
   currentDate,
   onDateChange,
-  onToday
+  onToday,
+  appointmentsToday = 0
 }: CalendarControlsProps) {
   // Formatar texto de data baseado no modo de visualização
   const getDateRangeText = () => {
@@ -56,44 +59,71 @@ export default function CalendarControls({
 
   return (
     <div className="flex items-center justify-between bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-      {/* View Selector */}
-      <div className="flex items-center bg-gray-100 rounded-lg p-1">
-        <button
-          type="button"
-          onClick={() => onViewModeChange('day')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            viewMode === 'day'
-              ? 'bg-orange-500 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-          }`}
+      {/* Left side: View Selector + Stats + New Button */}
+      <div className="flex items-center gap-4">
+        {/* View Selector */}
+        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <button
+            type="button"
+            onClick={() => onViewModeChange('day')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === 'day'
+                ? 'bg-orange-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            Dia
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange('week')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === 'week'
+                ? 'bg-orange-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            Semana
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange('month')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === 'month'
+                ? 'bg-orange-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+            }`}
+          >
+            Mês
+          </button>
+        </div>
+
+        {/* Separador */}
+        <div className="w-px h-8 bg-gray-200" />
+
+        {/* Stats do dia */}
+        <div className="flex items-center gap-2 text-gray-600">
+          <Calendar size={18} className="text-orange-500" />
+          <span className="text-sm">
+            <span className="font-bold text-gray-900">{appointmentsToday}</span>
+            {' '}agendamentos hoje
+          </span>
+        </div>
+
+        {/* Separador */}
+        <div className="w-px h-8 bg-gray-200" />
+
+        {/* Botão Novo Agendamento */}
+        <Link
+          to="/app/agenda/nova"
+          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-all hover:shadow-md"
         >
-          Dia
-        </button>
-        <button
-          type="button"
-          onClick={() => onViewModeChange('week')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            viewMode === 'week'
-              ? 'bg-orange-500 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-          }`}
-        >
-          Semana
-        </button>
-        <button
-          type="button"
-          onClick={() => onViewModeChange('month')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            viewMode === 'month'
-              ? 'bg-orange-500 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-          }`}
-        >
-          Mês
-        </button>
+          <Plus size={18} />
+          Novo Agendamento
+        </Link>
       </div>
 
-      {/* Navigation */}
+      {/* Right side: Navigation */}
       <div className="flex items-center gap-3">
         <button
           type="button"

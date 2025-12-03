@@ -4,7 +4,7 @@ import { usePatients } from '@/store/patients'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
-import { Save, Search, Calendar, X, User, Phone, Clock, FileText, Stethoscope, UserPlus, CalendarOff } from 'lucide-react'
+import { Save, Search, Calendar, X, User, Phone, Clock, FileText, Stethoscope, UserPlus, CalendarOff, Repeat } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { createISOFromDateTimeBR, formatInSaoPaulo } from '@/utils/timezone'
 import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
@@ -175,6 +175,15 @@ export default function AppointmentForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
+    console.log('📝 [APPOINTMENT] Iniciando submit do formulário...')
+    console.log('📝 [APPOINTMENT] isPersonal:', isPersonal)
+    console.log('📝 [APPOINTMENT] selectedPatient:', selectedPatient)
+    console.log('📝 [APPOINTMENT] professionalId:', professionalId)
+    console.log('📝 [APPOINTMENT] appointmentDate:', appointmentDate)
+    console.log('📝 [APPOINTMENT] startTime:', startTime)
+    console.log('📝 [APPOINTMENT] endTime:', endTime)
+    console.log('📝 [APPOINTMENT] customProcedureName:', customProcedureName)
+
     // Validações diferentes para compromisso pessoal vs agendamento
     if (isPersonal) {
       if (!personalTitle.trim()) {
@@ -236,30 +245,42 @@ export default function AppointmentForm() {
       navigate('/app/agenda')
     } else {
       // Criar novo agendamento ou compromisso
-      const newAppointmentId = await add({
-        patientId: isPersonal ? '' : selectedPatient!.id,
-        patientName: isPersonal ? personalTitle : selectedPatient!.name,
-        procedure: isPersonal ? 'Compromisso Pessoal' : customProcedureName,
-        procedureId: undefined,
-        selectedProducts: undefined,
-        professional: professional?.name || '',
-        room: room || undefined,
-        start,
-        end,
-        notes: notes || undefined,
-        status: 'scheduled',
-        isPersonal,
-        title: isPersonal ? personalTitle : undefined,
-      })
+      console.log('📝 [APPOINTMENT] Criando novo agendamento...')
+      console.log('📝 [APPOINTMENT] start:', start)
+      console.log('📝 [APPOINTMENT] end:', end)
+      console.log('📝 [APPOINTMENT] professional:', professional?.name)
 
-      if (!newAppointmentId) {
-        showToast(isPersonal ? 'Erro ao criar compromisso. Tente novamente.' : 'Erro ao criar agendamento. Tente novamente.', 'error')
-        return
+      try {
+        const newAppointmentId = await add({
+          patientId: isPersonal ? '' : selectedPatient!.id,
+          patientName: isPersonal ? personalTitle : selectedPatient!.name,
+          procedure: isPersonal ? 'Compromisso Pessoal' : customProcedureName,
+          procedureId: undefined,
+          selectedProducts: undefined,
+          professional: professional?.name || '',
+          room: room || undefined,
+          start,
+          end,
+          notes: notes || undefined,
+          status: 'scheduled',
+          isPersonal,
+          title: isPersonal ? personalTitle : undefined,
+        })
+
+        console.log('📝 [APPOINTMENT] Resultado do add:', newAppointmentId)
+
+        if (!newAppointmentId) {
+          showToast(isPersonal ? 'Erro ao criar compromisso. Tente novamente.' : 'Erro ao criar agendamento. Tente novamente.', 'error')
+          return
+        }
+
+        await fetchAppointments()
+        showToast(isPersonal ? 'Compromisso criado com sucesso!' : 'Agendamento criado com sucesso!', 'success')
+        navigate('/app/agenda')
+      } catch (error) {
+        console.error('❌ [APPOINTMENT] Erro ao criar agendamento:', error)
+        showToast('Erro ao criar agendamento. Verifique sua conexão.', 'error')
       }
-
-      await fetchAppointments()
-      showToast(isPersonal ? 'Compromisso criado com sucesso!' : 'Agendamento criado com sucesso!', 'success')
-      navigate('/app/agenda')
     }
   }
 
@@ -361,11 +382,11 @@ export default function AppointmentForm() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setIsPersonal(false)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
                   !isPersonal
                     ? 'border-orange-500 bg-orange-50 text-orange-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
@@ -377,7 +398,7 @@ export default function AppointmentForm() {
               <button
                 type="button"
                 onClick={() => setIsPersonal(true)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
                   isPersonal
                     ? 'border-orange-500 bg-orange-50 text-orange-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
@@ -386,6 +407,13 @@ export default function AppointmentForm() {
                 <CalendarOff size={18} />
                 Compromisso Pessoal
               </button>
+              <Link
+                to="/app/agenda/recorrentes"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 hover:border-gray-300 font-medium transition-all"
+              >
+                <Repeat size={18} />
+                Recorrentes
+              </Link>
             </div>
           </div>
 

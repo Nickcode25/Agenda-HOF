@@ -13,7 +13,7 @@ export default function CourtesyAdminPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
+    <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar
         activeView="courtesy"
         onViewChange={(view) => navigate(`/admin/${view === 'overview' ? 'dashboard' : view === 'clinics' ? 'users' : view}`)}

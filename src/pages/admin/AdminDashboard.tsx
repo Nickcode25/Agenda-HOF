@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CheckCircle, Clock, XCircle, AlertTriangle, Search, Filter,
-  Phone, Activity
+  Phone, Activity, X, Users, DollarSign, Gift, Package
 } from 'lucide-react'
 import { PieChart as RePieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from '../../lib/supabase'
@@ -28,6 +28,7 @@ interface Stats {
   clinicsInTrial: number
   clinicsExpired: number
   clinicsWithoutPlan: number
+  totalCourtesies: number
 }
 
 interface Clinic {
@@ -66,11 +67,20 @@ export default function AdminDashboard() {
     totalSales: 0,
     clinicsInTrial: 0,
     clinicsExpired: 0,
-    clinicsWithoutPlan: 0
+    clinicsWithoutPlan: 0,
+    totalCourtesies: 0
   })
   const [clinics, setClinics] = useState<Clinic[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'trial' | 'expired' | 'none'>('all')
+  const [detailModal, setDetailModal] = useState<{
+    isOpen: boolean
+    type: string
+    title: string
+    data: any[]
+  }>({ isOpen: false, type: '', title: '', data: [] })
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const [allSubscriptions, setAllSubscriptions] = useState<any[]>([])
 
   useEffect(() => {
     checkAdminAndLoadData()
@@ -111,10 +121,20 @@ export default function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      // Contar clínicas únicas (usuários com assinatura)
-      const { data: subscriptionsData, error: subsError } = await supabase
-        .from('user_subscriptions')
-        .select('user_id, plan_amount, status, discount_percentage')
+      // Buscar TODOS os usuários usando a função RPC
+      const { data: allUsers, error: usersError } = await supabase.rpc('get_all_users')
+
+      if (usersError) {
+        console.error('Erro ao buscar usuários:', usersError)
+        return
+      }
+
+      console.log('📊 Total de usuários:', allUsers?.length || 0)
+      const totalUsers = allUsers?.length || 0
+      setAllUsers(allUsers || [])
+
+      // Buscar todas as assinaturas
+      const { data: subscriptionsData, error: subsError } = await supabase.rpc('get_all_subscriptions')
 
       if (subsError) {
         console.error('Erro ao buscar assinaturas:', subsError)
@@ -122,38 +142,52 @@ export default function AdminDashboard() {
       }
 
       console.log('📊 Assinaturas encontradas:', subscriptionsData)
+      setAllSubscriptions(subscriptionsData || [])
 
-      // Usuários únicos com assinatura (clínicas)
-      const uniqueOwners = new Set(subscriptionsData?.map(sub => sub.user_id) || [])
-      const clinicsCount = uniqueOwners.size
+      // Assinaturas ativas (não cortesias - discount_percentage < 100)
+      const activeSubscriptions = subscriptionsData?.filter((sub: any) =>
+        sub.status === 'active' && sub.discount_percentage < 100
+      ) || []
 
-      // Total de usuários = clínicas
-      const totalUsers = clinicsCount
+      // Cortesias ativas (discount_percentage = 100)
+      const activeCourtesies = subscriptionsData?.filter((sub: any) =>
+        sub.status === 'active' && sub.discount_percentage === 100
+      ) || []
+
+      console.log('🎁 Cortesias ativas:', activeCourtesies.length)
 
       // Calcular receita de assinaturas ATIVAS (considerando descontos)
-      const activeSubscriptions = subscriptionsData?.filter(sub => sub.status === 'active') || []
-
       console.log('💰 Calculando receita...')
-      const subscriptionsRevenue = activeSubscriptions.reduce((sum, sub) => {
+      const subscriptionsRevenue = activeSubscriptions.reduce((sum: number, sub: any) => {
         const planAmount = parseFloat(sub.plan_amount) || 0
         const discountPercentage = sub.discount_percentage || 0
-        // Valor real = plan_amount * (1 - discount_percentage / 100)
         const realAmount = planAmount * (1 - discountPercentage / 100)
-        console.log(`  - Assinatura: R$ ${planAmount.toFixed(2)} - ${discountPercentage}% desconto = R$ ${realAmount.toFixed(2)}`)
         return sum + realAmount
       }, 0)
 
       console.log(`💰 Receita total: R$ ${subscriptionsRevenue.toFixed(2)}`)
-      const activeSubscriptionsCount = activeSubscriptions.length
+
+      // Usuários sem plano (nunca assinaram)
+      const usersWithSubscription = new Set(subscriptionsData?.map((sub: any) => sub.user_id) || [])
+      const usersWithoutPlan = totalUsers - usersWithSubscription.size
+
+      // Cancelados/Expirados
+      const cancelledSubscriptions = subscriptionsData?.filter((sub: any) =>
+        sub.status === 'cancelled' || sub.status === 'payment_failed'
+      ) || []
 
       setStats(prev => ({
         ...prev,
-        totalClinics: clinicsCount,
+        totalClinics: totalUsers,
         totalUsers: totalUsers,
         totalRevenue: subscriptionsRevenue,
-        activeSubscriptions: activeSubscriptionsCount,
-        totalAppointments: 0, // Não acessível sem RLS
-        totalSales: 0 // Não acessível sem RLS
+        activeSubscriptions: activeSubscriptions.length,
+        totalAppointments: 0,
+        totalSales: 0,
+        clinicsInTrial: 0,
+        clinicsExpired: cancelledSubscriptions.length,
+        clinicsWithoutPlan: usersWithoutPlan,
+        totalCourtesies: activeCourtesies.length
       }))
     } catch (err) {
       console.error('Erro ao carregar estatísticas:', err)
@@ -279,22 +313,22 @@ export default function AdminDashboard() {
       active: {
         icon: CheckCircle,
         text: 'Ativo',
-        class: 'bg-green-500/20 text-green-400 border-green-500/30'
+        class: 'bg-green-100 text-green-700 border-green-200'
       },
       trial: {
         icon: Clock,
         text: 'Trial',
-        class: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+        class: 'bg-blue-100 text-blue-700 border-blue-200'
       },
       expired: {
         icon: XCircle,
         text: 'Expirado',
-        class: 'bg-red-500/20 text-red-400 border-red-500/30'
+        class: 'bg-red-100 text-red-700 border-red-200'
       },
       none: {
         icon: AlertTriangle,
         text: 'Sem plano',
-        class: 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+        class: 'bg-gray-100 text-gray-600 border-gray-200'
       }
     }
 
@@ -381,10 +415,170 @@ export default function AdminDashboard() {
     return Object.entries(grouped).map(([name, value]) => ({ name, receita: value })).slice(-10)
   }
 
+  const handleCardClick = (cardType: string) => {
+    switch (cardType) {
+      case 'users':
+        navigate('/admin/users')
+        break
+      case 'subscriptions':
+        navigate('/admin/subscriptions')
+        break
+      case 'courtesy':
+        navigate('/admin/courtesy')
+        break
+      case 'revenue': {
+        // Assinaturas pagas (não cortesias)
+        const paidSubscriptions = allSubscriptions.filter(
+          (sub: any) => sub.status === 'active' && sub.discount_percentage < 100
+        )
+        setDetailModal({
+          isOpen: true,
+          type: 'revenue',
+          title: 'Receita Mensal Recorrente (MRR)',
+          data: paidSubscriptions
+        })
+        break
+      }
+      case 'cancelled': {
+        const cancelled = allSubscriptions.filter(
+          (sub: any) => sub.status === 'cancelled' || sub.status === 'payment_failed'
+        )
+        setDetailModal({
+          isOpen: true,
+          type: 'cancelled',
+          title: 'Assinaturas Canceladas',
+          data: cancelled
+        })
+        break
+      }
+      case 'without_plan': {
+        // Usuários que nunca tiveram assinatura
+        const usersWithSubscription = new Set(allSubscriptions.map((sub: any) => sub.user_id))
+        const usersWithoutPlan = allUsers.filter(
+          (user: any) => !usersWithSubscription.has(user.user_id)
+        )
+        setDetailModal({
+          isOpen: true,
+          type: 'without_plan',
+          title: 'Usuários Sem Plano',
+          data: usersWithoutPlan
+        })
+        break
+      }
+      default:
+        break
+    }
+  }
+
+  const closeModal = () => {
+    setDetailModal({ isOpen: false, type: '', title: '', data: [] })
+  }
+
+  const renderModalContent = () => {
+    if (!detailModal.isOpen) return null
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              {detailModal.type === 'revenue' && (
+                <div className="p-2 bg-green-100 rounded-xl">
+                  <DollarSign className="w-6 h-6 text-green-600" />
+                </div>
+              )}
+              {detailModal.type === 'cancelled' && (
+                <div className="p-2 bg-red-100 rounded-xl">
+                  <XCircle className="w-6 h-6 text-red-500" />
+                </div>
+              )}
+              {detailModal.type === 'without_plan' && (
+                <div className="p-2 bg-gray-100 rounded-xl">
+                  <Package className="w-6 h-6 text-gray-500" />
+                </div>
+              )}
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">{detailModal.title}</h2>
+                <p className="text-sm text-gray-500">{detailModal.data.length} registros</p>
+              </div>
+            </div>
+            <button
+              onClick={closeModal}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6 text-gray-500" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 overflow-y-auto max-h-[60vh]">
+            {detailModal.data.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">Nenhum registro encontrado</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Nome</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Email</th>
+                    {(detailModal.type === 'revenue' || detailModal.type === 'cancelled') && (
+                      <>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
+                        <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600">Valor</th>
+                      </>
+                    )}
+                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600">Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detailModal.data.map((item: any, index: number) => (
+                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <span className="text-gray-900 font-medium">
+                          {item.owner_name || 'Nome não disponível'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-gray-600">{item.owner_email || item.email || '-'}</span>
+                      </td>
+                      {(detailModal.type === 'revenue' || detailModal.type === 'cancelled') && (
+                        <>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              item.status === 'active'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {item.status === 'active' ? 'Ativo' : 'Cancelado'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span className="text-green-600 font-medium">
+                              R$ {(parseFloat(item.plan_amount || 0) * (1 - (item.discount_percentage || 0) / 100)).toFixed(2)}
+                            </span>
+                          </td>
+                        </>
+                      )}
+                      <td className="py-3 px-4 text-right text-gray-500 text-sm">
+                        {formatDateTimeBRSafe(item.subscription_created_at || item.user_created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Carregando...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600 text-xl">Carregando...</div>
       </div>
     )
   }
@@ -394,7 +588,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-black flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <AdminSidebar
         activeView={activeView}
@@ -421,9 +615,9 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="bg-gray-800/50 backdrop-blur-xl border-b border-gray-700 sticky top-0 z-10">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
           <div className="px-8 py-6">
-            <h2 className="text-3xl font-bold text-white">
+            <h2 className="text-3xl font-bold text-gray-900">
               {activeView === 'overview' && 'Dashboard Overview'}
               {activeView === 'clinics' && 'Gerenciar Usuários'}
               {activeView === 'plans' && 'Gestão de Planos'}
@@ -432,7 +626,7 @@ export default function AdminDashboard() {
               {activeView === 'coupons' && 'Cupons de Desconto'}
               {activeView === 'courtesy' && 'Gestão de Cortesias'}
             </h2>
-            <p className="text-gray-400 mt-1">
+            <p className="text-gray-500 mt-1">
               {activeView === 'overview' && 'Visão geral da plataforma'}
               {activeView === 'clinics' && `${filteredClinics.length} usuários registrados`}
               {activeView === 'plans' && 'Crie e gerencie planos de assinatura'}
@@ -449,13 +643,13 @@ export default function AdminDashboard() {
           {activeView === 'overview' && (
             <>
               {/* Stats Cards */}
-              <AdminStatsGrid stats={stats} />
+              <AdminStatsGrid stats={stats} onCardClick={handleCardClick} />
 
               {/* Quick Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Status Distribution */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <h3 className="text-xl font-bold text-white mb-6">Distribuição de Status</h3>
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Distribuição de Status</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <RePieChart>
                       <Pie
@@ -478,14 +672,14 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Recent Activity */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-                  <h3 className="text-xl font-bold text-white mb-6">Últimas Clínicas</h3>
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Últimas Clínicas</h3>
                   <div className="space-y-3">
                     {clinics.slice(0, 5).map(clinic => (
-                      <div key={clinic.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                      <div key={clinic.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
                         <div>
-                          <p className="text-white font-medium">{clinic.owner_name}</p>
-                          <p className="text-gray-400 text-sm">{clinic.owner_email}</p>
+                          <p className="text-gray-900 font-medium">{clinic.owner_name}</p>
+                          <p className="text-gray-500 text-sm">{clinic.owner_email}</p>
                         </div>
                         {getStatusBadge(clinic.subscription_status)}
                       </div>
@@ -508,7 +702,7 @@ export default function AdminDashboard() {
                     placeholder="Buscar por nome ou email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                   />
                 </div>
 
@@ -517,7 +711,7 @@ export default function AdminDashboard() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all appearance-none"
+                    className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all appearance-none"
                   >
                     <option value="all">Todos os status</option>
                     <option value="active">Ativos</option>
@@ -529,38 +723,38 @@ export default function AdminDashboard() {
               </div>
 
               {/* Table */}
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-white/20 bg-white/5">
-                        <th className="text-left py-4 px-6 text-gray-300 font-semibold">Owner</th>
-                        <th className="text-left py-4 px-6 text-gray-300 font-semibold">Email</th>
-                        <th className="text-left py-4 px-6 text-gray-300 font-semibold">Telefone</th>
-                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Status</th>
-                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Trial</th>
-                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Último Login</th>
-                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Pacientes</th>
-                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Agendamentos</th>
-                        <th className="text-right py-4 px-6 text-gray-300 font-semibold">Receita</th>
-                        <th className="text-center py-4 px-6 text-gray-300 font-semibold">Cadastro</th>
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left py-4 px-6 text-gray-600 font-semibold">Owner</th>
+                        <th className="text-left py-4 px-6 text-gray-600 font-semibold">Email</th>
+                        <th className="text-left py-4 px-6 text-gray-600 font-semibold">Telefone</th>
+                        <th className="text-center py-4 px-6 text-gray-600 font-semibold">Status</th>
+                        <th className="text-center py-4 px-6 text-gray-600 font-semibold">Trial</th>
+                        <th className="text-center py-4 px-6 text-gray-600 font-semibold">Último Login</th>
+                        <th className="text-center py-4 px-6 text-gray-600 font-semibold">Pacientes</th>
+                        <th className="text-center py-4 px-6 text-gray-600 font-semibold">Agendamentos</th>
+                        <th className="text-right py-4 px-6 text-gray-600 font-semibold">Receita</th>
+                        <th className="text-center py-4 px-6 text-gray-600 font-semibold">Cadastro</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredClinics.map((clinic) => (
-                        <tr key={clinic.id} className="border-b border-white/10 hover:bg-white/5 transition-colors duration-200">
+                        <tr key={clinic.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
                           <td className="py-4 px-6">
-                            <div className="text-white font-medium">{clinic.owner_name}</div>
+                            <div className="text-gray-900 font-medium">{clinic.owner_name}</div>
                           </td>
-                          <td className="py-4 px-6 text-gray-300 text-sm">{clinic.owner_email}</td>
-                          <td className="py-4 px-6 text-gray-300 text-sm">
+                          <td className="py-4 px-6 text-gray-600 text-sm">{clinic.owner_email}</td>
+                          <td className="py-4 px-6 text-gray-600 text-sm">
                             {clinic.owner_phone ? (
                               <div className="flex items-center gap-2">
-                                <Phone className="w-4 h-4 text-blue-400" />
+                                <Phone className="w-4 h-4 text-blue-500" />
                                 <span>{clinic.owner_phone}</span>
                               </div>
                             ) : (
-                              <span className="text-gray-500">-</span>
+                              <span className="text-gray-400">-</span>
                             )}
                           </td>
                           <td className="py-4 px-6 text-center">
@@ -568,24 +762,24 @@ export default function AdminDashboard() {
                           </td>
                           <td className="py-4 px-6 text-center">
                             {clinic.subscription_status === 'trial' ? (
-                              <span className="text-blue-400 font-semibold">
+                              <span className="text-blue-600 font-semibold">
                                 {clinic.trial_days_remaining} dias
                               </span>
                             ) : clinic.subscription_status === 'expired' ? (
-                              <span className="text-red-400 text-sm">Expirado</span>
+                              <span className="text-red-600 text-sm">Expirado</span>
                             ) : (
-                              <span className="text-gray-500 text-sm">-</span>
+                              <span className="text-gray-400 text-sm">-</span>
                             )}
                           </td>
-                          <td className="py-4 px-6 text-center text-gray-400 text-sm">
+                          <td className="py-4 px-6 text-center text-gray-500 text-sm">
                             {formatDateTime(clinic.last_login)}
                           </td>
-                          <td className="py-4 px-6 text-center text-white">{clinic.patients_count}</td>
-                          <td className="py-4 px-6 text-center text-white">{clinic.appointments_count}</td>
-                          <td className="py-4 px-6 text-right text-green-400 font-semibold">
+                          <td className="py-4 px-6 text-center text-gray-900">{clinic.patients_count}</td>
+                          <td className="py-4 px-6 text-center text-gray-900">{clinic.appointments_count}</td>
+                          <td className="py-4 px-6 text-right text-green-600 font-semibold">
                             R$ {clinic.total_revenue.toFixed(2)}
                           </td>
-                          <td className="py-4 px-6 text-center text-gray-400 text-sm">
+                          <td className="py-4 px-6 text-center text-gray-500 text-sm">
                             {formatDate(clinic.created_at)}
                           </td>
                         </tr>
@@ -596,15 +790,15 @@ export default function AdminDashboard() {
 
                 {filteredClinics.length === 0 && clinics.length > 0 && (
                   <div className="text-center py-12">
-                    <Search className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400">Nenhuma clínica encontrada com os filtros aplicados</p>
+                    <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhuma clínica encontrada com os filtros aplicados</p>
                   </div>
                 )}
 
                 {clinics.length === 0 && (
                   <div className="text-center py-12">
-                    <Activity className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400">Nenhuma clínica registrada ainda</p>
+                    <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhuma clínica registrada ainda</p>
                   </div>
                 )}
               </div>
@@ -637,6 +831,9 @@ export default function AdminDashboard() {
           )}
         </div>
       </main>
+
+      {/* Modal de Detalhes */}
+      {renderModalContent()}
     </div>
   )
 }
