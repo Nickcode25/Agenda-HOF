@@ -130,12 +130,7 @@ export default function CoursesList() {
           }
         />
       ) : (
-        <div className="space-y-4">
-          <div className="text-sm text-gray-500 px-1">
-            {filtered.length} curso{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(course => (
                 <div
                   key={course.id}
@@ -193,7 +188,6 @@ export default function CoursesList() {
                   </div>
                 </div>
             ))}
-          </div>
         </div>
       )}
     </div>

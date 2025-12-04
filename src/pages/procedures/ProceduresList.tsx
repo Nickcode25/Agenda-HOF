@@ -17,13 +17,20 @@ export default function ProceduresList() {
     fetchAll()
   }, [])
 
+  // Ordenar procedimentos alfabeticamente
+  const sortedProcedures = useMemo(() => {
+    return [...procedures].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+    )
+  }, [procedures])
+
   const filtered = useMemo(() => {
-    if (!q.trim()) return procedures
-    return procedures.filter(p =>
+    if (!q.trim()) return sortedProcedures
+    return sortedProcedures.filter(p =>
       containsIgnoringAccents(p.name, q) ||
       containsIgnoringAccents(p.description || '', q)
     )
-  }, [q, procedures])
+  }, [q, sortedProcedures])
 
   // Stats calculations
   const stats = useMemo(() => {
@@ -153,12 +160,8 @@ export default function ProceduresList() {
           }}
         />
       ) : (
-        <div className="space-y-4">
-          <div className="text-sm text-gray-500 px-1">
-            {filtered.length} procedimento{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
-          </div>
-
-          {filtered.map(proc => {
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {filtered.map(proc => {
             const iconConfig = getProcedureIcon(proc.name)
             const IconComponent = iconConfig.icon
 

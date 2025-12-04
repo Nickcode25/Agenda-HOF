@@ -49,14 +49,21 @@ export default function ProfessionalsList() {
     fetchAll()
   }, [])
 
+  // Ordenar profissionais alfabeticamente
+  const sortedProfessionals = useMemo(() => {
+    return [...professionals].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+    )
+  }, [professionals])
+
   const filtered = useMemo(() => {
-    if (!q.trim()) return professionals
-    return professionals.filter(p =>
+    if (!q.trim()) return sortedProfessionals
+    return sortedProfessionals.filter(p =>
       containsIgnoringAccents(p.name, q) ||
       containsIgnoringAccents(p.specialty, q) ||
       containsIgnoringAccents(p.registrationNumber, q)
     )
-  }, [q, professionals])
+  }, [q, sortedProfessionals])
 
   // Stats calculations
   const stats = useMemo(() => {
@@ -123,12 +130,8 @@ export default function ProfessionalsList() {
           }}
         />
       ) : (
-        <div className="space-y-4">
-          <div className="text-sm text-gray-500 px-1">
-            {filtered.length} profissional{filtered.length !== 1 ? 'is' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
-          </div>
-
-          {filtered.map(prof => (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {filtered.map(prof => (
             <Link
               key={prof.id}
               to={`/app/profissionais/${prof.id}`}

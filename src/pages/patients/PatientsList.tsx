@@ -241,12 +241,7 @@ export default function PatientsList() {
           }}
         />
       ) : (
-        <div className="space-y-4">
-          <div className="text-sm text-gray-500 px-1">
-            {filtered.length} paciente{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filtered.map(p => (
               <PatientCard
                 key={p.id}
@@ -254,7 +249,6 @@ export default function PatientsList() {
                 onWhatsApp={handleWhatsApp}
               />
             ))}
-          </div>
         </div>
       )}
     </div>
