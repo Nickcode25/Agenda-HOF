@@ -348,7 +348,7 @@ export default function WeekGrid({
     if (dragging) {
       window.addEventListener('mousemove', handleDragMove)
       window.addEventListener('mouseup', handleDragEnd)
-      document.body.style.cursor = 'crosshair'
+      document.body.style.cursor = 'grabbing'
       document.body.style.userSelect = 'none'
 
       return () => {
@@ -853,7 +853,7 @@ export default function WeekGrid({
                 }}
                 className={`relative border-r border-gray-200 last:border-r-0 ${
                   isDayToday ? 'bg-[#FFF7ED]/50' : ''
-                } ${onTimeSlotSelect ? 'cursor-crosshair' : ''}`}
+                } ${onTimeSlotSelect ? 'cursor-pointer' : ''}`}
                 style={{ height: `${timeSlots.length * HOUR_HEIGHT}px` }}
               >
                 {/* Linhas de hora */}
@@ -862,7 +862,7 @@ export default function WeekGrid({
                     key={hour}
                     onClick={() => !dragging && onTimeSlotClick?.(day, hour)}
                     style={{ height: `${HOUR_HEIGHT}px` }}
-                    className="hour-slot border-b border-gray-200 cursor-crosshair hover:bg-orange-50/50 transition-colors"
+                    className="hour-slot border-b border-gray-200 cursor-pointer hover:bg-orange-50/50 transition-colors"
                   />
                 ))}
 
