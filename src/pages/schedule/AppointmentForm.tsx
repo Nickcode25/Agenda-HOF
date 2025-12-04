@@ -4,12 +4,16 @@ import { usePatients } from '@/store/patients'
 import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
-import { Save, Search, Calendar, X, User, Phone, Clock, FileText, Stethoscope, UserPlus, CalendarOff, Repeat } from 'lucide-react'
+import { useRecurring } from '@/store/recurring'
+import { DAYS_OF_WEEK } from '@/types/recurring'
+import { Save, Search, Calendar, X, User, Phone, Clock, FileText, UserPlus, CalendarOff, Repeat } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { createISOFromDateTimeBR, formatInSaoPaulo } from '@/utils/timezone'
 import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
 import { formatTimeInput, formatDateInput } from '@/utils/inputFormatters'
 import QuickPatientModal from '@/components/QuickPatientModal'
+
+type AppointmentType = 'patient' | 'personal' | 'recurring'
 
 export default function AppointmentForm() {
   const { id: appointmentId } = useParams<{ id: string }>()
@@ -31,6 +35,7 @@ export default function AppointmentForm() {
   const update = useSchedule(s => s.updateAppointment)
   const appointments = useSchedule(s => s.appointments)
   const fetchAppointments = useSchedule(s => s.fetchAppointments)
+  const { blocks: recurringBlocks, addBlock, fetchBlocks, loading: recurringLoading } = useRecurring()
   const navigate = useNavigate()
   const showToast = useToast(s => s.show)
 
@@ -39,6 +44,7 @@ export default function AppointmentForm() {
     fetchPatients()
     fetchProfessionals()
     fetchAppointments()
+    fetchBlocks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -50,9 +56,15 @@ export default function AppointmentForm() {
   const [notes, setNotes] = useState('')
   const [professionalId, setProfessionalId] = useState(selectedProfessional || '')
 
-  // Compromisso pessoal
-  const [isPersonal, setIsPersonal] = useState(false)
+  // Tipo de agendamento: patient, personal, recurring
+  const [appointmentType, setAppointmentType] = useState<AppointmentType>('patient')
   const [personalTitle, setPersonalTitle] = useState('')
+
+  // Bloqueio recorrente
+  const [recurringTitle, setRecurringTitle] = useState('')
+  const [recurringStartTime, setRecurringStartTime] = useState('')
+  const [recurringEndTime, setRecurringEndTime] = useState('')
+  const [selectedDays, setSelectedDays] = useState<number[]>([])
 
   // Autocomplete patient search
   const [patientSearch, setPatientSearch] = useState('')
@@ -62,6 +74,9 @@ export default function AppointmentForm() {
 
   // Quick patient modal
   const [showQuickPatientModal, setShowQuickPatientModal] = useState(false)
+
+  // Expandir observações
+  const [showNotes, setShowNotes] = useState(false)
 
   // Obter nome do profissional selecionado
   const selectedProfessionalName = selectedProfessional
@@ -75,7 +90,7 @@ export default function AppointmentForm() {
       if (appointment) {
         // Verificar se é compromisso pessoal
         if (appointment.isPersonal) {
-          setIsPersonal(true)
+          setAppointmentType('personal')
           setPersonalTitle(appointment.title || '')
         } else {
           // Preencher dados do paciente
@@ -98,6 +113,7 @@ export default function AppointmentForm() {
         // Preencher sala e notas
         setRoom(appointment.room || '')
         setNotes(appointment.notes || '')
+        if (appointment.notes) setShowNotes(true)
 
         // Preencher data e horários
         setAppointmentDate(formatInSaoPaulo(appointment.start, 'dd/MM/yyyy'))
@@ -172,17 +188,45 @@ export default function AppointmentForm() {
     setAppointmentDate(formatDateInput(value))
   }
 
+  const toggleDay = (day: number) => {
+    setSelectedDays(prev =>
+      prev.includes(day)
+        ? prev.filter(d => d !== day)
+        : [...prev, day].sort((a, b) => a - b)
+    )
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    console.log('📝 [APPOINTMENT] Iniciando submit do formulário...')
-    console.log('📝 [APPOINTMENT] isPersonal:', isPersonal)
-    console.log('📝 [APPOINTMENT] selectedPatient:', selectedPatient)
-    console.log('📝 [APPOINTMENT] professionalId:', professionalId)
-    console.log('📝 [APPOINTMENT] appointmentDate:', appointmentDate)
-    console.log('📝 [APPOINTMENT] startTime:', startTime)
-    console.log('📝 [APPOINTMENT] endTime:', endTime)
-    console.log('📝 [APPOINTMENT] customProcedureName:', customProcedureName)
+    // Se for bloqueio recorrente, usar lógica diferente
+    if (appointmentType === 'recurring') {
+      if (!recurringTitle.trim()) {
+        showToast('Por favor, informe o título do bloqueio', 'error')
+        return
+      }
+      if (!recurringStartTime || !recurringEndTime) {
+        showToast('Por favor, informe os horários de início e término', 'error')
+        return
+      }
+      if (selectedDays.length === 0) {
+        showToast('Por favor, selecione pelo menos um dia da semana', 'error')
+        return
+      }
+
+      await addBlock({
+        title: recurringTitle,
+        startTime: recurringStartTime,
+        endTime: recurringEndTime,
+        daysOfWeek: selectedDays,
+        active: true,
+      })
+      showToast('Bloqueio recorrente criado com sucesso!', 'success')
+      navigate('/app/agenda')
+      return
+    }
+
+    const isPersonal = appointmentType === 'personal'
 
     // Validações diferentes para compromisso pessoal vs agendamento
     if (isPersonal) {
@@ -245,11 +289,6 @@ export default function AppointmentForm() {
       navigate('/app/agenda')
     } else {
       // Criar novo agendamento ou compromisso
-      console.log('📝 [APPOINTMENT] Criando novo agendamento...')
-      console.log('📝 [APPOINTMENT] start:', start)
-      console.log('📝 [APPOINTMENT] end:', end)
-      console.log('📝 [APPOINTMENT] professional:', professional?.name)
-
       try {
         const newAppointmentId = await add({
           patientId: isPersonal ? '' : selectedPatient!.id,
@@ -267,8 +306,6 @@ export default function AppointmentForm() {
           title: isPersonal ? personalTitle : undefined,
         })
 
-        console.log('📝 [APPOINTMENT] Resultado do add:', newAppointmentId)
-
         if (!newAppointmentId) {
           showToast(isPersonal ? 'Erro ao criar compromisso. Tente novamente.' : 'Erro ao criar agendamento. Tente novamente.', 'error')
           return
@@ -284,11 +321,12 @@ export default function AppointmentForm() {
     }
   }
 
-  // Para compromisso pessoal: precisa de título, profissional, data e horários
-  // Para agendamento: precisa de paciente, procedimento, profissional, data e horários
-  const canSubmit = isPersonal
-    ? (personalTitle.trim() && professionalId && appointmentDate && startTime && endTime)
-    : (selectedPatient && customProcedureName.trim() && professionalId && appointmentDate && startTime && endTime)
+  // Validação de submit baseada no tipo de agendamento
+  const canSubmit = appointmentType === 'recurring'
+    ? (recurringTitle.trim() && recurringStartTime && recurringEndTime && selectedDays.length > 0)
+    : appointmentType === 'personal'
+      ? (personalTitle.trim() && professionalId && appointmentDate && startTime && endTime)
+      : (selectedPatient && customProcedureName.trim() && professionalId && appointmentDate && startTime && endTime)
 
   // Callback quando paciente é criado pelo modal rápido
   const handleQuickPatientCreated = (newPatient: { id: string; name: string; phone?: string }) => {
@@ -313,449 +351,485 @@ export default function AppointmentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-8 p-8">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-gray-50 -m-8 p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header Compacto */}
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900">
               {isEditing
-                ? (isPersonal ? 'Editar Compromisso' : 'Editar Agendamento')
-                : (isPersonal ? 'Novo Compromisso' : 'Novo Agendamento')}
+                ? (appointmentType === 'personal' ? 'Editar Compromisso' : 'Editar Agendamento')
+                : appointmentType === 'recurring'
+                  ? 'Novo Bloqueio Recorrente'
+                  : 'Novo Agendamento'}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {isEditing
-                ? (isPersonal ? 'Altere os dados do compromisso pessoal' : 'Altere os dados do agendamento')
-                : isPersonal
-                  ? 'Bloqueie um horário na sua agenda'
-                  : selectedProfessionalName
-                    ? `Agenda: ${selectedProfessionalName}`
-                    : 'Agende um novo procedimento'}
+            <p className="text-sm text-gray-500">
+              {appointmentType === 'recurring'
+                ? 'Configure horários que se repetem automaticamente'
+                : selectedProfessionalName ? `Agenda: ${selectedProfessionalName}` : 'Agende rapidamente'}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               to="/app/agenda"
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               Cancelar
             </Link>
-            {!isPersonal && (
-              <button
-                type="button"
-                onClick={() => setShowQuickPatientModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors"
-              >
-                <UserPlus size={18} />
-                Adicionar Paciente
-              </button>
-            )}
             <button
               type="submit"
               form="appointment-form"
               disabled={!canSubmit}
-              className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all ${
+              className={`inline-flex items-center gap-2 px-5 py-2 text-sm rounded-lg font-medium transition-all ${
                 !canSubmit
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : isPersonal
-                    ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
-                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
+                  : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
               }`}
             >
-              <Save size={18} />
-              {isEditing ? 'Salvar Alterações' : (isPersonal ? 'Salvar Compromisso' : 'Salvar Agendamento')}
+              <Save size={16} />
+              Salvar
             </button>
           </div>
         </div>
 
         {/* Form */}
         <form id="appointment-form" onSubmit={onSubmit} className="space-y-4">
-          {/* Toggle: Tipo de agendamento */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className={`p-2 rounded-lg ${isPersonal ? 'bg-orange-50' : 'bg-gray-100'}`}>
-                <CalendarOff size={18} className={isPersonal ? 'text-orange-600' : 'text-gray-500'} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Tipo</h3>
-                <p className="text-xs text-gray-500">Selecione o tipo de evento na agenda</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setIsPersonal(false)}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
-                  !isPersonal
-                    ? 'border-orange-500 bg-orange-50 text-orange-700'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                }`}
-              >
-                <User size={18} />
-                Agendamento de Paciente
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsPersonal(true)}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium transition-all ${
-                  isPersonal
-                    ? 'border-orange-500 bg-orange-50 text-orange-700'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                }`}
-              >
-                <CalendarOff size={18} />
-                Compromisso Pessoal
-              </button>
-              <Link
-                to="/app/agenda/recorrentes"
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 hover:border-gray-300 font-medium transition-all"
-              >
-                <Repeat size={18} />
-                Recorrentes
-              </Link>
-            </div>
+          {/* Tipo de Agendamento - Botões compactos */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setAppointmentType('patient')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                appointmentType === 'patient'
+                  ? 'border-orange-500 bg-orange-50 text-orange-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              <User size={16} />
+              Paciente
+            </button>
+            <button
+              type="button"
+              onClick={() => setAppointmentType('personal')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                appointmentType === 'personal'
+                  ? 'border-orange-500 bg-orange-50 text-orange-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              <CalendarOff size={16} />
+              Compromisso
+            </button>
+            <button
+              type="button"
+              onClick={() => setAppointmentType('recurring')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                appointmentType === 'recurring'
+                  ? 'border-orange-500 bg-orange-50 text-orange-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              <Repeat size={16} />
+              Recorrentes
+            </button>
           </div>
 
-          {/* Seção: Compromisso Pessoal (quando isPersonal = true) */}
-          {isPersonal && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-                <div className="p-2 bg-orange-50 rounded-lg">
-                  <CalendarOff size={18} className="text-orange-600" />
-                </div>
+          {/* Card Principal - Todos os campos essenciais */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            {appointmentType === 'recurring' ? (
+              /* BLOQUEIO RECORRENTE */
+              <div className="space-y-4">
+                {/* Título */}
                 <div>
-                  <h3 className="font-semibold text-gray-900">Compromisso</h3>
-                  <p className="text-xs text-gray-500">Bloqueie um horário na sua agenda</p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Título do Compromisso <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Título <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={personalTitle}
-                    onChange={(e) => setPersonalTitle(e.target.value)}
-                    placeholder="Ex: Reunião, Gravação, Viagem..."
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                    value={recurringTitle}
+                    onChange={(e) => setRecurringTitle(e.target.value)}
+                    placeholder="Ex: Almoço, Reunião semanal, Intervalo..."
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-0.5">Descreva brevemente o compromisso</p>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Profissional <span className="text-red-500">*</span>
+                {/* Horários */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Horário de Início <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={recurringStartTime}
+                        onChange={(e) => setRecurringStartTime(formatTimeInput(e.target.value))}
+                        maxLength={5}
+                        placeholder="HH:MM"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Horário de Término <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={recurringEndTime}
+                        onChange={(e) => setRecurringEndTime(formatTimeInput(e.target.value))}
+                        maxLength={5}
+                        placeholder="HH:MM"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dias da semana */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dias da Semana <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={professionalId}
-                    onChange={(e) => setProfessionalId(e.target.value)}
-                    required
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                  >
-                    <option value="">Selecione um profissional</option>
-                    {professionals.map(prof => (
-                      <option key={prof.id} value={prof.id}>{prof.name} - {prof.specialty}</option>
+                  <div className="flex flex-wrap gap-2">
+                    {DAYS_OF_WEEK.map(day => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleDay(day.value)}
+                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all border-2 ${
+                          selectedDays.includes(day.value)
+                            ? 'border-orange-500 bg-orange-50 text-orange-700'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {day.label}
+                      </button>
                     ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-0.5">A quem pertence este compromisso</p>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selecione os dias em que este bloqueio deve aparecer
+                  </p>
+                </div>
+
+                {/* Dica */}
+                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm text-orange-700">
+                    Os bloqueios recorrentes aparecem automaticamente nos dias configurados.
+                    Se você agendar um paciente em um horário que tem bloqueio, o agendamento prevalece.
+                  </p>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Seção: Paciente (quando isPersonal = false) */}
-          {!isPersonal && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <User size={18} className="text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Paciente</h3>
-                <p className="text-xs text-gray-500">Selecione o paciente para o agendamento</p>
-              </div>
-            </div>
-
-            <div ref={patientSearchRef} className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Paciente <span className="text-red-500">*</span>
-              </label>
-              {selectedPatient ? (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-gray-900 rounded-lg px-3 py-2">
-                  <User size={16} className="text-green-600" />
-                  <span className="flex-1 font-medium">{selectedPatient.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPatient(null)
-                      setPatientSearch('')
-                      setShowPatientDropdown(false)
-                    }}
-                    className="p-1 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <X size={16} className="text-gray-400 hover:text-red-500" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="relative">
-                    <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            ) : appointmentType === 'personal' ? (
+              /* COMPROMISSO PESSOAL */
+              <div className="space-y-4">
+                {/* Título + Profissional em linha */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Título <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
-                      value={patientSearch}
-                      onChange={(e) => {
-                        setPatientSearch(e.target.value)
-                        setShowPatientDropdown(true)
-                      }}
-                      onFocus={() => setShowPatientDropdown(true)}
-                      placeholder="Buscar por nome, CPF ou telefone..."
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      value={personalTitle}
+                      onChange={(e) => setPersonalTitle(e.target.value)}
+                      placeholder="Ex: Reunião, Gravação..."
+                      autoFocus
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">Digite para buscar o paciente</p>
-                  {showPatientDropdown && (
-                    <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-auto">
-                      {filteredPatients.length > 0 ? (
-                        <div className="p-2">
-                          {filteredPatients.map(patient => (
-                            <button
-                              key={patient.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedPatient(patient)
-                                setPatientSearch(patient.name)
-                                setShowPatientDropdown(false)
-                              }}
-                              className="w-full text-left px-3 py-2 hover:bg-orange-50 transition-all rounded-lg mb-1 last:mb-0 border border-transparent hover:border-orange-200 group"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center border border-orange-200 group-hover:border-orange-400 transition-colors">
-                                  <User size={14} className="text-orange-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-gray-900 font-medium group-hover:text-orange-600 transition-colors truncate text-sm">
-                                    {patient.name}
-                                  </div>
-                                  {patient.phone && (
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
-                                      <Phone size={10} />
-                                      <span>{patient.phone}</span>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Profissional <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={professionalId}
+                      onChange={(e) => setProfessionalId(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                    >
+                      <option value="">Selecione...</option>
+                      {professionals.map(prof => (
+                        <option key={prof.id} value={prof.id}>{prof.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Data e Horários em linha */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Data <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={appointmentDate}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        maxLength={10}
+                        placeholder="dd/mm/aaaa"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Início <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={startTime}
+                        onChange={(e) => handleStartTimeChange(e.target.value)}
+                        maxLength={5}
+                        placeholder="09:00"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Término <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={endTime}
+                        onChange={(e) => handleEndTimeChange(e.target.value)}
+                        maxLength={5}
+                        placeholder="10:00"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* AGENDAMENTO DE PACIENTE */
+              <div className="space-y-4">
+                {/* Paciente + Botão Adicionar */}
+                <div ref={patientSearchRef} className="relative">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-gray-700">
+                      Paciente <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickPatientModal(true)}
+                      className="inline-flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium"
+                    >
+                      <UserPlus size={14} />
+                      Novo Paciente
+                    </button>
+                  </div>
+                  {selectedPatient ? (
+                    <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-gray-900 rounded-lg px-3 py-2.5">
+                      <User size={16} className="text-green-600" />
+                      <span className="flex-1 font-medium text-sm">{selectedPatient.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatient(null)
+                          setPatientSearch('')
+                        }}
+                        className="p-1 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <X size={16} className="text-gray-400 hover:text-red-500" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          value={patientSearch}
+                          onChange={(e) => {
+                            setPatientSearch(e.target.value)
+                            setShowPatientDropdown(true)
+                          }}
+                          onFocus={() => setShowPatientDropdown(true)}
+                          placeholder="Buscar paciente..."
+                          className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                        />
+                      </div>
+                      {showPatientDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                          {filteredPatients.length > 0 ? (
+                            <div className="p-1">
+                              {filteredPatients.map(patient => (
+                                <button
+                                  key={patient.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedPatient(patient)
+                                    setPatientSearch(patient.name)
+                                    setShowPatientDropdown(false)
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-orange-50 transition-all rounded-lg group"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-orange-50 flex items-center justify-center border border-orange-200">
+                                      <User size={12} className="text-orange-600" />
                                     </div>
-                                  )}
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="px-4 py-6 text-center text-gray-500">
-                          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                            <User size={24} className="text-gray-400" />
-                          </div>
-                          <p className="mb-2 text-gray-900 font-medium text-sm">Nenhum paciente encontrado</p>
-                          <Link
-                            to="/app/pacientes/novo"
-                            className="inline-flex items-center gap-2 text-orange-500 hover:text-orange-600 text-xs font-medium underline"
-                          >
-                            Cadastrar novo paciente
-                          </Link>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-gray-900 font-medium text-sm truncate">
+                                        {patient.name}
+                                      </div>
+                                      {patient.phone && (
+                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                          <Phone size={10} />
+                                          <span>{patient.phone}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="px-4 py-4 text-center text-gray-500 text-sm">
+                              <p>Nenhum paciente encontrado</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowPatientDropdown(false)
+                                  setShowQuickPatientModal(true)
+                                }}
+                                className="mt-2 text-orange-500 hover:text-orange-600 font-medium text-xs"
+                              >
+                                + Cadastrar novo paciente
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
+                    </>
                   )}
-                </>
-              )}
-            </div>
-          </div>
-          )}
+                </div>
 
-          {/* Seção: Procedimento (quando isPersonal = false) */}
-          {!isPersonal && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Stethoscope size={18} className="text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Procedimento</h3>
-                <p className="text-xs text-gray-500">Informações do procedimento</p>
-              </div>
-            </div>
+                {/* Procedimento + Profissional + Sala em linha */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Procedimento <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customProcedureName}
+                      onChange={(e) => setCustomProcedureName(e.target.value)}
+                      placeholder="Ex: Botox, Consulta..."
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Profissional <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={professionalId}
+                      onChange={(e) => setProfessionalId(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                    >
+                      <option value="">Selecione...</option>
+                      {professionals.map(prof => (
+                        <option key={prof.id} value={prof.id}>{prof.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Sala</label>
+                    <input
+                      value={room}
+                      onChange={(e) => setRoom(e.target.value)}
+                      placeholder="Opcional"
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                    />
+                  </div>
+                </div>
 
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Procedimento <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={customProcedureName}
-                  onChange={(e) => setCustomProcedureName(e.target.value)}
-                  required
-                  placeholder="Ex: Botox, Preenchimento, Consulta..."
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                />
-                <p className="text-xs text-gray-500 mt-0.5">Digite o procedimento ou apenas "agendamento"</p>
+                {/* Data e Horários em linha */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Data <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={appointmentDate}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        maxLength={10}
+                        placeholder="dd/mm/aaaa"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Início <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={startTime}
+                        onChange={(e) => handleStartTimeChange(e.target.value)}
+                        maxLength={5}
+                        placeholder="09:00"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Término <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={endTime}
+                        onChange={(e) => handleEndTimeChange(e.target.value)}
+                        maxLength={5}
+                        placeholder="10:00"
+                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Profissional <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={professionalId}
-                  onChange={(e) => setProfessionalId(e.target.value)}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+            {/* Observações - Colapsável (não aparece em bloqueios recorrentes) */}
+            {appointmentType !== 'recurring' && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNotes(!showNotes)}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
                 >
-                  <option value="">Selecione um profissional</option>
-                  {professionals.map(prof => (
-                    <option key={prof.id} value={prof.id}>{prof.name} - {prof.specialty}</option>
-                  ))}
-                </select>
-                {professionals.length === 0 && (
-                  <p className="text-xs text-yellow-600 mt-0.5">
-                    Nenhum profissional cadastrado. <Link to="/app/profissionais/novo" className="underline hover:text-yellow-700">Cadastre aqui</Link>
-                  </p>
+                  <FileText size={14} />
+                  <span>{showNotes ? 'Ocultar observações' : 'Adicionar observações'}</span>
+                </button>
+                {showNotes && (
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Observações sobre o agendamento..."
+                    rows={2}
+                    className="w-full mt-3 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm resize-none"
+                  />
                 )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sala</label>
-                <input
-                  value={room}
-                  onChange={(e) => setRoom(e.target.value)}
-                  placeholder="Número da sala"
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                />
-                <p className="text-xs text-gray-500 mt-0.5">Opcional</p>
-              </div>
-            </div>
-          </div>
-          )}
-
-          {/* Seção: Data e Horário */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="p-2 rounded-lg bg-orange-50">
-                <Calendar size={18} className="text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Data e Horário</h3>
-                <p className="text-xs text-gray-500">{isPersonal ? 'Quando será o compromisso' : 'Quando será o agendamento'}</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={appointmentDate}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    required
-                    maxLength={10}
-                    placeholder="dd/mm/aaaa"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-0.5">Ex: 05112025 para 05/11/2025</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Horário de Início <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={startTime}
-                    onChange={(e) => handleStartTimeChange(e.target.value)}
-                    required
-                    maxLength={5}
-                    placeholder="HH:MM"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-0.5">Ex: 0900 para 09:00</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Horário de Término <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Clock size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={endTime}
-                    onChange={(e) => handleEndTimeChange(e.target.value)}
-                    required
-                    maxLength={5}
-                    placeholder="HH:MM"
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg pl-10 pr-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-0.5">Ex: 1000 para 10:00</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Seção: Observações */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <FileText size={18} className="text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Observações</h3>
-                <p className="text-xs text-gray-500">Informações adicionais</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Anotações</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Adicione observações sobre o agendamento..."
-                rows={4}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm resize-none"
-              />
-              <p className="text-xs text-gray-500 mt-0.5">Opcional - informações relevantes sobre o agendamento</p>
-            </div>
-          </div>
-
-          {/* Sticky Footer */}
-          <div className="sticky bottom-0 bg-gray-50 pt-4 pb-2 -mx-8 px-8 border-t border-gray-200">
-            <div className="flex items-center justify-end gap-3 max-w-5xl mx-auto">
-              <Link
-                to="/app/agenda"
-                className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </Link>
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all ${
-                  !canSubmit
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
-                }`}
-              >
-                <Save size={18} />
-                {isEditing ? 'Salvar Alterações' : 'Salvar Agendamento'}
-              </button>
-            </div>
+            )}
           </div>
         </form>
       </div>

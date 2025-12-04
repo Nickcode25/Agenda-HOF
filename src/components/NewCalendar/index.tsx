@@ -18,6 +18,7 @@ interface NewCalendarProps {
   onTimeSlotClick?: (date: Date, hour: number) => void
   onTimeSlotSelect?: (date: Date, startHour: number, startMinutes: number, endHour: number, endMinutes: number) => void
   onAppointmentResize?: (appointmentId: string, newStart: Date, newEnd: Date) => void
+  onAppointmentMove?: (appointmentId: string, newStart: Date, newEnd: Date) => void
 }
 
 export default function NewCalendar({
@@ -26,7 +27,8 @@ export default function NewCalendar({
   onAppointmentClick,
   onTimeSlotClick,
   onTimeSlotSelect,
-  onAppointmentResize
+  onAppointmentResize,
+  onAppointmentMove
 }: NewCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -103,6 +105,7 @@ export default function NewCalendar({
           onTimeSlotClick={onTimeSlotClick}
           onTimeSlotSelect={onTimeSlotSelect}
           onAppointmentResize={onAppointmentResize}
+          onAppointmentMove={onAppointmentMove}
           viewMode={viewMode}
         />
       </div>

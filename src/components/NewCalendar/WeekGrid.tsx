@@ -15,6 +15,7 @@ interface WeekGridProps {
   onTimeSlotClick?: (date: Date, hour: number) => void
   onTimeSlotSelect?: (date: Date, startHour: number, startMinutes: number, endHour: number, endMinutes: number) => void
   onAppointmentResize?: (appointmentId: string, newStart: Date, newEnd: Date) => void
+  onAppointmentMove?: (appointmentId: string, newStart: Date, newEnd: Date) => void
   viewMode: ViewMode
 }
 
@@ -26,6 +27,7 @@ export default function WeekGrid({
   onTimeSlotClick,
   onTimeSlotSelect,
   onAppointmentResize,
+  onAppointmentMove,
   viewMode
 }: WeekGridProps) {
   // Altura de cada slot de hora em pixels
@@ -69,6 +71,26 @@ export default function WeekGrid({
     currentMinutes: number
   } | null>(null)
 
+  // Estado para detectar duplo clique
+  const lastClickRef = useRef<{
+    time: number
+    day: Date
+    hour: number
+    minutes: number
+  } | null>(null)
+
+  // Estado para arrastar agendamento existente (mover para outro horário)
+  const [moving, setMoving] = useState<{
+    appointment: Appointment
+    initialY: number
+    initialX: number
+    originalStart: Date
+    originalEnd: Date
+    currentStart: Date
+    currentEnd: Date
+    currentDay: Date
+  } | null>(null)
+
   // Ref para o container principal para calcular posição do mouse
   const gridContainerRef = useRef<HTMLDivElement>(null)
 
@@ -76,10 +98,9 @@ export default function WeekGrid({
   // A área de resize é proporcional à altura do card para funcionar bem em agendamentos curtos
   const handleCardMouseDown = useCallback((
     e: React.MouseEvent<HTMLButtonElement>,
-    apt: Appointment
+    apt: Appointment,
+    day: Date
   ) => {
-    if (!onAppointmentResize) return
-
     const rect = e.currentTarget.getBoundingClientRect()
     const mouseY = e.clientY
     const distanceFromBottom = rect.bottom - mouseY
@@ -88,7 +109,8 @@ export default function WeekGrid({
     // Área de resize: 8px ou 30% da altura do card (o que for maior), limitado a 15px max
     const resizeAreaSize = Math.min(15, Math.max(8, cardHeight * 0.3))
 
-    if (distanceFromBottom <= resizeAreaSize && distanceFromBottom >= 0) {
+    if (onAppointmentResize && distanceFromBottom <= resizeAreaSize && distanceFromBottom >= 0) {
+      // Clicou na borda inferior - iniciar resize
       e.stopPropagation()
       e.preventDefault()
 
@@ -104,9 +126,27 @@ export default function WeekGrid({
         currentStart: start,
         currentEnd: end
       })
+    } else if (onAppointmentMove) {
+      // Clicou no corpo do card - iniciar movimento (drag to move)
+      e.stopPropagation()
+      e.preventDefault()
+
+      const start = toSaoPauloTime(parseISO(apt.start))
+      const end = toSaoPauloTime(parseISO(apt.end))
+
+      setMoving({
+        appointment: apt,
+        initialY: e.clientY,
+        initialX: e.clientX,
+        originalStart: start,
+        originalEnd: end,
+        currentStart: start,
+        currentEnd: end,
+        currentDay: day
+      })
     }
-    // Se não for na borda, deixa o clique normal acontecer (abre o modal)
-  }, [onAppointmentResize])
+    // Se não tiver nenhum handler, deixa o clique normal acontecer (abre o modal)
+  }, [onAppointmentResize, onAppointmentMove])
 
   // Detecta se o mouse está na borda inferior para mostrar cursor de resize
   const handleCardMouseMove = useCallback((
@@ -251,21 +291,14 @@ export default function WeekGrid({
 
     const { hour, minutes } = getTimeFromY(e.clientY, dayColumnElement)
 
-    // Calcular horário final inicial (mínimo de 30 minutos)
-    let endHour = hour
-    let endMinutes = minutes + 30
-    if (endMinutes >= 60) {
-      endHour += 1
-      endMinutes -= 60
-    }
-
+    // Iniciar com o mesmo horário - só muda se arrastar
     setDragging({
       day,
       startY: e.clientY,
       startHour: hour,
       startMinutes: minutes,
-      currentHour: endHour,
-      currentMinutes: endMinutes
+      currentHour: hour,
+      currentMinutes: minutes
     })
   }, [onTimeSlotSelect, resizing, getTimeFromY])
 
@@ -286,21 +319,17 @@ export default function WeekGrid({
 
     const { hour, minutes } = getTimeFromY(e.clientY, dayColumn)
 
-    // Garantir mínimo de 15 minutos
     let endHour = hour
     let endMinutes = minutes
 
     const startTotal = dragging.startHour * 60 + dragging.startMinutes
     const endTotal = endHour * 60 + endMinutes
 
+    // Só atualiza se arrastou para baixo (horário maior que o início)
+    // Se arrastou para cima ou não moveu, mantém igual ao início
     if (endTotal <= startTotal) {
-      // Se arrastou para cima, usar pelo menos 15 minutos após o início
       endHour = dragging.startHour
-      endMinutes = dragging.startMinutes + 15
-      if (endMinutes >= 60) {
-        endHour += 1
-        endMinutes -= 60
-      }
+      endMinutes = dragging.startMinutes
     }
 
     setDragging(prev => prev ? {
@@ -327,17 +356,44 @@ export default function WeekGrid({
     const startTotal = startHour * 60 + startMinutes
     const endTotal = currentHour * 60 + currentMinutes
 
-    if (endTotal > startTotal) {
+    // Verificar se foi um arrasto significativo (horário final diferente do inicial)
+    const wasDragged = endTotal > startTotal
+
+    if (wasDragged) {
+      // Se arrastou, abrir agendamento com o período selecionado
       onTimeSlotSelect(day, startHour, startMinutes, currentHour, currentMinutes)
+      lastClickRef.current = null
     } else {
-      // Se clicou sem arrastar, criar agendamento de 30 minutos
-      let endH = startHour
-      let endM = startMinutes + 30
-      if (endM >= 60) {
-        endH += 1
-        endM -= 60
+      // Se foi apenas um clique (sem arrasto), verificar duplo clique
+      const now = Date.now()
+      const lastClick = lastClickRef.current
+
+      // Verificar se é um duplo clique (menos de 400ms entre cliques no mesmo horário)
+      const isDoubleClick = lastClick &&
+        now - lastClick.time < 400 &&
+        isSameDay(lastClick.day, day) &&
+        lastClick.hour === startHour &&
+        Math.abs(lastClick.minutes - startMinutes) <= 15
+
+      if (isDoubleClick) {
+        // Duplo clique - criar agendamento de 30 minutos
+        let endH = startHour
+        let endM = startMinutes + 30
+        if (endM >= 60) {
+          endH += 1
+          endM -= 60
+        }
+        onTimeSlotSelect(day, startHour, startMinutes, endH, endM)
+        lastClickRef.current = null
+      } else {
+        // Primeiro clique - apenas registrar para aguardar possível segundo clique
+        lastClickRef.current = {
+          time: now,
+          day,
+          hour: startHour,
+          minutes: startMinutes
+        }
       }
-      onTimeSlotSelect(day, startHour, startMinutes, endH, endM)
     }
 
     setDragging(null)
@@ -360,7 +416,7 @@ export default function WeekGrid({
     }
   }, [dragging, handleDragMove, handleDragEnd])
 
-  // Gerar dias baseado no modo de visualização
+  // Gerar dias baseado no modo de visualização (movido para antes do handleMoveMove)
   const days = useMemo(() => {
     if (viewMode === 'day') {
       return [currentDate]
@@ -385,6 +441,98 @@ export default function WeekGrid({
     }
     return daysArray
   }, [currentDate, viewMode])
+
+  // Handler para movimento do drag de agendamento (mover)
+  const handleMoveMove = useCallback((e: MouseEvent) => {
+    if (!moving || !gridContainerRef.current) return
+
+    e.preventDefault()
+
+    // Encontrar a coluna do dia atual baseado na posição X do mouse
+    const dayColumns = gridContainerRef.current.querySelectorAll('[data-day-column]')
+    let targetDay = moving.currentDay
+    let targetColumn: HTMLElement | null = null
+
+    dayColumns.forEach((col, index) => {
+      const rect = col.getBoundingClientRect()
+      if (e.clientX >= rect.left && e.clientX <= rect.right) {
+        targetColumn = col as HTMLElement
+        // Calcular o dia correspondente a esta coluna
+        if (viewMode === 'day') {
+          targetDay = days[0]
+        } else {
+          targetDay = days[index]
+        }
+      }
+    })
+
+    if (!targetColumn) return
+
+    const { hour, minutes } = getTimeFromY(e.clientY, targetColumn)
+
+    // Calcular duração original do agendamento em minutos
+    const durationMinutes = (moving.originalEnd.getTime() - moving.originalStart.getTime()) / (1000 * 60)
+
+    // Criar novo horário de início baseado na posição do mouse
+    const newStart = new Date(targetDay)
+    newStart.setHours(hour, minutes, 0, 0)
+
+    // Calcular novo horário de término mantendo a duração
+    const newEnd = addMinutes(newStart, durationMinutes)
+
+    // Garantir que não ultrapasse os limites (7h - 24h)
+    if (newStart.getHours() >= 7 && newEnd.getHours() <= 24) {
+      setMoving(prev => prev ? {
+        ...prev,
+        currentStart: newStart,
+        currentEnd: newEnd,
+        currentDay: targetDay
+      } : null)
+    }
+  }, [moving, days, viewMode, getTimeFromY])
+
+  // Handler para fim do drag de agendamento (mover)
+  const handleMoveEnd = useCallback(async (e?: MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    if (moving && onAppointmentMove) {
+      // Marca que acabou de fazer movimento para evitar abrir o modal
+      justResizedRef.current = true
+      setTimeout(() => {
+        justResizedRef.current = false
+      }, 100)
+
+      const { appointment, currentStart, currentEnd } = moving
+
+      // Limpa o estado de moving
+      setMoving(null)
+
+      // Salva no banco
+      await onAppointmentMove(appointment.id, currentStart, currentEnd)
+    } else {
+      setMoving(null)
+    }
+  }, [moving, onAppointmentMove])
+
+  // Adicionar listeners globais para mouse move/up durante movimento de agendamento
+  useEffect(() => {
+    if (moving) {
+      window.addEventListener('mousemove', handleMoveMove)
+      window.addEventListener('mouseup', handleMoveEnd)
+      document.body.style.cursor = 'grabbing'
+      document.body.style.userSelect = 'none'
+
+      return () => {
+        window.removeEventListener('mousemove', handleMoveMove)
+        window.removeEventListener('mouseup', handleMoveEnd)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+    }
+  }, [moving, handleMoveMove, handleMoveEnd])
 
   // Gerar horários (7h às 24h)
   const timeSlots = useMemo(() => {
@@ -582,21 +730,26 @@ export default function WeekGrid({
 
   // Calcular posição e altura do agendamento baseado no horário
   const getAppointmentStyle = (apt: Appointment, dayAppointments: Appointment[], dayBlocks: VirtualBlock[]) => {
-    // Se este agendamento está sendo redimensionado ou aguardando salvar, usa os valores do preview
+    // Se este agendamento está sendo redimensionado, movido ou aguardando salvar, usa os valores do preview
     const isBeingResized = resizing?.appointmentId === apt.id
+    const isBeingMoved = moving?.appointment.id === apt.id
     const isPendingSave = pendingSave?.appointmentId === apt.id
 
     const aptStart = isBeingResized
       ? resizing.currentStart
-      : isPendingSave
-        ? pendingSave.newStart
-        : toSaoPauloTime(parseISO(apt.start))
+      : isBeingMoved
+        ? moving.currentStart
+        : isPendingSave
+          ? pendingSave.newStart
+          : toSaoPauloTime(parseISO(apt.start))
 
     const aptEnd = isBeingResized
       ? resizing.currentEnd
-      : isPendingSave
-        ? pendingSave.newEnd
-        : toSaoPauloTime(parseISO(apt.end))
+      : isBeingMoved
+        ? moving.currentEnd
+        : isPendingSave
+          ? pendingSave.newEnd
+          : toSaoPauloTime(parseISO(apt.end))
 
     // Calcular minutos desde o início do dia (7h)
     const startMinutesFromDayStart = (aptStart.getHours() - 7) * 60 + aptStart.getMinutes()
@@ -905,28 +1058,31 @@ export default function WeekGrid({
                   const isBeingResized = resizing?.appointmentId === apt.id
                   const isPendingSave = pendingSave?.appointmentId === apt.id
 
-                  // Usa os valores do resize em andamento, ou do pendingSave, ou do banco
+                  // Usa os valores do resize/move em andamento, ou do pendingSave, ou do banco
+                  const isBeingMoved = moving?.appointment.id === apt.id
                   const displayStart = isBeingResized
                     ? resizing.currentStart
-                    : isPendingSave
-                      ? pendingSave.newStart
-                      : parseISO(apt.start)
+                    : isBeingMoved
+                      ? moving.currentStart
+                      : isPendingSave
+                        ? pendingSave.newStart
+                        : parseISO(apt.start)
 
                   const showResizeCursor = hoverResizeId === apt.id || isBeingResized
 
                   return (
                     <button
                       key={apt.id}
-                      onMouseDown={(e) => handleCardMouseDown(e, apt)}
+                      onMouseDown={(e) => handleCardMouseDown(e, apt, day)}
                       onMouseMove={(e) => handleCardMouseMove(e, apt.id)}
                       onMouseLeave={() => handleCardMouseLeave(apt.id)}
                       onClick={(e) => {
                         e.stopPropagation()
-                        // Só abre o modal se não estiver em resize e não acabou de fazer resize
-                        if (!resizing && !justResizedRef.current) onAppointmentClick(apt)
+                        // Só abre o modal se não estiver em resize/move e não acabou de fazer resize/move
+                        if (!resizing && !moving && !justResizedRef.current) onAppointmentClick(apt)
                       }}
                       style={getAppointmentStyle(apt, dayAppointments, dayRecurringBlocks)}
-                      className={`rounded ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-md overflow-hidden z-10 flex items-center justify-center px-1 border border-white/20 relative text-center ${isBeingResized ? 'ring-2 ring-white/50' : ''} ${showResizeCursor ? 'cursor-ns-resize' : 'cursor-pointer'}`}
+                      className={`rounded ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-md overflow-hidden z-10 flex items-center justify-center px-1 border border-white/20 relative text-center ${isBeingResized || isBeingMoved ? 'ring-2 ring-white/50 opacity-70' : ''} ${showResizeCursor ? 'cursor-ns-resize' : 'cursor-grab'}`}
                     >
                       {/* Conteúdo do card - centralizado */}
                       <span className="text-[10px] font-medium opacity-90 whitespace-nowrap">

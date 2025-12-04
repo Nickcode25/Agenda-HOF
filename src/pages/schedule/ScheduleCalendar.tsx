@@ -80,6 +80,13 @@ export default function ScheduleCalendar() {
     })
   }
 
+  const handleAppointmentMove = async (appointmentId: string, newStart: Date, newEnd: Date) => {
+    await updateAppointment(appointmentId, {
+      start: newStart.toISOString(),
+      end: newEnd.toISOString()
+    })
+  }
+
   return (
     <div className="relative -m-8 min-h-[calc(100vh-64px)]">
       {/* Overlay de bloqueio se não tiver assinatura */}
@@ -100,6 +107,7 @@ export default function ScheduleCalendar() {
         onTimeSlotClick={handleTimeSlotClick}
         onTimeSlotSelect={handleTimeSlotSelect}
         onAppointmentResize={handleAppointmentResize}
+        onAppointmentMove={handleAppointmentMove}
       />
 
       {/* Appointment Modal */}
