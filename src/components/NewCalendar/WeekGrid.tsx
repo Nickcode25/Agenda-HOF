@@ -94,6 +94,18 @@ export default function WeekGrid({
   // Ref para o container principal para calcular posição do mouse
   const gridContainerRef = useRef<HTMLDivElement>(null)
 
+  // Estado para rastrear início potencial de drag (para distinguir clique de drag)
+  const [potentialDrag, setPotentialDrag] = useState<{
+    appointment: Appointment
+    day: Date
+    startX: number
+    startY: number
+    isResize: boolean
+  } | null>(null)
+
+  // Threshold em pixels para considerar que começou um drag
+  const DRAG_THRESHOLD = 5
+
   // Funções de resize - detecta se clicou na borda inferior
   // A área de resize é proporcional à altura do card para funcionar bem em agendamentos curtos
   const handleCardMouseDown = useCallback((
@@ -110,7 +122,7 @@ export default function WeekGrid({
     const resizeAreaSize = Math.min(15, Math.max(8, cardHeight * 0.3))
 
     if (onAppointmentResize && distanceFromBottom <= resizeAreaSize && distanceFromBottom >= 0) {
-      // Clicou na borda inferior - iniciar resize
+      // Clicou na borda inferior - iniciar resize imediatamente (não precisa de threshold)
       e.stopPropagation()
       e.preventDefault()
 
@@ -127,22 +139,17 @@ export default function WeekGrid({
         currentEnd: end
       })
     } else if (onAppointmentMove) {
-      // Clicou no corpo do card - iniciar movimento (drag to move)
+      // Clicou no corpo do card - apenas registrar a posição inicial
+      // O movimento só inicia se o mouse mover além do threshold
       e.stopPropagation()
-      e.preventDefault()
+      // NÃO previne o default aqui para permitir que o clique funcione
 
-      const start = toSaoPauloTime(parseISO(apt.start))
-      const end = toSaoPauloTime(parseISO(apt.end))
-
-      setMoving({
+      setPotentialDrag({
         appointment: apt,
-        initialY: e.clientY,
-        initialX: e.clientX,
-        originalStart: start,
-        originalEnd: end,
-        currentStart: start,
-        currentEnd: end,
-        currentDay: day
+        day,
+        startX: e.clientX,
+        startY: e.clientY,
+        isResize: false
       })
     }
     // Se não tiver nenhum handler, deixa o clique normal acontecer (abre o modal)
@@ -533,6 +540,52 @@ export default function WeekGrid({
       }
     }
   }, [moving, handleMoveMove, handleMoveEnd])
+
+  // Handler para detectar se o movimento do mouse excede o threshold para iniciar drag
+  const handlePotentialDragMove = useCallback((e: MouseEvent) => {
+    if (!potentialDrag) return
+
+    const deltaX = Math.abs(e.clientX - potentialDrag.startX)
+    const deltaY = Math.abs(e.clientY - potentialDrag.startY)
+
+    // Se moveu além do threshold, iniciar o drag
+    if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
+      const { appointment, day } = potentialDrag
+      const start = toSaoPauloTime(parseISO(appointment.start))
+      const end = toSaoPauloTime(parseISO(appointment.end))
+
+      setMoving({
+        appointment,
+        initialY: potentialDrag.startY,
+        initialX: potentialDrag.startX,
+        originalStart: start,
+        originalEnd: end,
+        currentStart: start,
+        currentEnd: end,
+        currentDay: day
+      })
+
+      setPotentialDrag(null)
+    }
+  }, [potentialDrag, DRAG_THRESHOLD])
+
+  // Handler para cancelar o potentialDrag quando o mouse é solto (foi apenas um clique)
+  const handlePotentialDragEnd = useCallback(() => {
+    setPotentialDrag(null)
+  }, [])
+
+  // Adicionar listeners globais para detectar se é drag ou clique
+  useEffect(() => {
+    if (potentialDrag) {
+      window.addEventListener('mousemove', handlePotentialDragMove)
+      window.addEventListener('mouseup', handlePotentialDragEnd)
+
+      return () => {
+        window.removeEventListener('mousemove', handlePotentialDragMove)
+        window.removeEventListener('mouseup', handlePotentialDragEnd)
+      }
+    }
+  }, [potentialDrag, handlePotentialDragMove, handlePotentialDragEnd])
 
   // Gerar horários (7h às 24h)
   const timeSlots = useMemo(() => {
@@ -1078,8 +1131,8 @@ export default function WeekGrid({
                       onMouseLeave={() => handleCardMouseLeave(apt.id)}
                       onClick={(e) => {
                         e.stopPropagation()
-                        // Só abre o modal se não estiver em resize/move e não acabou de fazer resize/move
-                        if (!resizing && !moving && !justResizedRef.current) onAppointmentClick(apt)
+                        // Só abre o modal se não estiver em resize/move/potentialDrag e não acabou de fazer resize/move
+                        if (!resizing && !moving && !potentialDrag && !justResizedRef.current) onAppointmentClick(apt)
                       }}
                       style={getAppointmentStyle(apt, dayAppointments, dayRecurringBlocks)}
                       className={`rounded ${getAppointmentColors(apt)} text-white shadow-sm hover:shadow-md overflow-hidden z-10 flex items-center justify-center px-1 border border-white/20 relative text-center ${isBeingResized || isBeingMoved ? 'ring-2 ring-white/50 opacity-70' : ''} ${showResizeCursor ? 'cursor-ns-resize' : 'cursor-grab'}`}

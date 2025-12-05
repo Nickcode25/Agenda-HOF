@@ -479,7 +479,7 @@ export default function AddProcedureModal({
           </button>
           <button
             onClick={handleAdd}
-            disabled={!selectedProcedure || (useMultiplePayments && remaining !== 0)}
+            disabled={!selectedProcedure || (useMultiplePayments && totalPaid === 0)}
             className="flex-1 px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40"
           >
             {isEditMode ? 'Salvar Alterações' : 'Adicionar Procedimento'}
