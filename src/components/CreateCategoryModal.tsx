@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Plus } from 'lucide-react'
 import { useCategories } from '@/store/categories'
 
@@ -18,6 +18,19 @@ export default function CreateCategoryModal({
   const [categoryName, setCategoryName] = useState('')
   const [loading, setLoading] = useState(false)
   const { addCategory, error } = useCategories()
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 

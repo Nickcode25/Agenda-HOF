@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X, CheckCircle, CreditCard, Banknote, Smartphone, Building2, FileText } from 'lucide-react'
 
 interface ConfirmPaymentModalProps {
@@ -24,6 +25,19 @@ export default function ConfirmPaymentModal({
   onSubmit,
   onClose
 }: ConfirmPaymentModalProps) {
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (

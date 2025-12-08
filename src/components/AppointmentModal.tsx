@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X, Calendar, Clock, User, MapPin, FileText, Trash2, MessageCircle, Check, XCircle, Pencil, CalendarOff, UserCircle } from 'lucide-react'
 import type { Appointment } from '@/types/schedule'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -21,6 +22,19 @@ export default function AppointmentModal({ appointment, onClose, onDelete, onSta
   const updateAppointmentStatus = useSchedule(s => s.updateAppointmentStatus)
   const { show: showToast } = useToast()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!appointment) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [appointment, onClose])
 
   if (!appointment) return null
 

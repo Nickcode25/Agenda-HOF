@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Check, CreditCard } from 'lucide-react'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 
@@ -12,6 +13,19 @@ interface SuccessModalProps {
 }
 
 export default function SuccessModal({ show, subscriptionData, onNavigate }: SuccessModalProps) {
+  useEffect(() => {
+    if (!show || !subscriptionData) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        onNavigate()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [show, subscriptionData, onNavigate])
+
   if (!show || !subscriptionData) return null
 
   return (

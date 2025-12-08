@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import BeforeAfterGallery from '@/components/BeforeAfterGallery'
@@ -16,6 +17,19 @@ export default function PhotoGalleryModal({
   patientName,
   onClose
 }: PhotoGalleryModalProps) {
+  useEffect(() => {
+    if (!isOpen || !procedure || !procedure.photos) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, procedure, onClose])
+
   if (!isOpen || !procedure || !procedure.photos) return null
 
   const handleShare = (photo: ProcedurePhoto) => {

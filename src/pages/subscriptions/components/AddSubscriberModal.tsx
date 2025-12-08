@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X, Search, CheckCircle, Users, Calendar, CreditCard, DollarSign, UserPlus, CalendarClock } from 'lucide-react'
 import { Patient } from '@/types/patient'
 import CurrencyInput from '@/components/CurrencyInput'
@@ -48,6 +49,19 @@ export default function AddSubscriberModal({
   onClose,
   onNavigateToNewPatient
 }: AddSubscriberModalProps) {
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   const hasPatients = allAvailablePatients.length > 0

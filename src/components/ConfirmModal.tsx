@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 
 interface ConfirmModalProps {
@@ -21,6 +22,22 @@ export default function ConfirmModal({
   cancelText = 'Cancelar',
   confirmButtonClass = 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/30'
 }: ConfirmModalProps) {
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'Enter') {
+        onConfirm()
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose, onConfirm])
+
   if (!isOpen) return null
 
   const handleConfirm = () => {

@@ -1,6 +1,5 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { X, Package, AlertTriangle, Plus, Trash2 } from 'lucide-react'
+import React, { useEffect } from 'react'
+import { X, Plus, Trash2 } from 'lucide-react'
 import { Procedure } from '@/store/procedures'
 import { StockItem } from '@/types/stock'
 import { PaymentSplit } from '@/types/patient'
@@ -74,13 +73,33 @@ export default function AddProcedureModal({
   ])
   const [splitValues, setSplitValues] = React.useState<string[]>([''])
 
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'Enter' && !e.shiftKey && selectedProcedure) {
+        const target = e.target as HTMLElement
+        if (target.tagName !== 'TEXTAREA') {
+          e.preventDefault()
+          if (useMultiplePayments) {
+            onAdd(paymentSplits)
+          } else {
+            onAdd()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose, selectedProcedure, useMultiplePayments, paymentSplits, onAdd])
+
   if (!isOpen) return null
 
-  // Obter categoria e produtos disponíveis do procedimento selecionado
+  // Obter dados do procedimento selecionado
   const selectedProcedureData = procedures.find(p => p.name === selectedProcedure)
-  const availableProducts = selectedProcedureData?.category
-    ? stockItems.filter(item => item.category === selectedProcedureData.category)
-    : []
 
   // Calcular valor total do procedimento
   const totalValue = isEditingValue
@@ -374,87 +393,6 @@ export default function AddProcedureModal({
                 <p className="text-xs text-gray-500 mt-1">Edite para aplicar desconto ou ajuste manual</p>
               </div>
             </div>
-
-            {/* Mostrar categoria e produtos disponíveis */}
-            {selectedProcedureData && (
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Package size={18} className="text-orange-500" />
-                  <h4 className="font-medium text-gray-900">
-                    Categoria: {selectedProcedureData.category || 'Não definida'}
-                  </h4>
-                </div>
-
-                {selectedProcedureData.category ? (
-                  availableProducts.length > 0 ? (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Produtos disponíveis nesta categoria:
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {availableProducts.map(product => (
-                          <div
-                            key={product.id}
-                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {product.name}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Estoque: {product.quantity} {product.unit}
-                              </p>
-                            </div>
-                            <div
-                              className={`ml-2 w-2 h-2 rounded-full ${
-                                product.quantity > product.minQuantity
-                                  ? 'bg-green-500'
-                                  : product.quantity > 0
-                                  ? 'bg-yellow-500'
-                                  : 'bg-red-500'
-                              }`}
-                              title={
-                                product.quantity > product.minQuantity
-                                  ? 'Em estoque'
-                                  : product.quantity > 0
-                                  ? 'Estoque baixo'
-                                  : 'Sem estoque'
-                              }
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-3">
-                        💡 O produto específico será escolhido automaticamente no momento da realização do procedimento
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <AlertTriangle size={16} className="text-yellow-600" />
-                      <p className="text-sm text-yellow-700">
-                        Nenhum produto cadastrado na categoria "{selectedProcedureData.category}".{' '}
-                        <Link to="/app/estoque/novo" className="underline hover:text-yellow-600">
-                          Cadastrar produto
-                        </Link>
-                      </p>
-                    </div>
-                  )
-                ) : (
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <AlertTriangle size={16} className="text-blue-600" />
-                    <p className="text-sm text-blue-700">
-                      Este procedimento não possui categoria definida.{' '}
-                      <Link
-                        to={`/app/procedimentos/${selectedProcedureData.id}/editar`}
-                        className="underline hover:text-blue-600"
-                      >
-                        Editar procedimento
-                      </Link>
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Observações (opcional)</label>

@@ -189,6 +189,25 @@ export default function EnrollmentModal({ show, courseType = 'enrollment', enrol
   const canSubmit = selectedCourse && availableCourses.length > 0 &&
     (!useMultiplePayments || (useMultiplePayments && totalPaid > 0))
 
+  useEffect(() => {
+    if (!show) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'Enter' && !e.shiftKey && canSubmit) {
+        const target = e.target as HTMLElement
+        if (target.tagName !== 'TEXTAREA') {
+          e.preventDefault()
+          handleSubmit()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [show, onClose, canSubmit])
+
   if (!show) return null
 
   return (

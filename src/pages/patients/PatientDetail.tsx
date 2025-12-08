@@ -6,11 +6,12 @@ import { useStock } from '@/store/stock'
 import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
-import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, FileText, Image as ImageIcon, Phone, Calendar } from 'lucide-react'
+import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, FileText, Image as ImageIcon, Phone, Calendar, CreditCard } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import AddProcedureModal from './components/AddProcedureModal'
 import PhotoGalleryModal from './components/PhotoGalleryModal'
+import InstallmentPaymentModal from './components/InstallmentPaymentModal'
 
 export default function PatientDetail() {
   const { id } = useParams()
@@ -64,6 +65,7 @@ export default function PatientDetail() {
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingProcedureId, setEditingProcedureId] = useState<string | null>(null)
+  const [showInstallmentModal, setShowInstallmentModal] = useState(false)
 
   const handleDelete = async () => {
     const confirmed = await confirm({
@@ -370,7 +372,14 @@ export default function PatientDetail() {
             className="inline-flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium shadow-sm transition-colors text-sm sm:text-base"
           >
             <Plus size={18} />
-            <span className="hidden xs:inline">Adicionar</span> Procedimento
+            Procedimento
+          </button>
+          <button
+            onClick={() => setShowInstallmentModal(true)}
+            className="inline-flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium shadow-sm transition-colors text-sm sm:text-base"
+          >
+            <CreditCard size={18} />
+            Pagamento de parcelas
           </button>
           <Link
             to={`/app/pacientes/${id}/evolucao`}
@@ -666,6 +675,17 @@ export default function PatientDetail() {
         onClose={() => {
           setShowPhotoGallery(false)
           setSelectedProcedurePhotos(null)
+        }}
+      />
+
+      <InstallmentPaymentModal
+        isOpen={showInstallmentModal}
+        patientId={patient?.id || ''}
+        patientName={patient?.name || ''}
+        onClose={() => setShowInstallmentModal(false)}
+        onSuccess={() => {
+          setShowInstallmentModal(false)
+          showToast('Pagamento de parcela registrado com sucesso!', 'success')
         }}
       />
 

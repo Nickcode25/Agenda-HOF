@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { X, Clock, User, Stethoscope, Calendar as CalendarIcon } from 'lucide-react'
@@ -17,6 +18,19 @@ export default function DayAppointmentsModal({
   onClose, 
   onAppointmentClick 
 }: DayAppointmentsModalProps) {
+  useEffect(() => {
+    if (!date) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [date, onClose])
+
   if (!date) return null
 
   const sortedAppointments = [...appointments].sort((a, b) => 

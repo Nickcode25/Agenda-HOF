@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { formatCurrency } from '@/utils/currency'
 import SearchableSelect from '@/components/SearchableSelect'
@@ -43,6 +44,25 @@ export default function MentorshipModal({
   onClose,
   onSubmit
 }: MentorshipModalProps) {
+  useEffect(() => {
+    if (!show) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        const target = e.target as HTMLElement
+        if (target.tagName !== 'TEXTAREA') {
+          e.preventDefault()
+          onSubmit()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [show, onClose, onSubmit])
+
   if (!show) return null
 
   return (

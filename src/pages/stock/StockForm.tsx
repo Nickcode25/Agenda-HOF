@@ -154,12 +154,6 @@ export default function StockForm() {
     ? PREDEFINED_PRODUCTS[category][brand]
     : []
 
-  // Limpar o produto quando categoria ou marca mudarem (exceto em modo de edição)
-  useEffect(() => {
-    if (!isEditMode && name && availableProducts.length > 0 && !availableProducts.includes(name)) {
-      setName('')
-    }
-  }, [category, brand, availableProducts, isEditMode])
 
   // Limpar marca quando selecionar Insumos
   useEffect(() => {
@@ -449,32 +443,34 @@ export default function StockForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Produto <span className="text-red-500">*</span>
                 </label>
-                {category === 'Insumos' ? (
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Cânula, Agulha, Seringa..."
-                    required
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
-                  />
-                ) : availableProducts.length > 0 ? (
-                  <SearchableSelect
-                    options={availableProducts.map(product => ({
-                      value: product,
-                      label: product
-                    }))}
-                    value={name}
-                    onChange={setName}
-                    placeholder="Selecione ou digite o produto"
-                  />
-                ) : (
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Botox 100U, Restylane..."
-                    required
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
-                  />
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={category === 'Insumos' ? "Ex: Cânula, Agulha, Seringa..." : "Ex: Botox 100U, Restylane..."}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 text-sm"
+                />
+                {/* Sugestões de produtos pré-cadastrados */}
+                {availableProducts.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500 mb-1.5">Sugestões:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableProducts.map(product => (
+                        <button
+                          key={product}
+                          type="button"
+                          onClick={() => setName(product)}
+                          className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
+                            name === product
+                              ? 'bg-emerald-500 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {product}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -619,7 +615,7 @@ export default function StockForm() {
       <CreateCategoryModal
         isOpen={showCategoryModal}
         onClose={() => setShowCategoryModal(false)}
-        type="both"
+        type="stock"
         onCategoryCreated={handleCategoryCreated}
       />
     </div>

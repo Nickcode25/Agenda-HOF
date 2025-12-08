@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { PlannedProcedure } from '@/types/patient'
 
@@ -22,6 +23,25 @@ export default function EditValueModal({
   onSave,
   onClose
 }: EditValueModalProps) {
+  useEffect(() => {
+    if (!isOpen || !procedure) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        const target = e.target as HTMLElement
+        if (target.tagName !== 'TEXTAREA') {
+          e.preventDefault()
+          onSave()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, procedure, onClose, onSave])
+
   if (!isOpen || !procedure) return null
 
   const handleValueInput = (value: string) => {

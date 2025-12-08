@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X, Save, Trash2 } from 'lucide-react'
 import { PaymentMethod } from '@/types/cash'
 
@@ -24,6 +25,20 @@ export default function EditTransactionModal({
   onSave,
   onDelete
 }: EditTransactionModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel()
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        onSave()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel, onSave])
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">

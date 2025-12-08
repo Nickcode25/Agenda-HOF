@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useState, useEffect } from 'react'
 import { X, Save, User, Phone as PhoneIcon } from 'lucide-react'
 import { usePatients } from '@/store/patients'
 import { useToast } from '@/hooks/useToast'
@@ -15,6 +15,19 @@ export default function QuickPatientModal({ isOpen, onClose, onPatientCreated }:
   const { show: showToast } = useToast()
 
   const [name, setName] = useState('')
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
   const [phone, setPhone] = useState('')
   const [cpf, setCpf] = useState('')
   const [isLoading, setIsLoading] = useState(false)
