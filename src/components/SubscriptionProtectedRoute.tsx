@@ -33,6 +33,7 @@ export type Feature =
   | 'patients_unlimited'
   | 'professionals'
   | 'procedures'
+  | 'whatsapp'
   | 'students'
   | 'courses'
   | 'analytics'
@@ -53,10 +54,10 @@ export const PLAN_LIMITS: Record<PlanType, { appointments_per_month: number, pat
 // Mapeamento de funcionalidades por plano
 export const PLAN_FEATURES: Record<PlanType, Feature[]> = {
   basic: ['agenda', 'patients'], // Básico: apenas agenda e pacientes (com limites)
-  pro: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses'], // Pro: gestão completa de atendimento e educação
-  premium: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Premium: tudo
-  trial: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Trial tem acesso total
-  courtesy: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'] // Cortesia tem acesso total
+  pro: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures'], // Pro: gestão completa de atendimento (sem educação e WhatsApp)
+  premium: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Premium: tudo
+  trial: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Trial tem acesso total
+  courtesy: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'] // Cortesia tem acesso total
 }
 
 // Nome do plano mínimo necessário para cada funcionalidade
@@ -67,8 +68,9 @@ export const FEATURE_REQUIRED_PLAN: Record<Feature, { planName: string, planType
   patients_unlimited: { planName: 'Plano Pro', planType: 'pro' },
   professionals: { planName: 'Plano Pro', planType: 'pro' },
   procedures: { planName: 'Plano Pro', planType: 'pro' },
-  students: { planName: 'Plano Pro', planType: 'pro' },
-  courses: { planName: 'Plano Pro', planType: 'pro' },
+  whatsapp: { planName: 'Plano Premium', planType: 'premium' },
+  students: { planName: 'Plano Premium', planType: 'premium' },
+  courses: { planName: 'Plano Premium', planType: 'premium' },
   analytics: { planName: 'Plano Premium', planType: 'premium' },
   financial: { planName: 'Plano Premium', planType: 'premium' },
   stock: { planName: 'Plano Premium', planType: 'premium' },

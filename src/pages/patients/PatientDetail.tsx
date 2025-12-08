@@ -339,7 +339,7 @@ export default function PatientDetail() {
                 <Edit size={16} />
                 <span className="hidden xs:inline">Editar</span>
               </Link>
-              {hasFeature('professionals') && (
+              {hasFeature('whatsapp') && (
                 <a
                   href={patient?.phone ? `https://wa.me/55${patient.phone.replace(/\D/g, '')}` : '#'}
                   target="_blank"

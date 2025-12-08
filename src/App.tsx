@@ -268,7 +268,7 @@ export default function App() {
               </NavLink>
             )}
 
-            {/* Seção: Educação & Treinamentos - apenas para Pro e Premium */}
+            {/* Seção: Educação & Treinamentos - apenas para Premium */}
             {(hasFeature('students') || hasFeature('courses')) && (
               <>
                 {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Educação & Treinamentos</p></div>}

@@ -18,34 +18,60 @@ interface Plan {
   trial_days: number
 }
 
-// Features definidas manualmente para cada plano
+// Features definidas manualmente para cada plano (incluídos primeiro, depois não incluídos)
 const PLAN_FEATURES = {
   basic: [
+    // Incluídos
     { text: 'Agendamentos limitados', included: true },
     { text: 'Agenda inteligente', included: true },
-    { text: 'Gestão de Pacientes', included: false },
+    { text: 'Cadastro de pacientes (limitado)', included: true },
+    // Não incluídos
+    { text: 'Histórico de atendimentos', included: false },
     { text: 'Gestão de Profissionais', included: false },
-    { text: 'Analytics Avançado', included: false },
-    { text: 'Gestão Financeira', included: false },
+    { text: 'Gestão de Procedimentos', included: false },
+    { text: 'WhatsApp integrado', included: false },
+    { text: 'Gestão de Alunos', included: false },
+    { text: 'Gestão de Cursos', included: false },
+    { text: 'Registro de vendas', included: false },
+    { text: 'Controle de despesas', included: false },
+    { text: 'Relatório Financeiro (Analytics)', included: false },
     { text: 'Controle de Estoque', included: false },
+    { text: 'Gestão de Funcionários', included: false },
   ],
   pro: [
+    // Incluídos
     { text: 'Agendamentos ilimitados', included: true },
     { text: 'Agenda inteligente', included: true },
-    { text: 'Gestão de Pacientes', included: true },
+    { text: 'Cadastro completo de pacientes', included: true },
+    { text: 'Histórico de atendimentos', included: true },
     { text: 'Gestão de Profissionais', included: true },
-    { text: 'Analytics Avançado', included: false },
-    { text: 'Gestão Financeira', included: false },
+    { text: 'Gestão de Procedimentos', included: true },
+    // Não incluídos
+    { text: 'WhatsApp integrado', included: false },
+    { text: 'Gestão de Alunos', included: false },
+    { text: 'Gestão de Cursos', included: false },
+    { text: 'Registro de vendas', included: false },
+    { text: 'Controle de despesas', included: false },
+    { text: 'Relatório Financeiro (Analytics)', included: false },
     { text: 'Controle de Estoque', included: false },
+    { text: 'Gestão de Funcionários', included: false },
   ],
   premium: [
+    // Todos incluídos
     { text: 'Agendamentos ilimitados', included: true },
     { text: 'Agenda inteligente', included: true },
-    { text: 'Analytics Avançado', included: true },
-    { text: 'Gestão Financeira', included: true },
-    { text: 'Gestão de Pacientes', included: true },
+    { text: 'Cadastro completo de pacientes', included: true },
+    { text: 'Histórico de atendimentos', included: true },
     { text: 'Gestão de Profissionais', included: true },
+    { text: 'Gestão de Procedimentos', included: true },
+    { text: 'WhatsApp integrado', included: true },
+    { text: 'Gestão de Alunos', included: true },
+    { text: 'Gestão de Cursos', included: true },
+    { text: 'Registro de vendas', included: true },
+    { text: 'Controle de despesas', included: true },
+    { text: 'Relatório Financeiro (Analytics)', included: true },
     { text: 'Controle de Estoque', included: true },
+    { text: 'Gestão de Funcionários', included: true },
   ]
 }
 

@@ -251,7 +251,7 @@ export default function PatientsList() {
                 key={p.id}
                 patient={p}
                 onWhatsApp={handleWhatsApp}
-                showWhatsApp={hasFeature('professionals')}
+                showWhatsApp={hasFeature('whatsapp')}
               />
             ))}
         </div>
