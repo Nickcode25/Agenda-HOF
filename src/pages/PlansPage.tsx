@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, X, Crown, ArrowRight, Loader2, ArrowLeft, Sparkles } from 'lucide-react'
+import { Check, Lock, Crown, ArrowRight, Loader2, ArrowLeft, Star, Zap } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
@@ -18,61 +18,135 @@ interface Plan {
   trial_days: number
 }
 
-// Features definidas manualmente para cada plano (incluídos primeiro, depois não incluídos)
-const PLAN_FEATURES = {
-  basic: [
-    // Incluídos
-    { text: 'Agendamentos limitados', included: true },
-    { text: 'Agenda inteligente', included: true },
-    { text: 'Cadastro de pacientes (limitado)', included: true },
-    // Não incluídos
-    { text: 'Histórico de atendimentos', included: false },
-    { text: 'Gestão de Profissionais', included: false },
-    { text: 'Gestão de Procedimentos', included: false },
-    { text: 'WhatsApp integrado', included: false },
-    { text: 'Gestão de Alunos', included: false },
-    { text: 'Gestão de Cursos', included: false },
-    { text: 'Registro de vendas', included: false },
-    { text: 'Controle de despesas', included: false },
-    { text: 'Relatório Financeiro (Analytics)', included: false },
-    { text: 'Controle de Estoque', included: false },
-    { text: 'Gestão de Funcionários', included: false },
-  ],
-  pro: [
-    // Incluídos
-    { text: 'Agendamentos ilimitados', included: true },
-    { text: 'Agenda inteligente', included: true },
-    { text: 'Cadastro completo de pacientes', included: true },
-    { text: 'Histórico de atendimentos', included: true },
-    { text: 'Gestão de Profissionais', included: true },
-    { text: 'Gestão de Procedimentos', included: true },
-    // Não incluídos
-    { text: 'WhatsApp integrado', included: false },
-    { text: 'Gestão de Alunos', included: false },
-    { text: 'Gestão de Cursos', included: false },
-    { text: 'Registro de vendas', included: false },
-    { text: 'Controle de despesas', included: false },
-    { text: 'Relatório Financeiro (Analytics)', included: false },
-    { text: 'Controle de Estoque', included: false },
-    { text: 'Gestão de Funcionários', included: false },
-  ],
-  premium: [
-    // Todos incluídos
-    { text: 'Agendamentos ilimitados', included: true },
-    { text: 'Agenda inteligente', included: true },
-    { text: 'Cadastro completo de pacientes', included: true },
-    { text: 'Histórico de atendimentos', included: true },
-    { text: 'Gestão de Profissionais', included: true },
-    { text: 'Gestão de Procedimentos', included: true },
-    { text: 'WhatsApp integrado', included: true },
-    { text: 'Gestão de Alunos', included: true },
-    { text: 'Gestão de Cursos', included: true },
-    { text: 'Registro de vendas', included: true },
-    { text: 'Controle de despesas', included: true },
-    { text: 'Relatório Financeiro (Analytics)', included: true },
-    { text: 'Controle de Estoque', included: true },
-    { text: 'Gestão de Funcionários', included: true },
-  ]
+// Interface para as features agrupadas
+interface PlanFeature {
+  text: string
+  included: boolean
+  highlight?: boolean
+}
+
+interface PlanFeatureGroup {
+  title: string
+  features: PlanFeature[]
+}
+
+interface PlanFeatures {
+  agenda: PlanFeatureGroup
+  atendimento: PlanFeatureGroup
+  financeiro: PlanFeatureGroup
+  equipe: PlanFeatureGroup
+}
+
+// Features agrupadas por blocos de valor
+const PLAN_FEATURES_GROUPED: Record<'basic' | 'pro' | 'premium', PlanFeatures> = {
+  basic: {
+    agenda: {
+      title: 'Gestão da Agenda',
+      features: [
+        { text: 'Até 25 agendamentos/mês', included: true },
+        { text: 'Agenda inteligente', included: true },
+        { text: 'Cadastro de até 25 pacientes', included: true },
+      ]
+    },
+    atendimento: {
+      title: 'Gestão de Atendimentos',
+      features: [
+        { text: 'Histórico de atendimentos', included: false },
+        { text: 'Gestão de Profissionais', included: false },
+        { text: 'Gestão de Procedimentos', included: false },
+        { text: 'WhatsApp integrado', included: false },
+      ]
+    },
+    financeiro: {
+      title: 'Gestão Financeira',
+      features: [
+        { text: 'Registro de vendas', included: false },
+        { text: 'Controle de despesas', included: false },
+        { text: 'Relatórios financeiros', included: false },
+        { text: 'Controle de Estoque', included: false },
+      ]
+    },
+    equipe: {
+      title: 'Gestão da Equipe',
+      features: [
+        { text: 'Gestão de Alunos', included: false },
+        { text: 'Gestão de Cursos', included: false },
+        { text: 'Gestão de Funcionários', included: false },
+      ]
+    }
+  },
+  pro: {
+    agenda: {
+      title: 'Gestão da Agenda',
+      features: [
+        { text: 'Agendamentos ilimitados', included: true, highlight: true },
+        { text: 'Agenda inteligente', included: true },
+        { text: 'Pacientes ilimitados', included: true, highlight: true },
+      ]
+    },
+    atendimento: {
+      title: 'Gestão de Atendimentos',
+      features: [
+        { text: 'Histórico de atendimentos', included: true, highlight: true },
+        { text: 'Gestão de Profissionais', included: true, highlight: true },
+        { text: 'Gestão de Procedimentos', included: true, highlight: true },
+        { text: 'WhatsApp integrado', included: false },
+      ]
+    },
+    financeiro: {
+      title: 'Gestão Financeira',
+      features: [
+        { text: 'Registro de vendas', included: false },
+        { text: 'Controle de despesas', included: false },
+        { text: 'Relatórios financeiros', included: false },
+        { text: 'Controle de Estoque', included: false },
+      ]
+    },
+    equipe: {
+      title: 'Gestão da Equipe',
+      features: [
+        { text: 'Gestão de Alunos', included: false },
+        { text: 'Gestão de Cursos', included: false },
+        { text: 'Gestão de Funcionários', included: false },
+      ]
+    }
+  },
+  premium: {
+    agenda: {
+      title: 'Gestão da Agenda',
+      features: [
+        { text: 'Agendamentos ilimitados', included: true },
+        { text: 'Agenda inteligente', included: true },
+        { text: 'Pacientes ilimitados', included: true },
+      ]
+    },
+    atendimento: {
+      title: 'Gestão de Atendimentos',
+      features: [
+        { text: 'Histórico de atendimentos', included: true },
+        { text: 'Gestão de Profissionais', included: true },
+        { text: 'Gestão de Procedimentos', included: true },
+        { text: 'WhatsApp integrado', included: true, highlight: true },
+      ]
+    },
+    financeiro: {
+      title: 'Gestão Financeira',
+      features: [
+        { text: 'Registro de vendas', included: true, highlight: true },
+        { text: 'Controle de despesas', included: true, highlight: true },
+        { text: 'Relatórios financeiros', included: true, highlight: true },
+        { text: 'Controle de Estoque', included: true, highlight: true },
+      ]
+    },
+    equipe: {
+      title: 'Gestão da Equipe',
+      features: [
+        { text: 'Gestão de Alunos', included: true, highlight: true },
+        { text: 'Gestão de Cursos', included: true, highlight: true },
+        { text: 'Gestão de Funcionários', included: true, highlight: true },
+      ]
+    }
+  }
 }
 
 export default function PlansPage() {
@@ -124,16 +198,16 @@ export default function PlansPage() {
 
   const getPlanFeatures = (plan: Plan) => {
     const planName = plan.name.toLowerCase()
-    if (planName.includes('premium')) return PLAN_FEATURES.premium
-    if (planName.includes('pro')) return PLAN_FEATURES.pro
-    return PLAN_FEATURES.basic
+    if (planName.includes('premium')) return PLAN_FEATURES_GROUPED.premium
+    if (planName.includes('pro')) return PLAN_FEATURES_GROUPED.pro
+    return PLAN_FEATURES_GROUPED.basic
   }
 
-  const getPlanIcon = (plan: Plan) => {
+  const getPlanType = (plan: Plan) => {
     const planName = plan.name.toLowerCase()
-    if (planName.includes('premium')) return <Crown className="w-8 h-8 text-white" />
-    if (planName.includes('pro')) return <Crown className="w-8 h-8 text-white" />
-    return <Sparkles className="w-8 h-8 text-white" />
+    if (planName.includes('premium')) return 'premium'
+    if (planName.includes('pro')) return 'pro'
+    return 'basic'
   }
 
   if (loading) {
@@ -148,16 +222,15 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 py-6 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-orange-50/30 py-8 px-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-orange-500/5 to-orange-600/5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Back Button */}
-        <div className="mb-4">
+        <div className="mb-6">
           <button
             onClick={() => navigate('/app/agenda')}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors group"
@@ -168,109 +241,162 @@ export default function PlansPage() {
         </div>
 
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-5xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight">
-            Escolha seu Plano
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <Zap className="w-4 h-4" />
+            Automatize sua clínica hoje
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight">
+            Escolha o plano ideal para você
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Selecione o plano ideal para a sua clínica e comece a automatizar a sua gestão
+            Comece a organizar sua clínica de harmonização orofacial com as ferramentas certas
           </p>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-start">
           {plans.map((plan) => {
-            const planName = plan.name.toLowerCase()
-            const isPremium = planName.includes('premium')
-            const isPro = planName.includes('pro')
+            const planType = getPlanType(plan)
+            const isPremium = planType === 'premium'
+            const isPro = planType === 'pro'
+            const isBasic = planType === 'basic'
             const features = getPlanFeatures(plan)
 
             return (
               <div
                 key={plan.id}
-                className={`relative bg-white backdrop-blur-xl rounded-2xl p-6 border transition-all duration-300 hover:scale-105 shadow-lg ${
+                className={`relative rounded-2xl transition-all duration-300 ${
                   isPremium
-                    ? 'border-orange-500/50 shadow-xl shadow-orange-500/10'
-                    : 'border-gray-200'
+                    ? 'bg-gradient-to-b from-orange-500 to-orange-600 p-[2px] shadow-2xl shadow-orange-500/25 scale-105 lg:-mt-4 lg:mb-4 z-10'
+                    : 'bg-white border border-gray-200 shadow-lg hover:shadow-xl'
                 }`}
               >
                 {/* Popular Badge - APENAS para Premium */}
                 {isPremium && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-1.5 rounded-full shadow-lg">
-                    <div className="flex items-center gap-2">
-                      <Crown className="w-4 h-4 text-white" />
-                      <span className="text-sm font-bold text-white">Mais Popular</span>
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                    <div className="bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-2 rounded-full shadow-lg flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-white" />
+                      <span className="text-sm font-bold text-white uppercase tracking-wide">Mais Popular</span>
                     </div>
                   </div>
                 )}
 
-                {/* Plan Icon */}
-                <div className="flex justify-center mb-4">
-                  <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
-                    isPremium
-                      ? 'bg-gradient-to-br from-orange-500 to-orange-600'
-                      : isPro
-                      ? 'bg-gradient-to-br from-orange-400 to-orange-500'
-                      : 'bg-gradient-to-br from-gray-400 to-gray-500'
-                  }`}>
-                    <Crown className="w-7 h-7 text-white" />
+                <div className={`${isPremium ? 'bg-white rounded-2xl' : ''} p-6 h-full flex flex-col`}>
+                  {/* Plan Icon & Name */}
+                  <div className="text-center mb-6">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+                      isPremium
+                        ? 'bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30'
+                        : isPro
+                        ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20'
+                        : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                    }`}>
+                      {isPremium ? (
+                        <Crown className="w-7 h-7 text-white" />
+                      ) : isPro ? (
+                        <Star className="w-7 h-7 text-white" />
+                      ) : (
+                        <Zap className="w-7 h-7 text-white" />
+                      )}
+                    </div>
+                    <h3 className={`text-2xl font-bold mb-2 ${isPremium ? 'text-orange-600' : 'text-gray-900'}`}>
+                      {plan.name}
+                    </h3>
+                    <p className="text-gray-500 text-sm leading-relaxed min-h-[40px]">
+                      {plan.description}
+                    </p>
                   </div>
-                </div>
 
-                {/* Plan Name & Description */}
-                <div className="text-center mb-5">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">{plan.description}</p>
-                </div>
-
-                {/* Price */}
-                <div className="text-center mb-5 pb-5 border-b border-gray-200">
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-gray-500 text-base">R$</span>
-                    <span className="text-5xl font-bold text-gray-900">
-                      {Math.floor(plan.price)}
-                    </span>
-                    <span className="text-gray-500 text-base">
-                      ,{String(Math.round((plan.price % 1) * 100)).padStart(2, '0')}
-                    </span>
-                  </div>
-                  <p className="text-gray-500 text-sm mt-2">por mês</p>
-                </div>
-
-                {/* Features List */}
-                <div className="space-y-3 mb-6">
-                  {features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className={`flex-shrink-0 mt-0.5 ${
-                        feature.included ? 'text-green-500' : 'text-gray-300'
-                      }`}>
-                        {feature.included ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <X className="w-4 h-4" />
-                        )}
-                      </div>
-                      <span className={`text-sm leading-relaxed ${
-                        feature.included ? 'text-gray-700' : 'text-gray-400'
-                      }`}>
-                        {feature.text}
+                  {/* Price */}
+                  <div className={`text-center pb-6 mb-6 border-b ${isPremium ? 'border-orange-100' : 'border-gray-100'}`}>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-gray-400 text-lg">R$</span>
+                      <span className={`font-black ${isPremium ? 'text-6xl text-orange-600' : 'text-5xl text-gray-900'}`}>
+                        {Math.floor(plan.price)}
+                      </span>
+                      <span className="text-gray-400 text-lg">
+                        ,{String(Math.round((plan.price % 1) * 100)).padStart(2, '0')}
                       </span>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-gray-400 text-sm mt-1">por mês</p>
+                    {isPremium && (
+                      <p className="text-orange-600 text-xs font-medium mt-2">
+                        Melhor custo-benefício
+                      </p>
+                    )}
+                  </div>
 
-                {/* CTA Button */}
-                <button
-                  onClick={() => handleSelectPlan(plan)}
-                  className={`w-full py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
-                    isPremium
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
-                  }`}
-                >
-                  <span>Assinar {plan.name}</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                  {/* Features by Groups */}
+                  <div className="space-y-5 flex-1">
+                    {(Object.entries(features) as [string, PlanFeatureGroup][]).map(([key, group]) => (
+                      <div key={key}>
+                        <h4 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${
+                          isPremium ? 'text-orange-500' : 'text-gray-400'
+                        }`}>
+                          {group.title}
+                        </h4>
+                        <div className="space-y-2">
+                          {group.features.map((feature: PlanFeature, index: number) => (
+                            <div key={index} className="flex items-start gap-3">
+                              <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
+                                feature.included
+                                  ? isPremium
+                                    ? 'bg-orange-100 text-orange-600'
+                                    : 'bg-green-100 text-green-600'
+                                  : 'bg-gray-100 text-gray-400'
+                              }`}>
+                                {feature.included ? (
+                                  <Check className="w-3 h-3" strokeWidth={3} />
+                                ) : (
+                                  <Lock className="w-3 h-3" />
+                                )}
+                              </div>
+                              <span className={`text-sm leading-relaxed ${
+                                feature.included
+                                  ? feature.highlight
+                                    ? isPremium
+                                      ? 'text-orange-700 font-semibold'
+                                      : 'text-gray-900 font-semibold'
+                                    : 'text-gray-700'
+                                  : 'text-gray-400'
+                              }`}>
+                                {feature.text}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA Button */}
+                  <div className="mt-8">
+                    <button
+                      onClick={() => handleSelectPlan(plan)}
+                      className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-base ${
+                        isPremium
+                          ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5'
+                          : isPro
+                          ? 'bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50'
+                          : 'bg-white border-2 border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400'
+                      }`}
+                    >
+                      <span>
+                        {isPremium
+                          ? 'Começar com Premium'
+                          : `Assinar ${plan.name}`
+                        }
+                      </span>
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                    {isPremium && (
+                      <p className="text-center text-xs text-gray-500 mt-3">
+                        Todas as funcionalidades incluídas
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )
           })}
@@ -282,6 +408,18 @@ export default function PlansPage() {
             <p className="text-gray-500 text-lg">Nenhum plano disponível no momento.</p>
           </div>
         )}
+
+        {/* Trust badges */}
+        <div className="mt-16 text-center">
+          <p className="text-gray-400 text-sm mb-4">Pagamento seguro via</p>
+          <div className="flex items-center justify-center gap-6 opacity-60">
+            <span className="text-gray-500 font-semibold">Stripe</span>
+            <span className="text-gray-300">|</span>
+            <span className="text-gray-500 font-semibold">PIX</span>
+            <span className="text-gray-300">|</span>
+            <span className="text-gray-500 font-semibold">Cartão de Crédito</span>
+          </div>
+        </div>
       </div>
     </div>
   )

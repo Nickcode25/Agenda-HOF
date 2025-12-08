@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Calendar, Users, Menu, X, Syringe, Package, ShoppingCart, ChevronDown, CreditCard, LogOut, UserCog, TrendingUp, Receipt, GraduationCap, BookOpen, CircleUserRound } from 'lucide-react'
+import { CalendarDays, Users, Menu, X, Sparkles, Boxes, ShoppingBag, ChevronDown, Wallet, LogOut, UsersRound, BarChart3, CircleDollarSign, GraduationCap, BookMarked, BadgeCheck } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
@@ -242,92 +242,168 @@ export default function App() {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 py-4 px-2.5 space-y-0.5">
-            {/* Seção: Gestão de Atendimento */}
-            {isExpanded && <div className="pt-3 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Gestão de Atendimento</p></div>}
-            <NavLink to="/app/agenda" end className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Agenda">
-              <Calendar size={20} className="flex-shrink-0"/>
-              <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Agenda</span>
+          <nav className="flex-1 py-4 px-2.5 space-y-1">
+            {/* Seção 1: Gestão de Atendimento */}
+            {isExpanded && (
+              <div className="pt-2 pb-2 px-3">
+                <p className="text-[10px] font-medium text-gray-400/80 uppercase tracking-widest">Atendimento</p>
+              </div>
+            )}
+            <NavLink to="/app/agenda" end className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Agenda">
+              {({isActive}) => (
+                <>
+                  {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                  <CalendarDays size={20} className="flex-shrink-0"/>
+                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Agenda</span>
+                </>
+              )}
             </NavLink>
             {hasFeature('patients') && (
-              <NavLink to="/app/pacientes" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Pacientes">
-                <Users size={20} className="flex-shrink-0"/>
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Pacientes</span>
+              <NavLink to="/app/pacientes" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Pacientes">
+                {({isActive}) => (
+                  <>
+                    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                    <Users size={20} className="flex-shrink-0"/>
+                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Pacientes</span>
+                  </>
+                )}
               </NavLink>
             )}
             {hasFeature('professionals') && (
-              <NavLink to="/app/profissionais" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Profissionais">
-                <CircleUserRound size={20} className="flex-shrink-0"/>
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Profissionais</span>
+              <NavLink to="/app/profissionais" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Profissionais">
+                {({isActive}) => (
+                  <>
+                    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                    <BadgeCheck size={20} className="flex-shrink-0"/>
+                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Profissionais</span>
+                  </>
+                )}
               </NavLink>
             )}
             {hasFeature('procedures') && (
-              <NavLink to="/app/procedimentos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Procedimentos">
-                <Syringe size={20} className="flex-shrink-0"/>
-                <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Procedimentos</span>
+              <NavLink to="/app/procedimentos" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Procedimentos">
+                {({isActive}) => (
+                  <>
+                    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                    <Sparkles size={20} className="flex-shrink-0"/>
+                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Procedimentos</span>
+                  </>
+                )}
               </NavLink>
             )}
 
-            {/* Seção: Educação & Treinamentos - apenas para Premium */}
-            {(hasFeature('students') || hasFeature('courses')) && (
-              <>
-                {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Educação & Treinamentos</p></div>}
-                {hasFeature('students') && (
-                  <NavLink to="/app/alunos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Alunos">
-                    <GraduationCap size={20} className="flex-shrink-0"/>
-                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Alunos</span>
-                  </NavLink>
-                )}
-                {hasFeature('courses') && (
-                  <NavLink to="/app/cursos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Cursos">
-                    <BookOpen size={20} className="flex-shrink-0"/>
-                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Cursos</span>
-                  </NavLink>
-                )}
-              </>
-            )}
-
-            {/* Seção: Financeiro - só para owner e planos que tem acesso */}
+            {/* Seção 2: Financeiro - só para owner e planos que tem acesso */}
             {currentProfile?.role === 'owner' && (hasFeature('sales') || hasFeature('expenses') || hasFeature('financial')) && (
               <>
-                {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Financeiro</p></div>}
+                {isExpanded && (
+                  <div className="pt-6 pb-2 px-3">
+                    <p className="text-[10px] font-medium text-gray-400/80 uppercase tracking-widest">Financeiro</p>
+                  </div>
+                )}
                 {hasFeature('sales') && (
-                  <NavLink to="/app/vendas" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Venda de Produtos">
-                    <ShoppingCart size={20} className="flex-shrink-0"/>
-                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Venda de Produtos</span>
+                  <NavLink to="/app/vendas" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Vendas">
+                    {({isActive}) => (
+                      <>
+                        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                        <ShoppingBag size={20} className="flex-shrink-0"/>
+                        <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Vendas</span>
+                      </>
+                    )}
                   </NavLink>
                 )}
                 {hasFeature('expenses') && (
-                  <NavLink to="/app/despesas" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Despesas">
-                    <Receipt size={20} className="flex-shrink-0"/>
-                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
+                  <NavLink to="/app/despesas" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Despesas">
+                    {({isActive}) => (
+                      <>
+                        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                        <CircleDollarSign size={20} className="flex-shrink-0"/>
+                        <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Despesas</span>
+                      </>
+                    )}
                   </NavLink>
                 )}
                 {hasFeature('financial') && (
-                  <NavLink to="/app/financeiro" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Relatório Financeiro">
-                    <TrendingUp size={20} className="flex-shrink-0"/>
-                    <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Relatório Financeiro</span>
+                  <NavLink to="/app/financeiro" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Relatórios">
+                    {({isActive}) => (
+                      <>
+                        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                        <BarChart3 size={20} className="flex-shrink-0"/>
+                        <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Relatórios</span>
+                      </>
+                    )}
                   </NavLink>
                 )}
-                <NavLink to="/app/mensalidades/planos" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Planos">
-                  <CreditCard size={20} className="flex-shrink-0"/>
-                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Planos</span>
+                <NavLink to="/app/mensalidades/planos" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Planos">
+                  {({isActive}) => (
+                    <>
+                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                      <Wallet size={20} className="flex-shrink-0"/>
+                      <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Planos</span>
+                    </>
+                  )}
                 </NavLink>
               </>
             )}
 
-            {/* Seção: Administração Interna - só para owner e planos que tem acesso */}
+            {/* Seção 3: Administração Interna - só para owner e planos que tem acesso */}
             {currentProfile?.role === 'owner' && hasFeature('stock') && (
               <>
-                {isExpanded && <div className="pt-5 pb-1.5 px-3 transition-all duration-300"><p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Administração Interna</p></div>}
-                <NavLink to="/app/estoque" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Estoque">
-                  <Package size={20} className="flex-shrink-0"/>
-                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Estoque</span>
+                {isExpanded && (
+                  <div className="pt-6 pb-2 px-3">
+                    <p className="text-[10px] font-medium text-gray-400/80 uppercase tracking-widest">Administração</p>
+                  </div>
+                )}
+                <NavLink to="/app/estoque" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Estoque">
+                  {({isActive}) => (
+                    <>
+                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                      <Boxes size={20} className="flex-shrink-0"/>
+                      <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Estoque</span>
+                    </>
+                  )}
                 </NavLink>
-                <NavLink to="/app/funcionarios" className={({isActive})=>`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${isActive? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md shadow-orange-500/20':'text-gray-500 hover:bg-gray-100/80 hover:text-gray-700'}`} title="Funcionários">
-                  <UserCog size={20} className="flex-shrink-0"/>
-                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Funcionários</span>
+                <NavLink to="/app/funcionarios" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Funcionários">
+                  {({isActive}) => (
+                    <>
+                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                      <UsersRound size={20} className="flex-shrink-0"/>
+                      <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Funcionários</span>
+                    </>
+                  )}
                 </NavLink>
+              </>
+            )}
+
+            {/* Seção 4: Educação & Treinamentos - apenas para Premium (última seção) */}
+            {(hasFeature('students') || hasFeature('courses')) && (
+              <>
+                {isExpanded && (
+                  <div className="pt-6 pb-2 px-3">
+                    <p className="text-[10px] font-medium text-gray-400/80 uppercase tracking-widest">Educação</p>
+                  </div>
+                )}
+                {hasFeature('students') && (
+                  <NavLink to="/app/alunos" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Alunos">
+                    {({isActive}) => (
+                      <>
+                        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                        <GraduationCap size={20} className="flex-shrink-0"/>
+                        <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Alunos</span>
+                      </>
+                    )}
+                  </NavLink>
+                )}
+                {hasFeature('courses') && (
+                  <NavLink to="/app/cursos" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Cursos">
+                    {({isActive}) => (
+                      <>
+                        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                        <BookMarked size={20} className="flex-shrink-0"/>
+                        <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Cursos</span>
+                      </>
+                    )}
+                  </NavLink>
+                )}
               </>
             )}
           </nav>

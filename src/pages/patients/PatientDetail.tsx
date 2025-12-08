@@ -6,7 +6,7 @@ import { useStock } from '@/store/stock'
 import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
-import { Edit, Trash2, Plus, CheckCircle, Circle, Clock, FileText, Image as ImageIcon, Phone, Calendar, CreditCard } from 'lucide-react'
+import { Edit, Trash2, Plus, CheckCircle, FileText, Image as ImageIcon, Phone, CreditCard } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
@@ -146,7 +146,7 @@ export default function PatientDetail() {
       return
     }
 
-    // Modo de adição - criar novo procedimento
+    // Modo de adição - criar novo procedimento (já como realizado)
     const newPlannedProcedure: PlannedProcedure = {
       id: crypto.randomUUID(),
       procedureName: selectedProcedure,
@@ -157,9 +157,10 @@ export default function PatientDetail() {
       paymentMethod,
       installments,
       paymentSplits, // Adicionar os pagamentos múltiplos se fornecidos
-      status: 'pending',
+      status: 'completed',
       notes: procedureNotes,
       createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
       performedAt: performedAtISO
     }
 
@@ -171,27 +172,6 @@ export default function PatientDetail() {
     resetProcedureModal()
   }
 
-  const handleUpdateProcedureStatus = (procId: string, status: PlannedProcedure['status']) => {
-    if (!patient) return
-
-    const procedure = patient.plannedProcedures?.find(p => p.id === procId)
-    if (!procedure) return
-
-    const updated = (patient.plannedProcedures || []).map(p =>
-      p.id === procId ? {
-        ...p,
-        status,
-        completedAt: status === 'completed' ? new Date().toISOString() : p.completedAt
-      } : p
-    )
-
-    update(patient.id, { plannedProcedures: updated })
-
-    if (status === 'completed' && procedure.status !== 'completed') {
-      showToast('Procedimento concluído com sucesso!', 'success')
-    }
-  }
-
   const handleRemoveProcedure = async (procId: string) => {
     if (!patient) return
 
@@ -200,9 +180,7 @@ export default function PatientDetail() {
 
     const confirmed = await confirm({
       title: 'Remover Procedimento',
-      message: procedure.status === 'completed'
-        ? 'Remover este procedimento realizado?'
-        : 'Remover este procedimento do planejamento?',
+      message: 'Remover este procedimento realizado?',
       confirmText: 'Remover',
       cancelText: 'Cancelar'
     })
@@ -275,7 +253,6 @@ export default function PatientDetail() {
     </div>
   )
 
-  const plannedProcedures = patient.plannedProcedures?.filter(proc => proc.status !== 'completed') || []
   const completedProcedures = patient.plannedProcedures?.filter(proc => proc.status === 'completed') || []
 
   return (
@@ -394,99 +371,9 @@ export default function PatientDetail() {
           </Link>
         </div>
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Left Column: Planning (30%) */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-                <Calendar size={18} className="text-orange-500 flex-shrink-0" />
-                <span className="truncate">Planejamento de Procedimentos</span>
-              </h3>
-
-              {plannedProcedures.length > 0 ? (
-                <div className="space-y-3">
-                  {plannedProcedures.map(proc => (
-                    <div key={proc.id} className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            {proc.status === 'in_progress' && <Clock size={16} className="text-blue-500 flex-shrink-0" />}
-                            {proc.status === 'pending' && <Circle size={16} className="text-gray-400 flex-shrink-0" />}
-                            <span className="font-medium text-gray-900">{proc.procedureName}</span>
-                            <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs rounded-full font-medium">
-                              {proc.quantity}x
-                            </span>
-                          </div>
-
-                          <div className="space-y-1 text-xs text-gray-500 mb-2">
-                            <div>Unitário: {formatCurrency(proc.unitValue)}</div>
-                            <div className="text-green-600 font-medium">Total: {formatCurrency(proc.totalValue)}</div>
-                          </div>
-
-                          {proc.notes && (
-                            <p className="text-xs text-gray-500 mb-2">{proc.notes}</p>
-                          )}
-                        </div>
-
-                        <div className="flex flex-row sm:flex-col flex-wrap gap-1 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200">
-                          <select
-                            value={proc.status}
-                            onChange={(e) => handleUpdateProcedureStatus(proc.id, e.target.value as PlannedProcedure['status'])}
-                            className="px-2 py-1 text-xs bg-white border border-gray-200 rounded text-gray-900 focus:outline-none focus:border-orange-500"
-                          >
-                            <option value="pending">Pendente</option>
-                            <option value="in_progress">Em Andamento</option>
-                            <option value="completed">Concluído</option>
-                          </select>
-
-                          <button
-                            onClick={() => handleOpenEditValue(proc)}
-                            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                          >
-                            Editar
-                          </button>
-
-                          <button
-                            onClick={() => handleRemoveProcedure(proc.id)}
-                            className="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors"
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Total */}
-                  <div className="mt-4 p-3 bg-gray-100 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">Total:</span>
-                      <span className="text-base font-bold text-green-600">
-                        {formatCurrency(plannedProcedures.reduce((sum, proc) => sum + proc.totalValue, 0))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Calendar size={32} className="text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500 mb-4">Nenhum procedimento planejado ainda.</p>
-                  <button
-                    onClick={() => setShowProcedureModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <Plus size={16} />
-                    Planejar Procedimento
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column: Completed Procedures (70%) */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+        {/* Procedimentos Realizados */}
+        <div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
               <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                 <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
                 <span className="truncate">Procedimentos Realizados</span>
@@ -609,7 +496,6 @@ export default function PatientDetail() {
                 </div>
               )}
             </div>
-          </div>
         </div>
       </div>
 
