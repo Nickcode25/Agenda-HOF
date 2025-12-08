@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { format, startOfWeek, startOfMonth, endOfMonth, addDays, isSameDay, isToday, parseISO, getDay, addMinutes, subMinutes } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { toZonedTime } from 'date-fns-tz'
 import type { Appointment } from '@/types/schedule'
 import type { VirtualBlock } from '@/utils/recurringBlocks'
 import { toSaoPauloTime, formatInSaoPaulo } from '@/utils/timezone'
@@ -105,6 +106,33 @@ export default function WeekGrid({
 
   // Threshold em pixels para considerar que começou um drag
   const DRAG_THRESHOLD = 5
+
+  // Estado para o horário atual (São Paulo) - atualiza a cada minuto
+  const [currentTime, setCurrentTime] = useState(() => toZonedTime(new Date(), 'America/Sao_Paulo'))
+
+  // Atualizar o horário atual a cada minuto
+  useEffect(() => {
+    const updateCurrentTime = () => {
+      setCurrentTime(toZonedTime(new Date(), 'America/Sao_Paulo'))
+    }
+
+    // Atualizar imediatamente
+    updateCurrentTime()
+
+    // Calcular tempo até o próximo minuto
+    const now = new Date()
+    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
+
+    // Primeiro timeout para sincronizar com o minuto
+    const initialTimeout = setTimeout(() => {
+      updateCurrentTime()
+      // Depois, atualizar a cada minuto
+      const interval = setInterval(updateCurrentTime, 60000)
+      return () => clearInterval(interval)
+    }, msUntilNextMinute)
+
+    return () => clearTimeout(initialTimeout)
+  }, [])
 
   // Funções de resize - detecta se clicou na borda inferior
   // A área de resize é proporcional à altura do card para funcionar bem em agendamentos curtos
@@ -853,6 +881,26 @@ export default function WeekGrid({
   // Grid columns baseado no modo
   const gridCols = viewMode === 'day' ? 'grid-cols-[60px_1fr]' : 'grid-cols-[60px_repeat(7,1fr)]'
 
+  // Calcular posição da linha do horário atual (Now Line)
+  const getNowLinePosition = useCallback(() => {
+    const hour = currentTime.getHours()
+    const minutes = currentTime.getMinutes()
+
+    // Só mostra se estiver dentro do horário do grid (7h às 23h)
+    if (hour < 7 || hour > 23) return null
+
+    // Calcular minutos desde as 7h
+    const minutesFromDayStart = (hour - 7) * 60 + minutes
+
+    // Converter para pixels
+    const topPx = (minutesFromDayStart / 60) * HOUR_HEIGHT
+
+    return {
+      topPx,
+      timeString: `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+    }
+  }, [currentTime, HOUR_HEIGHT])
+
   // Renderizar visualização de mês
   if (viewMode === 'month') {
     const monthStart = startOfMonth(currentDate)
@@ -1113,6 +1161,24 @@ export default function WeekGrid({
                     </button>
                   )
                 })}
+
+                {/* Now Line - Linha do horário atual (apenas para hoje) */}
+                {isDayToday && (() => {
+                  const nowLinePos = getNowLinePosition()
+                  if (!nowLinePos) return null
+
+                  return (
+                    <div
+                      className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
+                      style={{ top: `${nowLinePos.topPx}px` }}
+                    >
+                      {/* Bolinha vermelha no início */}
+                      <div className="w-3 h-3 rounded-full bg-red-500 shadow-md flex-shrink-0 -ml-1.5" />
+                      {/* Linha vermelha */}
+                      <div className="flex-1 h-[2px] bg-red-500 shadow-sm" />
+                    </div>
+                  )
+                })()}
               </div>
             )
           })}
