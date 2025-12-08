@@ -9,7 +9,7 @@ export type Procedure = {
   value?: number // alias para price (compatibilidade)
   cashValue?: number
   cardValue?: number
-  durationMinutes: number
+  durationMinutes?: number
   category?: string
   isActive: boolean
   stockCategories?: Array<{

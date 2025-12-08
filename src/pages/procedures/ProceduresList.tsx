@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
-import { Plus, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Gem, Flower2, Palette, Triangle, Tag, CheckCircle } from 'lucide-react'
+import { Plus, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Gem, Flower2, Palette, Triangle, CheckCircle } from 'lucide-react'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
@@ -126,11 +126,6 @@ export default function ProceduresList() {
           { label: 'Ativos', value: stats.active, icon: CheckCircle, color: 'text-green-500' },
           { label: 'Preço médio', value: formatCurrency(stats.avgPrice), icon: DollarSign, color: 'text-green-500' }
         ]}
-        secondaryAction={{
-          label: 'Categorias',
-          icon: Tag,
-          href: '/app/procedimentos/categorias'
-        }}
         primaryAction={{
           label: 'Novo Procedimento',
           icon: Plus,

@@ -1,23 +1,18 @@
 import { FormEvent, useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
-import { useCategories } from '@/store/categories'
 import { parseCurrency } from '@/utils/currency'
-import { Save, ArrowLeft, Plus, FileText, DollarSign, Clock } from 'lucide-react'
-import CreateCategoryModal from '@/components/CreateCategoryModal'
-import SearchableSelect from '@/components/SearchableSelect'
+import { Save, ArrowLeft, FileText, DollarSign, Clock } from 'lucide-react'
 
 export default function ProcedureEdit() {
   const { id } = useParams()
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
-  const { getProcedureCategories, fetchCategories } = useCategories()
   const navigate = useNavigate()
 
   const procedure = procedures.find(p => p.id === id)
 
   useEffect(() => {
     fetchAll()
-    fetchCategories()
   }, [])
 
   const [value, setValue] = useState('')
@@ -26,18 +21,12 @@ export default function ProcedureEdit() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
-  const [category, setCategory] = useState('')
-  const [showCategoryModal, setShowCategoryModal] = useState(false)
-
-  // Obter categorias de procedimentos do banco
-  const procedureCategories = getProcedureCategories().map(cat => cat.name)
 
   useEffect(() => {
     if (procedure) {
       setName(procedure.name)
       setDescription(procedure.description || '')
       setDuration(procedure.durationMinutes?.toString() || '')
-      setCategory(procedure.category || '')
       setValue(formatCurrency(procedure.price))
       setCashValue(procedure.cashValue ? formatCurrency(procedure.cashValue) : '')
       setCardValue(procedure.cardValue ? formatCurrency(procedure.cardValue) : '')
@@ -104,14 +93,9 @@ export default function ProcedureEdit() {
       cardValue: cardValue ? parseCurrency(cardValue) : undefined,
       description: description || undefined,
       durationMinutes: duration ? Number(duration) : undefined,
-      category: category || undefined,
     })
 
     navigate(`/app/procedimentos/${procedure.id}`)
-  }
-
-  const handleCategoryCreated = (newCategoryName: string) => {
-    setCategory(newCategoryName)
   }
 
   if (!procedure) {
@@ -166,34 +150,6 @@ export default function ProcedureEdit() {
                     placeholder="Ex: Botox, Preenchimento Labial..."
                     className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria do Procedimento</label>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <SearchableSelect
-                        options={procedureCategories.map(cat => ({
-                          value: cat,
-                          label: cat
-                        }))}
-                        value={category}
-                        onChange={setCategory}
-                        placeholder="Selecione uma categoria"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowCategoryModal(true)}
-                      className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-all flex items-center gap-2 whitespace-nowrap"
-                    >
-                      <Plus size={18} />
-                      Nova
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Selecione a categoria de produto deste procedimento ou crie uma nova
-                  </p>
                 </div>
 
                 <div className="md:col-span-2">
@@ -305,14 +261,6 @@ export default function ProcedureEdit() {
           </div>
         </form>
       </div>
-
-      {/* Modal de Criar Categoria */}
-      <CreateCategoryModal
-        isOpen={showCategoryModal}
-        onClose={() => setShowCategoryModal(false)}
-        type="both"
-        onCategoryCreated={handleCategoryCreated}
-      />
     </div>
   )
 }

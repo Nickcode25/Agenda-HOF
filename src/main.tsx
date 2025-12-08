@@ -76,7 +76,6 @@ const ProceduresList = lazyWithRetry(() => import('./pages/procedures/Procedures
 const ProcedureForm = lazyWithRetry(() => import('./pages/procedures/ProcedureForm'))
 const ProcedureDetail = lazyWithRetry(() => import('./pages/procedures/ProcedureDetail'))
 const ProcedureEdit = lazyWithRetry(() => import('./pages/procedures/ProcedureEdit'))
-const ProcedureCategories = lazyWithRetry(() => import('./pages/procedures/ProcedureCategories'))
 
 // Stock
 const StockList = lazyWithRetry(() => import('./pages/stock/StockList'))
@@ -191,7 +190,6 @@ const router = createBrowserRouter([
       { path: 'agenda/recorrentes', element: withSuspense(RecurringBlocks) },
 
       { path: 'procedimentos', element: withSuspense(ProceduresList) },
-      { path: 'procedimentos/categorias', element: withSuspense(ProcedureCategories) },
       { path: 'procedimentos/novo', element: withSuspense(ProcedureForm) },
       { path: 'procedimentos/:id', element: withSuspense(ProcedureDetail) },
       { path: 'procedimentos/:id/editar', element: withSuspense(ProcedureEdit) },

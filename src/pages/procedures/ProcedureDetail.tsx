@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProcedures } from '@/store/procedures'
-import { Scissors, DollarSign, Clock, ArrowLeft, Trash2, FileText, Package, Edit, ToggleLeft, ToggleRight, CreditCard, Banknote, Tag } from 'lucide-react'
+import { Scissors, DollarSign, Clock, ArrowLeft, Trash2, FileText, Edit, ToggleLeft, ToggleRight, CreditCard, Banknote, Tag } from 'lucide-react'
 import { useEffect } from 'react'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useToast } from '@/hooks/useToast'
@@ -203,25 +203,6 @@ export default function ProcedureDetail() {
             </div>
           )}
 
-          {/* Categorias de Estoque */}
-          {procedure.stockCategories && procedure.stockCategories.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center gap-2 mb-4">
-                <Package size={18} className="text-gray-400" />
-                <h3 className="font-semibold text-gray-900">Produtos Utilizados</h3>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {procedure.stockCategories.map((cat, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl">
-                    <span className="text-gray-700 font-medium">{cat.category}</span>
-                    <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium">
-                      Qtd: {cat.quantityUsed}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Ações */}
