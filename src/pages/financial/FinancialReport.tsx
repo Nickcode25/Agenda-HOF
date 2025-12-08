@@ -24,7 +24,7 @@ import {
   Trash2
 } from 'lucide-react'
 import { PaymentMethod } from '@/types/cash'
-import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import { useSubscription, Feature, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -107,7 +107,7 @@ export default function FinancialReport() {
   const { patients, fetchAll: fetchPatients, update: updatePatient } = usePatients()
   const { sales, fetchSales, removeSale } = useSales()
   const { enrollments, fetchAll: fetchEnrollments, fetched: enrollmentsFetched, remove: removeEnrollment } = useEnrollments()
-  const { hasActiveSubscription } = useSubscription()
+  const { hasFeature, planType } = useSubscription()
   const { show: showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
@@ -517,7 +517,7 @@ export default function FinancialReport() {
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 relative">
-      {!hasActiveSubscription && <UpgradeOverlay message="Relatório Financeiro bloqueado" feature="relatórios financeiros completos e detalhados" />}
+      {!hasFeature('financial') && <UpgradeOverlay message="Relatório Financeiro bloqueado" feature="relatórios financeiros completos e detalhados" requiredPlan={FEATURE_REQUIRED_PLAN['financial']} currentPlan={planType} />}
 
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}

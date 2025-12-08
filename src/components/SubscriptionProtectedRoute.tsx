@@ -13,18 +13,80 @@ interface Subscription {
   id: string
   user_id: string
   plan_id: string
+  plan_type?: string
+  plan_name?: string
   status: string
   plan_amount: number
   next_billing_date: string | null
   created_at: string
+  discount_percentage?: number
+}
+
+// Tipos de plano disponíveis
+export type PlanType = 'basic' | 'pro' | 'premium' | 'trial' | 'courtesy'
+
+// Funcionalidades do sistema
+export type Feature =
+  | 'agenda'
+  | 'agenda_unlimited'
+  | 'patients'
+  | 'patients_unlimited'
+  | 'professionals'
+  | 'procedures'
+  | 'students'
+  | 'courses'
+  | 'analytics'
+  | 'financial'
+  | 'stock'
+  | 'expenses'
+  | 'sales'
+
+// Limites por plano
+export const PLAN_LIMITS: Record<PlanType, { appointments_per_month: number, patients: number }> = {
+  basic: { appointments_per_month: 25, patients: 25 },
+  pro: { appointments_per_month: -1, patients: -1 }, // -1 = ilimitado
+  premium: { appointments_per_month: -1, patients: -1 },
+  trial: { appointments_per_month: -1, patients: -1 },
+  courtesy: { appointments_per_month: -1, patients: -1 } // Cortesia herda do plano vinculado
+}
+
+// Mapeamento de funcionalidades por plano
+export const PLAN_FEATURES: Record<PlanType, Feature[]> = {
+  basic: ['agenda', 'patients'], // Básico: apenas agenda e pacientes (com limites)
+  pro: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses'], // Pro: gestão completa de atendimento e educação
+  premium: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Premium: tudo
+  trial: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Trial tem acesso total
+  courtesy: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'] // Cortesia tem acesso total
+}
+
+// Nome do plano mínimo necessário para cada funcionalidade
+export const FEATURE_REQUIRED_PLAN: Record<Feature, { planName: string, planType: PlanType }> = {
+  agenda: { planName: 'Plano Básico', planType: 'basic' },
+  agenda_unlimited: { planName: 'Plano Pro', planType: 'pro' },
+  patients: { planName: 'Plano Básico', planType: 'basic' },
+  patients_unlimited: { planName: 'Plano Pro', planType: 'pro' },
+  professionals: { planName: 'Plano Pro', planType: 'pro' },
+  procedures: { planName: 'Plano Pro', planType: 'pro' },
+  students: { planName: 'Plano Pro', planType: 'pro' },
+  courses: { planName: 'Plano Pro', planType: 'pro' },
+  analytics: { planName: 'Plano Premium', planType: 'premium' },
+  financial: { planName: 'Plano Premium', planType: 'premium' },
+  stock: { planName: 'Plano Premium', planType: 'premium' },
+  expenses: { planName: 'Plano Premium', planType: 'premium' },
+  sales: { planName: 'Plano Premium', planType: 'premium' }
 }
 
 interface SubscriptionContextType {
   hasActiveSubscription: boolean
-  hasPaidSubscription: boolean  // Nova: true apenas se tem assinatura PAGA
+  hasPaidSubscription: boolean
   isInTrial: boolean
   trialDaysRemaining: number
   subscription: Subscription | null
+  planType: PlanType | null
+  hasFeature: (feature: Feature) => boolean
+  getRequiredPlan: (feature: Feature) => { planName: string, planType: PlanType }
+  getPlanLimits: () => { appointments_per_month: number, patients: number }
+  isUnlimited: () => boolean
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
@@ -32,7 +94,12 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   hasPaidSubscription: false,
   isInTrial: false,
   trialDaysRemaining: 0,
-  subscription: null
+  subscription: null,
+  planType: null,
+  hasFeature: () => false,
+  getRequiredPlan: (feature) => FEATURE_REQUIRED_PLAN[feature],
+  getPlanLimits: () => PLAN_LIMITS.basic,
+  isUnlimited: () => false
 })
 
 export const useSubscription = () => useContext(SubscriptionContext)
@@ -49,6 +116,7 @@ let subscriptionCache: {
   isInTrial: boolean
   trialDaysRemaining: number
   subscription: Subscription | null
+  planType: PlanType | null
   timestamp: number
 } | null = null
 
@@ -91,6 +159,45 @@ export function invalidateSubscriptionCache() {
   saveCacheToStorage(null)
 }
 
+// Função para determinar o tipo de plano baseado no nome ou preço
+function determinePlanType(subscription: Subscription | null, planData?: any): PlanType {
+  if (!subscription && !planData) return 'basic'
+
+  // Se tem plan_type explícito
+  if (subscription?.plan_type) {
+    const type = subscription.plan_type.toLowerCase()
+    if (type.includes('premium')) return 'premium'
+    if (type.includes('pro')) return 'pro'
+    if (type.includes('basic') || type.includes('básico')) return 'basic'
+    if (type.includes('courtesy') || type.includes('cortesia')) return 'courtesy'
+  }
+
+  // Se tem plan_name
+  if (subscription?.plan_name) {
+    const name = subscription.plan_name.toLowerCase()
+    if (name.includes('premium')) return 'premium'
+    if (name.includes('pro')) return 'pro'
+    if (name.includes('basic') || name.includes('básico')) return 'basic'
+    if (name.includes('courtesy') || name.includes('cortesia')) return 'courtesy'
+  }
+
+  // Verificar pelo preço
+  const amount = subscription?.plan_amount || planData?.price || 0
+  if (amount >= 99) return 'premium'
+  if (amount >= 79) return 'pro'
+  if (amount >= 49) return 'basic'
+
+  // Fallback para premium se tiver assinatura ativa
+  if (subscription) return 'premium'
+
+  return 'basic'
+}
+
+// Função para verificar se é uma cortesia (100% de desconto)
+function isCourtesySubscription(subscription: any): boolean {
+  return subscription?.discount_percentage === 100
+}
+
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
   const { user } = useAuth()
 
@@ -105,6 +212,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   const [isInTrial, setIsInTrial] = useState(hasCachedData ? subscriptionCache!.isInTrial : false)
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(hasCachedData ? subscriptionCache!.trialDaysRemaining : 0)
   const [subscription, setSubscription] = useState<Subscription | null>(hasCachedData ? subscriptionCache!.subscription : null)
+  const [planType, setPlanType] = useState<PlanType | null>(hasCachedData ? subscriptionCache!.planType : null)
 
   useEffect(() => {
     async function checkSubscription() {
@@ -138,14 +246,17 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             .maybeSingle()
         ])
 
-        const subscription = subscriptionResult.data
+        const subscriptionData = subscriptionResult.data
         const courtesyUser = courtesyResult.data
 
         // 1. Verificar se usuário tem assinatura ativa
-        if (subscription) {
-          // Verificar se a assinatura realmente está válida
-          if (subscription.next_billing_date) {
-            const nextBilling = new Date(subscription.next_billing_date)
+        if (subscriptionData) {
+          // Verificar se é cortesia (100% de desconto) - cortesias não verificam next_billing_date
+          const isCourtesy = isCourtesySubscription(subscriptionData)
+
+          // Para assinaturas normais (não cortesia), verificar se a cobrança está atrasada
+          if (!isCourtesy && subscriptionData.next_billing_date) {
+            const nextBilling = new Date(subscriptionData.next_billing_date)
             const now = new Date()
 
             // Se passou mais de 5 dias da data de cobrança, considerar suspensa
@@ -156,15 +267,66 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
               setHasActiveSubscription(false)
               setHasPaidSubscription(false)
               setSubscription(null)
+              setPlanType(null)
               setLoading(false)
               return
             }
           }
 
+          // Buscar detalhes do plano se tiver plan_id
+          let planData = null
+          if (subscriptionData.plan_id) {
+            const { data: plan } = await supabase
+              .from('subscription_plans')
+              .select('name, price')
+              .eq('id', subscriptionData.plan_id)
+              .single()
+            planData = plan
+
+            // Adicionar nome do plano à subscription
+            if (plan) {
+              subscriptionData.plan_name = plan.name
+            }
+          }
+
+          // Para cortesias, usar o tipo do plano vinculado (basic, pro, premium)
+          // Se não tiver plano vinculado, fallback para premium (comportamento antigo)
+          let detectedPlanType: PlanType
+          if (isCourtesy) {
+            // Cortesia usa o tipo do plano vinculado
+            detectedPlanType = determinePlanType(subscriptionData, planData)
+            // Se não conseguiu determinar o plano, fallback para premium
+            if (!detectedPlanType || detectedPlanType === 'basic') {
+              // Se tem plan_name, tenta detectar pelo nome
+              if (planData?.name) {
+                const name = planData.name.toLowerCase()
+                if (name.includes('premium')) detectedPlanType = 'premium'
+                else if (name.includes('pro')) detectedPlanType = 'pro'
+                else if (name.includes('básico') || name.includes('basico') || name.includes('basic')) detectedPlanType = 'basic'
+              }
+            }
+          } else {
+            detectedPlanType = determinePlanType(subscriptionData, planData)
+          }
+
           setHasActiveSubscription(true)
-          setHasPaidSubscription(true)  // Tem assinatura PAGA
-          setSubscription(subscription)
+          setHasPaidSubscription(!isCourtesy) // Cortesia não é assinatura paga
+          setSubscription(subscriptionData)
+          setPlanType(detectedPlanType)
           setLoading(false)
+
+          // Atualizar cache
+          subscriptionCache = {
+            userId: user.id,
+            hasActiveSubscription: true,
+            hasPaidSubscription: !isCourtesy,
+            isInTrial: false,
+            trialDaysRemaining: 0,
+            subscription: subscriptionData,
+            planType: detectedPlanType,
+            timestamp: Date.now()
+          }
+          saveCacheToStorage(subscriptionCache)
           return
         }
 
@@ -189,8 +351,9 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
             setIsInTrial(true)
             setTrialDaysRemaining(daysRemaining)
-            setHasActiveSubscription(true) // Durante trial, tem acesso completo
-            setHasPaidSubscription(false)  // Mas NÃO é assinatura paga
+            setHasActiveSubscription(true)
+            setHasPaidSubscription(false)
+            setPlanType('trial') // Trial tem acesso completo
             setLoading(false)
 
             // Atualizar cache
@@ -201,8 +364,10 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
               isInTrial: true,
               trialDaysRemaining: daysRemaining,
               subscription: null,
+              planType: 'trial',
               timestamp: Date.now()
             }
+            saveCacheToStorage(subscriptionCache)
             return
           } else {
             // Trial expirou
@@ -210,6 +375,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             setTrialDaysRemaining(0)
             setHasActiveSubscription(false)
             setHasPaidSubscription(false)
+            setPlanType(null)
             // Continuar verificando cortesia
           }
         }
@@ -224,21 +390,26 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             if (now <= expirationDate) {
               // Cortesia ativa e não expirada
               setHasActiveSubscription(true)
+              setPlanType('courtesy')
             } else {
               // Cortesia expirada
               setHasActiveSubscription(false)
+              setPlanType(null)
             }
           } else {
             // Cortesia sem expiração
             setHasActiveSubscription(true)
+            setPlanType('courtesy')
           }
         } else {
           setHasActiveSubscription(false)
+          setPlanType(null)
         }
       } catch (error) {
         console.error('Erro ao verificar assinatura:', error)
         setHasActiveSubscription(false)
         setHasPaidSubscription(false)
+        setPlanType(null)
       } finally {
         setLoading(false)
       }
@@ -257,13 +428,14 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         isInTrial,
         trialDaysRemaining,
         subscription,
+        planType,
         timestamp: Date.now()
       }
       subscriptionCache = newCache
       // Sincronizar com localStorage para outras abas
       saveCacheToStorage(newCache)
     }
-  }, [loading, user, hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription])
+  }, [loading, user, hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription, planType])
 
   // Escutar mudanças no localStorage de outras abas
   useEffect(() => {
@@ -276,6 +448,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           setIsInTrial(newCache.isInTrial)
           setTrialDaysRemaining(newCache.trialDaysRemaining)
           setSubscription(newCache.subscription)
+          setPlanType(newCache.planType)
         }
       }
     }
@@ -284,15 +457,50 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [user?.id])
 
+  // Função para verificar se tem acesso a uma funcionalidade
+  const hasFeature = useMemo(() => {
+    return (feature: Feature): boolean => {
+      if (!hasActiveSubscription || !planType) return false
+      const allowedFeatures = PLAN_FEATURES[planType] || []
+      return allowedFeatures.includes(feature)
+    }
+  }, [hasActiveSubscription, planType])
+
+  // Função para obter o plano necessário para uma funcionalidade
+  const getRequiredPlan = useMemo(() => {
+    return (feature: Feature) => FEATURE_REQUIRED_PLAN[feature]
+  }, [])
+
+  // Função para obter os limites do plano atual
+  const getPlanLimits = useMemo(() => {
+    return () => {
+      if (!planType) return PLAN_LIMITS.basic
+      return PLAN_LIMITS[planType]
+    }
+  }, [planType])
+
+  // Função para verificar se o plano é ilimitado
+  const isUnlimited = useMemo(() => {
+    return () => {
+      if (!planType) return false
+      const limits = PLAN_LIMITS[planType]
+      return limits.appointments_per_month === -1 && limits.patients === -1
+    }
+  }, [planType])
+
   // Memoizar o valor do contexto para evitar re-renders desnecessários nos filhos
-  // IMPORTANTE: Este useMemo DEVE vir antes de qualquer return condicional
   const contextValue = useMemo(() => ({
     hasActiveSubscription,
     hasPaidSubscription,
     isInTrial,
     trialDaysRemaining,
-    subscription
-  }), [hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription])
+    subscription,
+    planType,
+    hasFeature,
+    getRequiredPlan,
+    getPlanLimits,
+    isUnlimited
+  }), [hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription, planType, hasFeature, getRequiredPlan, getPlanLimits, isUnlimited])
 
   // Enquanto carrega, mostrar loading
   if (loading) {

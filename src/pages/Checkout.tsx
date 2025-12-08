@@ -99,7 +99,7 @@ export default function Checkout() {
 
   // Usar preço do plano selecionado ou preço padrão
   const planPrice = userData?.selectedPlan?.price || PLAN_PRICE
-  const planName = userData?.selectedPlan?.name || 'Plano Profissional'
+  const planName = userData?.selectedPlan?.name || 'Plano Premium'
 
   // Debug: Log do plano recebido
   useEffect(() => {

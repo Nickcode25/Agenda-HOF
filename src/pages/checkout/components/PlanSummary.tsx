@@ -46,7 +46,7 @@ export default function PlanSummary({
 }: PlanSummaryProps) {
   // Usar preço do plano selecionado ou preço padrão
   const planPrice = userData.selectedPlan?.price || PLAN_PRICE
-  const planName = userData.selectedPlan?.name || 'Plano Profissional'
+  const planName = userData.selectedPlan?.name || 'Plano Premium'
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">

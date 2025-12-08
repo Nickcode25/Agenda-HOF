@@ -1,17 +1,23 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { usePatients } from '@/store/patients'
-import { Upload, X, Save, User, Phone as PhoneIcon, Home, FileText } from 'lucide-react'
+import { Upload, X, Save, User, Phone as PhoneIcon, Home, FileText, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { getViaCepUrl } from '@/utils/env'
 import { validatePhotoFile, fileToBase64 } from '@/utils/upload'
 import DateInput from '@/components/DateInput'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 
 export default function PatientForm() {
   const add = usePatients(s => s.add)
   const patients = usePatients(s => s.patients)
   const navigate = useNavigate()
   const { show: showToast } = useToast()
+  const { getPlanLimits, isUnlimited, planType } = useSubscription()
+
+  // Verificar limite de pacientes
+  const limits = getPlanLimits()
+  const hasReachedPatientLimit = !isUnlimited() && patients.length >= limits.patients
 
   const [photoUrl, setPhotoUrl] = useState<string | undefined>()
   const [name, setName] = useState('')
@@ -210,6 +216,28 @@ export default function PatientForm() {
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8">
       <div className="max-w-5xl mx-auto">
+        {/* Alerta de limite atingido */}
+        {hasReachedPatientLimit && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-amber-800">Limite de pacientes atingido</h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  Seu plano {planType === 'basic' ? 'Básico' : 'atual'} permite até {limits.patients} pacientes.
+                  Você já possui {patients.length} pacientes cadastrados.
+                </p>
+                <Link
+                  to="/planos"
+                  className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-orange-600 hover:text-orange-700"
+                >
+                  Fazer upgrade para cadastrar mais pacientes →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -226,9 +254,9 @@ export default function PatientForm() {
             <button
               type="submit"
               form="patient-form"
-              disabled={duplicateNameWarning || duplicateCpfWarning}
+              disabled={duplicateNameWarning || duplicateCpfWarning || hasReachedPatientLimit}
               className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all ${
-                duplicateNameWarning || duplicateCpfWarning
+                duplicateNameWarning || duplicateCpfWarning || hasReachedPatientLimit
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
               }`}

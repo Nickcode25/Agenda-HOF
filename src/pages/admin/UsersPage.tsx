@@ -40,12 +40,18 @@ export default function UsersPage() {
   const loadClinics = async () => {
     try {
       // Usar get_all_users para obter todos os usuários
+      console.log('Chamando get_all_users...')
       const { data: allUsers, error: usersError } = await supabase.rpc('get_all_users')
+
+      console.log('Resultado get_all_users:', { allUsers, usersError })
 
       if (usersError) {
         console.error('Erro ao buscar usuários:', usersError)
+        console.error('Detalhes do erro:', JSON.stringify(usersError, null, 2))
         return
       }
+
+      console.log(`Total de usuários retornados: ${allUsers?.length || 0}`)
 
       // Buscar assinaturas para saber status
       const { data: subscriptions, error: subsError } = await supabase.rpc('get_all_subscriptions')

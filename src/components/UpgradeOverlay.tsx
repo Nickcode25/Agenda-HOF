@@ -1,15 +1,71 @@
-import { Lock, Sparkles, Check, ArrowLeft, Calendar, Users, Package, BarChart3 } from 'lucide-react'
+import { Lock, Sparkles, Check, ArrowLeft, Calendar, Users, Package, BarChart3, Crown, ArrowRight } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/store/auth'
+import { PlanType } from './SubscriptionProtectedRoute'
 
 interface UpgradeOverlayProps {
   message?: string
   feature?: string
+  requiredPlan?: {
+    planName: string
+    planType: PlanType
+  }
+  currentPlan?: PlanType | null
+}
+
+// Preços dos planos
+const PLAN_PRICES: Record<PlanType, number> = {
+  basic: 49.90,
+  pro: 79.90,
+  premium: 99.90,
+  trial: 0,
+  courtesy: 0
+}
+
+// Nome legível dos planos
+const PLAN_NAMES: Record<PlanType, string> = {
+  basic: 'Plano Básico',
+  pro: 'Plano Pro',
+  premium: 'Plano Premium',
+  trial: 'Período de Teste',
+  courtesy: 'Cortesia'
+}
+
+// Features por plano para exibição
+const PLAN_FEATURE_LIST: Record<PlanType, string[]> = {
+  basic: [
+    'Agenda inteligente',
+    'Até 25 agendamentos/mês',
+    'Até 25 pacientes'
+  ],
+  pro: [
+    'Agenda inteligente',
+    'Agendamentos ilimitados',
+    'Pacientes ilimitados',
+    'Gestão de Profissionais',
+    'Gestão de Procedimentos',
+    'Alunos e Cursos'
+  ],
+  premium: [
+    'Agenda inteligente',
+    'Agendamentos ilimitados',
+    'Pacientes ilimitados',
+    'Gestão de Profissionais',
+    'Gestão de Procedimentos',
+    'Alunos e Cursos',
+    'Relatórios Financeiros',
+    'Vendas e Despesas',
+    'Controle de Estoque'
+  ],
+  trial: [],
+  courtesy: []
 }
 
 export default function UpgradeOverlay({
   message = 'Seu período de teste expirou',
-  feature = 'todas as funcionalidades premium'
+  feature = 'todas as funcionalidades premium',
+  requiredPlan,
+  currentPlan
 }: UpgradeOverlayProps) {
   const navigate = useNavigate()
   const { signOut } = useAuth()
@@ -18,6 +74,15 @@ export default function UpgradeOverlay({
     await signOut()
     navigate('/')
   }
+
+  // Determinar qual plano mostrar
+  const planToShow = requiredPlan?.planType || 'premium'
+  const planName = requiredPlan?.planName || PLAN_NAMES[planToShow]
+  const planPrice = PLAN_PRICES[planToShow]
+  const planFeatures = PLAN_FEATURE_LIST[planToShow]
+
+  // Verificar se é upgrade (tem plano atual e precisa de um maior)
+  const isUpgrade = currentPlan && requiredPlan && currentPlan !== requiredPlan.planType
 
   return (
     <div className="fixed inset-0 z-50">
@@ -70,16 +135,30 @@ export default function UpgradeOverlay({
               {/* Badge de status */}
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-full">
                 <Lock className="w-4 h-4 text-orange-500" />
-                <span className="text-orange-600 text-sm font-medium">Acesso Limitado</span>
+                <span className="text-orange-600 text-sm font-medium">
+                  {isUpgrade ? 'Upgrade Necessário' : 'Acesso Limitado'}
+                </span>
               </div>
 
               {/* Título principal */}
               <div>
                 <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
-                  {message}
+                  {isUpgrade
+                    ? `Faça upgrade para o ${planName}`
+                    : message
+                  }
                 </h2>
                 <p className="text-xl text-gray-600 leading-relaxed">
-                  Continue aproveitando todas as funcionalidades do <span className="text-orange-500 font-semibold">Agenda HOF</span> assinando nosso plano premium.
+                  {isUpgrade ? (
+                    <>
+                      Seu plano atual (<span className="font-semibold text-gray-700">{PLAN_NAMES[currentPlan!]}</span>) não inclui acesso a <span className="text-orange-500 font-semibold">{feature}</span>.
+                      Faça upgrade para continuar.
+                    </>
+                  ) : (
+                    <>
+                      Para acessar <span className="text-orange-500 font-semibold">{feature}</span>, você precisa do <span className="font-semibold text-gray-900">{planName}</span> ou superior.
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -110,7 +189,7 @@ export default function UpgradeOverlay({
                   className="group px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/30 flex items-center gap-2"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Assinar Agora
+                  {isUpgrade ? 'Fazer Upgrade' : 'Assinar Agora'}
                 </button>
                 <button
                   onClick={handleLogout}
@@ -131,41 +210,38 @@ export default function UpgradeOverlay({
               <div className="relative bg-white rounded-3xl border-2 border-orange-500/30 p-8 shadow-xl">
                 {/* Badge popular */}
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="px-4 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full text-white text-sm font-semibold shadow-lg">
-                    Recomendado
+                  <div className="px-4 py-1.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full text-white text-sm font-semibold shadow-lg flex items-center gap-1.5">
+                    <Crown className="w-4 h-4" />
+                    {planToShow === 'premium' ? 'Recomendado' : 'Necessário'}
                   </div>
                 </div>
 
                 {/* Header do card */}
                 <div className="text-center mb-8 pt-4">
                   <div className="inline-flex items-center gap-2 mb-4">
-                    <Sparkles className="w-6 h-6 text-orange-500" />
-                    <h3 className="text-2xl font-bold text-gray-900">Plano Premium</h3>
+                    <Crown className="w-6 h-6 text-orange-500" />
+                    <h3 className="text-2xl font-bold text-gray-900">{planName}</h3>
                   </div>
-                  <p className="text-gray-500">Acesso completo a todas as funcionalidades</p>
+                  <p className="text-gray-500">
+                    {planToShow === 'basic' && 'Para profissionais iniciantes'}
+                    {planToShow === 'pro' && 'Para clínicas em crescimento'}
+                    {planToShow === 'premium' && 'Acesso completo a todas as funcionalidades'}
+                  </p>
                 </div>
 
                 {/* Preço */}
                 <div className="text-center mb-8 py-6 bg-gray-50 rounded-2xl border border-gray-200">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-2xl text-gray-500">R$</span>
-                    <span className="text-6xl font-bold text-gray-900">99</span>
-                    <span className="text-2xl text-gray-500">,90</span>
+                    <span className="text-6xl font-bold text-gray-900">{Math.floor(planPrice)}</span>
+                    <span className="text-2xl text-gray-500">,{String(Math.round((planPrice % 1) * 100)).padStart(2, '0')}</span>
                   </div>
                   <span className="text-gray-500">por mês</span>
                 </div>
 
                 {/* Lista de benefícios */}
                 <div className="space-y-4 mb-8">
-                  {[
-                    'Agendamentos ilimitados',
-                    'Agenda inteligente',
-                    'Analytics Avançado',
-                    'Gestão Financeira',
-                    'Gestão de Pacientes',
-                    'Gestão de Profissionais',
-                    'Controle de Estoque'
-                  ].map((benefit, index) => (
+                  {planFeatures.map((benefit, index) => (
                     <div key={index} className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
                         <Check className="w-4 h-4 text-orange-500" />
@@ -181,8 +257,19 @@ export default function UpgradeOverlay({
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 flex items-center justify-center gap-2 text-lg"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Começar Agora
+                  {isUpgrade ? 'Fazer Upgrade' : 'Começar Agora'}
                 </button>
+
+                {/* Link para ver todos os planos */}
+                {planToShow !== 'premium' && (
+                  <button
+                    onClick={() => navigate('/planos')}
+                    className="w-full mt-3 py-3 text-orange-600 font-medium hover:text-orange-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    Ver todos os planos
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
 
                 {/* Info adicional */}
                 <div className="mt-6 text-center space-y-2">

@@ -5,6 +5,8 @@ import { PageHeader, SearchInput, EmptyState } from '@/components/ui'
 import { formatCurrency } from '@/utils/currency'
 import { useCourses } from '@/store/courses'
 import { useEnrollments } from '@/store/enrollments'
+import { useSubscription, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 // Skeleton loader
 const CourseSkeleton = memo(() => (
@@ -35,6 +37,7 @@ const CourseSkeleton = memo(() => (
 export default function CoursesList() {
   const { courses, loading, fetched, fetchAll } = useCourses()
   const { enrollments, fetchAll: fetchEnrollments, fetched: enrollmentsFetched } = useEnrollments()
+  const { hasFeature, planType } = useSubscription()
   const [q, setQ] = useState('')
 
   useEffect(() => {
@@ -75,7 +78,10 @@ export default function CoursesList() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
+      {/* Overlay de bloqueio se não tiver acesso à funcionalidade */}
+      {!hasFeature('courses') && <UpgradeOverlay message="Cursos bloqueados" feature="o cadastro e gestão de cursos" requiredPlan={FEATURE_REQUIRED_PLAN['courses']} currentPlan={planType} />}
+
       {/* Header */}
       <PageHeader
         icon={BookOpen}

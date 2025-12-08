@@ -3,7 +3,7 @@ import { useProcedures } from '@/store/procedures'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect } from 'react'
 import { Plus, DollarSign, Clock, ToggleLeft, ToggleRight, Edit, Syringe, Sparkles, Heart, Zap, Eye, Smile, Droplet, Star, Gem, Flower2, Palette, Triangle, CheckCircle } from 'lucide-react'
-import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import { useSubscription, Feature, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
@@ -11,7 +11,7 @@ import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/u
 export default function ProceduresList() {
   const { procedures, update, fetchAll } = useProcedures(s => ({ procedures: s.procedures, update: s.update, fetchAll: s.fetchAll }))
   const [q, setQ] = useState('')
-  const { hasActiveSubscription } = useSubscription()
+  const { hasFeature, planType } = useSubscription()
 
   useEffect(() => {
     fetchAll()
@@ -113,8 +113,8 @@ export default function ProceduresList() {
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
-      {/* Overlay de bloqueio se não tiver assinatura */}
-      {!hasActiveSubscription && <UpgradeOverlay message="Procedimentos bloqueados" feature="o cadastro e gestão de procedimentos" />}
+      {/* Overlay de bloqueio se não tiver acesso à funcionalidade */}
+      {!hasFeature('procedures') && <UpgradeOverlay message="Procedimentos bloqueados" feature="o cadastro e gestão de procedimentos" requiredPlan={FEATURE_REQUIRED_PLAN['procedures']} currentPlan={planType} />}
 
       {/* Header */}
       <PageHeader

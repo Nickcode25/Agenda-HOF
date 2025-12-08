@@ -623,42 +623,8 @@ export default function WeekGrid({
     return todayAppointments[0] || null
   }, [appointments])
 
-  // Scroll automático para o primeiro agendamento do dia ao carregar
-  useEffect(() => {
-    if (viewMode === 'month' || !scrollContainerRef.current) return
-
-    // Pequeno delay para garantir que o DOM está renderizado
-    const timer = setTimeout(() => {
-      if (!scrollContainerRef.current) return
-
-      let scrollPosition = 0
-
-      if (firstTodayAppointment) {
-        // Se tem agendamento hoje, scroll para o primeiro agendamento
-        const aptStart = toSaoPauloTime(parseISO(firstTodayAppointment.start))
-        const startHour = aptStart.getHours()
-        const startMinutes = aptStart.getMinutes()
-
-        // Calcular posição em pixels (horário - 7h de início - 1h de margem)
-        const hoursFromStart = Math.max(0, startHour - 7 - 1) // -1h para dar margem visual
-        scrollPosition = (hoursFromStart * 60 + startMinutes) / 60 * HOUR_HEIGHT
-      } else {
-        // Se não tem agendamento, scroll para 8h da manhã (1h após o início)
-        scrollPosition = HOUR_HEIGHT // 1 hora após as 7h
-      }
-
-      // Calcular posição absoluta na página considerando o offset do elemento
-      const elementRect = scrollContainerRef.current.getBoundingClientRect()
-      const absolutePosition = window.scrollY + elementRect.top + scrollPosition
-
-      window.scrollTo({
-        top: absolutePosition - 100, // -100px para dar margem do header
-        behavior: 'smooth'
-      })
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [firstTodayAppointment, viewMode, HOUR_HEIGHT])
+  // Scroll automático removido - causava scroll indesejado ao navegar entre páginas
+  // O comportamento padrão de scroll do navegador é mantido
 
   // Calcular duração do agendamento em minutos
   const getAppointmentDuration = (apt: Appointment) => {

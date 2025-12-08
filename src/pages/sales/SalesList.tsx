@@ -3,7 +3,7 @@ import { useSales } from '@/store/sales'
 import { formatCurrency } from '@/utils/currency'
 import { useMemo, useState, useEffect, useCallback, memo } from 'react'
 import { Search, Plus, ShoppingCart, User, Calendar, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle, Trash2, Edit, BarChart3, Filter, X } from 'lucide-react'
-import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import { useSubscription, Feature, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe, formatDateBR } from '@/utils/dateHelpers'
@@ -46,7 +46,7 @@ export default function SalesList() {
   const { sales, fetchProfessionals, fetchSales, removeSale, loading } = useSales()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const { hasActiveSubscription } = useSubscription()
+  const { hasFeature, planType } = useSubscription()
   const { confirm, ConfirmDialog } = useConfirm()
   const [hasFetched, setHasFetched] = useState(false)
   const [detailModal, setDetailModal] = useState<DetailModalType>(null)
@@ -279,7 +279,7 @@ export default function SalesList() {
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 relative">
-      {!hasActiveSubscription && <UpgradeOverlay message="Vendas bloqueadas" feature="a gestão completa de vendas e relatórios" />}
+      {!hasFeature('sales') && <UpgradeOverlay message="Vendas bloqueadas" feature="a gestão completa de vendas e relatórios" requiredPlan={FEATURE_REQUIRED_PLAN['sales']} currentPlan={planType} />}
 
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}

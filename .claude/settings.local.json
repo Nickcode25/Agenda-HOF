@@ -25,7 +25,8 @@
       "Bash(winget:*)",
       "Bash(ipconfig:*)",
       "Bash(findstr:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(cd:*)"
     ]
   }
 }

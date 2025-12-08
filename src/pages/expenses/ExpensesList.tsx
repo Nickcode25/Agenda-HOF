@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
-import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import { useSubscription, Feature, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import SearchableSelect from '@/components/SearchableSelect'
@@ -50,7 +50,7 @@ const ExpenseSkeleton = memo(() => (
 type PeriodFilter = 'day' | 'week' | 'month' | 'year'
 
 export default function ExpensesList() {
-  const { hasActiveSubscription } = useSubscription()
+  const { hasFeature, planType } = useSubscription()
   const {
     expenses,
     categories,
@@ -277,7 +277,7 @@ export default function ExpensesList() {
   return (
     <>
     <div className="min-h-screen bg-gray-50 -m-8 p-8 relative">
-      {!hasActiveSubscription && <UpgradeOverlay message="Despesas bloqueadas" feature="o controle completo de despesas e categorias" />}
+      {!hasFeature('expenses') && <UpgradeOverlay message="Despesas bloqueadas" feature="o controle completo de despesas e categorias" requiredPlan={FEATURE_REQUIRED_PLAN['expenses']} currentPlan={planType} />}
 
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}

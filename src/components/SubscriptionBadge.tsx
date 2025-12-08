@@ -1,9 +1,9 @@
-import { Crown, Sparkles, Clock } from 'lucide-react'
+import { Crown, Sparkles, Star } from 'lucide-react'
 import { useSubscription } from './SubscriptionProtectedRoute'
 import { useNavigate } from 'react-router-dom'
 
 export default function SubscriptionBadge() {
-  const { hasActiveSubscription, hasPaidSubscription, isInTrial, subscription } = useSubscription()
+  const { hasActiveSubscription, isInTrial, planType } = useSubscription()
   const navigate = useNavigate()
 
   // Não mostrar nada se não tem assinatura ativa
@@ -23,25 +23,34 @@ export default function SubscriptionBadge() {
     )
   }
 
-  // Usuário com assinatura paga
-  if (hasPaidSubscription && subscription) {
-    // Verificar qual plano (assumindo que planos básicos custam menos que R$ 60)
-    const isBasicPlan = subscription.plan_amount && subscription.plan_amount < 60
+  // Badge baseado no tipo de plano detectado
+  if (planType === 'basic') {
+    return (
+      <button
+        onClick={() => navigate('/planos')}
+        className="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 px-3 py-1.5 rounded-full hover:from-gray-100 hover:to-gray-200 transition-all"
+        title="Plano Básico - Clique para fazer upgrade"
+      >
+        <Star className="w-4 h-4 text-gray-500" />
+        <span className="text-xs font-semibold text-gray-600">Plano Básico</span>
+      </button>
+    )
+  }
 
-    if (isBasicPlan) {
-      return (
-        <button
-          onClick={() => navigate('/app/assinatura')}
-          className="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 px-3 py-1.5 rounded-full hover:from-gray-100 hover:to-gray-200 transition-all"
-          title="Plano Básico - Gerenciar Assinatura"
-        >
-          <Clock className="w-4 h-4 text-gray-500" />
-          <span className="text-xs font-semibold text-gray-600">Básico</span>
-        </button>
-      )
-    }
+  if (planType === 'pro') {
+    return (
+      <button
+        onClick={() => navigate('/app/assinatura')}
+        className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 px-3 py-1.5 rounded-full hover:from-blue-100 hover:to-indigo-100 transition-all"
+        title="Plano Pro - Gerenciar Assinatura"
+      >
+        <Star className="w-4 h-4 text-blue-500" />
+        <span className="text-xs font-semibold text-blue-600">Plano Pro</span>
+      </button>
+    )
+  }
 
-    // Plano Premium
+  if (planType === 'premium') {
     return (
       <button
         onClick={() => navigate('/app/assinatura')}
@@ -49,7 +58,7 @@ export default function SubscriptionBadge() {
         title="Plano Premium - Gerenciar Assinatura"
       >
         <Crown className="w-4 h-4 text-orange-500" />
-        <span className="text-xs font-semibold text-orange-600">Premium</span>
+        <span className="text-xs font-semibold text-orange-600">Plano Premium</span>
       </button>
     )
   }

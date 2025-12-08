@@ -7,7 +7,7 @@ import { useRecurring } from '@/store/recurring'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
-import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import { useSubscription, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
 import NewCalendar from '@/components/NewCalendar'
 import AppointmentModal from '@/components/AppointmentModal'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
@@ -19,7 +19,7 @@ export default function ScheduleCalendar() {
   const { professionals, fetchAll: fetchProfessionals } = useProfessionals()
   const { blocks: recurringBlocks, fetchBlocks: fetchRecurringBlocks } = useRecurring()
   const { selectedProfessional } = useProfessionalContext()
-  const { hasActiveSubscription } = useSubscription()
+  const { hasActiveSubscription, hasFeature, planType } = useSubscription()
   const { user } = useAuth()
   const { currentProfile } = useUserProfile()
 
@@ -89,11 +89,13 @@ export default function ScheduleCalendar() {
 
   return (
     <div className="relative -m-8 min-h-[calc(100vh-64px)]">
-      {/* Overlay de bloqueio se não tiver assinatura */}
-      {!hasActiveSubscription && (
+      {/* Overlay de bloqueio se não tiver acesso à agenda */}
+      {!hasFeature('agenda') && (
         <UpgradeOverlay
           message="Agenda bloqueada"
           feature="a gestão completa da sua agenda"
+          requiredPlan={FEATURE_REQUIRED_PLAN['agenda']}
+          currentPlan={planType}
         />
       )}
 

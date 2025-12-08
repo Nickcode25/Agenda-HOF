@@ -57,12 +57,19 @@ export default function CourtesyManager() {
 
   const loadUsers = async () => {
     try {
+      console.log('CourtesyManager: Chamando get_all_users...')
       const { data: allUsers, error: usersError } = await supabase.rpc('get_all_users')
+
+      console.log('CourtesyManager: Resultado get_all_users:', { allUsers, usersError })
 
       if (usersError) {
         console.error('Erro ao buscar usuários:', usersError)
+        console.error('Detalhes do erro:', JSON.stringify(usersError, null, 2))
+        setError('Erro ao carregar usuários: ' + (usersError.message || 'Erro desconhecido'))
         return
       }
+
+      console.log(`CourtesyManager: Total de usuários retornados: ${allUsers?.length || 0}`)
 
       const usersData = (allUsers || []).map((user: any) => ({
         id: user.user_id,
@@ -106,7 +113,7 @@ export default function CourtesyManager() {
         .map((sub: any) => ({
           id: sub.subscription_id,
           user_id: sub.user_id,
-          plan_id: null,
+          plan_id: sub.plan_id,
           granted_at: sub.subscription_created_at,
           expires_at: sub.trial_end_date,
           granted_by: 'admin',

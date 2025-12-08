@@ -4,6 +4,8 @@ import { useStudents } from '@/store/students'
 import { GraduationCap, UserPlus, Phone, MapPin, MessageCircle, ChevronRight, CheckSquare, BookOpen } from 'lucide-react'
 import { formatCurrency } from '@/utils/currency'
 import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
+import { useSubscription, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
+import UpgradeOverlay from '@/components/UpgradeOverlay'
 
 // Função utilitária movida para fora do componente
 const removeAccents = (str: string) => {
@@ -47,6 +49,7 @@ const StudentSkeleton = memo(() => (
 
 export default function StudentsList() {
   const { students, loading, fetchAll, fetched } = useStudents()
+  const { hasFeature, planType } = useSubscription()
   const [q, setQ] = useState('')
 
   useEffect(() => {
@@ -101,7 +104,10 @@ export default function StudentsList() {
   const isInitialLoading = loading && !fetched
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6">
+    <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
+      {/* Overlay de bloqueio se não tiver acesso à funcionalidade */}
+      {!hasFeature('students') && <UpgradeOverlay message="Alunos bloqueados" feature="o cadastro e gestão de alunos" requiredPlan={FEATURE_REQUIRED_PLAN['students']} currentPlan={planType} />}
+
       {/* Header */}
       <PageHeader
         icon={GraduationCap}

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useProfessionals } from '@/store/professionals'
 import { useMemo, useState, useEffect, useCallback, memo } from 'react'
 import { UserPlus, Stethoscope, Phone, Mail, Award, ToggleLeft, ToggleRight, Users, CheckCircle } from 'lucide-react'
-import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import { useSubscription, Feature, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { PageHeader, SearchInput, EmptyState, StatusBadge } from '@/components/ui'
@@ -43,7 +43,7 @@ export default function ProfessionalsList() {
     fetched: s.fetched
   }))
   const [q, setQ] = useState('')
-  const { hasActiveSubscription } = useSubscription()
+  const { hasFeature, planType } = useSubscription()
 
   useEffect(() => {
     fetchAll()
@@ -82,8 +82,8 @@ export default function ProfessionalsList() {
 
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
-      {/* Overlay de bloqueio se não tiver assinatura */}
-      {!hasActiveSubscription && <UpgradeOverlay message="Profissionais bloqueados" feature="o cadastro e gestão de profissionais" />}
+      {/* Overlay de bloqueio se não tiver acesso à funcionalidade */}
+      {!hasFeature('professionals') && <UpgradeOverlay message="Profissionais bloqueados" feature="o cadastro e gestão de profissionais" requiredPlan={FEATURE_REQUIRED_PLAN['professionals']} currentPlan={planType} />}
 
       {/* Header */}
       <PageHeader

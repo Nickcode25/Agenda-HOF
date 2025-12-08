@@ -6,12 +6,13 @@ import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { useRecurring } from '@/store/recurring'
 import { DAYS_OF_WEEK } from '@/types/recurring'
-import { Save, Search, Calendar, X, User, Phone, Clock, FileText, UserPlus, CalendarOff, Repeat } from 'lucide-react'
+import { Save, Search, Calendar, X, User, Phone, Clock, FileText, UserPlus, CalendarOff, Repeat, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { createISOFromDateTimeBR, formatInSaoPaulo } from '@/utils/timezone'
 import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
 import { formatTimeInput, formatDateInput } from '@/utils/inputFormatters'
 import QuickPatientModal from '@/components/QuickPatientModal'
+import { useSubscription } from '@/components/SubscriptionProtectedRoute'
 
 type AppointmentType = 'patient' | 'personal' | 'recurring'
 
@@ -38,6 +39,22 @@ export default function AppointmentForm() {
   const { blocks: recurringBlocks, addBlock, fetchBlocks, loading: recurringLoading } = useRecurring()
   const navigate = useNavigate()
   const showToast = useToast(s => s.show)
+  const { getPlanLimits, isUnlimited, planType, hasFeature } = useSubscription()
+
+  // Verificar limite de agendamentos do mês atual
+  const limits = getPlanLimits()
+  const currentMonthAppointments = useMemo(() => {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+
+    return appointments.filter(apt => {
+      const aptDate = new Date(apt.start)
+      return aptDate >= startOfMonth && aptDate <= endOfMonth && !apt.isPersonal
+    }).length
+  }, [appointments])
+
+  const hasReachedAppointmentLimit = !isUnlimited() && !isEditing && currentMonthAppointments >= limits.appointments_per_month
 
   // Carregar todos os dados necessários ao montar o componente
   useEffect(() => {
@@ -82,6 +99,13 @@ export default function AppointmentForm() {
   const selectedProfessionalName = selectedProfessional
     ? professionals.find(p => p.id === selectedProfessional)?.name || ''
     : ''
+
+  // Auto-selecionar o primeiro profissional para plano básico (que não tem seletor de profissional)
+  useEffect(() => {
+    if (!hasFeature('professionals') && professionals.length > 0 && !professionalId) {
+      setProfessionalId(professionals[0].id)
+    }
+  }, [professionals, professionalId])
 
   // Carregar dados do agendamento quando estiver editando
   useEffect(() => {
@@ -353,6 +377,28 @@ export default function AppointmentForm() {
   return (
     <div className="min-h-screen bg-gray-50 -m-8 p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Alerta de limite de agendamentos atingido */}
+        {hasReachedAppointmentLimit && appointmentType === 'patient' && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-amber-800">Limite de agendamentos atingido</h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  Seu plano {planType === 'basic' ? 'Básico' : 'atual'} permite até {limits.appointments_per_month} agendamentos por mês.
+                  Você já possui {currentMonthAppointments} agendamentos neste mês.
+                </p>
+                <Link
+                  to="/planos"
+                  className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-orange-600 hover:text-orange-700"
+                >
+                  Fazer upgrade para agendamentos ilimitados →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header Compacto */}
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -379,9 +425,9 @@ export default function AppointmentForm() {
             <button
               type="submit"
               form="appointment-form"
-              disabled={!canSubmit}
+              disabled={!canSubmit || (hasReachedAppointmentLimit && appointmentType === 'patient')}
               className={`inline-flex items-center gap-2 px-5 py-2 text-sm rounded-lg font-medium transition-all ${
-                !canSubmit
+                !canSubmit || (hasReachedAppointmentLimit && appointmentType === 'patient')
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm'
               }`}
@@ -394,7 +440,7 @@ export default function AppointmentForm() {
 
         {/* Form */}
         <form id="appointment-form" onSubmit={onSubmit} className="space-y-4">
-          {/* Tipo de Agendamento - Botões compactos */}
+          {/* Tipo de Agendamento - Botões compactos (Compromisso e Recorrentes apenas para Pro/Premium) */}
           <div className="flex gap-2">
             <button
               type="button"
@@ -408,30 +454,34 @@ export default function AppointmentForm() {
               <User size={16} />
               Paciente
             </button>
-            <button
-              type="button"
-              onClick={() => setAppointmentType('personal')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
-                appointmentType === 'personal'
-                  ? 'border-orange-500 bg-orange-50 text-orange-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              <CalendarOff size={16} />
-              Compromisso
-            </button>
-            <button
-              type="button"
-              onClick={() => setAppointmentType('recurring')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
-                appointmentType === 'recurring'
-                  ? 'border-orange-500 bg-orange-50 text-orange-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              <Repeat size={16} />
-              Recorrentes
-            </button>
+            {hasFeature('professionals') && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setAppointmentType('personal')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                    appointmentType === 'personal'
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <CalendarOff size={16} />
+                  Compromisso
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAppointmentType('recurring')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                    appointmentType === 'recurring'
+                      ? 'border-orange-500 bg-orange-50 text-orange-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <Repeat size={16} />
+                  Recorrentes
+                </button>
+              </>
+            )}
           </div>
 
           {/* Card Principal - Todos os campos essenciais */}
@@ -714,9 +764,9 @@ export default function AppointmentForm() {
                   )}
                 </div>
 
-                {/* Procedimento + Profissional + Sala em linha */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-1">
+                {/* Procedimento + Profissional + Sala em linha (Profissional e Sala apenas para Pro/Premium) */}
+                <div className={`grid grid-cols-1 ${hasFeature('professionals') ? 'md:grid-cols-3' : ''} gap-3`}>
+                  <div className={hasFeature('professionals') ? 'md:col-span-1' : ''}>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Procedimento <span className="text-red-500">*</span>
                     </label>
@@ -728,30 +778,34 @@ export default function AppointmentForm() {
                       className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Profissional <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={professionalId}
-                      onChange={(e) => setProfessionalId(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                    >
-                      <option value="">Selecione...</option>
-                      {professionals.map(prof => (
-                        <option key={prof.id} value={prof.id}>{prof.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Sala</label>
-                    <input
-                      value={room}
-                      onChange={(e) => setRoom(e.target.value)}
-                      placeholder="Opcional"
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
-                    />
-                  </div>
+                  {hasFeature('professionals') && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Profissional <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={professionalId}
+                          onChange={(e) => setProfessionalId(e.target.value)}
+                          className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                        >
+                          <option value="">Selecione...</option>
+                          {professionals.map(prof => (
+                            <option key={prof.id} value={prof.id}>{prof.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Sala</label>
+                        <input
+                          value={room}
+                          onChange={(e) => setRoom(e.target.value)}
+                          placeholder="Opcional"
+                          className="w-full bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2.5 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-sm"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Data e Horários em linha */}

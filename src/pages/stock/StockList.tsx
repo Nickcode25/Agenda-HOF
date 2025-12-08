@@ -3,7 +3,7 @@ import { useStock } from '@/store/stock'
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { Search, Plus, Package, AlertTriangle, Edit, Trash2, Minus } from 'lucide-react'
 import { useConfirm } from '@/hooks/useConfirm'
-import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import { useSubscription, Feature, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
 import UpgradeOverlay from '@/components/UpgradeOverlay'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { useToast } from '@/hooks/useToast'
@@ -13,7 +13,7 @@ export default function StockList() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('categoria') || '')
-  const { hasActiveSubscription } = useSubscription()
+  const { hasFeature, planType } = useSubscription()
   const { show: showToast } = useToast()
 
 
@@ -108,7 +108,7 @@ export default function StockList() {
   return (
     <>
       <div className="min-h-screen bg-gray-50 -m-8 p-8 space-y-6 relative">
-        {!hasActiveSubscription && <UpgradeOverlay message="Estoque bloqueado" feature="o controle completo de estoque" />}
+        {!hasFeature('stock') && <UpgradeOverlay message="Estoque bloqueado" feature="o controle completo de estoque" requiredPlan={FEATURE_REQUIRED_PLAN['stock']} currentPlan={planType} />}
 
         {/* Header Simplificado */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
