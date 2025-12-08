@@ -10,7 +10,9 @@ import {
   RefreshCw,
   ArrowLeft,
   DollarSign,
-  Clock
+  Clock,
+  Gift,
+  Sparkles
 } from 'lucide-react'
 import { useSubscription } from '../../components/SubscriptionProtectedRoute'
 import { supabase } from '../../lib/supabase'
@@ -40,7 +42,7 @@ interface SubscriptionDetails {
 
 export default function SubscriptionManagement() {
   const navigate = useNavigate()
-  const { hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining } = useSubscription()
+  const { hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, planType, subscription: contextSubscription } = useSubscription()
 
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
@@ -194,6 +196,7 @@ export default function SubscriptionManagement() {
 
         {/* Status da Assinatura */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+          {/* Assinatura Paga */}
           {hasPaidSubscription && subscription ? (
             <div className="grid md:grid-cols-2 gap-8">
               <div>
@@ -203,7 +206,9 @@ export default function SubscriptionManagement() {
                     <div className="p-2 bg-orange-50 rounded-lg">
                       <Crown className="w-5 h-5 text-orange-500" />
                     </div>
-                    <span className="text-gray-700 font-medium">Plano Premium</span>
+                    <span className="text-gray-700 font-medium">
+                      {planType === 'basic' ? 'Plano Básico' : planType === 'pro' ? 'Plano Pro' : 'Plano Premium'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-50 rounded-lg">
@@ -241,7 +246,28 @@ export default function SubscriptionManagement() {
                 </div>
               </div>
             </div>
+          ) : planType === 'courtesy' ? (
+            /* Cortesia */
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+                <Gift className="w-8 h-8 text-purple-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Acesso Cortesia</h2>
+              <p className="text-gray-600 mb-4">
+                Você possui acesso cortesia com todas as funcionalidades do <span className="text-purple-600 font-semibold">Plano Premium</span>
+              </p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-medium border border-purple-200">
+                <Sparkles className="w-4 h-4" />
+                Acesso Premium Completo
+              </div>
+              {contextSubscription?.next_billing_date && (
+                <p className="text-sm text-gray-500 mt-4">
+                  Válido até: {formatDate(contextSubscription.next_billing_date)}
+                </p>
+              )}
+            </div>
           ) : isInTrial ? (
+            /* Trial */
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
                 <Clock className="w-8 h-8 text-orange-500" />
@@ -251,13 +277,14 @@ export default function SubscriptionManagement() {
                 Você tem <span className="text-orange-500 font-bold">{trialDaysRemaining} dias</span> restantes no seu período de teste gratuito
               </p>
               <button
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate('/app/mensalidades/planos')}
                 className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all font-semibold shadow-lg shadow-orange-500/30"
               >
-                Assinar Agora
+                Ver Planos Disponíveis
               </button>
             </div>
           ) : (
+            /* Sem Assinatura */
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                 <XCircle className="w-8 h-8 text-gray-400" />
@@ -267,7 +294,7 @@ export default function SubscriptionManagement() {
                 Assine agora para ter acesso a todos os recursos Premium
               </p>
               <button
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate('/app/mensalidades/planos')}
                 className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all font-semibold shadow-lg shadow-orange-500/30"
               >
                 Começar Assinatura
