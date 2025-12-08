@@ -291,22 +291,12 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             }
           }
 
-          // Para cortesias, usar o tipo do plano vinculado (basic, pro, premium)
-          // Se não tiver plano vinculado, fallback para premium (comportamento antigo)
+          // Para cortesias, definir planType como 'courtesy' para exibição correta na UI
+          // O plano vinculado (basic, pro, premium) é armazenado em subscription.plan_type para referência
           let detectedPlanType: PlanType
           if (isCourtesy) {
-            // Cortesia usa o tipo do plano vinculado
-            detectedPlanType = determinePlanType(subscriptionData, planData)
-            // Se não conseguiu determinar o plano, fallback para premium
-            if (!detectedPlanType || detectedPlanType === 'basic') {
-              // Se tem plan_name, tenta detectar pelo nome
-              if (planData?.name) {
-                const name = planData.name.toLowerCase()
-                if (name.includes('premium')) detectedPlanType = 'premium'
-                else if (name.includes('pro')) detectedPlanType = 'pro'
-                else if (name.includes('básico') || name.includes('basico') || name.includes('basic')) detectedPlanType = 'basic'
-              }
-            }
+            // Cortesia sempre usa planType 'courtesy' para exibição na UI
+            detectedPlanType = 'courtesy'
           } else {
             detectedPlanType = determinePlanType(subscriptionData, planData)
           }

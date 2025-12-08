@@ -248,24 +248,39 @@ export default function SubscriptionManagement() {
             </div>
           ) : planType === 'courtesy' ? (
             /* Cortesia */
-            <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-                <Gift className="w-8 h-8 text-purple-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Acesso Cortesia</h2>
-              <p className="text-gray-600 mb-4">
-                Você possui acesso cortesia com todas as funcionalidades do <span className="text-purple-600 font-semibold">Plano Premium</span>
-              </p>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-medium border border-purple-200">
-                <Sparkles className="w-4 h-4" />
-                Acesso Premium Completo
-              </div>
-              {contextSubscription?.next_billing_date && (
-                <p className="text-sm text-gray-500 mt-4">
-                  Válido até: {formatDate(contextSubscription.next_billing_date)}
-                </p>
-              )}
-            </div>
+            (() => {
+              // Determinar o nome do plano da cortesia baseado no plan_type ou plan_name
+              const courtesyPlanType = contextSubscription?.plan_type?.toLowerCase() || ''
+              const courtesyPlanName = contextSubscription?.plan_name?.toLowerCase() || ''
+              let displayPlanName = 'Plano Premium' // Default
+
+              if (courtesyPlanType.includes('pro') || courtesyPlanName.includes('pro')) {
+                displayPlanName = 'Plano Pro'
+              } else if (courtesyPlanType.includes('basic') || courtesyPlanType.includes('básico') || courtesyPlanName.includes('basic') || courtesyPlanName.includes('básico')) {
+                displayPlanName = 'Plano Básico'
+              }
+
+              return (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+                    <Gift className="w-8 h-8 text-purple-500" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Acesso Cortesia</h2>
+                  <p className="text-gray-600 mb-4">
+                    Você possui acesso cortesia com todas as funcionalidades do <span className="text-purple-600 font-semibold">{displayPlanName}</span>
+                  </p>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-medium border border-purple-200">
+                    <Sparkles className="w-4 h-4" />
+                    Acesso {displayPlanName.replace('Plano ', '')} Completo
+                  </div>
+                  {contextSubscription?.next_billing_date && (
+                    <p className="text-sm text-gray-500 mt-4">
+                      Válido até: {formatDate(contextSubscription.next_billing_date)}
+                    </p>
+                  )}
+                </div>
+              )
+            })()
           ) : isInTrial ? (
             /* Trial */
             <div className="text-center py-8">
@@ -277,7 +292,7 @@ export default function SubscriptionManagement() {
                 Você tem <span className="text-orange-500 font-bold">{trialDaysRemaining} dias</span> restantes no seu período de teste gratuito
               </p>
               <button
-                onClick={() => navigate('/app/mensalidades/planos')}
+                onClick={() => navigate('/planos')}
                 className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all font-semibold shadow-lg shadow-orange-500/30"
               >
                 Ver Planos Disponíveis
@@ -294,7 +309,7 @@ export default function SubscriptionManagement() {
                 Assine agora para ter acesso a todos os recursos Premium
               </p>
               <button
-                onClick={() => navigate('/app/mensalidades/planos')}
+                onClick={() => navigate('/planos')}
                 className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all font-semibold shadow-lg shadow-orange-500/30"
               >
                 Começar Assinatura
