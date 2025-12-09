@@ -306,7 +306,18 @@ export default function SubscriptionManagement() {
 
   // Obter nome do plano para exibição
   const getDisplayPlanName = () => {
-    if (planType === 'courtesy') return 'Cortesia Premium'
+    if (planType === 'courtesy') {
+      // Mostrar qual plano está vinculado à cortesia
+      const linkedType = contextSubscription?.linked_plan_type
+      if (linkedType === 'premium') return 'Cortesia Premium'
+      if (linkedType === 'pro') return 'Cortesia Pro'
+      if (linkedType === 'basic') return 'Cortesia Básico'
+      // Fallback: tentar pelo nome do plano
+      const planName = contextSubscription?.plan_name?.toLowerCase() || ''
+      if (planName.includes('premium')) return 'Cortesia Premium'
+      if (planName.includes('pro')) return 'Cortesia Pro'
+      return 'Cortesia Básico'
+    }
     if (planType === 'trial') return 'Período de Teste'
     if (subscription?.plan_name) return subscription.plan_name
     if (planType === 'basic') return 'Plano Básico'
@@ -317,6 +328,18 @@ export default function SubscriptionManagement() {
 
   // Obter features do plano atual
   const getCurrentPlanFeatures = () => {
+    if (planType === 'courtesy') {
+      // Para cortesia, mostrar features do plano vinculado
+      const linkedType = contextSubscription?.linked_plan_type
+      if (linkedType) {
+        return PLAN_DISPLAY_FEATURES[linkedType] || PLAN_DISPLAY_FEATURES.basic
+      }
+      // Fallback: tentar pelo nome do plano
+      const planName = contextSubscription?.plan_name?.toLowerCase() || ''
+      if (planName.includes('premium')) return PLAN_DISPLAY_FEATURES.premium
+      if (planName.includes('pro')) return PLAN_DISPLAY_FEATURES.pro
+      return PLAN_DISPLAY_FEATURES.basic
+    }
     return PLAN_DISPLAY_FEATURES[planType || 'basic'] || PLAN_DISPLAY_FEATURES.basic
   }
 

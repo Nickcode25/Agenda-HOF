@@ -20,6 +20,7 @@ interface Subscription {
   next_billing_date: string | null
   created_at: string
   discount_percentage?: number
+  linked_plan_type?: 'basic' | 'pro' | 'premium' // Para cortesias, qual plano real está vinculado
 }
 
 // Tipos de plano disponíveis
@@ -54,10 +55,10 @@ export const PLAN_LIMITS: Record<PlanType, { appointments_per_month: number, pat
 // Mapeamento de funcionalidades por plano
 export const PLAN_FEATURES: Record<PlanType, Feature[]> = {
   basic: ['agenda', 'patients'], // Básico: apenas agenda e pacientes (com limites)
-  pro: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures'], // Pro: gestão completa de atendimento (sem educação e WhatsApp)
+  pro: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'financial', 'stock', 'expenses', 'sales'], // Pro: gestão completa de atendimento (sem educação e WhatsApp)
   premium: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Premium: tudo
   trial: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Trial tem acesso total
-  courtesy: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'] // Cortesia tem acesso total
+  courtesy: [] // Cortesia herda do plano vinculado - será resolvido dinamicamente
 }
 
 // Nome do plano mínimo necessário para cada funcionalidade
@@ -200,6 +201,25 @@ function isCourtesySubscription(subscription: any): boolean {
   return subscription?.discount_percentage === 100
 }
 
+// Função para determinar o tipo de plano vinculado a uma cortesia
+function determineLinkedPlanType(planName?: string, planAmount?: number): 'basic' | 'pro' | 'premium' {
+  // Primeiro tentar pelo nome
+  if (planName) {
+    const name = planName.toLowerCase()
+    if (name.includes('premium')) return 'premium'
+    if (name.includes('pro') || name.includes('profissional')) return 'pro'
+    if (name.includes('basic') || name.includes('básico')) return 'basic'
+  }
+
+  // Depois tentar pelo preço
+  if (planAmount) {
+    if (planAmount >= 99) return 'premium'
+    if (planAmount >= 79) return 'pro'
+  }
+
+  return 'basic'
+}
+
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
   const { user } = useAuth()
 
@@ -296,11 +316,14 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           }
 
           // Para cortesias, definir planType como 'courtesy' para exibição correta na UI
-          // O plano vinculado (basic, pro, premium) é armazenado em subscription.plan_type para referência
+          // O plano vinculado (basic, pro, premium) é armazenado em subscription.linked_plan_type
           let detectedPlanType: PlanType
           if (isCourtesy) {
             // Cortesia sempre usa planType 'courtesy' para exibição na UI
             detectedPlanType = 'courtesy'
+            // Determinar qual plano real está vinculado à cortesia
+            const linkedType = determineLinkedPlanType(planData?.name || subscriptionData.plan_name, subscriptionData.plan_amount)
+            subscriptionData.linked_plan_type = linkedType
           } else {
             detectedPlanType = determinePlanType(subscriptionData, planData)
           }
@@ -477,10 +500,17 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   const hasFeature = useMemo(() => {
     return (feature: Feature): boolean => {
       if (!hasActiveSubscription || !planType) return false
+
+      // Se for cortesia, usar as features do plano vinculado
+      if (planType === 'courtesy' && subscription?.linked_plan_type) {
+        const linkedFeatures = PLAN_FEATURES[subscription.linked_plan_type] || []
+        return linkedFeatures.includes(feature)
+      }
+
       const allowedFeatures = PLAN_FEATURES[planType] || []
       return allowedFeatures.includes(feature)
     }
-  }, [hasActiveSubscription, planType])
+  }, [hasActiveSubscription, planType, subscription])
 
   // Função para obter o plano necessário para uma funcionalidade
   const getRequiredPlan = useMemo(() => {
@@ -491,18 +521,32 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   const getPlanLimits = useMemo(() => {
     return () => {
       if (!planType) return PLAN_LIMITS.basic
+
+      // Se for cortesia, usar os limites do plano vinculado
+      if (planType === 'courtesy' && subscription?.linked_plan_type) {
+        return PLAN_LIMITS[subscription.linked_plan_type]
+      }
+
       return PLAN_LIMITS[planType]
     }
-  }, [planType])
+  }, [planType, subscription])
 
   // Função para verificar se o plano é ilimitado
   const isUnlimited = useMemo(() => {
     return () => {
       if (!planType) return false
-      const limits = PLAN_LIMITS[planType]
+
+      // Se for cortesia, verificar os limites do plano vinculado
+      let limits: { appointments_per_month: number, patients: number }
+      if (planType === 'courtesy' && subscription?.linked_plan_type) {
+        limits = PLAN_LIMITS[subscription.linked_plan_type]
+      } else {
+        limits = PLAN_LIMITS[planType]
+      }
+
       return limits.appointments_per_month === -1 && limits.patients === -1
     }
-  }, [planType])
+  }, [planType, subscription])
 
   // Memoizar o valor do contexto para evitar re-renders desnecessários nos filhos
   const contextValue = useMemo(() => ({
