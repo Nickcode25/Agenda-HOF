@@ -77,9 +77,7 @@ const PLAN_DISPLAY_FEATURES: Record<string, string[]> = {
     'Agenda ilimitada',
     'Pacientes ilimitados',
     'Gestão de profissionais',
-    'Procedimentos personalizados',
-    'Relatórios básicos',
-    'Suporte prioritário'
+    'Procedimentos personalizados'
   ],
   premium: [
     'Tudo do Pro +',
@@ -584,14 +582,27 @@ export default function SubscriptionManagement() {
             <div className="space-y-3">
               {/* CTA Principal baseado no tipo de plano */}
               {planType === 'courtesy' ? (
-                /* Usuário cortesia - já tem acesso Premium */
+                /* Usuário cortesia */
                 <div className="text-center py-2">
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <Gift className="w-6 h-6 text-green-600" />
                   </div>
                   <p className="text-sm text-gray-600 mb-3">
-                    Você já possui acesso completo ao sistema.
+                    {contextSubscription?.linked_plan_type === 'premium'
+                      ? 'Você possui acesso completo ao sistema.'
+                      : contextSubscription?.linked_plan_type === 'pro'
+                      ? 'Você possui acesso ao plano Pro via cortesia.'
+                      : 'Você possui acesso ao plano Básico via cortesia.'}
                   </p>
+                  {contextSubscription?.linked_plan_type !== 'premium' && (
+                    <button
+                      onClick={() => navigate('/planos')}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium shadow-lg shadow-orange-500/25 transition-all text-sm"
+                    >
+                      <Crown className="w-4 h-4" />
+                      Fazer Upgrade
+                    </button>
+                  )}
                   <button
                     onClick={() => navigate('/planos')}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors text-sm"

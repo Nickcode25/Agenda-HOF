@@ -55,7 +55,7 @@ export const PLAN_LIMITS: Record<PlanType, { appointments_per_month: number, pat
 // Mapeamento de funcionalidades por plano
 export const PLAN_FEATURES: Record<PlanType, Feature[]> = {
   basic: ['agenda', 'patients'], // Básico: apenas agenda e pacientes (com limites)
-  pro: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'financial', 'stock', 'expenses', 'sales'], // Pro: gestão completa de atendimento (sem educação e WhatsApp)
+  pro: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures'], // Pro: gestão completa de atendimento (sem financeiro, educação e WhatsApp)
   premium: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Premium: tudo
   trial: ['agenda', 'agenda_unlimited', 'patients', 'patients_unlimited', 'professionals', 'procedures', 'whatsapp', 'students', 'courses', 'analytics', 'financial', 'stock', 'expenses', 'sales'], // Trial tem acesso total
   courtesy: [] // Cortesia herda do plano vinculado - será resolvido dinamicamente
