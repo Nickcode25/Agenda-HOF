@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { CalendarDays, Users, Menu, X, Sparkles, Boxes, ShoppingBag, ChevronDown, Wallet, LogOut, UsersRound, BarChart3, CircleDollarSign, GraduationCap, BookMarked, BadgeCheck, UserCircle, CreditCard, PanelLeftClose, PanelLeft } from 'lucide-react'
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
 import { useCalendarContext } from '@/contexts/CalendarContext'
@@ -19,6 +19,7 @@ export default function App() {
   const [sidebarPinned, setSidebarPinned] = useState(false) // Desktop pinned (clicado)
   const [entityNames, setEntityNames] = useState<Record<string, string>>({})
   const entityNamesCache = useRef<Record<string, string>>({}) // Cache persistente
+  const sidebarRef = useRef<HTMLElement>(null) // Ref para o sidebar
   const { professionals } = useProfessionals()
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
@@ -43,6 +44,42 @@ export default function App() {
       fetchCurrentProfile()
     }
   }, [user, fetchCurrentProfile])
+
+  // Listener global de mousemove para garantir que o hover do sidebar seja resetado
+  // Isso resolve o problema quando eventos de drag no calendário "travam" o estado do hover
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!sidebarRef.current || sidebarPinned) return
+
+      const sidebarRect = sidebarRef.current.getBoundingClientRect()
+      const isOverSidebar = e.clientX >= sidebarRect.left &&
+                            e.clientX <= sidebarRect.right &&
+                            e.clientY >= sidebarRect.top &&
+                            e.clientY <= sidebarRect.bottom
+
+      // Se o hover está ativo mas o mouse não está sobre o sidebar, resetar
+      if (sidebarHovered && !isOverSidebar) {
+        setSidebarHovered(false)
+      }
+    }
+
+    // Adicionar listener com throttle para performance
+    let throttleTimer: ReturnType<typeof setTimeout> | null = null
+    const throttledHandler = (e: MouseEvent) => {
+      if (!throttleTimer) {
+        throttleTimer = setTimeout(() => {
+          handleGlobalMouseMove(e)
+          throttleTimer = null
+        }, 100)
+      }
+    }
+
+    document.addEventListener('mousemove', throttledHandler)
+    return () => {
+      document.removeEventListener('mousemove', throttledHandler)
+      if (throttleTimer) clearTimeout(throttleTimer)
+    }
+  }, [sidebarHovered, sidebarPinned])
 
   // Função para extrair primeiro e último nome
   const getFirstAndLastName = (fullName: string): string => {
@@ -209,9 +246,10 @@ export default function App() {
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         onMouseEnter={() => setSidebarHovered(true)}
         onMouseLeave={() => setSidebarHovered(false)}
-        className={`fixed lg:sticky top-0 left-0 h-screen bg-gradient-to-b from-white to-gray-50/80 border-r border-gray-100 transition-all duration-500 ease-in-out z-50 ${sidebarOpen ? 'w-64' : 'w-0'} lg:w-20 ${(sidebarHovered || sidebarPinned) ? 'lg:w-64 lg:shadow-xl lg:shadow-gray-200/50' : ''} overflow-y-auto overflow-x-hidden`}
+        className={`fixed top-0 left-0 h-screen bg-gradient-to-b from-white to-gray-50/80 border-r border-gray-100 transition-all duration-300 ease-in-out z-50 ${sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-20'} ${sidebarPinned ? 'lg:!w-64 shadow-xl shadow-gray-200/50' : ''} ${sidebarHovered && !sidebarPinned ? 'lg:!w-64 shadow-2xl shadow-gray-300/50' : ''} overflow-y-auto overflow-x-hidden`}
       >
         <div className="flex flex-col min-h-full">
           {/* Logo */}
@@ -483,7 +521,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-20">
         {/* Mobile Header */}
         <header className="lg:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
           <div className="flex items-center gap-4">
@@ -569,6 +607,17 @@ export default function App() {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Overlay for desktop sidebar hover (subtle) */}
+      {(sidebarHovered || sidebarPinned) && !sidebarOpen && (
+        <div
+          className="hidden lg:block fixed inset-0 bg-black/5 z-40 transition-opacity duration-300"
+          onClick={() => {
+            setSidebarHovered(false)
+            setSidebarPinned(false)
+          }}
+        />
       )}
 
       {/* Toast Notification */}

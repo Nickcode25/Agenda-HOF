@@ -62,13 +62,13 @@ export default function CalendarControls({
   // Versão compacta para o header
   if (compact) {
     return (
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 xl:gap-6 flex-wrap xl:flex-nowrap">
         {/* View Selector */}
         <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
           <button
             type="button"
             onClick={() => onViewModeChange('day')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+            className={`px-2 xl:px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
               viewMode === 'day'
                 ? 'bg-orange-500 text-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -79,7 +79,7 @@ export default function CalendarControls({
           <button
             type="button"
             onClick={() => onViewModeChange('week')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+            className={`px-2 xl:px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
               viewMode === 'week'
                 ? 'bg-orange-500 text-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -90,7 +90,7 @@ export default function CalendarControls({
           <button
             type="button"
             onClick={() => onViewModeChange('month')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+            className={`px-2 xl:px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
               viewMode === 'month'
                 ? 'bg-orange-500 text-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -100,11 +100,11 @@ export default function CalendarControls({
           </button>
         </div>
 
-        {/* Separador */}
-        <div className="w-px h-7 bg-gray-200" />
+        {/* Separador - oculto em telas menores */}
+        <div className="hidden xl:block w-px h-7 bg-gray-200" />
 
-        {/* Stats do dia */}
-        <div className="flex items-center gap-2 text-gray-600">
+        {/* Stats do dia - oculto em telas menores */}
+        <div className="hidden xl:flex items-center gap-2 text-gray-600">
           <Calendar size={16} className="text-orange-500" />
           <span className="text-sm whitespace-nowrap">
             <span className="font-semibold text-gray-900">{appointmentsToday}</span>
@@ -112,40 +112,41 @@ export default function CalendarControls({
           </span>
         </div>
 
-        {/* Separador */}
-        <div className="w-px h-7 bg-gray-200" />
+        {/* Separador - oculto em telas menores */}
+        <div className="hidden xl:block w-px h-7 bg-gray-200" />
 
         {/* Botão Novo Agendamento */}
         <Link
           to="/app/agenda/nova"
-          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-sm transition-all hover:shadow-md whitespace-nowrap"
+          className="inline-flex items-center gap-1 xl:gap-2 bg-orange-500 hover:bg-orange-600 text-white px-3 xl:px-4 py-1.5 rounded-lg text-sm font-medium shadow-sm transition-all hover:shadow-md whitespace-nowrap"
         >
           <Plus size={16} />
-          Novo Agendamento
+          <span className="hidden sm:inline">Novo Agendamento</span>
+          <span className="sm:hidden">Novo</span>
         </Link>
 
         {/* Separador */}
         <div className="w-px h-7 bg-gray-200" />
 
         {/* Navigation */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 xl:gap-1">
           <button
             type="button"
             onClick={handlePrevious}
-            className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+            className="p-1 xl:p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
             title="Anterior"
           >
             <ChevronLeft size={18} />
           </button>
 
-          <span className="text-gray-900 font-medium text-sm min-w-[180px] text-center whitespace-nowrap">
+          <span className="text-gray-900 font-medium text-xs xl:text-sm min-w-[120px] xl:min-w-[180px] text-center whitespace-nowrap">
             {getDateRangeText()}
           </span>
 
           <button
             type="button"
             onClick={handleNext}
-            className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+            className="p-1 xl:p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
             title="Próximo"
           >
             <ChevronRight size={18} />
@@ -156,7 +157,7 @@ export default function CalendarControls({
         <button
           type="button"
           onClick={onToday}
-          className="px-3 py-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg text-sm font-medium transition-all"
+          className="px-2 xl:px-3 py-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg text-sm font-medium transition-all"
         >
           Hoje
         </button>
