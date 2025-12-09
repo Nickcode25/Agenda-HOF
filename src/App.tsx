@@ -1,25 +1,24 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, Users, Menu, X, Sparkles, Boxes, ShoppingBag, ChevronDown, Wallet, LogOut, UsersRound, BarChart3, CircleDollarSign, GraduationCap, BookMarked, BadgeCheck } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { CalendarDays, Users, Menu, X, Sparkles, Boxes, ShoppingBag, ChevronDown, Wallet, LogOut, UsersRound, BarChart3, CircleDollarSign, GraduationCap, BookMarked, BadgeCheck, UserCircle, CreditCard, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useProfessionals } from '@/store/professionals'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
+import { useCalendarContext } from '@/contexts/CalendarContext'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
-import NotificationBell from '@/components/NotificationBell'
-import { startNotificationPolling } from '@/services/notificationService'
-import { useNotificationChecker } from '@/hooks/useNotificationChecker'
 import Toast from '@/components/Toast'
 import { useToast } from '@/hooks/useToast'
 import { supabase } from '@/lib/supabase'
 import TrialBanner from '@/components/TrialBanner'
-import SubscriptionBadge from '@/components/SubscriptionBadge'
 import { useSubscription, Feature } from '@/components/SubscriptionProtectedRoute'
+import { CalendarControls } from '@/components/NewCalendar'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile sidebar
   const [sidebarHovered, setSidebarHovered] = useState(false) // Desktop hover
+  const [sidebarPinned, setSidebarPinned] = useState(false) // Desktop pinned (clicado)
   const [entityNames, setEntityNames] = useState<Record<string, string>>({})
-  const entityNamesCache = useState<Record<string, string>>(() => ({}))[0] // Cache persistente
+  const entityNamesCache = useRef<Record<string, string>>({}) // Cache persistente
   const { professionals } = useProfessionals()
   const { selectedProfessional, setSelectedProfessional } = useProfessionalContext()
   const { signOut, user } = useAuth()
@@ -28,9 +27,16 @@ export default function App() {
   const location = useLocation()
   const { message, type, isVisible, hide } = useToast()
   const { hasActiveSubscription, hasPaidSubscription, hasFeature } = useSubscription()
+  const {
+    viewMode,
+    setViewMode,
+    currentDate,
+    setCurrentDate,
+    goToToday,
+    appointmentsToday,
+    isCalendarPage
+  } = useCalendarContext()
 
-  // Ativar verificação automática de notificações
-  useNotificationChecker()
 
   useEffect(() => {
     if (user) {
@@ -38,13 +44,20 @@ export default function App() {
     }
   }, [user, fetchCurrentProfile])
 
-  // Iniciar polling de notificações
-  useEffect(() => {
-    if (user) {
-      const stopPolling = startNotificationPolling()
-      return () => stopPolling()
-    }
-  }, [user])
+  // Função para extrair primeiro e último nome
+  const getFirstAndLastName = (fullName: string): string => {
+    const names = fullName.trim().split(/\s+/)
+    if (names.length === 1) return names[0]
+    return `${names[0]} ${names[names.length - 1]}`
+  }
+
+  // Nome de exibição no header: username > primeiro+último nome > displayName > email
+  const displayNameForHeader = useMemo(() => {
+    if (currentProfile?.username) return currentProfile.username
+    if (currentProfile?.socialName) return getFirstAndLastName(currentProfile.socialName)
+    if (currentProfile?.displayName) return currentProfile.displayName
+    return user?.email || ''
+  }, [currentProfile, user])
 
   // Buscar nomes de entidades (pacientes, procedimentos, profissionais, etc) para breadcrumbs
   useEffect(() => {
@@ -64,8 +77,8 @@ export default function App() {
         const id = nextPath
 
         // Se já está no cache, usar o cache
-        if (entityNamesCache[id]) {
-          newEntityNames[id] = entityNamesCache[id]
+        if (entityNamesCache.current[id]) {
+          newEntityNames[id] = entityNamesCache.current[id]
           continue
         }
 
@@ -103,7 +116,7 @@ export default function App() {
         results.forEach((result) => {
           if (result.status === 'fulfilled' && result.value.name) {
             newEntityNames[result.value.id] = result.value.name
-            entityNamesCache[result.value.id] = result.value.name // Atualizar cache
+            entityNamesCache.current[result.value.id] = result.value.name // Atualizar cache
           }
         })
       }
@@ -112,7 +125,7 @@ export default function App() {
     }
 
     fetchEntityNames()
-  }, [location.pathname, entityNamesCache])
+  }, [location.pathname])
 
   const handleLogout = async () => {
     await signOut()
@@ -153,6 +166,8 @@ export default function App() {
       'assinantes': 'Assinantes',
       'relatorios': 'Relatórios',
       'profissionais-lista': 'Profissionais',
+      'perfil': 'Meu Perfil',
+      'meu-plano': 'Minha Assinatura',
     }
 
     // Filtrar paths para evitar duplicação no breadcrumb (ex: mensalidades/planos -> apenas Planos)
@@ -187,8 +202,8 @@ export default function App() {
 
   const breadcrumbs = getBreadcrumb()
 
-  // Determinar se o sidebar está expandido (mobile OU desktop hover)
-  const isExpanded = sidebarOpen || sidebarHovered
+  // Determinar se o sidebar está expandido (mobile OU desktop hover OU pinned)
+  const isExpanded = sidebarOpen || sidebarHovered || sidebarPinned
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -196,18 +211,43 @@ export default function App() {
       <aside
         onMouseEnter={() => setSidebarHovered(true)}
         onMouseLeave={() => setSidebarHovered(false)}
-        className={`fixed lg:sticky top-0 left-0 h-screen bg-gradient-to-b from-white to-gray-50/80 border-r border-gray-100 transition-all duration-500 ease-in-out z-50 ${sidebarOpen ? 'w-64' : 'w-0'} lg:w-20 ${sidebarHovered ? 'lg:w-64 lg:shadow-xl lg:shadow-gray-200/50' : ''} overflow-y-auto overflow-x-hidden`}
+        className={`fixed lg:sticky top-0 left-0 h-screen bg-gradient-to-b from-white to-gray-50/80 border-r border-gray-100 transition-all duration-500 ease-in-out z-50 ${sidebarOpen ? 'w-64' : 'w-0'} lg:w-20 ${(sidebarHovered || sidebarPinned) ? 'lg:w-64 lg:shadow-xl lg:shadow-gray-200/50' : ''} overflow-y-auto overflow-x-hidden`}
       >
         <div className="flex flex-col min-h-full">
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
-            <NavLink to="/app" className="flex items-center gap-3 hover:opacity-90 transition-all duration-300">
-              <img src="/logo-agenda-hof.png" alt="Agenda HOF" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 shadow-sm" />
-              <h1 className={`font-semibold text-lg whitespace-nowrap transition-all duration-500 ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}><span className="text-gray-800">Agenda</span> <span className="text-orange-500">HOF</span></h1>
-            </NavLink>
-            <button type="button" onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-gray-600 flex-shrink-0 transition-colors">
-              <X size={20} />
-            </button>
+            {isExpanded ? (
+              // Quando expandido: mostra logo + nome + botão de pin
+              <>
+                <NavLink to="/app" className="flex items-center gap-3 hover:opacity-90 transition-all duration-300">
+                  <img src="/logo-agenda-hof.png" alt="Agenda HOF" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+                  <h1 className="font-semibold text-lg whitespace-nowrap"><span className="text-gray-800">Agenda</span> <span className="text-orange-500">HOF</span></h1>
+                </NavLink>
+                {/* Mobile close button */}
+                <button type="button" onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-gray-600 flex-shrink-0 transition-colors">
+                  <X size={20} />
+                </button>
+                {/* Desktop pin/unpin button */}
+                <button
+                  type="button"
+                  onClick={() => setSidebarPinned(!sidebarPinned)}
+                  className="hidden lg:flex text-gray-400 hover:text-gray-600 flex-shrink-0 transition-colors p-1.5 rounded-lg hover:bg-gray-100"
+                  title={sidebarPinned ? 'Recolher menu' : 'Fixar menu'}
+                >
+                  {sidebarPinned ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+                </button>
+              </>
+            ) : (
+              // Quando recolhido: mostra botão para expandir centralizado
+              <button
+                type="button"
+                onClick={() => setSidebarPinned(true)}
+                className="hidden lg:flex w-full justify-center text-gray-500 hover:text-orange-500 transition-colors p-2 rounded-lg hover:bg-orange-50"
+                title="Expandir menu"
+              >
+                <Menu size={22} />
+              </button>
+            )}
           </div>
 
           {/* Professional Selector - apenas para Pro e Premium */}
@@ -406,6 +446,31 @@ export default function App() {
                 )}
               </>
             )}
+
+            {/* Seção 5: Configuração */}
+            {isExpanded && (
+              <div className="pt-6 pb-2 px-3">
+                <p className="text-[10px] font-medium text-gray-400/80 uppercase tracking-widest">Configuração</p>
+              </div>
+            )}
+            <NavLink to="/app/perfil" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Meu Perfil">
+              {({isActive}) => (
+                <>
+                  {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                  <UserCircle size={20} className="flex-shrink-0"/>
+                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Meu Perfil</span>
+                </>
+              )}
+            </NavLink>
+            <NavLink to="/app/meu-plano" className={({isActive})=>`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 relative ${isActive ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-500/25' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="Minha Assinatura">
+              {({isActive}) => (
+                <>
+                  {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-600 rounded-r-full" />}
+                  <CreditCard size={20} className="flex-shrink-0"/>
+                  <span className={`text-sm font-medium whitespace-nowrap transition-all duration-500 overflow-hidden ${isExpanded ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}`}>Minha Assinatura</span>
+                </>
+              )}
+            </NavLink>
           </nav>
 
           {/* Footer */}
@@ -430,64 +495,65 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <NotificationBell />
           </div>
         </header>
 
         {/* Desktop Header */}
         <header className="hidden lg:flex h-16 bg-white border-b border-gray-200 px-6 items-center justify-between sticky top-0 z-30 shadow-sm">
-          {/* Left: Breadcrumbs */}
+          {/* Left side: Calendar Controls ou Breadcrumbs */}
           <div className="flex items-center gap-4 flex-1">
-            {breadcrumbs && (
-              <nav className="flex items-center gap-2 text-sm">
-                {breadcrumbs.map((crumb, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    {index > 0 && <span className="text-gray-400">/</span>}
-                    {crumb.isLast ? (
-                      <span className="text-gray-900 font-medium">{crumb.name}</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => navigate(crumb.path)}
-                        className="text-gray-500 hover:text-gray-900 transition-colors"
-                      >
-                        {crumb.name}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </nav>
+            {isCalendarPage ? (
+              // Controles do calendário quando na página da agenda
+              <CalendarControls
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                currentDate={currentDate}
+                onDateChange={setCurrentDate}
+                onToday={goToToday}
+                appointmentsToday={appointmentsToday}
+                compact={true}
+              />
+            ) : (
+              // Breadcrumbs nas outras páginas
+              breadcrumbs && (
+                <nav className="flex items-center gap-2 text-sm">
+                  {breadcrumbs.map((crumb, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      {index > 0 && <span className="text-gray-400">/</span>}
+                      {crumb.isLast ? (
+                        <span className="text-gray-900 font-medium">{crumb.name}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => navigate(crumb.path)}
+                          className="text-gray-500 hover:text-gray-900 transition-colors"
+                        >
+                          {crumb.name}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </nav>
+              )
             )}
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <NotificationBell />
-
-            {/* User Menu */}
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-              <div>
-                <p className="text-sm text-gray-900 font-medium">{currentProfile?.displayName || user?.email}</p>
-                <div className="flex items-center gap-2">
-                  {/* Subscription Badge (Premium/Básico/Trial) */}
-                  <SubscriptionBadge />
-                  <p className="text-xs text-gray-500">
-                    {currentProfile?.role === 'owner' ? 'Administrador' : 'Funcionário'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                  title="Sair"
-                >
-                  <LogOut size={20} />
-                </button>
-              </div>
+          {/* Right side: User Menu (sempre visível) */}
+          <div className="flex items-center gap-4 ml-6 pl-6 border-l border-gray-200">
+            <div>
+              <p className="text-sm text-gray-900 font-medium">{displayNameForHeader}</p>
+              <p className="text-xs text-gray-500">
+                {currentProfile?.role === 'owner' ? 'Administrador' : 'Funcionário'}
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+              title="Sair"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         </header>
 

@@ -76,11 +76,18 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         email: user.email,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
+        // Extended profile fields
+        profilePhoto: data.profile_photo,
+        socialName: data.social_name,
+        fullName: data.full_name,
+        username: data.username,
+        address: data.address,
+        phone: data.phone,
+        secondaryPhone: data.secondary_phone,
       }
 
       set({ currentProfile: profile, loading: false })
     } catch (error: any) {
-      console.error('❌ [USER_PROFILE] Erro inesperado:', error)
       set({ currentProfile: null, error: error.message, loading: false })
     }
   },
@@ -209,7 +216,6 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         loading: false,
       })
     } catch (error: any) {
-      console.error('❌ [USER_PROFILE] Erro ao atualizar funcionário:', error)
       set({ error: error.message, loading: false })
     }
   },

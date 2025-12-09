@@ -1,17 +1,17 @@
 import { useNavigate } from 'react-router-dom'
 import { Clock, Sparkles, CreditCard } from 'lucide-react'
 import { useSubscription } from './SubscriptionProtectedRoute'
-import { useAuth } from '@/store/auth'
-import { useUserProfile } from '@/store/userProfile'
 
 export default function TrialBanner() {
-  const { isInTrial, trialDaysRemaining } = useSubscription()
+  const { isInTrial, trialDaysRemaining, hasPaidSubscription, planType } = useSubscription()
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const { currentProfile } = useUserProfile()
 
-  // Não mostrar banner se não está em trial
-  if (!isInTrial) return null
+  // Mostrar banner APENAS se:
+  // - Está em trial gratuito de 7 dias
+  // - NÃO tem assinatura paga ativa
+  // - NÃO é cortesia
+  // - planType é 'trial' (trial gratuito)
+  if (!isInTrial || hasPaidSubscription || planType === 'courtesy' || planType !== 'trial') return null
 
   // Determinar cor baseado nos dias restantes
   const getColorClass = () => {

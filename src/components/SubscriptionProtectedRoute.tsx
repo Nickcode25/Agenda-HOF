@@ -203,18 +203,22 @@ function isCourtesySubscription(subscription: any): boolean {
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
   const { user } = useAuth()
 
-  // Verificar se temos cache válido para evitar loading desnecessário
-  const hasCachedData = subscriptionCache &&
-    subscriptionCache.userId === user?.id &&
-    (Date.now() - subscriptionCache.timestamp) < CACHE_TTL
+  // Verificar se temos cache válido para evitar loading desnecessário - usar useMemo para evitar recálculos
+  const initialCacheState = useMemo(() => {
+    const hasCachedData = subscriptionCache &&
+      subscriptionCache.userId === user?.id &&
+      (Date.now() - subscriptionCache.timestamp) < CACHE_TTL
+    return hasCachedData ? subscriptionCache : null
+  }, [user?.id])
 
-  const [loading, setLoading] = useState(!hasCachedData)
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(hasCachedData ? subscriptionCache!.hasActiveSubscription : false)
-  const [hasPaidSubscription, setHasPaidSubscription] = useState(hasCachedData ? subscriptionCache!.hasPaidSubscription : false)
-  const [isInTrial, setIsInTrial] = useState(hasCachedData ? subscriptionCache!.isInTrial : false)
-  const [trialDaysRemaining, setTrialDaysRemaining] = useState(hasCachedData ? subscriptionCache!.trialDaysRemaining : 0)
-  const [subscription, setSubscription] = useState<Subscription | null>(hasCachedData ? subscriptionCache!.subscription : null)
-  const [planType, setPlanType] = useState<PlanType | null>(hasCachedData ? subscriptionCache!.planType : null)
+  const [loading, setLoading] = useState(!initialCacheState)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(initialCacheState?.hasActiveSubscription ?? false)
+  const [hasPaidSubscription, setHasPaidSubscription] = useState(initialCacheState?.hasPaidSubscription ?? false)
+  const [isInTrial, setIsInTrial] = useState(initialCacheState?.isInTrial ?? false)
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState(initialCacheState?.trialDaysRemaining ?? 0)
+  const [subscription, setSubscription] = useState<Subscription | null>(initialCacheState?.subscription ?? null)
+  const [planType, setPlanType] = useState<PlanType | null>(initialCacheState?.planType ?? null)
+  const [dataLoaded, setDataLoaded] = useState(!!initialCacheState)
 
   useEffect(() => {
     async function checkSubscription() {
@@ -224,8 +228,8 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         return
       }
 
-      // Se temos cache válido, usar os dados em cache e não fazer requisição
-      if (hasCachedData) {
+      // Se já carregamos os dados (do cache ou de requisição anterior), não fazer novamente
+      if (dataLoaded) {
         setLoading(false)
         return
       }
@@ -375,44 +379,63 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         // 3. Verificar se é usuário cortesia ativo
         if (courtesyUser) {
           // Verificar se tem data de expiração
+          let courtesyActive = false
           if (courtesyUser.expires_at) {
             const expirationDate = new Date(courtesyUser.expires_at)
             const now = new Date()
-
-            if (now <= expirationDate) {
-              // Cortesia ativa e não expirada
-              setHasActiveSubscription(true)
-              setPlanType('courtesy')
-            } else {
-              // Cortesia expirada
-              setHasActiveSubscription(false)
-              setPlanType(null)
-            }
+            courtesyActive = now <= expirationDate
           } else {
-            // Cortesia sem expiração
+            // Cortesia sem expiração = sempre ativa
+            courtesyActive = true
+          }
+
+          if (courtesyActive) {
+            // Cortesia ativa
             setHasActiveSubscription(true)
+            setHasPaidSubscription(false) // Cortesia não é assinatura paga
+            setIsInTrial(false) // Cortesia NÃO é trial
+            setTrialDaysRemaining(0)
             setPlanType('courtesy')
+            setLoading(false)
+
+            // Atualizar cache para cortesia
+            subscriptionCache = {
+              userId: user.id,
+              hasActiveSubscription: true,
+              hasPaidSubscription: false,
+              isInTrial: false,
+              trialDaysRemaining: 0,
+              subscription: null,
+              planType: 'courtesy',
+              timestamp: Date.now()
+            }
+            saveCacheToStorage(subscriptionCache)
+            return
+          } else {
+            // Cortesia expirada
+            setHasActiveSubscription(false)
+            setPlanType(null)
           }
         } else {
           setHasActiveSubscription(false)
           setPlanType(null)
         }
-      } catch (error) {
-        console.error('Erro ao verificar assinatura:', error)
+      } catch {
         setHasActiveSubscription(false)
         setHasPaidSubscription(false)
         setPlanType(null)
       } finally {
         setLoading(false)
+        setDataLoaded(true)
       }
     }
 
     checkSubscription()
-  }, [user, hasCachedData])
+  }, [user, dataLoaded])
 
-  // Atualizar cache sempre que os valores mudarem
+  // Atualizar cache apenas quando terminar de carregar dados novos (evita loop)
   useEffect(() => {
-    if (!loading && user) {
+    if (dataLoaded && !loading && user) {
       const newCache = {
         userId: user.id,
         hasActiveSubscription,
@@ -427,7 +450,8 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
       // Sincronizar com localStorage para outras abas
       saveCacheToStorage(newCache)
     }
-  }, [loading, user, hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription, planType])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataLoaded, loading, user?.id])
 
   // Escutar mudanças no localStorage de outras abas
   useEffect(() => {
