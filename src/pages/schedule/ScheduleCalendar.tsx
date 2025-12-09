@@ -5,6 +5,7 @@ import { useSchedule } from '@/store/schedule'
 import { useProfessionals } from '@/store/professionals'
 import { useRecurring } from '@/store/recurring'
 import { useProfessionalContext } from '@/contexts/ProfessionalContext'
+import { useCalendarContext } from '@/contexts/CalendarContext'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
 import { useSubscription, FEATURE_REQUIRED_PLAN } from '@/components/SubscriptionProtectedRoute'
@@ -23,6 +24,16 @@ export default function ScheduleCalendar() {
   const { user } = useAuth()
   const { currentProfile } = useUserProfile()
 
+  // Contexto do calendário para compartilhar com o header
+  const {
+    viewMode,
+    setViewMode,
+    currentDate,
+    setCurrentDate,
+    setAppointments,
+    setIsCalendarPage
+  } = useCalendarContext()
+
   // Carregar dados ao montar o componente (apenas uma vez)
   useEffect(() => {
     fetchProfessionals()
@@ -30,6 +41,17 @@ export default function ScheduleCalendar() {
     fetchRecurringBlocks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Marcar que estamos na página do calendário
+  useEffect(() => {
+    setIsCalendarPage(true)
+    return () => setIsCalendarPage(false)
+  }, [setIsCalendarPage])
+
+  // Sincronizar appointments com o contexto
+  useEffect(() => {
+    setAppointments(appointments)
+  }, [appointments, setAppointments])
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
 
@@ -110,6 +132,11 @@ export default function ScheduleCalendar() {
         onTimeSlotSelect={handleTimeSlotSelect}
         onAppointmentResize={handleAppointmentResize}
         onAppointmentMove={handleAppointmentMove}
+        externalViewMode={viewMode}
+        externalCurrentDate={currentDate}
+        onExternalViewModeChange={setViewMode}
+        onExternalDateChange={setCurrentDate}
+        hideControls={true}
       />
 
       {/* Appointment Modal */}

@@ -4,10 +4,12 @@ import type { Appointment } from '@/types/schedule'
 import type { RecurringBlock } from '@/types/recurring'
 import { toSaoPauloTime } from '@/utils/timezone'
 import { generateRecurringBlocksForPeriod } from '@/utils/recurringBlocks'
-import CalendarControls from './CalendarControls'
+import CalendarControls, { ViewMode } from './CalendarControls'
 import WeekGrid from './WeekGrid'
 
-type ViewMode = 'day' | 'week' | 'month'
+// Re-exportar tipos úteis
+export type { ViewMode }
+export { CalendarControls }
 
 interface NewCalendarProps {
   appointments: Appointment[]
@@ -19,6 +21,12 @@ interface NewCalendarProps {
   onTimeSlotSelect?: (date: Date, startHour: number, startMinutes: number, endHour: number, endMinutes: number) => void
   onAppointmentResize?: (appointmentId: string, newStart: Date, newEnd: Date) => void
   onAppointmentMove?: (appointmentId: string, newStart: Date, newEnd: Date) => void
+  // Novos props para controle externo
+  externalViewMode?: ViewMode
+  externalCurrentDate?: Date
+  onExternalViewModeChange?: (mode: ViewMode) => void
+  onExternalDateChange?: (date: Date) => void
+  hideControls?: boolean
 }
 
 export default function NewCalendar({
@@ -28,10 +36,22 @@ export default function NewCalendar({
   onTimeSlotClick,
   onTimeSlotSelect,
   onAppointmentResize,
-  onAppointmentMove
+  onAppointmentMove,
+  externalViewMode,
+  externalCurrentDate,
+  onExternalViewModeChange,
+  onExternalDateChange,
+  hideControls = false
 }: NewCalendarProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('week')
-  const [currentDate, setCurrentDate] = useState(new Date())
+  // Estado interno (usado quando não há controle externo)
+  const [internalViewMode, setInternalViewMode] = useState<ViewMode>('week')
+  const [internalCurrentDate, setInternalCurrentDate] = useState(new Date())
+
+  // Usar estado externo se fornecido, senão usar interno
+  const viewMode = externalViewMode ?? internalViewMode
+  const currentDate = externalCurrentDate ?? internalCurrentDate
+  const setViewMode = onExternalViewModeChange ?? setInternalViewMode
+  const setCurrentDate = onExternalDateChange ?? setInternalCurrentDate
 
   // Gerar array de datas baseado no viewMode e currentDate
   const visibleDates = useMemo(() => {
@@ -83,17 +103,19 @@ export default function NewCalendar({
 
   return (
     <div className="flex flex-col">
-      {/* Controles de visualização e navegação */}
-      <div className="flex-shrink-0 mb-4">
-        <CalendarControls
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          currentDate={currentDate}
-          onDateChange={setCurrentDate}
-          onToday={handleToday}
-          appointmentsToday={todayStats.count}
-        />
-      </div>
+      {/* Controles de visualização e navegação (apenas se não estiver oculto) */}
+      {!hideControls && (
+        <div className="flex-shrink-0 mb-4">
+          <CalendarControls
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+            onToday={handleToday}
+            appointmentsToday={todayStats.count}
+          />
+        </div>
+      )}
 
       {/* Calendário */}
       <div>
@@ -111,4 +133,20 @@ export default function NewCalendar({
       </div>
     </div>
   )
+}
+
+// Hook auxiliar para usar o estado do calendário em componentes externos
+export function useCalendarState(initialViewMode: ViewMode = 'week') {
+  const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode)
+  const [currentDate, setCurrentDate] = useState(new Date())
+
+  const goToToday = () => setCurrentDate(new Date())
+
+  return {
+    viewMode,
+    setViewMode,
+    currentDate,
+    setCurrentDate,
+    goToToday
+  }
 }

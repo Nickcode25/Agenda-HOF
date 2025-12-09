@@ -216,12 +216,9 @@ export const useAuth = create<AuthState>()(
             throw new Error(data.error || 'Erro ao solicitar redefinição de senha')
           }
 
-          console.log('✅ Email de reset de senha enviado com sucesso')
-
           set({ loading: false })
           return true
         } catch (error) {
-          console.error('❌ Erro ao solicitar reset de senha:', error)
           set({
             error: getErrorMessage(error),
             loading: false,

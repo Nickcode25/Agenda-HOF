@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
 import { ProfessionalProvider } from './contexts/ProfessionalContext'
+import { CalendarProvider } from './contexts/CalendarContext'
 
 // Lazy load com retry automático em caso de erro de cache após deploy
 function lazyWithRetry<T extends ComponentType<unknown>>(
@@ -11,9 +12,8 @@ function lazyWithRetry<T extends ComponentType<unknown>>(
   return lazy(async () => {
     try {
       return await importFn()
-    } catch (error) {
+    } catch {
       // Se falhar (geralmente por cache antigo após deploy), recarrega a página
-      console.warn('Erro ao carregar módulo, recarregando página...', error)
       window.location.reload()
       // Retorna um componente vazio enquanto recarrega
       return { default: (() => null) as unknown as T }
@@ -122,6 +122,7 @@ const EvolutionSettings = lazyWithRetry(() => import('./pages/settings/Evolution
 
 // Account
 const SubscriptionManagement = lazyWithRetry(() => import('./pages/account/SubscriptionManagement'))
+const ProfilePage = lazyWithRetry(() => import('./pages/account/ProfilePage'))
 
 // Admin
 const AdminLoginPage = lazyWithRetry(() => import('./pages/admin/AdminLoginPage'))
@@ -423,6 +424,8 @@ const router = createBrowserRouter([
       { path: 'notificacoes', element: withSuspense(NotificationsPage) },
 
       { path: 'assinatura', element: withSuspense(SubscriptionManagement) },
+      { path: 'perfil', element: withSuspense(ProfilePage) },
+      { path: 'meu-plano', element: withSuspense(SubscriptionManagement) },
 
       {
         path: 'configuracoes/evolution',
@@ -470,8 +473,10 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ProfessionalProvider>
-      <RouterProvider router={router} />
-    </ProfessionalProvider>
+    <CalendarProvider>
+      <ProfessionalProvider>
+        <RouterProvider router={router} />
+      </ProfessionalProvider>
+    </CalendarProvider>
   </React.StrictMode>
 )

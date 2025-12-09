@@ -26,7 +26,12 @@
       "Bash(ipconfig:*)",
       "Bash(findstr:*)",
       "Bash(git checkout:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(xxd:*)",
+      "Bash(curl:*)",
+      "Bash(for file in \"src/components/NewCalendar/WeekGrid.tsx\" \"src/pages/admin/UsersPage.tsx\" \"src/pages/Checkout.tsx\" \"src/pages/checkout/components/SuccessModal.tsx\" \"src/pages/financial/components/EditTransactionModal.tsx\" \"src/pages/patients/components/EditValueModal.tsx\" \"src/pages/patients/components/PhotoGalleryModal.tsx\")",
+      "Bash(do curl -s \"https://raw.githubusercontent.com/Nickcode25/Agenda-HOF/main/$file\" -o \"$file\")",
+      "Bash(done)"
     ]
   }
 }
