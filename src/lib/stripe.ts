@@ -1,10 +1,10 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js'
 
 // Stripe Configuration
-export const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+export const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
 
 if (!STRIPE_PUBLISHABLE_KEY) {
-  console.warn('⚠️ VITE_STRIPE_PUBLISHABLE_KEY não está configurada no .env')
+  console.warn('⚠️ VITE_STRIPE_PUBLIC_KEY não está configurada no .env')
 }
 
 // Singleton para instância do Stripe
