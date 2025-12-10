@@ -566,9 +566,259 @@ async function handleWebhook(req, res, supabase) {
   }
 }
 
+// ============================================
+// ENDPOINT: ASSINATURA COM CARTÃO DIGITADO
+// ============================================
+
+/**
+ * POST /api/stripe/create-subscription
+ *
+ * Cria uma assinatura recorrente com dados do cartão digitados
+ */
+async function handleCreateSubscription(req, res) {
+  try {
+    const {
+      customerEmail,
+      customerName,
+      customerId,
+      cardNumber,
+      cardExpMonth,
+      cardExpYear,
+      cardCvc,
+      amount,
+      planName,
+      planId,
+      couponId,
+      discountPercentage
+    } = req.body
+
+    console.log('💳 Criando assinatura com cartão digitado...')
+
+    // Validações
+    if (!customerEmail) {
+      return res.status(400).json({
+        success: false,
+        error: 'customerEmail is required'
+      })
+    }
+
+    if (!cardNumber || !cardExpMonth || !cardExpYear || !cardCvc) {
+      return res.status(400).json({
+        success: false,
+        error: 'Card details are required'
+      })
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'amount must be greater than 0'
+      })
+    }
+
+    // Converter valor para centavos (Stripe usa centavos)
+    const amountInCents = Math.round(amount * 100)
+
+    // 1. Buscar ou criar cliente no Stripe
+    let customer
+    const existingCustomers = await stripe.customers.list({
+      email: customerEmail,
+      limit: 1
+    })
+
+    if (existingCustomers.data.length > 0) {
+      customer = existingCustomers.data[0]
+      console.log('👤 Cliente existente encontrado:', customer.id)
+    } else {
+      customer = await stripe.customers.create({
+        email: customerEmail,
+        name: customerName,
+        metadata: {
+          supabase_user_id: customerId || '',
+          source: 'card_form'
+        }
+      })
+      console.log('👤 Novo cliente criado:', customer.id)
+    }
+
+    // 2. Criar PaymentMethod com os dados do cartão
+    const paymentMethod = await stripe.paymentMethods.create({
+      type: 'card',
+      card: {
+        number: cardNumber,
+        exp_month: cardExpMonth,
+        exp_year: cardExpYear,
+        cvc: cardCvc
+      },
+      billing_details: {
+        name: customerName,
+        email: customerEmail
+      }
+    })
+    console.log('💳 PaymentMethod criado:', paymentMethod.id)
+
+    // 3. Anexar PaymentMethod ao cliente
+    await stripe.paymentMethods.attach(paymentMethod.id, {
+      customer: customer.id
+    })
+
+    // 4. Definir como método de pagamento padrão
+    await stripe.customers.update(customer.id, {
+      invoice_settings: {
+        default_payment_method: paymentMethod.id
+      }
+    })
+
+    // 5. Buscar ou criar o produto
+    let product
+    const products = await stripe.products.list({
+      active: true,
+      limit: 100
+    })
+
+    product = products.data.find(p => p.name === planName)
+
+    if (!product) {
+      product = await stripe.products.create({
+        name: planName || 'Agenda HOF - Plano Profissional',
+        metadata: {
+          plan_id: planId || ''
+        }
+      })
+      console.log('📦 Novo produto criado:', product.id)
+    }
+
+    // 6. Buscar ou criar o preço
+    let price
+    const prices = await stripe.prices.list({
+      product: product.id,
+      active: true,
+      limit: 100
+    })
+
+    price = prices.data.find(p =>
+      p.unit_amount === amountInCents &&
+      p.recurring?.interval === 'month'
+    )
+
+    if (!price) {
+      price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: amountInCents,
+        currency: 'brl',
+        recurring: {
+          interval: 'month'
+        }
+      })
+      console.log('💰 Novo preço criado:', price.id)
+    }
+
+    // 7. Criar a assinatura
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [{ price: price.id }],
+      default_payment_method: paymentMethod.id,
+      payment_behavior: 'error_if_incomplete',
+      expand: ['latest_invoice.payment_intent'],
+      metadata: {
+        supabase_user_id: customerId || '',
+        coupon_id: couponId || '',
+        discount_percentage: discountPercentage?.toString() || '0',
+        payment_method: 'card_form'
+      }
+    })
+
+    // 8. Verificar status do pagamento
+    const invoice = subscription.latest_invoice
+    const paymentIntent = invoice?.payment_intent
+
+    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+      // Se precisar de ação adicional (3D Secure, etc)
+      if (paymentIntent?.status === 'requires_action') {
+        console.log('⚠️ Pagamento requer autenticação adicional')
+        return res.json({
+          success: false,
+          error: 'Pagamento requer autenticação adicional',
+          requiresAction: true,
+          clientSecret: paymentIntent.client_secret
+        })
+      }
+
+      return res.json({
+        success: false,
+        error: 'Pagamento não foi aprovado. Verifique os dados do cartão.'
+      })
+    }
+
+    // 9. Calcular próxima data de cobrança
+    const nextBillingDate = new Date(subscription.current_period_end * 1000)
+
+    console.log('✅ Assinatura criada com sucesso:', subscription.id)
+
+    return res.json({
+      success: true,
+      subscriptionId: subscription.id,
+      customerId: customer.id,
+      status: subscription.status,
+      nextBillingDate: nextBillingDate.toISOString(),
+      cardLastDigits: paymentMethod.card?.last4 || '',
+      cardBrand: paymentMethod.card?.brand || ''
+    })
+
+  } catch (error) {
+    console.error('❌ Stripe Subscription Error:', error)
+
+    // Tratar erros específicos do Stripe
+    if (error.type === 'StripeCardError') {
+      return res.status(400).json({
+        success: false,
+        error: getCardErrorMessage(error.code),
+        code: error.code
+      })
+    }
+
+    if (error.type === 'StripeInvalidRequestError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Dados do cartão inválidos',
+        code: error.code
+      })
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'Erro interno ao processar pagamento'
+    })
+  }
+}
+
+/**
+ * Traduz códigos de erro do Stripe para mensagens em português
+ */
+function getCardErrorMessage(code) {
+  const messages = {
+    'card_declined': 'Cartão recusado. Tente outro cartão.',
+    'expired_card': 'Cartão expirado. Verifique a data de validade.',
+    'incorrect_cvc': 'CVV incorreto. Verifique o código de segurança.',
+    'incorrect_number': 'Número do cartão incorreto.',
+    'invalid_cvc': 'CVV inválido.',
+    'invalid_expiry_month': 'Mês de validade inválido.',
+    'invalid_expiry_year': 'Ano de validade inválido.',
+    'invalid_number': 'Número do cartão inválido.',
+    'processing_error': 'Erro ao processar. Tente novamente.',
+    'insufficient_funds': 'Saldo insuficiente.',
+    'lost_card': 'Cartão reportado como perdido.',
+    'stolen_card': 'Cartão reportado como roubado.',
+    'generic_decline': 'Cartão recusado. Entre em contato com seu banco.'
+  }
+
+  return messages[code] || 'Erro ao processar cartão. Tente novamente.'
+}
+
 module.exports = {
   handleApplePayPayment,
   handleApplePaySubscription,
+  handleCreateSubscription,
   cancelSubscription,
   getSubscription,
   createPaymentIntent,

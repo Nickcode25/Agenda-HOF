@@ -4,10 +4,11 @@ const { MercadoPagoConfig, PreApproval, Payment } = require('mercadopago')
 const { createClient } = require('@supabase/supabase-js')
 const { Resend } = require('resend')
 
-// Stripe para Apple Pay (iOS)
+// Stripe para Apple Pay (iOS) e Cartão Digitado
 const {
   handleApplePayPayment,
   handleApplePaySubscription,
+  handleCreateSubscription,
   cancelSubscription: cancelStripeSubscription,
   getSubscription: getStripeSubscription,
   createPaymentIntent,
@@ -989,7 +990,7 @@ app.post('/api/auth/request-password-reset', async (req, res) => {
 })
 
 // ===============================================
-// STRIPE - APPLE PAY (iOS)
+// STRIPE - APPLE PAY (iOS) e CARTÃO DIGITADO
 // ===============================================
 
 // Pagamento único com Apple Pay
@@ -997,6 +998,9 @@ app.post('/api/stripe/apple-pay', handleApplePayPayment)
 
 // Criar assinatura recorrente com Apple Pay
 app.post('/api/stripe/create-subscription-apple-pay', handleApplePaySubscription)
+
+// Criar assinatura com cartão digitado (iOS/Web)
+app.post('/api/stripe/create-subscription', handleCreateSubscription)
 
 // Cancelar assinatura Stripe
 app.post('/api/stripe/cancel-subscription', cancelStripeSubscription)
@@ -1030,9 +1034,10 @@ app.listen(PORT, () => {
   console.log('  - POST /api/email/send-subscription ⭐ Confirmação de assinatura')
   console.log('\n✅ Endpoints disponíveis (Auth):')
   console.log('  - POST /api/auth/request-password-reset ⭐ Solicitação de reset de senha')
-  console.log('\n✅ Endpoints disponíveis (Stripe - Apple Pay iOS):')
-  console.log('  - POST /api/stripe/apple-pay ⭐ Pagamento único')
-  console.log('  - POST /api/stripe/create-subscription-apple-pay ⭐ Assinatura recorrente')
+  console.log('\n✅ Endpoints disponíveis (Stripe - iOS/Web):')
+  console.log('  - POST /api/stripe/apple-pay ⭐ Pagamento único (Apple Pay)')
+  console.log('  - POST /api/stripe/create-subscription-apple-pay ⭐ Assinatura (Apple Pay)')
+  console.log('  - POST /api/stripe/create-subscription ⭐ Assinatura (Cartão digitado)')
   console.log('  - POST /api/stripe/cancel-subscription')
   console.log('  - GET  /api/stripe/subscription/:id')
   console.log('  - POST /api/stripe/create-payment-intent')
