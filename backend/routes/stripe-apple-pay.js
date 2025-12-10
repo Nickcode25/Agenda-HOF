@@ -611,6 +611,53 @@ async function handleWebhook(req, res, supabase) {
 
       case 'invoice.paid':
         console.log('💰 Fatura paga:', event.data.object.id)
+        // Salvar no histórico de pagamentos
+        if (supabase) {
+          const invoice = event.data.object
+          try {
+            // Buscar detalhes do cliente para pegar o email
+            const customer = await stripe.customers.retrieve(invoice.customer)
+            const customerEmail = customer.email || invoice.customer_email
+
+            // Extrair últimos 4 dígitos do cartão se disponível
+            let cardLastDigits = null
+            let cardBrand = null
+            if (invoice.payment_intent) {
+              try {
+                const paymentIntent = await stripe.paymentIntents.retrieve(invoice.payment_intent)
+                if (paymentIntent.payment_method) {
+                  const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method)
+                  cardLastDigits = paymentMethod.card?.last4
+                  cardBrand = paymentMethod.card?.brand
+                }
+              } catch (e) {
+                console.log('⚠️ Não foi possível obter detalhes do cartão:', e.message)
+              }
+            }
+
+            const { error: historyError } = await supabase
+              .from('payment_history')
+              .insert({
+                payment_id: invoice.id,
+                subscription_id: invoice.subscription,
+                amount: invoice.amount_paid / 100, // Stripe usa centavos
+                status: 'approved',
+                status_detail: invoice.status,
+                payment_method: cardBrand ? `${cardBrand} ****${cardLastDigits}` : 'credit_card',
+                payer_email: customerEmail,
+                created_at: new Date(invoice.created * 1000).toISOString(),
+                updated_at: new Date().toISOString()
+              })
+
+            if (historyError) {
+              console.error('❌ Erro ao salvar histórico de pagamento:', historyError)
+            } else {
+              console.log('✅ Histórico de pagamento salvo para:', customerEmail)
+            }
+          } catch (e) {
+            console.error('❌ Erro ao processar fatura paga:', e.message)
+          }
+        }
         break
 
       case 'invoice.payment_failed':
@@ -806,6 +853,35 @@ async function handleCreateSubscription(req, res) {
 
     console.log('✅ Assinatura criada com sucesso:', subscription.id)
 
+    // 10. Salvar histórico de pagamento no Supabase
+    if (supabase && invoice) {
+      try {
+        const { error: historyError } = await supabase
+          .from('payment_history')
+          .insert({
+            payment_id: invoice.id || `sub_${subscription.id}`,
+            subscription_id: subscription.id,
+            amount: amount,
+            status: 'approved',
+            status_detail: 'first_payment',
+            payment_method: paymentMethod.card?.brand
+              ? `${paymentMethod.card.brand} ****${paymentMethod.card.last4}`
+              : 'credit_card',
+            payer_email: customerEmail,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (historyError) {
+          console.error('⚠️ Erro ao salvar histórico de pagamento:', historyError)
+        } else {
+          console.log('💾 Histórico de pagamento salvo para:', customerEmail)
+        }
+      } catch (e) {
+        console.error('⚠️ Erro ao salvar histórico:', e.message)
+      }
+    }
+
     return res.json({
       success: true,
       subscriptionId: subscription.id,
@@ -866,6 +942,72 @@ function getCardErrorMessage(code) {
   return messages[code] || 'Erro ao processar cartão. Tente novamente.'
 }
 
+/**
+ * Buscar histórico de pagamentos de um cliente
+ * GET /api/stripe/payment-history/:email
+ */
+async function getPaymentHistory(req, res) {
+  try {
+    const { email } = req.params
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email é obrigatório'
+      })
+    }
+
+    console.log('📜 Buscando histórico de pagamentos para:', email)
+
+    // 1. Buscar cliente pelo email
+    const customers = await stripe.customers.list({
+      email: email,
+      limit: 1
+    })
+
+    if (customers.data.length === 0) {
+      return res.json({
+        success: true,
+        payments: []
+      })
+    }
+
+    const customer = customers.data[0]
+
+    // 2. Buscar faturas pagas do cliente
+    const invoices = await stripe.invoices.list({
+      customer: customer.id,
+      status: 'paid',
+      limit: 20
+    })
+
+    // 3. Formatar os pagamentos
+    const payments = invoices.data.map(invoice => ({
+      id: invoice.id,
+      payment_id: invoice.id,
+      amount: invoice.amount_paid / 100,
+      status: 'approved',
+      status_detail: invoice.status,
+      payment_method: 'credit_card',
+      created_at: new Date(invoice.created * 1000).toISOString()
+    }))
+
+    console.log(`✅ Encontrados ${payments.length} pagamentos`)
+
+    return res.json({
+      success: true,
+      payments
+    })
+
+  } catch (error) {
+    console.error('❌ Erro ao buscar histórico:', error)
+    return res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar histórico de pagamentos'
+    })
+  }
+}
+
 module.exports = {
   handleApplePayPayment,
   handleApplePaySubscription,
@@ -873,5 +1015,6 @@ module.exports = {
   cancelSubscription,
   getSubscription,
   createPaymentIntent,
-  handleWebhook
+  handleWebhook,
+  getPaymentHistory
 }

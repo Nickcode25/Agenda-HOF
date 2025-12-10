@@ -52,6 +52,7 @@ interface SubscriptionDetails {
   plan_type: string
   plan_name?: string
   amount: number
+  plan_amount?: number // Campo real da tabela user_subscriptions
   next_billing_date: string
   last_payment_date: string | null
   created_at: string
@@ -102,27 +103,34 @@ const PLAN_DISPLAY_FEATURES: Record<string, string[]> = {
   ]
 }
 
+// Preços dos planos para fallback
+const PLAN_PRICES: Record<string, number> = {
+  basic: 49.90,
+  pro: 79.90,
+  premium: 99.90
+}
+
 // Planos estáticos para fallback quando não há planos no banco
 const STATIC_PLANS: AvailablePlan[] = [
   {
     id: 'basic',
     name: 'Básico',
     slug: 'basic',
-    price: 49.90,
+    price: PLAN_PRICES.basic,
     features: PLAN_DISPLAY_FEATURES.basic
   },
   {
     id: 'pro',
     name: 'Profissional',
     slug: 'pro',
-    price: 99.90,
+    price: PLAN_PRICES.pro,
     features: PLAN_DISPLAY_FEATURES.pro
   },
   {
     id: 'premium',
     name: 'Premium',
     slug: 'premium',
-    price: 149.90,
+    price: PLAN_PRICES.premium,
     features: PLAN_DISPLAY_FEATURES.premium
   }
 ]
@@ -198,8 +206,18 @@ export default function SubscriptionManagement() {
         .order('created_at', { ascending: false })
         .limit(10)
 
-      if (!historyError && historyData) {
+      if (!historyError && historyData && historyData.length > 0) {
         setPaymentHistory(historyData)
+      } else {
+        // Se não encontrou no banco, buscar do Stripe diretamente
+        try {
+          const response = await axios.get(`${BACKEND_URL}/api/stripe/payment-history/${encodeURIComponent(user.email || '')}`)
+          if (response.data.success && response.data.payments) {
+            setPaymentHistory(response.data.payments)
+          }
+        } catch {
+          // Erro silencioso - continuar sem histórico
+        }
       }
 
     } catch {
@@ -304,6 +322,25 @@ export default function SubscriptionManagement() {
     })
   }
 
+  // Obter preço do plano (com fallback para quando plan_amount é 0 ou null)
+  const getSubscriptionPrice = () => {
+    // Primeiro, tentar usar plan_amount do banco
+    const dbAmount = subscription?.plan_amount || subscription?.amount
+    if (dbAmount && dbAmount > 0) {
+      return dbAmount
+    }
+    // Fallback: usar preço baseado no tipo do plano
+    if (planType && PLAN_PRICES[planType]) {
+      return PLAN_PRICES[planType]
+    }
+    // Tentar pelo nome do plano
+    const planName = subscription?.plan_name?.toLowerCase() || ''
+    if (planName.includes('premium')) return PLAN_PRICES.premium
+    if (planName.includes('pro')) return PLAN_PRICES.pro
+    if (planName.includes('basic') || planName.includes('básico')) return PLAN_PRICES.basic
+    return 0
+  }
+
   // Obter nome do plano para exibição
   const getDisplayPlanName = () => {
     if (planType === 'courtesy') {
@@ -399,7 +436,7 @@ export default function SubscriptionManagement() {
               <h2 className="text-xl font-bold mb-1">{getDisplayPlanName()}</h2>
               {hasPaidSubscription && subscription && (
                 <p className="text-white/80 text-sm">
-                  {formatCurrency(subscription.amount)}/mês
+                  {formatCurrency(getSubscriptionPrice())}/mês
                 </p>
               )}
               {isInTrial && (
@@ -492,7 +529,7 @@ export default function SubscriptionManagement() {
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Próximo Pagamento</p>
                 <div className="flex items-end justify-between">
-                  <span className="text-2xl font-bold text-gray-900">{formatCurrency(subscription.amount)}</span>
+                  <span className="text-2xl font-bold text-gray-900">{formatCurrency(getSubscriptionPrice())}</span>
                   <span className="text-sm text-gray-500">{formatDateShort(subscription.next_billing_date)}</span>
                 </div>
               </div>

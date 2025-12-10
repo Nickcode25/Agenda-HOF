@@ -12,7 +12,8 @@ const {
   cancelSubscription: cancelStripeSubscription,
   getSubscription: getStripeSubscription,
   createPaymentIntent,
-  handleWebhook: handleStripeWebhook
+  handleWebhook: handleStripeWebhook,
+  getPaymentHistory: getStripePaymentHistory
 } = require('./routes/stripe-apple-pay')
 
 // Carregar .env apenas se não estiver em produção
@@ -1017,6 +1018,9 @@ app.post('/api/stripe/webhook',
   express.raw({ type: 'application/json' }),
   (req, res) => handleStripeWebhook(req, res, supabase)
 )
+
+// Buscar histórico de pagamentos do Stripe
+app.get('/api/stripe/payment-history/:email', getStripePaymentHistory)
 
 // Iniciar servidor
 app.listen(PORT, () => {

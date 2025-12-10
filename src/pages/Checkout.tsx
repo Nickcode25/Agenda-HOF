@@ -7,6 +7,7 @@ import { PLAN_PRICE, getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 import { supabaseAnon } from '@/lib/supabaseAnon'
 import { createSubscription } from '@/services/stripeService'
+import { invalidateSubscriptionCache } from '@/components/SubscriptionProtectedRoute'
 import StripePaymentForm from './checkout/components/StripePaymentForm'
 import PlanSummary from './checkout/components/PlanSummary'
 import SuccessModal from './checkout/components/SuccessModal'
@@ -259,6 +260,7 @@ export default function Checkout() {
           stripe_subscription_id: subscriptionResponse.subscriptionId,
           stripe_customer_id: subscriptionResponse.customerId,
           status: 'active',
+          plan_name: planName,
           plan_amount: planPrice,
           billing_cycle: 'MONTHLY',
           next_billing_date: subscriptionResponse.nextBillingDate,
@@ -278,6 +280,10 @@ export default function Checkout() {
         console.error('❌ Usuário não encontrado após criar conta!')
       }
 
+      // IMPORTANTE: Invalidar o cache de assinatura para que a nova assinatura seja reconhecida
+      invalidateSubscriptionCache()
+      console.log('🔄 Cache de assinatura invalidado')
+
       // Sucesso! Mostrar modal bonito
       setSubscriptionData({
         cardLastDigits: subscriptionResponse.cardLastDigits,
@@ -285,11 +291,6 @@ export default function Checkout() {
         nextBillingDate: subscriptionResponse.nextBillingDate
       })
       setShowSuccessModal(true)
-
-      // Redirecionar automaticamente após 3 segundos
-      setTimeout(() => {
-        navigate('/app/agenda')
-      }, 3000)
 
     } catch (err: any) {
       setError(err.message || 'Erro ao processar cartão')
@@ -306,35 +307,43 @@ export default function Checkout() {
   const stripePromise = getStripe()
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 py-6 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header Compacto */}
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30 py-8 px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/planos')}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors group"
           >
-            <div className="p-2 group-hover:bg-gray-100 rounded-lg transition-colors">
+            <div className="p-2.5 group-hover:bg-white group-hover:shadow-md rounded-xl transition-all border border-transparent group-hover:border-gray-200">
               <ArrowLeft className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium hidden sm:inline">Voltar</span>
+            <span className="text-sm font-medium hidden sm:inline">Voltar aos planos</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-green-500" />
-            <span className="text-sm text-gray-500">Pagamento Seguro</span>
+          <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100">
+            <Lock className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-700 font-medium">Pagamento Seguro</span>
           </div>
+        </div>
+
+        {/* Título da página */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Finalizar Assinatura</h1>
+          <p className="text-gray-500">Complete seu pagamento para ter acesso imediato</p>
         </div>
 
         {/* Banner informativo para usuário já logado */}
         {userData?.existingUser && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-green-700 font-semibold mb-1">Ativação da Assinatura</h3>
-                <p className="text-sm text-gray-600">
-                  Você está prestes a ativar sua assinatura {planName}. Após o pagamento, seu acesso será liberado imediatamente!
+          <div className="bg-white border border-green-200 rounded-2xl p-4 mb-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center flex-shrink-0">
+                <Check className="w-5 h-5 text-white" strokeWidth={3} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-gray-900 font-semibold">Ativação da Assinatura</h3>
+                <p className="text-sm text-gray-500">
+                  Você está ativando o <span className="font-medium text-orange-600">{planName}</span>. Acesso liberado após o pagamento!
                 </p>
               </div>
             </div>
@@ -342,9 +351,11 @@ export default function Checkout() {
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-2xl p-5 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
               <div>
                 <h3 className="text-red-700 font-semibold mb-1">Erro no Pagamento</h3>
                 <p className="text-sm text-gray-600">{error}</p>
@@ -353,7 +364,7 @@ export default function Checkout() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-8">
           <PlanSummary
             userData={userData}
             couponCode={couponCode}
