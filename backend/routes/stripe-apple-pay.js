@@ -573,7 +573,7 @@ async function handleWebhook(req, res, supabase) {
 /**
  * POST /api/stripe/create-subscription
  *
- * Cria uma assinatura recorrente com dados do cartão digitados
+ * Cria uma assinatura recorrente com paymentMethodId (criado via Stripe.js no frontend)
  */
 async function handleCreateSubscription(req, res) {
   try {
@@ -581,10 +581,7 @@ async function handleCreateSubscription(req, res) {
       customerEmail,
       customerName,
       customerId,
-      cardNumber,
-      cardExpMonth,
-      cardExpYear,
-      cardCvc,
+      paymentMethodId,  // ID do PaymentMethod criado via Stripe.js
       amount,
       planName,
       planId,
@@ -592,7 +589,7 @@ async function handleCreateSubscription(req, res) {
       discountPercentage
     } = req.body
 
-    console.log('💳 Criando assinatura com cartão digitado...')
+    console.log('💳 Criando assinatura com PaymentMethod:', paymentMethodId)
 
     // Validações
     if (!customerEmail) {
@@ -602,10 +599,10 @@ async function handleCreateSubscription(req, res) {
       })
     }
 
-    if (!cardNumber || !cardExpMonth || !cardExpYear || !cardCvc) {
+    if (!paymentMethodId) {
       return res.status(400).json({
         success: false,
-        error: 'Card details are required'
+        error: 'paymentMethodId is required'
       })
     }
 
@@ -641,31 +638,22 @@ async function handleCreateSubscription(req, res) {
       console.log('👤 Novo cliente criado:', customer.id)
     }
 
-    // 2. Criar PaymentMethod com os dados do cartão
-    const paymentMethod = await stripe.paymentMethods.create({
-      type: 'card',
-      card: {
-        number: cardNumber,
-        exp_month: cardExpMonth,
-        exp_year: cardExpYear,
-        cvc: cardCvc
-      },
-      billing_details: {
-        name: customerName,
-        email: customerEmail
-      }
-    })
-    console.log('💳 PaymentMethod criado:', paymentMethod.id)
+    // 2. Buscar o PaymentMethod criado no frontend
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId)
+    console.log('💳 PaymentMethod recuperado:', paymentMethod.id)
 
-    // 3. Anexar PaymentMethod ao cliente
-    await stripe.paymentMethods.attach(paymentMethod.id, {
-      customer: customer.id
-    })
+    // 3. Anexar PaymentMethod ao cliente (se ainda não estiver anexado)
+    if (!paymentMethod.customer) {
+      await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customer.id
+      })
+      console.log('💳 PaymentMethod anexado ao cliente')
+    }
 
     // 4. Definir como método de pagamento padrão
     await stripe.customers.update(customer.id, {
       invoice_settings: {
-        default_payment_method: paymentMethod.id
+        default_payment_method: paymentMethodId
       }
     })
 
@@ -717,7 +705,7 @@ async function handleCreateSubscription(req, res) {
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: price.id }],
-      default_payment_method: paymentMethod.id,
+      default_payment_method: paymentMethodId,
       payment_behavior: 'error_if_incomplete',
       expand: ['latest_invoice.payment_intent'],
       metadata: {

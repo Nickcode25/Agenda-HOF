@@ -4,10 +4,7 @@ export interface CreateSubscriptionData {
   customerEmail: string
   customerName: string
   customerId?: string
-  cardNumber: string
-  cardExpMonth: number
-  cardExpYear: number
-  cardCvc: string
+  paymentMethodId: string  // ID do PaymentMethod criado via Stripe.js
   amount?: number
   planName?: string
   planId?: string
@@ -32,7 +29,7 @@ export interface SubscriptionResponse {
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 /**
- * Cria assinatura recorrente com Stripe (cartao digitado)
+ * Cria assinatura recorrente com Stripe (usando paymentMethodId)
  */
 export async function createSubscription(data: CreateSubscriptionData): Promise<SubscriptionResponse> {
   try {
@@ -51,10 +48,7 @@ export async function createSubscription(data: CreateSubscriptionData): Promise<
         customerEmail: data.customerEmail,
         customerName: data.customerName,
         customerId: data.customerId,
-        cardNumber: data.cardNumber,
-        cardExpMonth: data.cardExpMonth,
-        cardExpYear: data.cardExpYear,
-        cardCvc: data.cardCvc,
+        paymentMethodId: data.paymentMethodId,
         amount: finalAmount,
         planName: data.planName || PLAN_NAME,
         planId: data.planId,

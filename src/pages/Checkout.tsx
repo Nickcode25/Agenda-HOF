@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Check, Lock, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Elements } from '@stripe/react-stripe-js'
 import { useAuth } from '@/store/auth'
-import { PLAN_PRICE } from '@/lib/stripe'
+import { PLAN_PRICE, getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 import { supabaseAnon } from '@/lib/supabaseAnon'
 import { createSubscription } from '@/services/stripeService'
-import PaymentSection from './checkout/components/PaymentSection'
+import StripePaymentForm from './checkout/components/StripePaymentForm'
 import PlanSummary from './checkout/components/PlanSummary'
 import SuccessModal from './checkout/components/SuccessModal'
 
@@ -19,13 +20,9 @@ export default function Checkout() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [subscriptionData, setSubscriptionData] = useState<any>(null)
 
-  // Dados do cartão
-  const [cardNumber, setCardNumber] = useState('')
+  // Dados do cartão (apenas nome e CPF, o resto é gerenciado pelo Stripe)
   const [cardName, setCardName] = useState('')
-  const [cardExpiry, setCardExpiry] = useState('')
-  const [cardCvv, setCardCvv] = useState('')
   const [cardCpf, setCardCpf] = useState('')
-  const [cardBrand, setCardBrand] = useState<string>('')
 
   // Cupom de desconto
   const [couponCode, setCouponCode] = useState('')
@@ -56,38 +53,6 @@ export default function Checkout() {
     }
   }, [userData, navigate])
 
-  // Detectar bandeira do cartão
-  const detectCardBrand = (number: string) => {
-    const cleanNumber = number.replace(/\D/g, '')
-
-    if (/^4/.test(cleanNumber)) return 'visa'
-    if (/^5[1-5]/.test(cleanNumber)) return 'mastercard'
-    if (/^3[47]/.test(cleanNumber)) return 'amex'
-    if (/^6(?:011|5)/.test(cleanNumber)) return 'discover'
-    if (/^35/.test(cleanNumber)) return 'jcb'
-    if (/^36|38/.test(cleanNumber)) return 'diners'
-    if (/^50|^60|^63|^67/.test(cleanNumber)) return 'elo'
-    if (/^62/.test(cleanNumber)) return 'unionpay'
-    if (/^60|^65/.test(cleanNumber)) return 'hipercard'
-
-    return ''
-  }
-
-  const formatCardNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, '')
-    const brand = detectCardBrand(numbers)
-    setCardBrand(brand)
-    return numbers.replace(/(\d{4})/g, '$1 ').trim()
-  }
-
-  const formatExpiry = (value: string) => {
-    const numbers = value.replace(/\D/g, '')
-    if (numbers.length >= 2) {
-      return numbers.slice(0, 2) + '/' + numbers.slice(2, 4)
-    }
-    return numbers
-  }
-
   const formatCPF = (value: string) => {
     const numbers = value.replace(/\D/g, '')
     return numbers
@@ -113,10 +78,8 @@ export default function Checkout() {
   const MINIMUM_SUBSCRIPTION_VALUE = 10.00
 
   // Calcular preço final com desconto (arredondado para 2 casas decimais)
-  // Primeiro calcula o desconto, depois arredonda uma única vez
   const discountMultiplier = 1 - couponDiscount / 100
   const discountedPrice = planPrice * discountMultiplier
-  // Garantir que nunca seja menor que o mínimo ou negativo
   const finalPrice = Math.max(MINIMUM_SUBSCRIPTION_VALUE, Math.round(discountedPrice * 100) / 100)
 
   const isFinalPriceTooLow = discountedPrice < MINIMUM_SUBSCRIPTION_VALUE
@@ -135,7 +98,6 @@ export default function Checkout() {
 
       console.log('🔍 Validando cupom:', couponCode.toUpperCase())
 
-      // Usar cliente anônimo dedicado para buscar cupons (usuário ainda não tem conta)
       const { data: coupon, error } = await supabaseAnon
         .from('discount_coupons')
         .select('*')
@@ -149,7 +111,6 @@ export default function Checkout() {
         return
       }
 
-      // Validar data de validade
       if (coupon.valid_until) {
         const expiryDate = new Date(coupon.valid_until)
         if (expiryDate < new Date()) {
@@ -158,26 +119,22 @@ export default function Checkout() {
         }
       }
 
-      // Validar número de usos
       if (coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses) {
         setCouponError('Este cupom atingiu o limite de usos')
         return
       }
 
-      // Validar desconto não pode ser >= 100%
       if (coupon.discount_percentage >= 100) {
         setCouponError('Desconto inválido')
         return
       }
 
-      // Validar se o preço final não fica abaixo do mínimo
       const priceAfterDiscount = planPrice * (1 - coupon.discount_percentage / 100)
       if (priceAfterDiscount < MINIMUM_SUBSCRIPTION_VALUE) {
         setCouponError(`Desconto deixa o valor abaixo do mínimo (R$ ${MINIMUM_SUBSCRIPTION_VALUE.toFixed(2)})`)
         return
       }
 
-      // Cupom válido!
       setCouponDiscount(coupon.discount_percentage)
       setCouponSuccess(true)
       setValidatedCouponId(coupon.id)
@@ -190,7 +147,6 @@ export default function Checkout() {
     }
   }
 
-  // Remover cupom
   const removeCoupon = () => {
     setCouponCode('')
     setCouponDiscount(0)
@@ -199,13 +155,9 @@ export default function Checkout() {
     setCouponError('')
   }
 
-  // Registrar uso do cupom
   const registerCouponUsage = async (couponId: string, orderAmount: number) => {
     try {
-      // Incrementar contador de usos
       await supabase.rpc('increment_coupon_usage', { coupon_id: couponId })
-
-      // Registrar uso na tabela coupon_usage
       await supabase.from('coupon_usage').insert({
         coupon_id: couponId,
         user_email: userData!.email,
@@ -217,17 +169,11 @@ export default function Checkout() {
     }
   }
 
-  const handleCardPayment = async (e: React.FormEvent) => {
-    e.preventDefault()
-
+  // Handler para o pagamento com Stripe
+  const handleStripePayment = async (paymentMethodId: string) => {
     try {
       setLoading(true)
       setError('')
-
-      // Validar campos do cartão
-      if (!cardNumber || !cardName || !cardExpiry || !cardCvv || !cardCpf) {
-        throw new Error('Preencha todos os campos do cartão')
-      }
 
       // Validar CPF (11 dígitos)
       const cpfNumbers = cardCpf.replace(/\D/g, '')
@@ -235,17 +181,10 @@ export default function Checkout() {
         throw new Error('CPF inválido')
       }
 
-      // Extrair mês e ano do cartão
-      const [month, year] = cardExpiry.split('/')
-      if (!month || !year || month.length !== 2 || year.length !== 2) {
-        throw new Error('Data de validade inválida')
-      }
-
       // Criar conta do usuário ANTES de fazer o pagamento (apenas se não existir)
       if (!userData!.existingUser) {
         console.log('👤 Criando conta do usuário...')
 
-        // Criar conta diretamente com Supabase Auth
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: userData!.email,
           password: userData!.password,
@@ -261,8 +200,6 @@ export default function Checkout() {
         }
 
         console.log('✅ Conta criada com sucesso! User ID:', signUpData.user.id)
-
-        // Aguardar um momento para garantir que a sessão foi persistida
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
@@ -273,14 +210,10 @@ export default function Checkout() {
       }
 
       // Criar assinatura recorrente com Stripe
-      // O backend processa os dados do cartão de forma segura
       const subscriptionResponse = await createSubscription({
         customerEmail: userData!.email,
         customerName: userData!.name,
-        cardNumber: cardNumber.replace(/\s/g, ''),
-        cardExpMonth: parseInt(month),
-        cardExpYear: parseInt(`20${year}`),
-        cardCvc: cardCvv,
+        paymentMethodId: paymentMethodId,
         amount: finalPrice,
         planName: planName,
         planId: userData?.selectedPlan?.id,
@@ -307,10 +240,7 @@ export default function Checkout() {
       const { data: userData2 } = await supabase.auth.getUser()
       if (userData2.user) {
         console.log('💾 Salvando assinatura no banco de dados...')
-        console.log('User ID:', userData2.user.id)
-        console.log('Subscription ID:', subscriptionResponse.subscriptionId)
 
-        // Atualizar metadados do usuário com CPF e telefone
         const { error: updateError } = await supabase.auth.updateUser({
           data: {
             cpf: cardCpf.replace(/\D/g, ''),
@@ -341,7 +271,6 @@ export default function Checkout() {
 
         if (insertError) {
           console.error('❌ Erro ao salvar assinatura:', insertError)
-          console.error('❌ Erro completo:', JSON.stringify(insertError, null, 2))
         } else {
           console.log('✅ Assinatura salva com sucesso!', insertData)
         }
@@ -373,6 +302,8 @@ export default function Checkout() {
   if (!userData) {
     return null
   }
+
+  const stripePromise = getStripe()
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 py-6 px-4">
@@ -439,26 +370,21 @@ export default function Checkout() {
             minimumSubscriptionValue={MINIMUM_SUBSCRIPTION_VALUE}
           />
 
-          <PaymentSection
-            cardNumber={cardNumber}
-            setCardNumber={setCardNumber}
-            formatCardNumber={formatCardNumber}
-            cardBrand={cardBrand}
-            cardExpiry={cardExpiry}
-            setCardExpiry={setCardExpiry}
-            formatExpiry={formatExpiry}
-            cardCvv={cardCvv}
-            setCardCvv={setCardCvv}
-            cardName={cardName}
-            setCardName={setCardName}
-            cardCpf={cardCpf}
-            setCardCpf={setCardCpf}
-            formatCPF={formatCPF}
-            loading={loading}
-            isFinalPriceTooLow={isFinalPriceTooLow}
-            finalPrice={finalPrice}
-            onSubmit={handleCardPayment}
-          />
+          {stripePromise && (
+            <Elements stripe={stripePromise}>
+              <StripePaymentForm
+                cardName={cardName}
+                setCardName={setCardName}
+                cardCpf={cardCpf}
+                setCardCpf={setCardCpf}
+                formatCPF={formatCPF}
+                loading={loading}
+                isFinalPriceTooLow={isFinalPriceTooLow}
+                finalPrice={finalPrice}
+                onSubmit={handleStripePayment}
+              />
+            </Elements>
+          )}
         </div>
       </div>
 
