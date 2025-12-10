@@ -35,7 +35,8 @@ const allowedOrigins = [
   'https://agendahof.com',
   'https://www.agendahof.com',
   'http://localhost:5175',
-  'http://localhost:5173'
+  'http://localhost:5173',
+  'http://localhost:5177'
 ]
 
 app.use(cors({
