@@ -16,7 +16,7 @@ interface Subscription {
   next_billing_date: string | null
   plan_amount: number
   discount_percentage: number
-  mercadopago_subscription_id: string | null
+  stripe_subscription_id: string | null
 }
 
 interface Stats {
@@ -64,7 +64,7 @@ export default function ActiveSubscriptions() {
         next_billing_date: sub.next_billing_date,
         plan_amount: parseFloat(sub.plan_amount) || 0,
         discount_percentage: sub.discount_percentage || 0,
-        mercadopago_subscription_id: sub.mercadopago_subscription_id
+        stripe_subscription_id: sub.stripe_subscription_id
       }))
 
       setSubscriptions(mapped)

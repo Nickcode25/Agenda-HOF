@@ -237,7 +237,9 @@ export default function SubscriptionManagement() {
     try {
       setCancelling(true)
 
-      await axios.post(`${BACKEND_URL}/api/mercadopago/cancel-subscription/${subscription.subscription_id}`)
+      await axios.post(`${BACKEND_URL}/api/stripe/cancel-subscription`, {
+        subscriptionId: subscription.subscription_id
+      })
 
       await supabase
         .from('user_subscriptions')
@@ -503,7 +505,7 @@ export default function SubscriptionManagement() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Cartão de Crédito</p>
-                    <p className="text-xs text-gray-500">Gerenciado pelo Mercado Pago</p>
+                    <p className="text-xs text-gray-500">Gerenciado pelo Stripe</p>
                   </div>
                 </div>
               </div>

@@ -277,7 +277,7 @@ export default function UpgradeOverlay({
                     Cancele quando quiser • Sem taxas ocultas
                   </p>
                   <p className="text-xs text-gray-400">
-                    Pagamento seguro via Mercado Pago
+                    Pagamento seguro via Stripe
                   </p>
                 </div>
               </div>

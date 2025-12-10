@@ -13,7 +13,7 @@ const OPTIONAL_ENV_VARS = {
   VITE_SITE_URL: () => typeof window !== 'undefined' ? window.location.origin : '',
   VITE_BACKEND_URL: 'http://localhost:3001',
   VITE_ASAAS_ENV: 'sandbox',
-  VITE_MERCADOPAGO_PUBLIC_KEY: '',
+  VITE_STRIPE_PUBLISHABLE_KEY: '',
   VITE_PAGBANK_TOKEN: '',
   VITE_PAGBANK_EMAIL: '',
   VITE_ASAAS_API_KEY: '',

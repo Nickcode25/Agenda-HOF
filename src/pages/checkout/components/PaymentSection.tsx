@@ -48,7 +48,7 @@ export default function PaymentSection({
           <CreditCard className="w-6 h-6 text-blue-500" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Pagamento via Mercado Pago</h2>
+          <h2 className="text-xl font-bold text-gray-900">Pagamento Seguro</h2>
           <p className="text-sm text-gray-500">Pagamento seguro e criptografado</p>
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function PaymentSection({
             <Lock className="w-5 h-5 text-green-600" />
             <div>
               <p className="text-sm font-medium text-green-700">Pagamento 100% Seguro</p>
-              <p className="text-xs text-gray-500">Processado pelo Mercado Pago com criptografia SSL</p>
+              <p className="text-xs text-gray-500">Processado pelo Stripe com criptografia SSL</p>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { Check, Tag, X, AlertCircle } from 'lucide-react'
-import { PLAN_PRICE } from '@/lib/mercadopago'
+import { PLAN_PRICE } from '@/lib/stripe'
 
 interface PlanSummaryProps {
   userData: {
@@ -179,7 +179,7 @@ export default function PlanSummary({
               <div className="text-sm">
                 <p className="font-semibold text-red-600">Valor muito baixo</p>
                 <p className="text-red-500 mt-1">
-                  O Mercado Pago pode recusar pagamentos inferiores a R$ {minimumSubscriptionValue.toFixed(2)}.
+                  O Stripe pode recusar pagamentos inferiores a R$ {minimumSubscriptionValue.toFixed(2)}.
                   O cupom aplicado resulta em um valor muito baixo (R$ {finalPrice.toFixed(2)}).
                 </p>
                 <p className="text-red-500 mt-1">

@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Check, Lock, ArrowLeft, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/store/auth'
-import { PLAN_PRICE, MERCADOPAGO_PUBLIC_KEY } from '@/lib/mercadopago'
+import { PLAN_PRICE } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 import { supabaseAnon } from '@/lib/supabaseAnon'
-import { createSubscription, type SubscriptionResponse } from '@/services/mercadopagoService'
+import { createSubscription } from '@/services/stripeService'
 import PaymentSection from './checkout/components/PaymentSection'
 import PlanSummary from './checkout/components/PlanSummary'
 import SuccessModal from './checkout/components/SuccessModal'
@@ -109,7 +109,7 @@ export default function Checkout() {
     }
   }, [userData, planPrice])
 
-  // Validar valor mínimo (Mercado Pago pode recusar valores muito baixos)
+  // Validar valor mínimo (Stripe pode recusar valores muito baixos)
   const MINIMUM_SUBSCRIPTION_VALUE = 10.00
 
   // Calcular preço final com desconto (arredondado para 2 casas decimais)
@@ -217,58 +217,6 @@ export default function Checkout() {
     }
   }
 
-  // Criar token de cartão usando SDK do Mercado Pago
-  const createCardToken = async (): Promise<string> => {
-    try {
-      // Extrair mês e ano
-      const [month, year] = cardExpiry.split('/')
-      if (!month || !year || month.length !== 2 || year.length !== 2) {
-        throw new Error('Data de validade inválida')
-      }
-
-      // Garantir que o SDK está disponível
-      if (!(window as any).MercadoPago) {
-        throw new Error('SDK do Mercado Pago não carregado. Recarregue a página.')
-      }
-
-      // Inicializar Mercado Pago com a Public Key
-      const mp = new (window as any).MercadoPago(MERCADOPAGO_PUBLIC_KEY, {
-        locale: 'pt-BR'
-      })
-
-      const cardData = {
-        cardNumber: cardNumber.replace(/\s/g, ''),
-        cardholderName: cardName,
-        cardExpirationMonth: month,
-        cardExpirationYear: `20${year}`,
-        securityCode: cardCvv,
-        identificationType: 'CPF',
-        identificationNumber: cardCpf.replace(/\D/g, '')
-      }
-
-      console.log('📝 Dados do cartão (sem números sensíveis):', {
-        cardholderName: cardData.cardholderName,
-        cardExpirationMonth: cardData.cardExpirationMonth,
-        cardExpirationYear: cardData.cardExpirationYear,
-        identificationType: cardData.identificationType,
-        identificationNumber: cardData.identificationNumber.substring(0, 3) + '...'
-      })
-
-      const response = await mp.createCardToken(cardData)
-
-      if (response.error) {
-        console.error('❌ Erro do Mercado Pago:', response.error)
-        throw new Error(response.error.message || 'Erro ao criar token do cartão')
-      }
-
-      console.log('✅ Token criado com sucesso!')
-      return response.id
-    } catch (error: any) {
-      console.error('❌ Erro ao criar token:', error)
-      throw new Error(error.message || 'Erro ao processar dados do cartão')
-    }
-  }
-
   const handleCardPayment = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -285,6 +233,12 @@ export default function Checkout() {
       const cpfNumbers = cardCpf.replace(/\D/g, '')
       if (cpfNumbers.length !== 11) {
         throw new Error('CPF inválido')
+      }
+
+      // Extrair mês e ano do cartão
+      const [month, year] = cardExpiry.split('/')
+      if (!month || !year || month.length !== 2 || year.length !== 2) {
+        throw new Error('Data de validade inválida')
       }
 
       // Criar conta do usuário ANTES de fazer o pagamento (apenas se não existir)
@@ -312,51 +266,49 @@ export default function Checkout() {
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      console.log('💳 Criando token do cartão...')
-
-      // Criar token do cartão
-      const cardToken = await createCardToken()
-
-      console.log('✅ Token criado:', cardToken)
-      console.log('🔄 Criando assinatura recorrente...')
+      console.log('💳 Processando pagamento com Stripe...')
       console.log('💰 Valor final com desconto:', finalPrice)
       if (couponDiscount > 0) {
         console.log('🎟️ Cupom aplicado:', couponCode, '- Desconto:', couponDiscount + '%')
       }
 
-      // Criar assinatura recorrente com valor final (incluindo desconto)
+      // Criar assinatura recorrente com Stripe
+      // O backend processa os dados do cartão de forma segura
       const subscriptionResponse = await createSubscription({
         customerEmail: userData!.email,
         customerName: userData!.name,
-        customerPhone: userData!.phone,
-        customerCpf: cardCpf.replace(/\D/g, ''),
-        cardToken: cardToken,
-        amount: finalPrice, // 🎟️ Envia valor com desconto aplicado
+        cardNumber: cardNumber.replace(/\s/g, ''),
+        cardExpMonth: parseInt(month),
+        cardExpYear: parseInt(`20${year}`),
+        cardCvc: cardCvv,
+        amount: finalPrice,
+        planName: planName,
+        planId: userData?.selectedPlan?.id,
+        couponId: validatedCouponId || undefined,
+        discountPercentage: couponDiscount > 0 ? couponDiscount : undefined,
       })
 
-      console.log('✅ Assinatura criada:', subscriptionResponse)
-      console.log('📊 Status da assinatura:', subscriptionResponse.status)
+      console.log('📊 Resposta do Stripe:', subscriptionResponse)
 
-      // Validar se o pagamento foi aprovado antes de ativar
-      const isApproved = subscriptionResponse.status === 'authorized' || subscriptionResponse.status === 'approved'
-
-      if (!isApproved) {
-        console.error('❌ Pagamento não aprovado! Status:', subscriptionResponse.status)
-        throw new Error('Pagamento não foi aprovado. Verifique os dados do cartão e tente novamente.')
+      if (!subscriptionResponse.success) {
+        console.error('❌ Pagamento não aprovado!', subscriptionResponse.error)
+        throw new Error(subscriptionResponse.error || 'Pagamento não foi aprovado. Verifique os dados do cartão e tente novamente.')
       }
+
+      console.log('✅ Assinatura criada com sucesso!')
+      console.log('Subscription ID:', subscriptionResponse.subscriptionId)
 
       // Registrar uso de cupom se houver
       if (validatedCouponId) {
         await registerCouponUsage(validatedCouponId, finalPrice)
       }
 
-      // Salvar assinatura no banco de dados SOMENTE se aprovada
+      // Salvar assinatura no banco de dados
       const { data: userData2 } = await supabase.auth.getUser()
       if (userData2.user) {
         console.log('💾 Salvando assinatura no banco de dados...')
         console.log('User ID:', userData2.user.id)
-        console.log('Subscription ID:', subscriptionResponse.id)
-        console.log('✅ Status aprovado:', subscriptionResponse.status)
+        console.log('Subscription ID:', subscriptionResponse.subscriptionId)
 
         // Atualizar metadados do usuário com CPF e telefone
         const { error: updateError } = await supabase.auth.updateUser({
@@ -374,24 +326,22 @@ export default function Checkout() {
 
         const { data: insertData, error: insertError } = await supabase.from('user_subscriptions').insert({
           user_id: userData2.user.id,
-          mercadopago_subscription_id: subscriptionResponse.id,
-          status: 'active', // Só chega aqui se isApproved === true
-          plan_amount: planPrice, // ✅ Usar o preço do plano selecionado
+          stripe_subscription_id: subscriptionResponse.subscriptionId,
+          stripe_customer_id: subscriptionResponse.customerId,
+          status: 'active',
+          plan_amount: planPrice,
           billing_cycle: 'MONTHLY',
           next_billing_date: subscriptionResponse.nextBillingDate,
           payment_method: 'CREDIT_CARD',
           card_last_digits: subscriptionResponse.cardLastDigits,
           card_brand: subscriptionResponse.cardBrand,
           coupon_id: validatedCouponId,
-          discount_percentage: couponDiscount, // Desconto é salvo aqui, não no plan_amount
+          discount_percentage: couponDiscount,
         })
 
         if (insertError) {
           console.error('❌ Erro ao salvar assinatura:', insertError)
           console.error('❌ Erro completo:', JSON.stringify(insertError, null, 2))
-          console.error('❌ Mensagem:', insertError.message)
-          console.error('❌ Código:', insertError.code)
-          console.error('❌ Detalhes:', insertError.details)
         } else {
           console.log('✅ Assinatura salva com sucesso!', insertData)
         }

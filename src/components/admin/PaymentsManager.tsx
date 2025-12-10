@@ -14,7 +14,7 @@ interface Payment {
   amount: number
   status: 'approved' | 'rejected' | 'pending' | 'refunded'
   payment_method: string
-  mercadopago_payment_id: string | null
+  stripe_payment_id: string | null
   created_at: string
   updated_at: string
 }
@@ -64,8 +64,8 @@ export default function PaymentsManager() {
         amount: parseFloat(item.plan_amount) || 0,
         status: item.subscription_status === 'active' ? 'approved' :
                 item.subscription_status === 'expired' ? 'rejected' : 'pending',
-        payment_method: 'Mercado Pago',
-        mercadopago_payment_id: item.mercadopago_subscription_id,
+        payment_method: 'Stripe',
+        stripe_payment_id: item.stripe_subscription_id,
         created_at: item.subscription_created_at,
         updated_at: item.subscription_created_at
       }))
@@ -115,8 +115,8 @@ export default function PaymentsManager() {
   })
 
   const handleViewReceipt = (payment: Payment) => {
-    if (payment.mercadopago_payment_id) {
-      alert(`Ver recibo do pagamento ${payment.mercadopago_payment_id}`)
+    if (payment.stripe_payment_id) {
+      alert(`Ver recibo do pagamento ${payment.stripe_payment_id}`)
     } else {
       alert('Recibo não disponível')
     }
@@ -131,7 +131,7 @@ export default function PaymentsManager() {
       confirmButtonClass: 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/30'
     })
     if (!confirmed) return
-    alert('Funcionalidade de reprocessamento será implementada com a API do Mercado Pago')
+    alert('Funcionalidade de reprocessamento será implementada com a API do Stripe')
   }
 
   const handleRefund = async (payment: Payment) => {
@@ -142,11 +142,11 @@ export default function PaymentsManager() {
       cancelText: 'Cancelar'
     })
     if (!confirmed) return
-    alert('Funcionalidade de estorno será implementada com a API do Mercado Pago')
+    alert('Funcionalidade de estorno será implementada com a API do Stripe')
   }
 
   const exportToCSV = () => {
-    const headers = ['Data', 'Cliente', 'Email', 'Valor', 'Status', 'Método', 'ID Mercado Pago']
+    const headers = ['Data', 'Cliente', 'Email', 'Valor', 'Status', 'Método', 'ID Stripe']
     const rows = filteredPayments.map(p => [
       formatDateTimeBRSafe(p.created_at),
       p.user_name,
@@ -154,7 +154,7 @@ export default function PaymentsManager() {
       `R$ ${p.amount.toFixed(2)}`,
       p.status,
       p.payment_method,
-      p.mercadopago_payment_id || '-'
+      p.stripe_payment_id || '-'
     ])
 
     const csv = [headers, ...rows].map(row => row.join(';')).join('\n')
