@@ -4,6 +4,16 @@ const { MercadoPagoConfig, PreApproval, Payment } = require('mercadopago')
 const { createClient } = require('@supabase/supabase-js')
 const { Resend } = require('resend')
 
+// Stripe para Apple Pay (iOS)
+const {
+  handleApplePayPayment,
+  handleApplePaySubscription,
+  cancelSubscription: cancelStripeSubscription,
+  getSubscription: getStripeSubscription,
+  createPaymentIntent,
+  handleWebhook: handleStripeWebhook
+} = require('./routes/stripe-apple-pay')
+
 // Carregar .env apenas se não estiver em produção
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config()
@@ -978,6 +988,31 @@ app.post('/api/auth/request-password-reset', async (req, res) => {
   }
 })
 
+// ===============================================
+// STRIPE - APPLE PAY (iOS)
+// ===============================================
+
+// Pagamento único com Apple Pay
+app.post('/api/stripe/apple-pay', handleApplePayPayment)
+
+// Criar assinatura recorrente com Apple Pay
+app.post('/api/stripe/create-subscription-apple-pay', handleApplePaySubscription)
+
+// Cancelar assinatura Stripe
+app.post('/api/stripe/cancel-subscription', cancelStripeSubscription)
+
+// Buscar assinatura Stripe
+app.get('/api/stripe/subscription/:subscriptionId', getStripeSubscription)
+
+// Criar PaymentIntent (para fluxo iOS)
+app.post('/api/stripe/create-payment-intent', createPaymentIntent)
+
+// Webhook do Stripe (para receber notificações)
+app.post('/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res) => handleStripeWebhook(req, res, supabase)
+)
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log('\n🚀 Backend Agenda HOF iniciado!')
@@ -995,5 +1030,12 @@ app.listen(PORT, () => {
   console.log('  - POST /api/email/send-subscription ⭐ Confirmação de assinatura')
   console.log('\n✅ Endpoints disponíveis (Auth):')
   console.log('  - POST /api/auth/request-password-reset ⭐ Solicitação de reset de senha')
+  console.log('\n✅ Endpoints disponíveis (Stripe - Apple Pay iOS):')
+  console.log('  - POST /api/stripe/apple-pay ⭐ Pagamento único')
+  console.log('  - POST /api/stripe/create-subscription-apple-pay ⭐ Assinatura recorrente')
+  console.log('  - POST /api/stripe/cancel-subscription')
+  console.log('  - GET  /api/stripe/subscription/:id')
+  console.log('  - POST /api/stripe/create-payment-intent')
+  console.log('  - POST /api/stripe/webhook ⭐ Notificações')
   console.log('\n💡 Use Ctrl+C para parar o servidor\n')
 })
