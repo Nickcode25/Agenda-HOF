@@ -4,6 +4,12 @@
  */
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+const { createClient } = require('@supabase/supabase-js')
+
+// Inicializar Supabase para atualizar status das assinaturas
+const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+  : null
 
 /**
  * Processar pagamento único com Apple Pay
@@ -325,12 +331,17 @@ async function handleApplePaySubscription(req, res) {
 /**
  * Cancelar assinatura
  * POST /api/stripe/cancel-subscription
+ *
+ * Aceita:
+ * - subscriptionId: ID da assinatura no Stripe (sub_xxx) ou ID do registro no Supabase
+ * - userId: ID do usuário (opcional, para validação)
+ * - immediately: boolean - se true, cancela imediatamente; se false, cancela no fim do período
  */
 async function cancelSubscription(req, res) {
   try {
-    const { subscriptionId, immediately = false } = req.body
+    const { subscriptionId, userId, immediately = false } = req.body
 
-    console.log('🚫 Cancelando assinatura:', subscriptionId)
+    console.log('🚫 Cancelando assinatura:', subscriptionId, 'userId:', userId)
 
     if (!subscriptionId) {
       return res.status(400).json({
@@ -338,19 +349,71 @@ async function cancelSubscription(req, res) {
       })
     }
 
+    let stripeSubscriptionId = subscriptionId
+
+    // Se tiver userId, buscar a assinatura no Supabase para validação
+    if (userId && supabase) {
+      const { data: dbSubscription, error: dbError } = await supabase
+        .from('user_subscriptions')
+        .select('stripe_subscription_id')
+        .eq('id', subscriptionId)
+        .eq('user_id', userId)
+        .single()
+
+      if (dbError) {
+        // Tentar buscar pelo stripe_subscription_id diretamente
+        const { data: dbSub2 } = await supabase
+          .from('user_subscriptions')
+          .select('stripe_subscription_id')
+          .eq('stripe_subscription_id', subscriptionId)
+          .eq('user_id', userId)
+          .single()
+
+        if (dbSub2) {
+          stripeSubscriptionId = dbSub2.stripe_subscription_id
+        }
+      } else if (dbSubscription?.stripe_subscription_id) {
+        stripeSubscriptionId = dbSubscription.stripe_subscription_id
+      }
+    }
+
     let subscription
 
     if (immediately) {
       // Cancelar imediatamente
-      subscription = await stripe.subscriptions.cancel(subscriptionId)
+      subscription = await stripe.subscriptions.cancel(stripeSubscriptionId)
     } else {
       // Cancelar no fim do período
-      subscription = await stripe.subscriptions.update(subscriptionId, {
+      subscription = await stripe.subscriptions.update(stripeSubscriptionId, {
         cancel_at_period_end: true
       })
     }
 
-    console.log('✅ Assinatura cancelada:', subscription.id)
+    console.log('✅ Assinatura cancelada no Stripe:', subscription.id)
+
+    // Atualizar status no Supabase
+    if (supabase) {
+      const updateData = {
+        status: immediately ? 'cancelled' : 'pending_cancellation',
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        updated_at: new Date().toISOString()
+      }
+
+      if (immediately) {
+        updateData.cancelled_at = new Date().toISOString()
+      }
+
+      const { error: updateError } = await supabase
+        .from('user_subscriptions')
+        .update(updateData)
+        .eq('stripe_subscription_id', subscription.id)
+
+      if (updateError) {
+        console.error('⚠️ Erro ao atualizar Supabase:', updateError)
+      } else {
+        console.log('✅ Status atualizado no Supabase')
+      }
+    }
 
     res.json({
       success: true,
