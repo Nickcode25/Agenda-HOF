@@ -577,7 +577,7 @@ export default function AdminDashboard() {
   }
 
   if (loading) {
-    return <PageLoading />
+    return <PageLoading fullScreen message="Carregando dashboard..." />
   }
 
   if (!isSuperAdmin) {

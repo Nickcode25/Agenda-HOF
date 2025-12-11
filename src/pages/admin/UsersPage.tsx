@@ -1,12 +1,36 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Phone, Activity } from 'lucide-react'
+import { Search, Phone, Activity, MessageCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../store/auth'
 import AdminSidebar from './components/AdminSidebar'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import PageLoading from '@/components/ui/PageLoading'
+
+// Função para formatar telefone para WhatsApp (apenas números com código do país)
+const formatPhoneForWhatsApp = (phone: string): string => {
+  const cleanPhone = phone.replace(/\D/g, '')
+  // Se já tem código do país (55), usar direto. Senão, adicionar
+  if (cleanPhone.startsWith('55')) {
+    return cleanPhone
+  }
+  return `55${cleanPhone}`
+}
+
+// Função para formatar telefone para exibição
+const formatPhoneDisplay = (phone: string): string => {
+  const cleanPhone = phone.replace(/\D/g, '')
+  // Remover código do país se existir
+  const phoneWithoutCountry = cleanPhone.startsWith('55') ? cleanPhone.slice(2) : cleanPhone
+
+  if (phoneWithoutCountry.length === 11) {
+    return phoneWithoutCountry.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+  } else if (phoneWithoutCountry.length === 10) {
+    return phoneWithoutCountry.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
+  }
+  return phone
+}
 
 interface Clinic {
   id: string
@@ -119,7 +143,7 @@ export default function UsersPage() {
   }
 
   if (loading) {
-    return <PageLoading />
+    return <PageLoading fullScreen message="Carregando usuários..." />
   }
 
   return (
@@ -163,60 +187,77 @@ export default function UsersPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Owner</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Email</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Telefone</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Último Login</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">Receita</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">Cadastro</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredClinics.map((clinic) => (
-                  <tr key={clinic.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{clinic.owner_name}</div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">{clinic.owner_email}</td>
-                    <td className="px-6 py-4">
-                      {clinic.owner_phone ? (
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <Phone className="w-4 h-4" />
-                          {clinic.owner_phone}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                        clinic.has_active_subscription
-                          ? 'bg-green-100 text-green-700 border border-green-200'
-                          : 'bg-gray-100 text-gray-600 border border-gray-200'
-                      }`}>
-                        <Activity className="w-3 h-3" />
-                        {clinic.has_active_subscription ? 'Ativo' : 'Sem plano'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      {clinic.last_login
-                        ? formatDateTimeBRSafe(clinic.last_login)
-                        : 'Nunca'}
-                    </td>
-                    <td className="px-6 py-4 text-right text-green-600 font-medium">
-                      R$ {clinic.total_revenue.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-right text-gray-500 text-sm">
-                      {formatDateTimeBRSafe(clinic.created_at)}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px]">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-4 py-4 text-sm font-semibold text-gray-600 w-[180px]">Nome</th>
+                    <th className="text-left px-4 py-4 text-sm font-semibold text-gray-600 w-[220px]">Email</th>
+                    <th className="text-left px-4 py-4 text-sm font-semibold text-gray-600 w-[180px]">Telefone</th>
+                    <th className="text-center px-4 py-4 text-sm font-semibold text-gray-600 w-[100px]">Status</th>
+                    <th className="text-center px-4 py-4 text-sm font-semibold text-gray-600 w-[100px]">Último Login</th>
+                    <th className="text-right px-4 py-4 text-sm font-semibold text-gray-600 w-[80px]">Receita</th>
+                    <th className="text-right px-4 py-4 text-sm font-semibold text-gray-600 w-[100px]">Cadastro</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredClinics.map((clinic) => (
+                    <tr key={clinic.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900 truncate max-w-[180px]" title={clinic.owner_name}>
+                          {clinic.owner_name}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-gray-700 text-sm truncate max-w-[220px]" title={clinic.owner_email}>
+                          {clinic.owner_email}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {clinic.owner_phone ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-700 text-sm whitespace-nowrap">
+                              {formatPhoneDisplay(clinic.owner_phone)}
+                            </span>
+                            <a
+                              href={`https://wa.me/${formatPhoneForWhatsApp(clinic.owner_phone)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 p-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                              title="Abrir WhatsApp"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                          clinic.has_active_subscription
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {clinic.has_active_subscription ? 'Ativo' : 'Sem plano'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center text-gray-600 text-sm whitespace-nowrap">
+                        {clinic.last_login
+                          ? new Date(clinic.last_login).toLocaleDateString('pt-BR')
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-green-600 font-medium text-sm whitespace-nowrap">
+                        R$ {clinic.total_revenue.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-500 text-sm whitespace-nowrap">
+                        {new Date(clinic.created_at).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {filteredClinics.length === 0 && (
               <div className="text-center py-12">

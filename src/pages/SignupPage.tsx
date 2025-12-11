@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Mail, Lock, User, Phone, ArrowLeft, CheckCircle, Eye, EyeOff, X } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import { invalidateSubscriptionCache } from '@/components/SubscriptionProtectedRoute'
+import { invalidateUserCache } from '@/lib/supabase'
 import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator'
 import { validateEmail, validatePhone, validatePasswordStrength } from '@/utils/validation'
 import NewLandingPage from './landing/NewLandingPage'
@@ -107,7 +108,8 @@ export default function SignupPage() {
       )
 
       if (success) {
-        // Invalidar cache de assinatura para garantir verificação fresh do trial
+        // Invalidar caches para garantir verificação fresh do trial
+        invalidateUserCache()
         invalidateSubscriptionCache()
         // Redirecionar para dentro do app - usuário tem 7 dias de trial gratuito
         navigate('/app/agenda')
