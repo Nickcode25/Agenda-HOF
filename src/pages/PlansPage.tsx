@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Lock, Crown, ArrowRight, Loader2, ArrowLeft, Star, Zap } from 'lucide-react'
+import { Check, Lock, Crown, ArrowRight, ArrowLeft, Star, Zap } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/store/auth'
 import { useUserProfile } from '@/store/userProfile'
 import { useSubscription } from '@/components/SubscriptionProtectedRoute'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface Plan {
   id: string
@@ -211,18 +212,11 @@ export default function PlansPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
-          <p className="text-gray-600 text-lg">Carregando planos...</p>
-        </div>
-      </div>
-    )
+    return <PageLoading message="Carregando planos..." />
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-orange-50/30 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-orange-50/30 py-4 px-4">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-orange-500/5 to-orange-600/5 rounded-full blur-3xl"></div>
@@ -230,7 +224,7 @@ export default function PlansPage() {
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Back Button */}
-        <div className="mb-6">
+        <div className="mb-4">
           <button
             onClick={() => navigate('/app/agenda')}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors group"
@@ -241,21 +235,17 @@ export default function PlansPage() {
         </div>
 
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
-            <Zap className="w-4 h-4" />
-            Automatize sua clínica hoje
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2 tracking-tight">
             Escolha o plano ideal para você
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base text-gray-600 max-w-2xl mx-auto">
             Comece a organizar sua clínica de harmonização orofacial com as ferramentas certas
           </p>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-start pt-6">
           {plans.map((plan) => {
             const planType = getPlanType(plan)
             const isPremium = planType === 'premium'
@@ -268,7 +258,7 @@ export default function PlansPage() {
                 key={plan.id}
                 className={`relative rounded-2xl transition-all duration-300 ${
                   isPremium
-                    ? 'bg-gradient-to-b from-orange-500 to-orange-600 p-[2px] shadow-2xl shadow-orange-500/25 scale-105 lg:-mt-4 lg:mb-4 z-10'
+                    ? 'bg-gradient-to-b from-orange-500 to-orange-600 p-[2px] shadow-2xl shadow-orange-500/25 scale-105 z-10'
                     : 'bg-white border border-gray-200 shadow-lg hover:shadow-xl'
                 }`}
               >

@@ -17,6 +17,7 @@ import AdminStatsGrid from './components/AdminStatsGrid'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import { formatInSaoPaulo } from '@/utils/timezone'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface Stats {
   totalClinics: number
@@ -576,11 +577,7 @@ export default function AdminDashboard() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600 text-xl">Carregando...</div>
-      </div>
-    )
+    return <PageLoading />
   }
 
   if (!isSuperAdmin) {

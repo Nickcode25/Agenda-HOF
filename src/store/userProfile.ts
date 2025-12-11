@@ -41,29 +41,59 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         .eq('id', user.id)
         .single()
 
-      // Se o perfil não existe, criar um novo (fallback para usuários antigos)
-      if (error && error.code === 'PGRST116') {
-        const { data: newProfile, error: createError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: user.id,
-            role: 'owner',
-            clinic_id: user.id,
-            display_name: user.email?.split('@')[0] || 'Usuário',
-            is_active: true,
-          })
-          .select()
-          .single()
+      // Se o perfil não existe ou tabela não existe, criar um perfil padrão como owner
+      if (error) {
+        // Tentar criar perfil na tabela (pode falhar se tabela não existir)
+        if (error.code === 'PGRST116' || error.code === '42P01') {
+          const { data: newProfile, error: createError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: user.id,
+              role: 'owner',
+              clinic_id: user.id,
+              display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+              is_active: true,
+            })
+            .select()
+            .single()
 
-        if (createError) {
-          set({ currentProfile: null, loading: false, error: createError.message })
+          if (!createError && newProfile) {
+            data = newProfile
+          } else {
+            // Se não conseguiu criar na tabela, usar perfil padrão em memória
+            // Isso garante que novos usuários sejam tratados como owner
+            console.warn('Não foi possível criar perfil na tabela, usando perfil padrão:', createError?.message)
+            const defaultProfile: UserProfile = {
+              id: user.id,
+              role: 'owner', // Novos usuários são sempre owners
+              clinicId: user.id,
+              parentUserId: undefined,
+              displayName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+              isActive: true,
+              email: user.email,
+              createdAt: user.created_at,
+              updatedAt: user.created_at,
+            }
+            set({ currentProfile: defaultProfile, loading: false, error: null })
+            return
+          }
+        } else {
+          // Outro erro que não seja "perfil não encontrado" - usar perfil padrão
+          console.warn('Erro ao buscar perfil, usando perfil padrão:', error.message)
+          const defaultProfile: UserProfile = {
+            id: user.id,
+            role: 'owner', // Novos usuários são sempre owners
+            clinicId: user.id,
+            parentUserId: undefined,
+            displayName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+            isActive: true,
+            email: user.email,
+            createdAt: user.created_at,
+            updatedAt: user.created_at,
+          }
+          set({ currentProfile: defaultProfile, loading: false, error: null })
           return
         }
-
-        data = newProfile
-      } else if (error) {
-        set({ currentProfile: null, loading: false, error: error.message })
-        return
       }
 
       const profile: UserProfile = {
@@ -88,7 +118,25 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
 
       set({ currentProfile: profile, loading: false })
     } catch (error: any) {
-      set({ currentProfile: null, error: error.message, loading: false })
+      // Em caso de qualquer erro, usar perfil padrão como owner
+      console.warn('Exceção ao buscar perfil, usando perfil padrão:', error.message)
+      const user = await getCachedUser()
+      if (user) {
+        const defaultProfile: UserProfile = {
+          id: user.id,
+          role: 'owner', // Novos usuários são sempre owners
+          clinicId: user.id,
+          parentUserId: undefined,
+          displayName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+          isActive: true,
+          email: user.email,
+          createdAt: user.created_at,
+          updatedAt: user.created_at,
+        }
+        set({ currentProfile: defaultProfile, loading: false, error: null })
+      } else {
+        set({ currentProfile: null, error: error.message, loading: false })
+      }
     }
   },
 

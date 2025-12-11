@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import { useConfirm } from '@/hooks/useConfirm'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface User {
   id: string
@@ -217,11 +218,7 @@ export default function CourtesyManager() {
   )
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
-      </div>
-    )
+    return <PageLoading message="Carregando cortesias..." />
   }
 
   return (

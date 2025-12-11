@@ -13,6 +13,7 @@ import { useUserProfile } from '@/store/userProfile'
 import { useAuth } from '@/store/auth'
 import { supabase } from '@/lib/supabase'
 import type { UserAddress, UserPhone } from '@/types/user'
+import PageLoading from '@/components/ui/PageLoading'
 
 // Lista de estados brasileiros
 const BRAZILIAN_STATES = [
@@ -79,6 +80,7 @@ export default function ProfilePage() {
   const { currentProfile, fetchCurrentProfile } = useUserProfile()
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const phoneNumberRef = useRef<HTMLInputElement>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -286,11 +288,7 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-      </div>
-    )
+    return <PageLoading />
   }
 
   return (
@@ -585,7 +583,14 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={formData.phone?.areaCode || ''}
-                onChange={(e) => handlePhoneChange('phone', 'areaCode', e.target.value.replace(/\D/g, '').slice(0, 2))}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 2)
+                  handlePhoneChange('phone', 'areaCode', value)
+                  // Auto-focus para o campo Número quando preencher 2 dígitos
+                  if (value.length === 2) {
+                    phoneNumberRef.current?.focus()
+                  }
+                }}
                 placeholder="11"
                 maxLength={2}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-center"
@@ -594,6 +599,7 @@ export default function ProfilePage() {
             <div>
               <label className="block text-xs text-gray-500 mb-1">Número</label>
               <input
+                ref={phoneNumberRef}
                 type="text"
                 value={formatPhone(formData.phone?.number || '')}
                 onChange={(e) => handlePhoneChange('phone', 'number', e.target.value.replace(/\D/g, '').slice(0, 9))}

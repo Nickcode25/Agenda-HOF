@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import { useConfirm } from '@/hooks/useConfirm'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface Subscription {
   id: string
@@ -145,7 +146,7 @@ export default function ActiveSubscriptions() {
   }
 
   if (loading) {
-    return <div className="text-gray-600 text-center py-8">Carregando...</div>
+    return <PageLoading message="Carregando assinaturas..." />
   }
 
   return (

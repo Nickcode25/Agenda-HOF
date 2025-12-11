@@ -4,6 +4,7 @@ import { useAuth } from '@/store/auth'
 import { supabase, getCachedUser } from '@/lib/supabase'
 import { Lock } from 'lucide-react'
 import UpgradeOverlay from './UpgradeOverlay'
+import PageLoading from './ui/PageLoading'
 
 interface SubscriptionProtectedRouteProps {
   children: React.ReactNode
@@ -109,6 +110,7 @@ export const useSubscription = () => useContext(SubscriptionContext)
 
 // Chave para localStorage para sincronizar cache entre abas
 const CACHE_STORAGE_KEY = 'subscription_cache'
+const CACHE_INVALIDATION_KEY = 'subscription_cache_invalidated'
 const CACHE_TTL = 2 * 60 * 1000 // 2 minutos (cache mais curto para ser mais responsivo)
 
 // Cache global para evitar verificações repetidas durante navegação
@@ -122,6 +124,9 @@ let subscriptionCache: {
   planType: PlanType | null
   timestamp: number
 } | null = null
+
+// Contador de invalidações para forçar re-render
+let cacheInvalidationCounter = 0
 
 // Carregar cache do localStorage ao iniciar
 function loadCacheFromStorage(): typeof subscriptionCache {
@@ -156,10 +161,22 @@ function saveCacheToStorage(cache: typeof subscriptionCache) {
 // Inicializar cache do localStorage
 subscriptionCache = loadCacheFromStorage()
 
-// Função para invalidar o cache (útil após login)
+// Função para invalidar o cache (útil após login ou após assinar)
 export function invalidateSubscriptionCache() {
   subscriptionCache = null
   saveCacheToStorage(null)
+  // Incrementar contador e salvar no localStorage para notificar componentes montados
+  cacheInvalidationCounter++
+  try {
+    localStorage.setItem(CACHE_INVALIDATION_KEY, String(cacheInvalidationCounter))
+    // Disparar evento de storage manualmente (não dispara na mesma aba automaticamente)
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: CACHE_INVALIDATION_KEY,
+      newValue: String(cacheInvalidationCounter)
+    }))
+  } catch {
+    // Ignorar erros de storage
+  }
 }
 
 // Função para determinar o tipo de plano baseado no nome ou preço
@@ -256,12 +273,13 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
 
       try {
         // Buscar todas as informações em paralelo (mais rápido)
+        // Aceitar status 'active' ou 'pending_cancellation' (usuário cancelou mas ainda tem acesso até fim do período)
         const [subscriptionResult, cachedUser, courtesyResult] = await Promise.all([
           supabase
             .from('user_subscriptions')
             .select('*')
             .eq('user_id', user.id)
-            .eq('status', 'active')
+            .in('status', ['active', 'pending_cancellation'])
             .maybeSingle(),
           getCachedUser(),
           supabase
@@ -280,22 +298,44 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           // Verificar se é cortesia (100% de desconto) - cortesias não verificam next_billing_date
           const isCourtesy = isCourtesySubscription(subscriptionData)
 
-          // Para assinaturas normais (não cortesia), verificar se a cobrança está atrasada
+          // Para assinaturas normais (não cortesia), verificar se a cobrança está atrasada ou se o período acabou
           if (!isCourtesy && subscriptionData.next_billing_date) {
             const nextBilling = new Date(subscriptionData.next_billing_date)
             const now = new Date()
 
-            // Se passou mais de 5 dias da data de cobrança, considerar suspensa
-            const daysDiff = Math.floor((now.getTime() - nextBilling.getTime()) / (1000 * 60 * 60 * 24))
+            // Se status é 'pending_cancellation', o usuário cancelou mas ainda deve ter acesso
+            // até a next_billing_date (quando a próxima cobrança seria feita)
+            if (subscriptionData.status === 'pending_cancellation') {
+              if (now > nextBilling) {
+                // Período pago acabou - usuário não tem mais acesso
+                // Atualizar status para 'cancelled' no banco
+                await supabase
+                  .from('user_subscriptions')
+                  .update({ status: 'cancelled' })
+                  .eq('id', subscriptionData.id)
 
-            if (daysDiff > 5) {
-              // Assinatura com cobrança atrasada - não considerar como ativa
-              setHasActiveSubscription(false)
-              setHasPaidSubscription(false)
-              setSubscription(null)
-              setPlanType(null)
-              setLoading(false)
-              return
+                setHasActiveSubscription(false)
+                setHasPaidSubscription(false)
+                setSubscription(null)
+                setPlanType(null)
+                setLoading(false)
+                return
+              }
+              // Ainda está no período pago, continuar com acesso normal
+            } else {
+              // Assinatura ativa normal - verificar se cobrança está atrasada
+              // Se passou mais de 5 dias da data de cobrança, considerar suspensa
+              const daysDiff = Math.floor((now.getTime() - nextBilling.getTime()) / (1000 * 60 * 60 * 24))
+
+              if (daysDiff > 5) {
+                // Assinatura com cobrança atrasada - não considerar como ativa
+                setHasActiveSubscription(false)
+                setHasPaidSubscription(false)
+                setSubscription(null)
+                setPlanType(null)
+                setLoading(false)
+                return
+              }
             }
           }
 
@@ -349,7 +389,43 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           return
         }
 
-        // 2. Se não tem subscription, verificar período de trial (7 dias grátis)
+        // 2. Verificar se o usuário teve cortesia revogada
+        // Se tiver, não deve ter acesso via trial (evita que trial_end_date da cortesia seja usado)
+        const { data: revokedCourtesy } = await supabase
+          .from('user_subscriptions')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'cancelled')
+          .eq('discount_percentage', 100)
+          .limit(1)
+          .maybeSingle()
+
+        // Se teve cortesia revogada, não considerar trial
+        if (revokedCourtesy) {
+          setHasActiveSubscription(false)
+          setHasPaidSubscription(false)
+          setIsInTrial(false)
+          setTrialDaysRemaining(0)
+          setPlanType(null)
+          setLoading(false)
+
+          // Atualizar cache para refletir que não tem acesso
+          subscriptionCache = {
+            userId: user.id,
+            hasActiveSubscription: false,
+            hasPaidSubscription: false,
+            isInTrial: false,
+            trialDaysRemaining: 0,
+            subscription: null,
+            planType: null,
+            timestamp: Date.now()
+          }
+          saveCacheToStorage(subscriptionCache)
+          setDataLoaded(true)
+          return
+        }
+
+        // 3. Se não tem subscription e não teve cortesia revogada, verificar período de trial (7 dias grátis)
         let trialEndDate = cachedUser?.user_metadata?.trial_end_date
 
         // Se não tem trial_end_date definido, calcular com base na data de criação da conta
@@ -399,7 +475,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           }
         }
 
-        // 3. Verificar se é usuário cortesia ativo
+        // 4. Verificar se é usuário cortesia ativo (tabela courtesy_users)
         if (courtesyUser) {
           // Verificar se tem data de expiração
           let courtesyActive = false
@@ -476,7 +552,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataLoaded, loading, user?.id])
 
-  // Escutar mudanças no localStorage de outras abas
+  // Escutar mudanças no localStorage de outras abas e invalidações de cache
   useEffect(() => {
     function handleStorageChange(e: StorageEvent) {
       if (e.key === CACHE_STORAGE_KEY) {
@@ -489,6 +565,12 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
           setSubscription(newCache.subscription)
           setPlanType(newCache.planType)
         }
+      }
+      // Escutar invalidação de cache (ex: após assinar um plano)
+      if (e.key === CACHE_INVALIDATION_KEY) {
+        // Forçar recarregamento dos dados de assinatura
+        setDataLoaded(false)
+        setLoading(true)
       }
     }
 
@@ -564,14 +646,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
 
   // Enquanto carrega, mostrar loading
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-orange-600">Verificando assinatura...</p>
-        </div>
-      </div>
-    )
+    return <PageLoading message="Verificando assinatura..." />
   }
 
   // Se não está logado, redirecionar para home

@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Power, PowerOff, X, Save } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import PlanForm from './components/PlanForm'
 import { useConfirm } from '@/hooks/useConfirm'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface Plan {
   id: string
@@ -193,7 +194,7 @@ export default function PlansManager() {
   }
 
   if (loading) {
-    return <div className="text-gray-600 text-center py-8">Carregando...</div>
+    return <PageLoading message="Carregando planos..." />
   }
 
   return (

@@ -1,6 +1,7 @@
-import { Lock, Sparkles, Check, ArrowLeft, Calendar, Users, Package, BarChart3, Crown, ArrowRight } from 'lucide-react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Lock, Sparkles, Check, Calendar, Users, Package, BarChart3, Crown } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/store/auth'
+import { useUserProfile } from '@/store/userProfile'
 import { PlanType } from './SubscriptionProtectedRoute'
 
 interface UpgradeOverlayProps {
@@ -68,11 +69,31 @@ export default function UpgradeOverlay({
   currentPlan
 }: UpgradeOverlayProps) {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
+  const { currentProfile } = useUserProfile()
 
   const handleLogout = async () => {
     await signOut()
     navigate('/')
+  }
+
+  // Função para ir direto ao checkout do plano premium
+  const handleGoToCheckout = () => {
+    navigate('/checkout', {
+      state: {
+        name: currentProfile?.displayName || user?.email?.split('@')[0] || '',
+        email: user?.email || '',
+        phone: '',
+        password: '',
+        existingUser: true,
+        selectedPlan: {
+          id: 'premium',
+          name: 'Plano Premium',
+          price: 99.90,
+          duration_months: 1
+        }
+      }
+    })
   }
 
   // Determinar qual plano mostrar
@@ -106,20 +127,12 @@ export default function UpgradeOverlay({
                 <span className="text-orange-500 ml-2">HOF</span>
               </h1>
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleLogout}
-                className="px-6 py-2.5 text-gray-600 hover:text-gray-900 transition-colors font-medium"
-              >
-                Sair
-              </button>
-              <Link
-                to="/planos"
-                className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/30"
-              >
-                Ver Planos
-              </Link>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2.5 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+            >
+              Sair
+            </button>
           </div>
         </div>
       </header>
@@ -182,21 +195,14 @@ export default function UpgradeOverlay({
                 })}
               </div>
 
-              {/* Botões de ação */}
-              <div className="flex flex-wrap gap-4">
+              {/* Botão de ação centralizado */}
+              <div className="flex justify-center">
                 <button
                   onClick={() => navigate('/planos')}
                   className="group px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/30 flex items-center gap-2"
                 >
                   <Sparkles className="w-5 h-5" />
-                  {isUpgrade ? 'Fazer Upgrade' : 'Assinar Agora'}
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-8 py-4 bg-white border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Voltar ao Início
+                  Ver Planos
                 </button>
               </div>
             </div>
@@ -251,25 +257,14 @@ export default function UpgradeOverlay({
                   ))}
                 </div>
 
-                {/* Botão principal */}
+                {/* Botão principal - vai direto para checkout */}
                 <button
-                  onClick={() => navigate('/planos')}
+                  onClick={handleGoToCheckout}
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 flex items-center justify-center gap-2 text-lg"
                 >
                   <Sparkles className="w-5 h-5" />
-                  {isUpgrade ? 'Fazer Upgrade' : 'Começar Agora'}
+                  Assinar Agora
                 </button>
-
-                {/* Link para ver todos os planos */}
-                {planToShow !== 'premium' && (
-                  <button
-                    onClick={() => navigate('/planos')}
-                    className="w-full mt-3 py-3 text-orange-600 font-medium hover:text-orange-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    Ver todos os planos
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
 
                 {/* Info adicional */}
                 <div className="mt-6 text-center space-y-2">

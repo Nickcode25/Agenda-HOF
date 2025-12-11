@@ -5,6 +5,7 @@ import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe, parseLocalDate } from '@/utils/dateHelpers'
 import { useConfirm } from '@/hooks/useConfirm'
 import DateInput from '@/components/DateInput'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface Payment {
   id: string
@@ -166,7 +167,7 @@ export default function PaymentsManager() {
   }
 
   if (loading) {
-    return <div className="text-gray-600 text-center py-8">Carregando...</div>
+    return <PageLoading message="Carregando pagamentos..." />
   }
 
   return (

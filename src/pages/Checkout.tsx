@@ -255,12 +255,24 @@ export default function Checkout() {
           console.log('✅ CPF e telefone salvos nos metadados do usuário')
         }
 
+        // Determinar o tipo do plano baseado no nome ou preço
+        const determinePlanType = () => {
+          const nameLower = planName.toLowerCase()
+          if (nameLower.includes('premium') || nameLower.includes('completo') || planPrice >= 99) {
+            return 'premium'
+          } else if (nameLower.includes('profissional') || nameLower.includes('pro')) {
+            return 'professional'
+          }
+          return 'basic'
+        }
+
         const { data: insertData, error: insertError } = await supabase.from('user_subscriptions').insert({
           user_id: userData2.user.id,
           stripe_subscription_id: subscriptionResponse.subscriptionId,
           stripe_customer_id: subscriptionResponse.customerId,
           status: 'active',
           plan_name: planName,
+          plan_type: determinePlanType(),
           plan_amount: planPrice,
           billing_cycle: 'MONTHLY',
           next_billing_date: subscriptionResponse.nextBillingDate,

@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
 import { MessageSquare, Save, AlertCircle, CheckCircle, ExternalLink, QrCode, Smartphone, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface EvolutionConfig {
   api_url: string
@@ -101,11 +102,7 @@ export default function EvolutionSettings() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-      </div>
-    )
+    return <PageLoading message="Carregando configurações..." />
   }
 
   return (

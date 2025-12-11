@@ -1,28 +1,21 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Crown,
   CreditCard,
-  Calendar,
   AlertCircle,
   CheckCircle,
   XCircle,
   RefreshCw,
-  DollarSign,
   Clock,
   Gift,
   Sparkles,
-  TrendingUp,
-  Award,
-  ArrowRight,
-  CalendarDays,
   Zap,
   User,
   Mail,
   Shield,
   Receipt,
   ChevronRight,
-  Star,
   Check,
   X,
   FileText,
@@ -33,6 +26,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../store/auth'
 import { useUserProfile } from '../../store/userProfile'
 import axios from 'axios'
+import PageLoading from '../../components/ui/PageLoading'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
@@ -47,7 +41,9 @@ interface PaymentHistory {
 }
 
 interface SubscriptionDetails {
+  id: string
   subscription_id: string
+  stripe_subscription_id?: string // ID real do Stripe (sub_xxx)
   status: string
   plan_type: string
   plan_name?: string
@@ -56,14 +52,6 @@ interface SubscriptionDetails {
   next_billing_date: string
   last_payment_date: string | null
   created_at: string
-}
-
-interface AvailablePlan {
-  id: string
-  name: string
-  slug: string
-  price: number
-  features: string[]
 }
 
 // Features por plano para exibição
@@ -110,31 +98,6 @@ const PLAN_PRICES: Record<string, number> = {
   premium: 99.90
 }
 
-// Planos estáticos para fallback quando não há planos no banco
-const STATIC_PLANS: AvailablePlan[] = [
-  {
-    id: 'basic',
-    name: 'Básico',
-    slug: 'basic',
-    price: PLAN_PRICES.basic,
-    features: PLAN_DISPLAY_FEATURES.basic
-  },
-  {
-    id: 'pro',
-    name: 'Profissional',
-    slug: 'pro',
-    price: PLAN_PRICES.pro,
-    features: PLAN_DISPLAY_FEATURES.pro
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    slug: 'premium',
-    price: PLAN_PRICES.premium,
-    features: PLAN_DISPLAY_FEATURES.premium
-  }
-]
-
 export default function SubscriptionManagement() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -146,39 +109,15 @@ export default function SubscriptionManagement() {
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(null)
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([])
   const [showCancelModal, setShowCancelModal] = useState(false)
-  const [availablePlans, setAvailablePlans] = useState<AvailablePlan[]>([])
   const [showHistoryModal, setShowHistoryModal] = useState(false)
-
-  // Calcular tempo de assinatura
-  const subscriptionDuration = useMemo(() => {
-    if (!subscription?.created_at) return null
-
-    const startDate = new Date(subscription.created_at)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - startDate.getTime())
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    const months = Math.floor(diffDays / 30)
-    const days = diffDays % 30
-
-    if (months === 0) {
-      return { text: `${days} dia${days !== 1 ? 's' : ''}`, months: 0, days }
-    } else if (days === 0) {
-      return { text: `${months} ${months === 1 ? 'mês' : 'meses'}`, months, days: 0 }
-    } else {
-      return { text: `${months} ${months === 1 ? 'mês' : 'meses'} e ${days} dia${days !== 1 ? 's' : ''}`, months, days }
-    }
-  }, [subscription?.created_at])
-
-  // Calcular total gasto
-  const totalSpent = useMemo(() => {
-    return paymentHistory
-      .filter(p => p.status === 'approved')
-      .reduce((sum, p) => sum + p.amount, 0)
-  }, [paymentHistory])
+  const [feedbackModal, setFeedbackModal] = useState<{ show: boolean; type: 'success' | 'error'; message: string }>({
+    show: false,
+    type: 'success',
+    message: ''
+  })
 
   useEffect(() => {
     loadSubscriptionData()
-    loadAvailablePlans()
   }, [])
 
   const loadSubscriptionData = async () => {
@@ -188,11 +127,12 @@ export default function SubscriptionManagement() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // Buscar assinaturas ativas ou pendentes de cancelamento
       const { data: subData, error: subError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'active')
+        .in('status', ['active', 'pending_cancellation'])
         .single()
 
       if (!subError && subData) {
@@ -227,52 +167,52 @@ export default function SubscriptionManagement() {
     }
   }
 
-  const loadAvailablePlans = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('is_active', true)
-        .order('price', { ascending: true })
-
-      if (error) throw error
-
-      setAvailablePlans(data?.map(p => ({
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        price: p.price,
-        features: p.features || []
-      })) || [])
-    } catch {
-      // Erro silencioso - usa planos estáticos como fallback
-    }
-  }
-
   const handleCancelSubscription = async () => {
     if (!subscription) return
+
+    // Usar stripe_subscription_id se disponível, senão usar subscription_id
+    const stripeSubId = subscription.stripe_subscription_id || subscription.subscription_id
+
+    if (!stripeSubId || !stripeSubId.startsWith('sub_')) {
+      setFeedbackModal({
+        show: true,
+        type: 'error',
+        message: 'ID da assinatura Stripe não encontrado. Entre em contato com o suporte.'
+      })
+      return
+    }
 
     try {
       setCancelling(true)
 
       await axios.post(`${BACKEND_URL}/api/stripe/cancel-subscription`, {
-        subscriptionId: subscription.subscription_id
+        subscriptionId: stripeSubId
       })
 
+      // Mudar para pending_cancellation - o usuário mantém acesso até next_billing_date
       await supabase
         .from('user_subscriptions')
         .update({
-          status: 'cancelled',
+          status: 'pending_cancellation',
+          cancel_at_period_end: true,
           cancelled_at: new Date().toISOString()
         })
-        .eq('subscription_id', subscription.subscription_id)
+        .eq('id', subscription.id)
 
-      alert('Assinatura cancelada com sucesso!')
       setShowCancelModal(false)
+      setFeedbackModal({
+        show: true,
+        type: 'success',
+        message: 'Assinatura cancelada com sucesso! Você terá acesso até o final do período atual.'
+      })
       loadSubscriptionData()
 
     } catch {
-      alert('Erro ao cancelar assinatura. Tente novamente.')
+      setFeedbackModal({
+        show: true,
+        type: 'error',
+        message: 'Erro ao cancelar assinatura. Tente novamente.'
+      })
     } finally {
       setCancelling(false)
     }
@@ -283,6 +223,7 @@ export default function SubscriptionManagement() {
       approved: { label: 'Aprovado', bgColor: 'bg-green-100', textColor: 'text-green-700', icon: CheckCircle },
       active: { label: 'Ativo', bgColor: 'bg-green-100', textColor: 'text-green-700', icon: CheckCircle },
       pending: { label: 'Pendente', bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', icon: AlertCircle },
+      pending_cancellation: { label: 'Cancelamento Agendado', bgColor: 'bg-orange-100', textColor: 'text-orange-700', icon: Clock },
       rejected: { label: 'Rejeitado', bgColor: 'bg-red-100', textColor: 'text-red-700', icon: XCircle },
       refunded: { label: 'Reembolsado', bgColor: 'bg-orange-100', textColor: 'text-orange-700', icon: RefreshCw },
       cancelled: { label: 'Cancelado', bgColor: 'bg-gray-100', textColor: 'text-gray-600', icon: XCircle }
@@ -381,14 +322,7 @@ export default function SubscriptionManagement() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Carregando informações...</p>
-        </div>
-      </div>
-    )
+    return <PageLoading />
   }
 
   return (
@@ -406,11 +340,11 @@ export default function SubscriptionManagement() {
         </p>
       </div>
 
-      {/* Layout Grid - 3 Colunas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Layout Grid - 2 Colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* Coluna 1: Status e Recursos */}
-        <div className="lg:col-span-1 space-y-6">
+        {/* Coluna 1: Status do Plano e Informações da Conta */}
+        <div className="space-y-6">
           {/* Card: Status do Plano */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             {/* Header do Card com Gradiente */}
@@ -429,7 +363,7 @@ export default function SubscriptionManagement() {
                 </div>
                 {hasActiveSubscription && (
                   <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
-                    Ativo
+                    {subscription?.status === 'pending_cancellation' ? 'Cancelamento Agendado' : 'Ativo'}
                   </span>
                 )}
               </div>
@@ -515,8 +449,8 @@ export default function SubscriptionManagement() {
           </div>
         </div>
 
-        {/* Coluna 2: Faturamento e Pagamento */}
-        <div className="lg:col-span-1 space-y-6">
+        {/* Coluna 2: Pagamentos e Ações */}
+        <div className="space-y-6">
           {/* Card: Gestão de Pagamentos */}
           {hasPaidSubscription && subscription ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -586,32 +520,7 @@ export default function SubscriptionManagement() {
             </div>
           )}
 
-          {/* Card: Estatísticas (apenas para pagantes) */}
-          {hasPaidSubscription && subscription && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-gray-400" />
-                Resumo
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 rounded-xl p-4 text-center">
-                  <CalendarDays className="w-5 h-5 text-blue-500 mx-auto mb-2" />
-                  <p className="text-lg font-bold text-gray-900">{subscriptionDuration?.text || '-'}</p>
-                  <p className="text-xs text-gray-500">Assinante</p>
-                </div>
-                <div className="bg-green-50 rounded-xl p-4 text-center">
-                  <DollarSign className="w-5 h-5 text-green-500 mx-auto mb-2" />
-                  <p className="text-lg font-bold text-gray-900">{formatCurrency(totalSpent)}</p>
-                  <p className="text-xs text-gray-500">Total Investido</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Coluna 3: Ações e Upgrade */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Card: CTAs */}
+          {/* Card: Ações */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Zap className="w-4 h-4 text-orange-500" />
@@ -670,8 +579,8 @@ export default function SubscriptionManagement() {
                 </button>
               )}
 
-              {/* Cancelar Assinatura */}
-              {hasPaidSubscription && subscription && (
+              {/* Cancelar Assinatura - só mostra se não está pendente de cancelamento */}
+              {hasPaidSubscription && subscription && subscription.status !== 'pending_cancellation' && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors text-sm"
@@ -680,101 +589,33 @@ export default function SubscriptionManagement() {
                   Cancelar Assinatura
                 </button>
               )}
+
+              {/* Aviso de cancelamento agendado */}
+              {subscription?.status === 'pending_cancellation' && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-orange-800">Cancelamento Agendado</p>
+                      <p className="text-xs text-orange-600 mt-1">
+                        Sua assinatura foi cancelada e você terá acesso até{' '}
+                        <span className="font-semibold">{formatDateShort(subscription.next_billing_date)}</span>.
+                        Após essa data, seu acesso será encerrado.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Aviso */}
-            {hasPaidSubscription && (
+            {/* Aviso - só mostra se não está com cancelamento agendado */}
+            {hasPaidSubscription && subscription?.status !== 'pending_cancellation' && (
               <p className="text-xs text-gray-400 text-center mt-4">
                 Você terá acesso até o fim do período atual em caso de cancelamento
               </p>
             )}
           </div>
 
-          {/* Card: Comparação de Planos Mini */}
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-500" />
-              Compare os Planos
-            </h3>
-
-            {/* Se for cortesia, mostrar apenas o link para ver planos */}
-            {planType === 'courtesy' ? (
-              <div className="text-center py-4">
-                <p className="text-sm text-gray-500 mb-4">
-                  Você já possui acesso Premium através de cortesia.
-                </p>
-                <button
-                  onClick={() => navigate('/planos')}
-                  className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
-                >
-                  Ver todos os planos
-                  <ExternalLink className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {/* Usar planos do banco ou fallback para estáticos */}
-                  {(availablePlans.length > 0 ? availablePlans.filter(p => p.slug) : STATIC_PLANS).slice(0, 3).map((plan) => {
-                    const planSlug = plan.slug?.toLowerCase() || ''
-                    const isCurrentPlan = (
-                      planType === planSlug ||
-                      subscription?.plan_type?.toLowerCase() === planSlug
-                    )
-
-                    return (
-                      <div
-                        key={plan.id}
-                        onClick={() => !isCurrentPlan && navigate(`/checkout/${plan.slug}`)}
-                        className={`p-4 rounded-xl border transition-all ${
-                          isCurrentPlan
-                            ? 'border-orange-300 bg-orange-50'
-                            : 'border-gray-200 hover:border-orange-200 hover:bg-orange-50/50 cursor-pointer'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">{plan.name}</p>
-                            <p className="text-sm text-gray-500">{formatCurrency(plan.price)}/mês</p>
-                          </div>
-                          {isCurrentPlan ? (
-                            <span className="px-2 py-1 bg-orange-200 text-orange-700 text-xs font-medium rounded-full">
-                              Atual
-                            </span>
-                          ) : (
-                            <ArrowRight className="w-4 h-4 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                <button
-                  onClick={() => navigate('/planos')}
-                  className="w-full flex items-center justify-center gap-2 mt-4 text-sm text-orange-600 hover:text-orange-700 font-medium"
-                >
-                  Ver todos os planos
-                  <ExternalLink className="w-4 h-4" />
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Card: Precisa de Ajuda */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Precisa de ajuda?</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Entre em contato conosco para tirar dúvidas sobre sua assinatura.
-            </p>
-            <a
-              href="mailto:suporte@agendahof.com.br"
-              className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
-            >
-              <Mail className="w-4 h-4" />
-              suporte@agendahof.com.br
-            </a>
-          </div>
         </div>
       </div>
 
@@ -866,7 +707,9 @@ export default function SubscriptionManagement() {
                     </div>
                     <div className="text-right">
                       {getStatusBadge(payment.status)}
-                      <p className="text-xs text-gray-400 mt-1 uppercase">{payment.payment_method}</p>
+                      <p className="text-xs text-gray-400 mt-1 uppercase">
+                        {payment.payment_method === 'credit_card' ? 'Cartão de Crédito' : payment.payment_method}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -879,6 +722,50 @@ export default function SubscriptionManagement() {
             >
               Fechar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Feedback (Sucesso/Erro) */}
+      {feedbackModal.show && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center">
+              {/* Ícone */}
+              <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                feedbackModal.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {feedbackModal.type === 'success' ? (
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                ) : (
+                  <XCircle className="w-8 h-8 text-red-600" />
+                )}
+              </div>
+
+              {/* Título */}
+              <h3 className={`text-xl font-bold mb-2 ${
+                feedbackModal.type === 'success' ? 'text-green-700' : 'text-red-700'
+              }`}>
+                {feedbackModal.type === 'success' ? 'Sucesso!' : 'Ops!'}
+              </h3>
+
+              {/* Mensagem */}
+              <p className="text-gray-600 mb-6">
+                {feedbackModal.message}
+              </p>
+
+              {/* Botão */}
+              <button
+                onClick={() => setFeedbackModal({ ...feedbackModal, show: false })}
+                className={`w-full px-6 py-3 rounded-xl font-semibold transition-colors ${
+                  feedbackModal.type === 'success'
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-red-500 hover:bg-red-600 text-white'
+                }`}
+              >
+                Entendi
+              </button>
+            </div>
           </div>
         </div>
       )}

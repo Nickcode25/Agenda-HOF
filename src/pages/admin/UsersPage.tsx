@@ -6,6 +6,7 @@ import { useAuth } from '../../store/auth'
 import AdminSidebar from './components/AdminSidebar'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface Clinic {
   id: string
@@ -118,14 +119,7 @@ export default function UsersPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    )
+    return <PageLoading />
   }
 
   return (

@@ -91,6 +91,7 @@ export const useAuth = create<AuthState>()(
           trialEndDate.setDate(trialEndDate.getDate() + 7)
 
           // 1. Criar conta no Supabase Auth com trial_end_date e phone no metadata
+          // emailRedirectTo: undefined desabilita o redirect de confirmação
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
@@ -99,14 +100,44 @@ export const useAuth = create<AuthState>()(
                 full_name: fullName,
                 phone: phone || null,
                 trial_end_date: trialEndDate.toISOString()
-              }
+              },
+              emailRedirectTo: undefined // Não enviar email de confirmação
             }
           })
 
-          if (authError) throw authError
+          if (authError) {
+            console.error('Erro Supabase signUp:', authError.message, authError)
+            throw new Error(authError.message)
+          }
 
-          // 2. Fazer login automaticamente se confirmação de email não for necessária
-          if (authData.user) {
+          // 2. Se o usuário foi criado mas não tem sessão (confirmação de email habilitada no Supabase),
+          // fazer login manualmente
+          if (authData.user && !authData.session) {
+            // Tentar fazer login com as credenciais
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            })
+
+            if (signInError) {
+              // Se o erro for de email não confirmado, o Supabase tem confirmação obrigatória
+              // Nesse caso, o usuário foi criado mas precisa confirmar email
+              console.warn('Login após cadastro falhou:', signInError.message)
+              throw new Error('Conta criada, mas não foi possível fazer login automático. Verifique as configurações do Supabase.')
+            }
+
+            if (signInData.user) {
+              set({
+                user: signInData.user,
+                adminUser: null,
+                loading: false,
+              })
+              return true
+            }
+          }
+
+          // 3. Se já tem sessão (confirmação de email desabilitada), usar diretamente
+          if (authData.user && authData.session) {
             set({
               user: authData.user,
               adminUser: null,

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
 import { useConfirm } from '@/hooks/useConfirm'
 import DateInput from '@/components/DateInput'
+import PageLoading from '@/components/ui/PageLoading'
 
 interface Coupon {
   id: string
@@ -185,11 +186,7 @@ export default function CouponManager() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-      </div>
-    )
+    return <PageLoading message="Carregando cupons..." />
   }
 
   return (

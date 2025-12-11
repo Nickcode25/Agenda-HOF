@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useSales } from '@/store/sales'
 import { Save, ArrowLeft, User, MapPin, FileText, Calendar, Phone, Mail, Building, BadgeCheck } from 'lucide-react'
 import { formatDateInput } from '@/utils/inputFormatters'
+import PageLoading from '@/components/ui/PageLoading'
 
 export default function ProfessionalEdit() {
   const { id } = useParams<{ id: string }>()
@@ -197,11 +198,7 @@ export default function ProfessionalEdit() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Carregando...</div>
-      </div>
-    )
+    return <PageLoading message="Carregando profissional..." />
   }
 
   return (
