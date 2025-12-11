@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Phone, Activity } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 // Ícone do WhatsApp
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -217,60 +217,48 @@ export default function UsersPage() {
 
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
-                <thead className="bg-gray-50">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="text-left px-4 py-4 text-sm font-semibold text-gray-600 w-[180px]">Nome</th>
-                    <th className="text-left px-4 py-4 text-sm font-semibold text-gray-600 w-[220px]">Email</th>
-                    <th className="text-left px-4 py-4 text-sm font-semibold text-gray-600 w-[180px]">Telefone</th>
-                    <th className="text-center px-4 py-4 text-sm font-semibold text-gray-600 w-[100px]">Status</th>
-                    <th className="text-center px-4 py-4 text-sm font-semibold text-gray-600 w-[100px]">Último Login</th>
-                    <th className="text-right px-4 py-4 text-sm font-semibold text-gray-600 w-[80px]">Receita</th>
-                    <th className="text-right px-4 py-4 text-sm font-semibold text-gray-600 w-[100px]">Cadastro</th>
+                    <th className="text-left py-4 px-6 text-gray-600 font-semibold">Usuário</th>
+                    <th className="text-center py-4 px-6 text-gray-600 font-semibold">Contato</th>
+                    <th className="text-center py-4 px-6 text-gray-600 font-semibold">Status</th>
+                    <th className="text-center py-4 px-6 text-gray-600 font-semibold">Atividade</th>
+                    <th className="text-center py-4 px-6 text-gray-600 font-semibold">Receita</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {filteredClinics.map((clinic) => (
-                    <tr key={clinic.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900 truncate max-w-[180px]" title={clinic.owner_name}>
-                          {clinic.owner_name}
-                        </div>
+                    <tr key={clinic.id} className="border-b border-gray-100 hover:bg-orange-50/30 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-medium text-gray-900">{clinic.owner_name}</div>
+                        <div className="text-sm text-gray-500">{clinic.owner_email}</div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-gray-700 text-sm truncate max-w-[220px]" title={clinic.owner_email}>
-                          {clinic.owner_email}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      <td className="py-4 px-6 text-center">
                         {clinic.owner_phone ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-700 text-sm whitespace-nowrap">
-                              {formatPhoneDisplay(clinic.owner_phone)}
-                            </span>
-                            <a
-                              href={`https://wa.me/${formatPhoneForWhatsApp(clinic.owner_phone)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-shrink-0 p-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-                              title="Abrir WhatsApp"
-                            >
-                              <WhatsAppIcon className="w-4 h-4" />
-                            </a>
-                          </div>
+                          <a
+                            href={`https://wa.me/${formatPhoneForWhatsApp(clinic.owner_phone)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors border border-green-200"
+                            title="Abrir WhatsApp"
+                          >
+                            <WhatsAppIcon className="w-4 h-4" />
+                            <span className="text-sm font-medium">{formatPhoneDisplay(clinic.owner_phone)}</span>
+                          </a>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-400 text-sm">Sem telefone</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      <td className="py-4 px-6 text-center">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
                           clinic.subscription_status === 'active'
-                            ? 'bg-green-100 text-green-700'
+                            ? 'bg-green-100 text-green-700 border-green-200'
                             : clinic.subscription_status === 'trial'
-                            ? 'bg-blue-100 text-blue-700'
+                            ? 'bg-blue-100 text-blue-700 border-blue-200'
                             : clinic.subscription_status === 'expired'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-red-100 text-red-700 border-red-200'
+                            : 'bg-gray-100 text-gray-600 border-gray-200'
                         }`}>
                           {clinic.subscription_status === 'active' && 'Ativo'}
                           {clinic.subscription_status === 'trial' && `Trial (${clinic.trial_days_remaining}d)`}
@@ -278,16 +266,19 @@ export default function UsersPage() {
                           {clinic.subscription_status === 'none' && 'Sem plano'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-gray-600 text-sm whitespace-nowrap">
-                        {clinic.last_login
-                          ? new Date(clinic.last_login).toLocaleDateString('pt-BR')
-                          : '-'}
+                      <td className="py-4 px-6 text-center">
+                        <div className="text-sm text-gray-600">
+                          <div>Cadastro: {new Date(clinic.created_at).toLocaleDateString('pt-BR')}</div>
+                          <div className="text-gray-400">
+                            Último login: {clinic.last_login
+                              ? new Date(clinic.last_login).toLocaleDateString('pt-BR')
+                              : 'Nunca'}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-right text-green-600 font-medium text-sm whitespace-nowrap">
-                        R$ {clinic.total_revenue.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-500 text-sm whitespace-nowrap">
-                        {new Date(clinic.created_at).toLocaleDateString('pt-BR')}
+                      <td className="py-4 px-6 text-center">
+                        <div className="font-bold text-green-600">R$ {clinic.total_revenue.toFixed(2)}</div>
+                        <div className="text-xs text-gray-400">mensal</div>
                       </td>
                     </tr>
                   ))}

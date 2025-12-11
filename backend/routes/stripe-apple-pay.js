@@ -1008,6 +1008,154 @@ async function getPaymentHistory(req, res) {
   }
 }
 
+/**
+ * Alterar plano de uma assinatura (upgrade/downgrade)
+ * POST /api/stripe/update-subscription-plan
+ *
+ * Altera o plano da assinatura no Stripe e no banco de dados.
+ * O Stripe ajusta automaticamente o valor na próxima cobrança.
+ */
+async function updateSubscriptionPlan(req, res) {
+  try {
+    const {
+      subscriptionId,      // ID da assinatura no Stripe (sub_xxx)
+      newPlanType,         // 'basic', 'pro', 'premium'
+      userId               // ID do usuário no Supabase (opcional, para validação)
+    } = req.body
+
+    console.log('🔄 Alterando plano da assinatura:', subscriptionId, '-> ', newPlanType)
+
+    if (!subscriptionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'subscriptionId é obrigatório'
+      })
+    }
+
+    if (!newPlanType || !['basic', 'pro', 'premium'].includes(newPlanType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'newPlanType inválido. Use: basic, pro ou premium'
+      })
+    }
+
+    // Definir preços dos planos (em reais)
+    const planPrices = {
+      basic: 49.90,
+      pro: 79.90,
+      premium: 99.90
+    }
+
+    const planNames = {
+      basic: 'Plano Básico',
+      pro: 'Plano Pro',
+      premium: 'Plano Premium'
+    }
+
+    const newAmount = planPrices[newPlanType]
+    const newPlanName = planNames[newPlanType]
+    const amountInCents = Math.round(newAmount * 100)
+
+    // 1. Buscar assinatura atual no Stripe
+    const currentSubscription = await stripe.subscriptions.retrieve(subscriptionId)
+
+    if (!currentSubscription) {
+      return res.status(404).json({
+        success: false,
+        error: 'Assinatura não encontrada no Stripe'
+      })
+    }
+
+    console.log('📋 Assinatura atual:', currentSubscription.id, 'Status:', currentSubscription.status)
+
+    // 2. Buscar ou criar o produto para o novo plano
+    let product
+    const products = await stripe.products.list({ active: true, limit: 100 })
+    product = products.data.find(p => p.name === `Agenda HOF - ${newPlanName}`)
+
+    if (!product) {
+      product = await stripe.products.create({
+        name: `Agenda HOF - ${newPlanName}`,
+        metadata: { plan_type: newPlanType }
+      })
+      console.log('📦 Novo produto criado:', product.id)
+    }
+
+    // 3. Buscar ou criar o preço para o novo plano
+    let newPrice
+    const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 })
+    newPrice = prices.data.find(p =>
+      p.unit_amount === amountInCents &&
+      p.recurring?.interval === 'month'
+    )
+
+    if (!newPrice) {
+      newPrice = await stripe.prices.create({
+        product: product.id,
+        unit_amount: amountInCents,
+        currency: 'brl',
+        recurring: { interval: 'month' }
+      })
+      console.log('💰 Novo preço criado:', newPrice.id)
+    }
+
+    // 4. Atualizar a assinatura no Stripe
+    // Usar proration_behavior para calcular diferença de valor
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: currentSubscription.items.data[0].id,
+        price: newPrice.id
+      }],
+      proration_behavior: 'create_prorations', // Calcula diferença proporcional
+      metadata: {
+        ...currentSubscription.metadata,
+        plan_type: newPlanType,
+        plan_name: newPlanName,
+        updated_at: new Date().toISOString()
+      }
+    })
+
+    console.log('✅ Assinatura atualizada no Stripe:', updatedSubscription.id)
+
+    // 5. Atualizar no Supabase
+    if (supabase) {
+      const { error: updateError } = await supabase
+        .from('user_subscriptions')
+        .update({
+          plan_type: newPlanType,
+          plan_name: newPlanName,
+          plan_amount: newAmount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_subscription_id', subscriptionId)
+
+      if (updateError) {
+        console.error('⚠️ Erro ao atualizar Supabase:', updateError)
+      } else {
+        console.log('✅ Plano atualizado no Supabase')
+      }
+    }
+
+    // 6. Retornar sucesso
+    res.json({
+      success: true,
+      subscriptionId: updatedSubscription.id,
+      status: updatedSubscription.status,
+      newPlanType,
+      newPlanName,
+      newAmount,
+      nextBillingDate: new Date(updatedSubscription.current_period_end * 1000).toISOString()
+    })
+
+  } catch (error) {
+    console.error('❌ Erro ao alterar plano:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Erro ao alterar plano'
+    })
+  }
+}
+
 module.exports = {
   handleApplePayPayment,
   handleApplePaySubscription,
@@ -1016,5 +1164,6 @@ module.exports = {
   getSubscription,
   createPaymentIntent,
   handleWebhook,
-  getPaymentHistory
+  getPaymentHistory,
+  updateSubscriptionPlan
 }

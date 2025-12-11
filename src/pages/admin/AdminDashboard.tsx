@@ -197,93 +197,82 @@ export default function AdminDashboard() {
 
   const loadClinics = async () => {
     try {
-      // Buscar assinaturas usando a view que já tem dados de usuários
-      const { data: subscriptions, error: viewError } = await supabase
-        .from('subscribers_view')
-        .select('*')
-        .order('subscription_created_at', { ascending: false })
+      // Buscar usuários usando get_all_users
+      const { data: allUsersData, error: usersError } = await supabase.rpc('get_all_users')
 
-      if (viewError) {
-        console.error('❌ Erro ao buscar subscribers_view:', viewError)
+      if (usersError) {
+        console.error('❌ Erro ao buscar usuários:', usersError)
         return
       }
 
-      console.log('📋 Assinaturas na view:', subscriptions)
+      // Buscar assinaturas usando get_all_subscriptions (mais completa)
+      const { data: subscriptionsData, error: subsError } = await supabase.rpc('get_all_subscriptions')
 
-      if (!subscriptions) return
+      if (subsError) {
+        console.error('❌ Erro ao buscar assinaturas:', subsError)
+      }
 
-      // Agrupar por user_id para obter clínicas únicas
-      const clinicsMap = new Map<string, typeof subscriptions[0]>()
-      subscriptions.forEach(sub => {
-        if (!clinicsMap.has(sub.user_id)) {
-          clinicsMap.set(sub.user_id, sub)
+      // Criar mapa de assinaturas por user_id (priorizar active)
+      const subscriptionMap = new Map<string, any>()
+      subscriptionsData?.forEach((sub: any) => {
+        const existing = subscriptionMap.get(sub.user_id)
+        // Priorizar assinatura ativa
+        if (!existing || sub.status === 'active') {
+          subscriptionMap.set(sub.user_id, sub)
         }
       })
 
-      const clinicsData: Clinic[] = await Promise.all(
-        Array.from(clinicsMap.values()).map(async (subscription) => {
-          const userId = subscription.user_id
-          const ownerEmail = subscription.email || 'Email não disponível'
-          const ownerName = subscription.full_name || 'Nome não disponível'
-          const ownerPhone = subscription.phone || null
-          const lastLogin = subscription.last_login
-          const userCreatedAt = subscription.user_created_at || subscription.subscription_created_at
-          const trialEndDate = null
+      const clinicsData: Clinic[] = (allUsersData || []).map((user: any) => {
+        const subscription = subscriptionMap.get(user.user_id)
+        const hasActiveSubscription = subscription?.status === 'active'
 
-          let trialDaysRemaining = 0
-          let isInTrial = false
-          if (trialEndDate) {
-            const trialEnd = new Date(trialEndDate)
-            const now = new Date()
-            if (now <= trialEnd) {
-              trialDaysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-              isInTrial = true
-            }
-          }
+        // Verificar se está em período de trial
+        const createdAt = new Date(user.user_created_at)
+        const trialEndDate = subscription?.trial_end_date
+          ? new Date(subscription.trial_end_date)
+          : new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000)
+        const now = new Date()
+        const isInTrial = !hasActiveSubscription && trialEndDate > now
+        const trialDaysRemaining = isInTrial
+          ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          : 0
 
-          // Determinar status baseado nos dados da assinatura
-          const hasActiveSubscription = subscription.status === 'active'
+        // Determinar status: active > trial > expired > none
+        let subscriptionStatus: 'active' | 'trial' | 'expired' | 'none' = 'none'
+        if (hasActiveSubscription) {
+          subscriptionStatus = 'active'
+        } else if (isInTrial) {
+          subscriptionStatus = 'trial'
+        } else if (subscription && (subscription.status === 'expired' || subscription.status === 'cancelled' || subscription.status === 'payment_failed')) {
+          subscriptionStatus = 'expired'
+        }
 
-          let subscriptionStatus: 'active' | 'trial' | 'expired' | 'none' = 'none'
-          if (subscription.status === 'active') {
-            subscriptionStatus = 'active'
-          } else if (subscription.status === 'payment_failed') {
-            subscriptionStatus = 'expired'
-          } else if (isInTrial) {
-            subscriptionStatus = 'trial'
-          } else if (trialEndDate) {
-            subscriptionStatus = 'expired'
-          }
+        // Calcular receita considerando desconto
+        const planAmount = subscription ? parseFloat(subscription.plan_amount || 0) : 0
+        const discountPercentage = subscription?.discount_percentage || 0
+        const totalRevenue = planAmount * (1 - discountPercentage / 100)
 
-          // Dados de clínicas não acessíveis sem permissão RLS adequada
-          const usersCount = 0
-          const patientsCount = 0
-          const appointmentsCount = 0
-          // Calcular receita considerando desconto
-          const planAmount = parseFloat(subscription.plan_amount) || 0
-          const discountPercentage = subscription.discount_percentage || 0
-          const totalRevenue = planAmount * (1 - discountPercentage / 100)
-          const salesCount = 0
+        return {
+          id: user.user_id,
+          owner_email: user.owner_email || 'Email não disponível',
+          owner_name: user.owner_name || 'Nome não disponível',
+          owner_phone: user.owner_phone || null,
+          created_at: user.user_created_at,
+          users_count: 0,
+          patients_count: 0,
+          appointments_count: 0,
+          sales_count: 0,
+          total_revenue: totalRevenue,
+          subscription_status: subscriptionStatus,
+          trial_end_date: trialEndDate.toISOString(),
+          trial_days_remaining: trialDaysRemaining,
+          has_active_subscription: hasActiveSubscription || isInTrial,
+          last_login: user.last_login
+        }
+      })
 
-          return {
-            id: userId,
-            owner_email: ownerEmail,
-            owner_name: ownerName,
-            owner_phone: ownerPhone,
-            created_at: userCreatedAt,
-            users_count: usersCount || 0,
-            patients_count: patientsCount || 0,
-            appointments_count: appointmentsCount || 0,
-            sales_count: salesCount,
-            total_revenue: totalRevenue,
-            subscription_status: subscriptionStatus,
-            trial_end_date: trialEndDate,
-            trial_days_remaining: trialDaysRemaining,
-            has_active_subscription: hasActiveSubscription,
-            last_login: lastLogin
-          }
-        })
-      )
+      // Ordenar por data de criação (mais recente primeiro)
+      clinicsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
       setClinics(clinicsData)
 
@@ -670,7 +659,7 @@ export default function AdminDashboard() {
 
                 {/* Recent Activity */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Últimas Clínicas</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Últimos Usuários</h3>
                   <div className="space-y-3">
                     {clinics.slice(0, 5).map(clinic => (
                       <div key={clinic.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">

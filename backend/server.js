@@ -13,7 +13,8 @@ const {
   getSubscription: getStripeSubscription,
   createPaymentIntent,
   handleWebhook: handleStripeWebhook,
-  getPaymentHistory: getStripePaymentHistory
+  getPaymentHistory: getStripePaymentHistory,
+  updateSubscriptionPlan: updateStripeSubscriptionPlan
 } = require('./routes/stripe-apple-pay')
 
 // Carregar .env apenas se não estiver em produção
@@ -1022,6 +1023,9 @@ app.post('/api/stripe/webhook',
 // Buscar histórico de pagamentos do Stripe
 app.get('/api/stripe/payment-history/:email', getStripePaymentHistory)
 
+// Alterar plano de assinatura (Admin)
+app.post('/api/stripe/update-subscription-plan', updateStripeSubscriptionPlan)
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log('\n🚀 Backend Agenda HOF iniciado!')
@@ -1044,6 +1048,7 @@ app.listen(PORT, () => {
   console.log('  - POST /api/stripe/create-subscription-apple-pay ⭐ Assinatura (Apple Pay)')
   console.log('  - POST /api/stripe/create-subscription ⭐ Assinatura (Cartão digitado)')
   console.log('  - POST /api/stripe/cancel-subscription')
+  console.log('  - POST /api/stripe/update-subscription-plan ⭐ Alterar plano (Admin)')
   console.log('  - GET  /api/stripe/subscription/:id')
   console.log('  - POST /api/stripe/create-payment-intent')
   console.log('  - POST /api/stripe/webhook ⭐ Notificações')
