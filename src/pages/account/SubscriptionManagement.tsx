@@ -127,16 +127,17 @@ export default function SubscriptionManagement() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Buscar assinaturas ativas ou pendentes de cancelamento
-      const { data: subData, error: subError } = await supabase
+      // Buscar assinaturas ativas ou pendentes de cancelamento (mais recente primeiro)
+      const { data: subDataArray } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .in('status', ['active', 'pending_cancellation'])
-        .single()
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-      if (!subError && subData) {
-        setSubscription(subData)
+      if (subDataArray && subDataArray.length > 0) {
+        setSubscription(subDataArray[0])
       }
 
       const { data: historyData, error: historyError } = await supabase

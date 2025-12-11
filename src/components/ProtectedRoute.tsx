@@ -37,16 +37,16 @@ export default function ProtectedRoute({ children, requiredRoles, fallback }: Pr
 
 function AccessDenied() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="max-w-md w-full">
-        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-700/50 p-8 text-center">
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 text-center">
           <div className="mb-6 flex justify-center">
-            <div className="p-4 bg-red-500/20 rounded-full">
-              <AlertTriangle size={48} className="text-red-400" />
+            <div className="p-4 bg-red-100 rounded-full">
+              <AlertTriangle size={48} className="text-red-500" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3">Acesso Negado</h1>
-          <p className="text-gray-400 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Acesso Negado</h1>
+          <p className="text-gray-500 mb-6">
             Você não tem permissão para acessar esta página. Entre em contato com o administrador se acredita que isso é um erro.
           </p>
           <button

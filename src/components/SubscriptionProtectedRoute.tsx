@@ -179,35 +179,59 @@ export function invalidateSubscriptionCache() {
   }
 }
 
-// Função para determinar o tipo de plano baseado no nome ou preço
+// Função para determinar o tipo de plano baseado no nome, tipo salvo ou preço
+// PRIORIDADE: plan_type/plan_name confiáveis > plan_amount > fallback premium
 function determinePlanType(subscription: Subscription | null, planData?: any): PlanType {
   if (!subscription && !planData) return 'basic'
 
-  // Se tem plan_type explícito
+  // PRIORIDADE 1: Se tem plan_type explícito E NÃO é 'basic' com preço alto (bug antigo)
   if (subscription?.plan_type) {
     const type = subscription.plan_type.toLowerCase()
-    if (type.includes('premium')) return 'premium'
-    if (type.includes('pro')) return 'pro'
-    if (type.includes('basic') || type.includes('básico')) return 'basic'
+
+    // Se plan_type é 'basic' mas o preço indica outro plano, usar o preço
+    // Isso corrige o bug onde assinaturas foram salvas com plan_type errado
+    if (type === 'basic' && subscription.plan_amount) {
+      if (subscription.plan_amount >= 99) {
+        console.log('⚠️ Correção: plan_type=basic mas plan_amount>=99, retornando premium')
+        return 'premium'
+      }
+      if (subscription.plan_amount >= 79) {
+        console.log('⚠️ Correção: plan_type=basic mas plan_amount>=79, retornando pro')
+        return 'pro'
+      }
+    }
+
+    if (type === 'premium' || type.includes('premium')) return 'premium'
+    if (type === 'pro' || type.includes('pro') || type === 'professional') return 'pro'
+    if (type === 'basic' || type.includes('basic') || type.includes('básico')) return 'basic'
     if (type.includes('courtesy') || type.includes('cortesia')) return 'courtesy'
   }
 
-  // Se tem plan_name
+  // PRIORIDADE 2: Se tem plan_name
   if (subscription?.plan_name) {
     const name = subscription.plan_name.toLowerCase()
-    if (name.includes('premium')) return 'premium'
-    if (name.includes('pro')) return 'pro'
+    if (name.includes('premium') || name.includes('completo')) return 'premium'
+    if (name.includes('pro') || name.includes('profissional')) return 'pro'
     if (name.includes('basic') || name.includes('básico')) return 'basic'
     if (name.includes('courtesy') || name.includes('cortesia')) return 'courtesy'
   }
 
-  // Verificar pelo preço
-  const amount = subscription?.plan_amount || planData?.price || 0
-  if (amount >= 99) return 'premium'
-  if (amount >= 79) return 'pro'
-  if (amount >= 49) return 'basic'
+  // PRIORIDADE 3: Se tem planData do banco de planos
+  if (planData?.name) {
+    const name = planData.name.toLowerCase()
+    if (name.includes('premium') || name.includes('completo')) return 'premium'
+    if (name.includes('pro') || name.includes('profissional')) return 'pro'
+    if (name.includes('basic') || name.includes('básico')) return 'basic'
+  }
 
-  // Fallback para premium se tiver assinatura ativa
+  // PRIORIDADE 4: Usar plan_amount como última tentativa
+  if (subscription?.plan_amount) {
+    if (subscription.plan_amount >= 99) return 'premium'
+    if (subscription.plan_amount >= 79) return 'pro'
+    if (subscription.plan_amount > 0) return 'basic'
+  }
+
+  // Fallback para premium se tiver assinatura ativa (melhor dar acesso do que bloquear)
   if (subscription) return 'premium'
 
   return 'basic'
@@ -240,11 +264,16 @@ function determineLinkedPlanType(planName?: string, planAmount?: number): 'basic
 export default function SubscriptionProtectedRoute({ children }: SubscriptionProtectedRouteProps) {
   const { user } = useAuth()
 
-  // Verificar se temos cache válido para evitar loading desnecessário - usar useMemo para evitar recálculos
+  // Cache é usado APENAS para exibição inicial (evitar flash de loading)
+  // MAS sempre verificamos o banco para garantir dados atualizados
   const initialCacheState = useMemo(() => {
     const hasCachedData = subscriptionCache &&
       subscriptionCache.userId === user?.id &&
       (Date.now() - subscriptionCache.timestamp) < CACHE_TTL
+    // NUNCA confiar em cache de trial - usuário pode ter assinado
+    if (hasCachedData && subscriptionCache?.isInTrial) {
+      return null
+    }
     return hasCachedData ? subscriptionCache : null
   }, [user?.id])
 
@@ -255,7 +284,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(initialCacheState?.trialDaysRemaining ?? 0)
   const [subscription, setSubscription] = useState<Subscription | null>(initialCacheState?.subscription ?? null)
   const [planType, setPlanType] = useState<PlanType | null>(initialCacheState?.planType ?? null)
-  const [dataLoaded, setDataLoaded] = useState(!!initialCacheState)
+  const [dataLoaded, setDataLoaded] = useState(false) // SEMPRE false inicialmente para forçar verificação
 
   useEffect(() => {
     async function checkSubscription() {
@@ -265,7 +294,7 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
         return
       }
 
-      // Se já carregamos os dados (do cache ou de requisição anterior), não fazer novamente
+      // Se já verificamos o banco nesta sessão, não verificar novamente
       if (dataLoaded) {
         setLoading(false)
         return
@@ -274,13 +303,15 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
       try {
         // Buscar todas as informações em paralelo (mais rápido)
         // Aceitar status 'active' ou 'pending_cancellation' (usuário cancelou mas ainda tem acesso até fim do período)
-        const [subscriptionResult, cachedUser, courtesyResult] = await Promise.all([
+        // IMPORTANTE: Ordenar por created_at desc e pegar apenas 1 para evitar erro 406 quando há múltiplas assinaturas
+        const [subscriptionResultArray, cachedUser, courtesyResult] = await Promise.all([
           supabase
             .from('user_subscriptions')
             .select('*')
             .eq('user_id', user.id)
             .in('status', ['active', 'pending_cancellation'])
-            .maybeSingle(),
+            .order('created_at', { ascending: false })
+            .limit(1),
           getCachedUser(),
           supabase
             .from('courtesy_users')
@@ -290,7 +321,8 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
             .maybeSingle()
         ])
 
-        const subscriptionData = subscriptionResult.data
+        // Pegar primeiro item do array (mais recente)
+        const subscriptionData = subscriptionResultArray.data?.[0] || null
         const courtesyUser = courtesyResult.data
 
         // 1. Verificar se usuário tem assinatura ativa
@@ -644,9 +676,9 @@ export default function SubscriptionProtectedRoute({ children }: SubscriptionPro
     isUnlimited
   }), [hasActiveSubscription, hasPaidSubscription, isInTrial, trialDaysRemaining, subscription, planType, hasFeature, getRequiredPlan, getPlanLimits, isUnlimited])
 
-  // Enquanto carrega, mostrar loading
+  // Enquanto carrega, mostrar loading (fullScreen para cobrir toda a tela)
   if (loading) {
-    return <PageLoading message="Verificando assinatura..." />
+    return <PageLoading message="Verificando assinatura..." fullScreen />
   }
 
   // Se não está logado, redirecionar para home

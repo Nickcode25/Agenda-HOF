@@ -255,24 +255,53 @@ export default function Checkout() {
           console.log('✅ CPF e telefone salvos nos metadados do usuário')
         }
 
-        // Determinar o tipo do plano baseado no nome ou preço
-        const determinePlanType = () => {
-          const nameLower = planName.toLowerCase()
-          if (nameLower.includes('premium') || nameLower.includes('completo') || planPrice >= 99) {
+        // Determinar o tipo do plano baseado no nome do plano selecionado
+        // IMPORTANTE: Usar o nome do plano, NÃO o preço (que pode ter desconto)
+        const determinePlanType = (name: string): string => {
+          const nameLower = (name || '').toLowerCase()
+          console.log('🔍 determinePlanType - nome recebido:', name, '-> lower:', nameLower)
+
+          if (nameLower.includes('premium') || nameLower.includes('completo')) {
+            console.log('✅ Plano identificado como PREMIUM')
             return 'premium'
           } else if (nameLower.includes('profissional') || nameLower.includes('pro')) {
-            return 'professional'
+            console.log('✅ Plano identificado como PRO')
+            return 'pro'
+          } else if (nameLower.includes('básico') || nameLower.includes('basico') || nameLower.includes('basic')) {
+            console.log('✅ Plano identificado como BASIC')
+            return 'basic'
           }
+
+          // Fallback: usar o preço ORIGINAL (não o com desconto) para determinar
+          console.log('⚠️ Nome não reconhecido, usando preço para fallback. Preço:', planPrice)
+          if (planPrice >= 99) {
+            console.log('✅ Fallback: PREMIUM (preço >= 99)')
+            return 'premium'
+          }
+          if (planPrice >= 79) {
+            console.log('✅ Fallback: PRO (preço >= 79)')
+            return 'pro'
+          }
+          console.log('✅ Fallback: BASIC (preço < 79)')
           return 'basic'
         }
+
+        // GARANTIR que temos um nome de plano válido
+        const finalPlanName = planName || userData?.selectedPlan?.name || 'Plano Premium'
+        const finalPlanType = determinePlanType(finalPlanName)
+
+        console.log('💾 Dados a serem salvos:')
+        console.log('  - plan_name:', finalPlanName)
+        console.log('  - plan_type:', finalPlanType)
+        console.log('  - plan_amount:', planPrice)
 
         const { data: insertData, error: insertError } = await supabase.from('user_subscriptions').insert({
           user_id: userData2.user.id,
           stripe_subscription_id: subscriptionResponse.subscriptionId,
           stripe_customer_id: subscriptionResponse.customerId,
           status: 'active',
-          plan_name: planName,
-          plan_type: determinePlanType(),
+          plan_name: finalPlanName,
+          plan_type: finalPlanType,
           plan_amount: planPrice,
           billing_cycle: 'MONTHLY',
           next_billing_date: subscriptionResponse.nextBillingDate,

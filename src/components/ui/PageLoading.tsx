@@ -6,7 +6,7 @@ interface PageLoadingProps {
 export default function PageLoading({ message = 'Carregando informações...', fullScreen = false }: PageLoadingProps) {
   const containerClass = fullScreen
     ? 'min-h-screen bg-gray-50 flex items-center justify-center'
-    : 'min-h-[60vh] flex items-center justify-center'
+    : 'min-h-[60vh] bg-gray-50 flex items-center justify-center'
 
   return (
     <div className={containerClass}>
