@@ -48,27 +48,51 @@ export default function PaymentsManager() {
 
   const loadPayments = async () => {
     try {
-      // Buscar pagamentos da tabela user_subscriptions
-      const { data, error } = await supabase
-        .from('subscribers_view')
-        .select('*')
-        .order('subscription_created_at', { ascending: false })
-        .limit(100)
+      // Usar RPC para buscar assinaturas com nomes corretos
+      const { data, error } = await supabase.rpc('get_all_subscriptions')
 
-      if (error) throw error
+      if (error) {
+        console.error('Erro RPC get_all_subscriptions:', error)
+        // Fallback para view se RPC falhar
+        const { data: viewData, error: viewError } = await supabase
+          .from('subscribers_view')
+          .select('*')
+          .order('subscription_created_at', { ascending: false })
+          .limit(100)
 
-      const mapped: Payment[] = (data || []).map(item => ({
+        if (viewError) throw viewError
+
+        const mapped: Payment[] = (viewData || []).map(item => ({
+          id: item.subscription_id,
+          user_id: item.user_id,
+          user_email: item.email,
+          user_name: item.full_name || 'Nome não disponível',
+          amount: parseFloat(item.plan_amount) || 0,
+          status: item.subscription_status === 'active' ? 'approved' :
+                  item.subscription_status === 'expired' ? 'rejected' : 'pending',
+          payment_method: 'Stripe',
+          stripe_payment_id: item.stripe_subscription_id,
+          created_at: item.subscription_created_at,
+          updated_at: item.subscription_created_at
+        }))
+
+        setPayments(mapped)
+        calculateStats(mapped)
+        return
+      }
+
+      const mapped: Payment[] = (data || []).map((item: any) => ({
         id: item.subscription_id,
         user_id: item.user_id,
-        user_email: item.email,
-        user_name: item.full_name || 'Nome não disponível',
+        user_email: item.user_email,
+        user_name: item.user_name || 'Nome não disponível',
         amount: parseFloat(item.plan_amount) || 0,
-        status: item.subscription_status === 'active' ? 'approved' :
-                item.subscription_status === 'expired' ? 'rejected' : 'pending',
+        status: item.status === 'active' ? 'approved' :
+                item.status === 'expired' ? 'rejected' : 'pending',
         payment_method: 'Stripe',
         stripe_payment_id: item.stripe_subscription_id,
-        created_at: item.subscription_created_at,
-        updated_at: item.subscription_created_at
+        created_at: item.created_at,
+        updated_at: item.created_at
       }))
 
       setPayments(mapped)

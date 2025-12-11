@@ -1,4 +1,4 @@
-import { Shield, Home, Users, Package, UserCheck, CreditCard, Tag, Gift, LogOut } from 'lucide-react'
+import { Shield, LayoutDashboard, Users, CreditCard, Tag, Gift, LogOut, Receipt, UserCheck } from 'lucide-react'
 
 type ActiveView = 'overview' | 'clinics' | 'plans' | 'subscriptions' | 'payments' | 'coupons' | 'courtesy'
 
@@ -8,13 +8,48 @@ interface AdminSidebarProps {
   onLogout: () => void
 }
 
+interface NavItem {
+  id: ActiveView
+  label: string
+  icon: React.ReactNode
+}
+
+interface NavGroup {
+  title: string
+  items: NavItem[]
+}
+
 export default function AdminSidebar({ activeView, onViewChange, onLogout }: AdminSidebarProps) {
+  const navGroups: NavGroup[] = [
+    {
+      title: 'Geral',
+      items: [
+        { id: 'overview', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+        { id: 'clinics', label: 'Usuários', icon: <Users className="w-5 h-5" /> },
+      ]
+    },
+    {
+      title: 'Financeiro',
+      items: [
+        { id: 'subscriptions', label: 'Assinaturas', icon: <UserCheck className="w-5 h-5" /> },
+        { id: 'payments', label: 'Pagamentos', icon: <Receipt className="w-5 h-5" /> },
+      ]
+    },
+    {
+      title: 'Promoções',
+      items: [
+        { id: 'coupons', label: 'Cupons', icon: <Tag className="w-5 h-5" /> },
+        { id: 'courtesy', label: 'Cortesias', icon: <Gift className="w-5 h-5" /> },
+      ]
+    }
+  ]
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl">
+          <div className="p-2.5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg shadow-orange-500/20">
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -25,100 +60,40 @@ export default function AdminSidebar({ activeView, onViewChange, onLogout }: Adm
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        <button
-          onClick={() => onViewChange('overview')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeView === 'overview'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Home className="w-5 h-5" />
-          <span className="font-medium">Overview</span>
-        </button>
-
-        <button
-          onClick={() => onViewChange('clinics')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeView === 'clinics'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Users className="w-5 h-5" />
-          <span className="font-medium">Usuários</span>
-        </button>
-
-        <button
-          onClick={() => onViewChange('plans')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeView === 'plans'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Package className="w-5 h-5" />
-          <span className="font-medium">Planos</span>
-        </button>
-
-        <button
-          onClick={() => onViewChange('subscriptions')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeView === 'subscriptions'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <UserCheck className="w-5 h-5" />
-          <span className="font-medium">Assinaturas</span>
-        </button>
-
-        <button
-          onClick={() => onViewChange('payments')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeView === 'payments'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <CreditCard className="w-5 h-5" />
-          <span className="font-medium">Pagamentos</span>
-        </button>
-
-        <button
-          onClick={() => onViewChange('coupons')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeView === 'coupons'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Tag className="w-5 h-5" />
-          <span className="font-medium">Cupons</span>
-        </button>
-
-        <button
-          onClick={() => onViewChange('courtesy')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-            activeView === 'courtesy'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Gift className="w-5 h-5" />
-          <span className="font-medium">Cortesia</span>
-        </button>
+      <nav className="flex-1 p-4 overflow-y-auto">
+        {navGroups.map((group, groupIndex) => (
+          <div key={group.title} className={groupIndex > 0 ? 'mt-6' : ''}>
+            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              {group.title}
+            </h3>
+            <div className="space-y-1">
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onViewChange(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                    activeView === item.id
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/25'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  {item.icon}
+                  <span className="font-medium text-sm">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-100">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-all duration-200 border border-red-200"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
         >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Sair</span>
+          <LogOut className="w-4 h-4" />
+          <span className="font-medium text-sm">Sair</span>
         </button>
       </div>
     </aside>

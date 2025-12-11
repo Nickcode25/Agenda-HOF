@@ -47,21 +47,46 @@ export default function ActiveSubscriptions() {
 
   const loadSubscriptions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('subscribers_view')
-        .select('*')
-        .order('subscription_created_at', { ascending: false })
+      // Usar RPC para buscar assinaturas com nomes corretos
+      const { data, error } = await supabase.rpc('get_all_subscriptions')
 
-      if (error) throw error
+      if (error) {
+        console.error('Erro RPC get_all_subscriptions:', error)
+        // Fallback para view se RPC falhar
+        const { data: viewData, error: viewError } = await supabase
+          .from('subscribers_view')
+          .select('*')
+          .order('subscription_created_at', { ascending: false })
 
-      const mapped: Subscription[] = (data || []).map(sub => ({
+        if (viewError) throw viewError
+
+        const mapped: Subscription[] = (viewData || []).map(sub => ({
+          id: sub.subscription_id,
+          user_id: sub.user_id,
+          user_email: sub.email,
+          user_name: sub.full_name || 'Nome não disponível',
+          plan_name: 'Premium',
+          status: sub.subscription_status,
+          started_at: sub.subscription_created_at,
+          next_billing_date: sub.next_billing_date,
+          plan_amount: parseFloat(sub.plan_amount) || 0,
+          discount_percentage: sub.discount_percentage || 0,
+          stripe_subscription_id: sub.stripe_subscription_id
+        }))
+
+        setSubscriptions(mapped)
+        calculateStats(mapped)
+        return
+      }
+
+      const mapped: Subscription[] = (data || []).map((sub: any) => ({
         id: sub.subscription_id,
         user_id: sub.user_id,
-        user_email: sub.email,
-        user_name: sub.full_name || 'Nome não disponível',
-        plan_name: 'Premium', // Você pode adicionar plan_name na view
-        status: sub.subscription_status,
-        started_at: sub.subscription_created_at,
+        user_email: sub.user_email,
+        user_name: sub.user_name || 'Nome não disponível',
+        plan_name: 'Premium',
+        status: sub.status,
+        started_at: sub.created_at,
         next_billing_date: sub.next_billing_date,
         plan_amount: parseFloat(sub.plan_amount) || 0,
         discount_percentage: sub.discount_percentage || 0,
