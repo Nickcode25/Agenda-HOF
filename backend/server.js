@@ -36,8 +36,9 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5175',
   'https://agendahof.com',
   'https://www.agendahof.com',
-  'http://localhost:5175',
   'http://localhost:5173',
+  'http://localhost:5175',
+  'http://localhost:5176',
   'http://localhost:5177'
 ]
 

@@ -140,24 +140,24 @@ export default function SubscriptionManagement() {
         setSubscription(subDataArray[0])
       }
 
-      const { data: historyData, error: historyError } = await supabase
-        .from('payment_history')
-        .select('*')
-        .eq('payer_email', user.email)
-        .order('created_at', { ascending: false })
-        .limit(10)
+      // Buscar histórico de pagamentos do Stripe (fonte de verdade)
+      try {
+        const response = await axios.get(`${BACKEND_URL}/api/stripe/payment-history/${encodeURIComponent(user.email || '')}`)
+        if (response.data.success && response.data.payments) {
+          setPaymentHistory(response.data.payments)
+        }
+      } catch (err) {
+        console.error('Erro ao buscar histórico de pagamentos:', err)
+        // Fallback: tentar buscar do banco local
+        const { data: historyData } = await supabase
+          .from('payment_history')
+          .select('*')
+          .eq('payer_email', user.email)
+          .order('created_at', { ascending: false })
+          .limit(10)
 
-      if (!historyError && historyData && historyData.length > 0) {
-        setPaymentHistory(historyData)
-      } else {
-        // Se não encontrou no banco, buscar do Stripe diretamente
-        try {
-          const response = await axios.get(`${BACKEND_URL}/api/stripe/payment-history/${encodeURIComponent(user.email || '')}`)
-          if (response.data.success && response.data.payments) {
-            setPaymentHistory(response.data.payments)
-          }
-        } catch {
-          // Erro silencioso - continuar sem histórico
+        if (historyData && historyData.length > 0) {
+          setPaymentHistory(historyData)
         }
       }
 
