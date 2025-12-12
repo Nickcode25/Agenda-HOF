@@ -7,6 +7,7 @@ import { useEnrollments } from '@/store/enrollments'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/utils/currency'
 import { formatDateBR } from '@/utils/dateHelpers'
+import { getTodayInSaoPaulo, formatInSaoPaulo } from '@/utils/timezone'
 import {
   DollarSign,
   TrendingUp,
@@ -111,16 +112,17 @@ export default function FinancialReport() {
   const { show: showToast } = useToast()
   const { confirm, ConfirmDialog } = useConfirm()
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('day')
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayInSaoPaulo()
   const [startDate, setStartDate] = useState(today)
   const [endDate, setEndDate] = useState(today)
   const [detailModal, setDetailModal] = useState<DetailModalType>(null)
   const [subscriptionPayments, setSubscriptionPayments] = useState<SubscriptionPayment[]>([])
 
-  // Atualizar datas quando o período mudar
+  // Atualizar datas quando o período mudar (usando fuso horário de São Paulo)
   useEffect(() => {
-    const now = new Date()
-    const todayStr = now.toISOString().split('T')[0]
+    const todayStr = getTodayInSaoPaulo()
+    const [year, month, day] = todayStr.split('-').map(Number)
+    const now = new Date(year, month - 1, day)
 
     switch (periodFilter) {
       case 'day':
@@ -133,22 +135,22 @@ export default function FinancialReport() {
         weekStart.setDate(now.getDate() - now.getDay())
         const weekEnd = new Date(weekStart)
         weekEnd.setDate(weekStart.getDate() + 6)
-        setStartDate(weekStart.toISOString().split('T')[0])
-        setEndDate(weekEnd.toISOString().split('T')[0])
+        setStartDate(`${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`)
+        setEndDate(`${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`)
         break
 
       case 'month':
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        setStartDate(monthStart.toISOString().split('T')[0])
-        setEndDate(monthEnd.toISOString().split('T')[0])
+        const monthStart = new Date(year, month - 1, 1)
+        const monthEnd = new Date(year, month, 0)
+        setStartDate(`${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}-${String(monthStart.getDate()).padStart(2, '0')}`)
+        setEndDate(`${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`)
         break
 
       case 'year':
-        const yearStart = new Date(now.getFullYear(), 0, 1)
-        const yearEnd = new Date(now.getFullYear(), 11, 31)
-        setStartDate(yearStart.toISOString().split('T')[0])
-        setEndDate(yearEnd.toISOString().split('T')[0])
+        const yearStart = new Date(year, 0, 1)
+        const yearEnd = new Date(year, 11, 31)
+        setStartDate(`${yearStart.getFullYear()}-${String(yearStart.getMonth() + 1).padStart(2, '0')}-${String(yearStart.getDate()).padStart(2, '0')}`)
+        setEndDate(`${yearEnd.getFullYear()}-${String(yearEnd.getMonth() + 1).padStart(2, '0')}-${String(yearEnd.getDate()).padStart(2, '0')}`)
         break
     }
   }, [periodFilter])

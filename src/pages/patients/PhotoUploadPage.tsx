@@ -6,6 +6,7 @@ import { ArrowLeft, Upload, Image as ImageIcon, Calendar, FileText } from 'lucid
 import type { PhotoType } from '@/types/medicalRecords'
 import { useToast } from '@/hooks/useToast'
 import DateInput from '@/components/DateInput'
+import { getTodayInSaoPaulo } from '@/utils/timezone'
 
 export default function PhotoUploadPage() {
   const { id } = useParams<{ id: string }>()
@@ -22,7 +23,7 @@ export default function PhotoUploadPage() {
   const [procedureName, setProcedureName] = useState('')
   const [bodyArea, setBodyArea] = useState('')
   const [description, setDescription] = useState('')
-  const [takenAt, setTakenAt] = useState(new Date().toISOString().split('T')[0])
+  const [takenAt, setTakenAt] = useState(getTodayInSaoPaulo())
 
   const [uploading, setUploading] = useState(false)
 

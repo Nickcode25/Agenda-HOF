@@ -3,6 +3,7 @@ import { SubscriptionPlan, Subscription, SubscriptionPayment } from '../types/su
 import { supabase, getCachedUser } from '@/lib/supabase'
 import { sendSubscriptionConfirmation } from '@/services/email/resend.service'
 import { formatCurrency } from '@/utils/currency'
+import { createISOFromDateTimeBR, getCurrentTimeInSaoPaulo, getTodayInSaoPaulo } from '@/utils/timezone'
 
 type SubscriptionStore = {
   plans: SubscriptionPlan[]
@@ -406,7 +407,8 @@ export const useSubscriptionStore = create<SubscriptionStore>()((set, get) => ({
       const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      const now = new Date().toISOString()
+      // Usar fuso horário de São Paulo para salvar a data correta
+      const now = createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
       const subscription = get().subscriptions.find(s => s.id === subscriptionId)
       const payment = subscription?.payments.find(p => p.id === paymentId)
 

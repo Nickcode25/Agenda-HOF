@@ -8,6 +8,7 @@ import { Save, Plus, Trash2, User, ShoppingCart, CreditCard, Package } from 'luc
 import SearchableSelect from '@/components/SearchableSelect'
 import { useToast } from '@/hooks/useToast'
 import DateInput from '@/components/DateInput'
+import { getTodayInSaoPaulo, formatInSaoPaulo, getCurrentTimeInSaoPaulo, createISOFromDateTimeBR } from '@/utils/timezone'
 
 export default function SaleForm() {
   const { id } = useParams<{ id: string }>()
@@ -29,7 +30,7 @@ export default function SaleForm() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'pix' | 'transfer' | 'check'>('cash')
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'overdue'>('pending')
   const [dueDate, setDueDate] = useState('')
-  const [soldAt, setSoldAt] = useState(() => new Date().toISOString().split('T')[0])
+  const [soldAt, setSoldAt] = useState(() => getTodayInSaoPaulo())
   const [notes, setNotes] = useState('')
   const [saleItems, setSaleItems] = useState<Array<{
     stockItemId: string
@@ -46,9 +47,9 @@ export default function SaleForm() {
         setPaymentMethod(sale.paymentMethod)
         setPaymentStatus(sale.paymentStatus)
         setNotes(sale.notes || '')
-        // Carregar a data de venda existente ou usar a data de criação
+        // Carregar a data de venda existente ou usar a data de criação (no fuso horário de São Paulo)
         const existingDate = sale.soldAt || sale.createdAt
-        setSoldAt(existingDate ? new Date(existingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+        setSoldAt(existingDate ? formatInSaoPaulo(existingDate, 'yyyy-MM-dd') : getTodayInSaoPaulo())
 
         // Converter items da venda para o formato do formulário
         const formattedItems = sale.items.map(item => ({
@@ -140,10 +141,9 @@ export default function SaleForm() {
       profit: item.profit
     }))
 
-    // Converter a data para ISO string mantendo o horário atual
-    const now = new Date()
-    const currentTime = now.toTimeString().split(' ')[0] // HH:MM:SS
-    const soldAtISO = soldAt ? new Date(soldAt + 'T' + currentTime).toISOString() : now.toISOString()
+    // Converter a data para ISO string usando o fuso horário de São Paulo
+    const currentTime = getCurrentTimeInSaoPaulo() // HH:mm no horário de São Paulo
+    const soldAtISO = soldAt ? createISOFromDateTimeBR(soldAt, currentTime) : new Date().toISOString()
 
     try {
       if (isEditing && id) {
@@ -159,7 +159,7 @@ export default function SaleForm() {
           paymentMethod,
           paymentStatus,
           dueDate: dueDate || undefined,
-          paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
+          paidAt: paymentStatus === 'paid' ? soldAtISO : undefined,
           soldAt: soldAtISO,
           notes: notes || undefined
         })
@@ -178,7 +178,7 @@ export default function SaleForm() {
           paymentMethod,
           paymentStatus,
           dueDate: dueDate || undefined,
-          paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
+          paidAt: paymentStatus === 'paid' ? soldAtISO : undefined,
           soldAt: soldAtISO,
           notes: notes || undefined
         })

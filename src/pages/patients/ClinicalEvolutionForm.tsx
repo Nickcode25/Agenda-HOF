@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Activity, Calendar, User, FileText, Stethoscope, Alert
 import type { EvolutionType } from '@/types/medicalRecords'
 import { useToast } from '@/hooks/useToast'
 import DateInput from '@/components/DateInput'
+import { getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 export default function ClinicalEvolutionForm() {
   const { id } = useParams<{ id: string }>()
@@ -18,8 +19,8 @@ export default function ClinicalEvolutionForm() {
 
   const patient = patients.find(p => p.id === id)
 
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [time, setTime] = useState(new Date().toTimeString().slice(0, 5))
+  const [date, setDate] = useState(getTodayInSaoPaulo())
+  const [time, setTime] = useState(getCurrentTimeInSaoPaulo())
   const [professionalName, setProfessionalName] = useState('')
   const [evolutionType, setEvolutionType] = useState<EvolutionType>('consultation')
   const [subjective, setSubjective] = useState('')

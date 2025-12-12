@@ -27,8 +27,8 @@ export default function PlanDetail() {
   const [selectedPaymentId, setSelectedPaymentId] = useState('')
   const [selectedPatientId, setSelectedPatientId] = useState('')
   const [searchPatient, setSearchPatient] = useState('')
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
-  const [subscriptionStartDate, setSubscriptionStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [paymentDate, setPaymentDate] = useState(getTodayInSaoPaulo())
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState(getTodayInSaoPaulo())
   const [paidAmount, setPaidAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('PIX')
   const [confirmPaymentMethod, setConfirmPaymentMethod] = useState('PIX')
@@ -213,8 +213,8 @@ export default function PlanDetail() {
   const resetForm = () => {
     setSelectedPatientId('')
     setSearchPatient('')
-    setPaymentDate(new Date().toISOString().split('T')[0])
-    setSubscriptionStartDate(new Date().toISOString().split('T')[0])
+    setPaymentDate(getTodayInSaoPaulo())
+    setSubscriptionStartDate(getTodayInSaoPaulo())
     setPaidAmount('')
     setPaymentMethod('PIX')
   }

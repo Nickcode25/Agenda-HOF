@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { Professional, Sale, SaleItem, SalesReport } from '@/types/sales'
 import { supabase, getCachedUser } from '@/lib/supabase'
 import { removeCashMovementByReference } from './cash'
+import { createISOFromDateTimeBR, getCurrentTimeInSaoPaulo, getTodayInSaoPaulo } from '@/utils/timezone'
 
 interface SalesStore {
   professionals: Professional[]
@@ -344,7 +345,7 @@ export const useSales = create<SalesStore>()(
       markSaleAsPaid: async (saleId) => {
         await get().updateSale(saleId, {
           paymentStatus: 'paid',
-          paidAt: new Date().toISOString()
+          paidAt: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
         })
       },
 

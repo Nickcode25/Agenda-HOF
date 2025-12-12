@@ -8,6 +8,7 @@ import StatsOverview from './components/StatsOverview'
 import TabsNav from './components/TabsNav'
 import SubscriptionCard from './components/SubscriptionCard'
 import DateInput from '@/components/DateInput'
+import { getTodayInSaoPaulo } from '@/utils/timezone'
 
 // Skeleton loaders
 const PlanSkeleton = memo(() => (
@@ -86,7 +87,7 @@ export default function SubscriptionsMain() {
   const [showSubscriberModal, setShowSubscriberModal] = useState(false)
   const [selectedPatientId, setSelectedPatientId] = useState('')
   const [selectedPlanId, setSelectedPlanId] = useState('')
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
+  const [paymentDate, setPaymentDate] = useState(getTodayInSaoPaulo())
   const [paidAmount, setPaidAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('PIX')
 
@@ -194,7 +195,7 @@ export default function SubscriptionsMain() {
   const resetSubscriberForm = () => {
     setSelectedPatientId('')
     setSelectedPlanId('')
-    setPaymentDate(new Date().toISOString().split('T')[0])
+    setPaymentDate(getTodayInSaoPaulo())
     setPaidAmount('')
     setPaymentMethod('PIX')
   }

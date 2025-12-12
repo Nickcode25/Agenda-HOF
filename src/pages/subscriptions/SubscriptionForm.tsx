@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, CreditCard, User, FileText } from 'lucide-react'
 import { useSubscriptionStore } from '../../store/subscriptions'
 import { usePatients } from '../../store/patients'
 import DateInput from '@/components/DateInput'
+import { getTodayInSaoPaulo } from '@/utils/timezone'
 
 export default function SubscriptionForm() {
   const navigate = useNavigate()
@@ -12,7 +13,7 @@ export default function SubscriptionForm() {
 
   const [patientId, setPatientId] = useState('')
   const [planId, setPlanId] = useState('')
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [startDate, setStartDate] = useState(getTodayInSaoPaulo())
 
   useEffect(() => {
     fetchPlans()

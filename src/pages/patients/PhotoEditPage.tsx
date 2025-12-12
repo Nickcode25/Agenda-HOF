@@ -6,6 +6,7 @@ import { ArrowLeft, Save, Image as ImageIcon, FileText } from 'lucide-react'
 import type { PhotoType } from '@/types/medicalRecords'
 import { useToast } from '@/hooks/useToast'
 import DateInput from '@/components/DateInput'
+import { formatInSaoPaulo } from '@/utils/timezone'
 
 export default function PhotoEditPage() {
   const { id, photoId } = useParams<{ id: string; photoId: string }>()
@@ -37,7 +38,7 @@ export default function PhotoEditPage() {
       setProcedureName(photo.procedure_name || '')
       setBodyArea(photo.body_area || '')
       setDescription(photo.description || '')
-      setTakenAt(photo.taken_at ? new Date(photo.taken_at).toISOString().split('T')[0] : '')
+      setTakenAt(photo.taken_at ? formatInSaoPaulo(photo.taken_at, 'yyyy-MM-dd') : '')
     }
   }, [photo])
 

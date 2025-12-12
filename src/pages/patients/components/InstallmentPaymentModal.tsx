@@ -4,6 +4,7 @@ import SearchableSelect from '@/components/SearchableSelect'
 import DateInput from '@/components/DateInput'
 import { usePatients } from '@/store/patients'
 import { PlannedProcedure } from '@/types/patient'
+import { getTodayInSaoPaulo, createISOFromDateTimeBR, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 interface InstallmentPaymentModalProps {
   isOpen: boolean
@@ -22,7 +23,7 @@ export default function InstallmentPaymentModal({
 }: InstallmentPaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'pix' | 'card'>('pix')
   const [customValue, setCustomValue] = useState('')
-  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [paymentDate, setPaymentDate] = useState(() => getTodayInSaoPaulo())
   const [description, setDescription] = useState('')
   const update = usePatients(s => s.update)
   const patient = usePatients(s => s.patients.find(p => p.id === patientId))
@@ -51,7 +52,7 @@ export default function InstallmentPaymentModal({
     if (isOpen) {
       setPaymentMethod('pix')
       setCustomValue('')
-      setPaymentDate(new Date().toISOString().split('T')[0])
+      setPaymentDate(getTodayInSaoPaulo())
       setDescription('')
     }
   }, [isOpen])
@@ -85,8 +86,11 @@ export default function InstallmentPaymentModal({
     const amount = parseCurrencyValue(customValue)
     if (amount <= 0 || !patient) return
 
-    // Registrar como procedimento "Pagamento de parcela" já concluído
-    const performedAtISO = paymentDate ? new Date(paymentDate + 'T12:00:00').toISOString() : new Date().toISOString()
+    // Registrar como procedimento "Pagamento de parcela" já concluído usando fuso horário de São Paulo
+    const performedAtISO = paymentDate
+      ? createISOFromDateTimeBR(paymentDate, getCurrentTimeInSaoPaulo())
+      : createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
+    const nowISO = createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
 
     const newProcedure: PlannedProcedure = {
       id: crypto.randomUUID(),
@@ -99,7 +103,7 @@ export default function InstallmentPaymentModal({
       installments: 1,
       status: 'completed',
       notes: '',
-      createdAt: new Date().toISOString(),
+      createdAt: nowISO,
       performedAt: performedAtISO,
       completedAt: performedAtISO
     }

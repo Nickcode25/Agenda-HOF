@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable'
 import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import DateInput from '@/components/DateInput'
+import { getTodayInSaoPaulo, formatInSaoPaulo } from '@/utils/timezone'
 
 type PeriodFilter = 'day' | 'week' | 'month' | 'year' | 'custom'
 
@@ -23,16 +24,14 @@ export default function SalesHistory() {
     fetchSales()
   }, [])
 
-  // Calcular datas baseado no período selecionado
+  // Calcular datas baseado no período selecionado (usando fuso horário de São Paulo)
   useEffect(() => {
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = today.getMonth()
-    const day = today.getDate()
+    const todayStr = getTodayInSaoPaulo()
+    const [year, month, day] = todayStr.split('-').map(Number)
+    const today = new Date(year, month - 1, day)
 
     switch (periodFilter) {
       case 'day':
-        const todayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         setStartDate(todayStr)
         setEndDate(todayStr)
         break
@@ -45,9 +44,9 @@ export default function SalesHistory() {
         setEndDate(`${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`)
         break
       case 'month':
-        const monthEnd = new Date(year, month + 1, 0)
-        setStartDate(`${year}-${String(month + 1).padStart(2, '0')}-01`)
-        setEndDate(`${year}-${String(month + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`)
+        const monthEnd = new Date(year, month, 0)
+        setStartDate(`${year}-${String(month).padStart(2, '0')}-01`)
+        setEndDate(`${year}-${String(month).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`)
         break
       case 'year':
         setStartDate(`${year}-01-01`)
@@ -75,7 +74,10 @@ export default function SalesHistory() {
 
     if (startDate && endDate) {
       result = result.filter(sale => {
-        const saleDateStr = (sale.soldAt || sale.createdAt).split('T')[0]
+        const saleDateRaw = sale.soldAt || sale.createdAt
+        if (!saleDateRaw) return false
+        // Converter a data UTC para o fuso horário de São Paulo antes de comparar
+        const saleDateStr = formatInSaoPaulo(saleDateRaw, 'yyyy-MM-dd')
         return saleDateStr >= startDate && saleDateStr <= endDate
       })
     }

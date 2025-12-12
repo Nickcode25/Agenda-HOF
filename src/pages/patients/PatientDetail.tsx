@@ -6,6 +6,7 @@ import { useStock } from '@/store/stock'
 import { PlannedProcedure, ProcedurePhoto } from '@/types/patient'
 import { formatCurrency } from '@/utils/currency'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
+import { getTodayInSaoPaulo, formatInSaoPaulo, createISOFromDateTimeBR, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 import { Edit, Trash2, Plus, CheckCircle, FileText, Image as ImageIcon, Phone, CreditCard } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useConfirm } from '@/hooks/useConfirm'
@@ -36,7 +37,7 @@ export default function PatientDetail() {
   const [installments, setInstallments] = useState(1)
   const [customValue, setCustomValue] = useState('')
   const [isEditingValue, setIsEditingValue] = useState(false)
-  const [performedAt, setPerformedAt] = useState(() => new Date().toISOString().split('T')[0])
+  const [performedAt, setPerformedAt] = useState(() => getTodayInSaoPaulo())
 
   useEffect(() => {
     fetchProcedures()
@@ -99,7 +100,7 @@ export default function PatientDetail() {
     setInstallments(1)
     setCustomValue('')
     setIsEditingValue(false)
-    setPerformedAt(new Date().toISOString().split('T')[0])
+    setPerformedAt(getTodayInSaoPaulo())
     setShowProcedureModal(false)
     setIsEditMode(false)
     setEditingProcedureId(null)
@@ -119,8 +120,10 @@ export default function PatientDetail() {
       totalValue = procedureQuantity * unitValue
     }
 
-    // Converter a data para ISO string com horário do meio-dia para evitar problemas de timezone
-    const performedAtISO = performedAt ? new Date(performedAt + 'T12:00:00').toISOString() : new Date().toISOString()
+    // Converter a data para ISO string usando o fuso horário de São Paulo
+    const performedAtISO = performedAt
+      ? createISOFromDateTimeBR(performedAt, getCurrentTimeInSaoPaulo())
+      : createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
 
     // Modo de edição - atualizar procedimento existente
     if (isEditMode && editingProcedureId) {
@@ -159,8 +162,8 @@ export default function PatientDetail() {
       paymentSplits, // Adicionar os pagamentos múltiplos se fornecidos
       status: 'completed',
       notes: procedureNotes,
-      createdAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
+      createdAt: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()),
+      completedAt: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()),
       performedAt: performedAtISO
     }
 
@@ -224,9 +227,9 @@ export default function PatientDetail() {
     setInstallments(proc.installments || 1)
     setCustomValue(formatCurrency(proc.totalValue))
     setIsEditingValue(true)
-    // Carregar a data de realização existente ou usar a data atual
+    // Carregar a data de realização existente ou usar a data atual (no fuso horário de São Paulo)
     const existingDate = proc.performedAt || proc.completedAt || proc.createdAt
-    setPerformedAt(existingDate ? new Date(existingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+    setPerformedAt(existingDate ? formatInSaoPaulo(existingDate, 'yyyy-MM-dd') : getTodayInSaoPaulo())
     setEditingProcedureId(proc.id)
     setIsEditMode(true)
     setShowProcedureModal(true)
