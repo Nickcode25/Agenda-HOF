@@ -5,6 +5,7 @@ import { containsIgnoringAccents } from '@/utils/textSearch'
 import { formatDateTimeBRSafe } from '@/utils/dateHelpers'
 import { useConfirm } from '@/hooks/useConfirm'
 import PageLoading from '@/components/ui/PageLoading'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 interface Subscription {
   id: string
@@ -167,7 +168,7 @@ export default function ActiveSubscriptions() {
         .from('user_subscriptions')
         .update({
           status: immediately ? 'cancelled' : 'pending_cancellation',
-          cancelled_at: immediately ? new Date().toISOString() : null,
+          cancelled_at: immediately ? createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()) : null,
           cancel_at_period_end: !immediately
         })
         .eq('id', subscription.id)

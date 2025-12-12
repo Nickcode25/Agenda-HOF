@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase, getCachedUser } from '@/lib/supabase'
 import { Expense, ExpenseCategory, DEFAULT_EXPENSE_CATEGORIES } from '@/types/cash'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 interface ExpensesStore {
   categories: ExpenseCategory[]
@@ -137,7 +138,7 @@ export const useExpenses = create<ExpensesStore>()(
           const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
-          const updateData: any = { updated_at: new Date().toISOString() }
+          const updateData: any = { updated_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()) }
           if (updates.name !== undefined) updateData.name = updates.name
           if (updates.description !== undefined) updateData.description = updates.description
           if (updates.color !== undefined) updateData.color = updates.color
@@ -335,7 +336,7 @@ export const useExpenses = create<ExpensesStore>()(
           const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
-          const updateData: any = { updated_at: new Date().toISOString() }
+          const updateData: any = { updated_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()) }
           if (updates.categoryId !== undefined) updateData.category_id = updates.categoryId
           if (updates.categoryName !== undefined) updateData.category_name = updates.categoryName
           if (updates.description !== undefined) updateData.description = updates.description

@@ -143,7 +143,7 @@ export default function SaleForm() {
 
     // Converter a data para ISO string usando o fuso horário de São Paulo
     const currentTime = getCurrentTimeInSaoPaulo() // HH:mm no horário de São Paulo
-    const soldAtISO = soldAt ? createISOFromDateTimeBR(soldAt, currentTime) : new Date().toISOString()
+    const soldAtISO = soldAt ? createISOFromDateTimeBR(soldAt, currentTime) : createISOFromDateTimeBR(getTodayInSaoPaulo(), currentTime)
 
     try {
       if (isEditing && id) {

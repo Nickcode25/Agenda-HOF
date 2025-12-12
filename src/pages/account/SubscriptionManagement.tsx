@@ -27,6 +27,7 @@ import { useAuth } from '../../store/auth'
 import { useUserProfile } from '../../store/userProfile'
 import axios from 'axios'
 import PageLoading from '../../components/ui/PageLoading'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
@@ -196,7 +197,7 @@ export default function SubscriptionManagement() {
         .update({
           status: 'pending_cancellation',
           cancel_at_period_end: true,
-          cancelled_at: new Date().toISOString()
+          cancelled_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
         })
         .eq('id', subscription.id)
 

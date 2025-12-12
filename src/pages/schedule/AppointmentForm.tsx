@@ -8,7 +8,7 @@ import { useRecurring } from '@/store/recurring'
 import { DAYS_OF_WEEK } from '@/types/recurring'
 import { Save, Search, Calendar, X, User, Phone, Clock, FileText, UserPlus, CalendarOff, Repeat, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
-import { createISOFromDateTimeBR, formatInSaoPaulo } from '@/utils/timezone'
+import { createISOFromDateTimeBR, formatInSaoPaulo, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 import { normalizeForSearch, anyWordStartsWithIgnoringAccents } from '@/utils/textSearch'
 import { formatTimeInput, formatDateInput } from '@/utils/inputFormatters'
 import QuickPatientModal from '@/components/QuickPatientModal'
@@ -366,7 +366,7 @@ export default function AppointmentForm() {
           name: newPatient.name,
           phone: newPatient.phone || '',
           cpf: '',
-          createdAt: new Date().toISOString(),
+          createdAt: createISOFromDateTimeBR(appointmentDate || getTodayInSaoPaulo(), startTime || getCurrentTimeInSaoPaulo()),
         })
       }
       setPatientSearch(newPatient.name)

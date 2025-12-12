@@ -192,7 +192,7 @@ export const useSales = create<SalesStore>()(
           if (updates.state !== undefined) updateData.state = updates.state || null
           if (updates.notes !== undefined) updateData.notes = updates.notes || null
 
-          updateData.updated_at = new Date().toISOString()
+          updateData.updated_at = createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
 
           const { error } = await supabase
             .from('sales_professionals')

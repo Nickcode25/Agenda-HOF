@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase, getCachedUser } from '@/lib/supabase'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 export interface Category {
   id: string
@@ -101,7 +102,7 @@ export const useCategories = create<CategoriesState>((set, get) => ({
         .from('categories')
         .update({
           ...updates,
-          updated_at: new Date().toISOString()
+          updated_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
         })
         .eq('id', id)
 

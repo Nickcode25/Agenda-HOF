@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { MessageSquare, Save, AlertCircle, CheckCircle, ExternalLink, QrCode, Smartphone, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import PageLoading from '@/components/ui/PageLoading'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 interface EvolutionConfig {
   api_url: string
@@ -74,7 +75,7 @@ export default function EvolutionSettings() {
         api_key: config.api_key,
         instance_name: config.instance_name,
         enabled: config.enabled,
-        updated_at: new Date().toISOString(),
+        updated_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()),
       }
 
       if (existing) {

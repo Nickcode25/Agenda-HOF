@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase, getCachedUser } from '@/lib/supabase'
 import type { Notification, NotificationPreferences, NotificationType, NotificationPriority } from '@/types/notification'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 type NotificationsState = {
   notifications: Notification[]
@@ -118,11 +119,12 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
   markAsRead: async (id: string) => {
     try {
+      const nowISO = createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
       const { error } = await supabase
         .from('notifications')
         .update({
           is_read: true,
-          read_at: new Date().toISOString()
+          read_at: nowISO
         })
         .eq('id', id)
 
@@ -130,7 +132,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
 
       set(state => ({
         notifications: state.notifications.map(n =>
-          n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n
+          n.id === id ? { ...n, isRead: true, readAt: nowISO } : n
         ),
         unreadCount: Math.max(0, state.unreadCount - 1)
       }))
@@ -144,11 +146,12 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
       const user = await getCachedUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      const nowISO = createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
       const { error } = await supabase
         .from('notifications')
         .update({
           is_read: true,
-          read_at: new Date().toISOString()
+          read_at: nowISO
         })
         .eq('user_id', user.id)
         .eq('is_read', false)
@@ -159,7 +162,7 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
         notifications: state.notifications.map(n => ({
           ...n,
           isRead: true,
-          readAt: new Date().toISOString()
+          readAt: nowISO
         })),
         unreadCount: 0
       }))

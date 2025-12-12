@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { StockItem, StockMovement, StockAlert } from '@/types/stock'
 import { supabase, getCachedUser } from '@/lib/supabase'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 interface StockStore {
   items: StockItem[]
@@ -219,8 +220,8 @@ export const useStock = create<StockStore>()(
 
       addMovement: (movementData) => {
         const id = crypto.randomUUID()
-        const now = new Date().toISOString()
-        
+        const now = createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
+
         const newMovement: StockMovement = {
           ...movementData,
           id,
@@ -321,7 +322,7 @@ export const useStock = create<StockStore>()(
                 type: 'low_stock',
                 message: `Estoque baixo: ${item.name} (${item.quantity} ${item.unit} restantes)`,
                 isRead: false,
-                createdAt: new Date().toISOString()
+                createdAt: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
               })
             }
           }

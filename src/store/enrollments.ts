@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { supabase, getCachedUser } from '@/lib/supabase'
-import { getTodayInSaoPaulo } from '@/utils/timezone'
+import { getTodayInSaoPaulo, createISOFromDateTimeBR, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 export interface Enrollment {
   id: string
@@ -225,11 +225,12 @@ export const useEnrollments = create<EnrollmentsState>((set, get) => ({
   update: async (id, enrollmentInput) => {
     set({ loading: true })
     try {
+      const nowISO = createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
       const { error } = await supabase
         .from('enrollments')
         .update({
           ...enrollmentInput,
-          updated_at: new Date().toISOString()
+          updated_at: nowISO
         })
         .eq('id', id)
 
@@ -237,7 +238,7 @@ export const useEnrollments = create<EnrollmentsState>((set, get) => ({
 
       set(state => ({
         enrollments: state.enrollments.map(e =>
-          e.id === id ? { ...e, ...enrollmentInput, updated_at: new Date().toISOString() } : e
+          e.id === id ? { ...e, ...enrollmentInput, updated_at: nowISO } : e
         )
       }))
 

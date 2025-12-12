@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase, getCachedUser } from '@/lib/supabase'
 import { CashRegister, CashSession, CashMovement } from '@/types/cash'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 interface CashStore {
   registers: CashRegister[]
@@ -115,7 +116,7 @@ export const useCash = create<CashStore>()(
           const user = await getCachedUser()
           if (!user) throw new Error('Usuário não autenticado')
 
-          const updateData: any = { updated_at: new Date().toISOString() }
+          const updateData: any = { updated_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()) }
           if (updates.name !== undefined) updateData.name = updates.name
           if (updates.description !== undefined) updateData.description = updates.description
           if (updates.isActive !== undefined) updateData.is_active = updates.isActive
@@ -371,7 +372,7 @@ export const useCash = create<CashStore>()(
           console.log('[CASH] Saldo esperado:', expectedBalance, 'Saldo final:', closingBalance, 'Diferença:', difference)
 
           const updateData = {
-            closed_at: new Date().toISOString(),
+            closed_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()),
             closing_balance: closingBalance,
             expected_balance: expectedBalance,
             difference: difference,

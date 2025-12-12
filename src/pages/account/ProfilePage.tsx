@@ -13,6 +13,7 @@ import { useUserProfile } from '@/store/userProfile'
 import { useAuth } from '@/store/auth'
 import { supabase } from '@/lib/supabase'
 import type { UserAddress, UserPhone } from '@/types/user'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 import PageLoading from '@/components/ui/PageLoading'
 
 // Lista de estados brasileiros
@@ -249,7 +250,7 @@ export default function ProfilePage() {
         username: formData.username,
         address: formData.address,
         phone: formData.phone,
-        updated_at: new Date().toISOString()
+        updated_at: createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo())
       }
 
       const { error: updateError } = await supabase

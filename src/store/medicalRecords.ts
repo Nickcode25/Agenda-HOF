@@ -6,6 +6,7 @@ import type {
   ClinicalEvolutionFormData,
   MedicalPhotoFormData,
 } from '@/types/medicalRecords'
+import { createISOFromDateTimeBR, getTodayInSaoPaulo, getCurrentTimeInSaoPaulo } from '@/utils/timezone'
 
 interface MedicalRecordsState {
   // State - apenas evolução e fotos
@@ -177,7 +178,7 @@ export const useMedicalRecords = create<MedicalRecordsState>((set, get) => ({
           patient_id: patientId,
           photo_url: publicUrl,
           ...formData,
-          taken_at: formData.taken_at || new Date().toISOString(),
+          taken_at: formData.taken_at || createISOFromDateTimeBR(getTodayInSaoPaulo(), getCurrentTimeInSaoPaulo()),
           created_by: user.id,
         })
 
