@@ -32,7 +32,24 @@
       "Bash(for file in \"src/components/NewCalendar/WeekGrid.tsx\" \"src/pages/admin/UsersPage.tsx\" \"src/pages/Checkout.tsx\" \"src/pages/checkout/components/SuccessModal.tsx\" \"src/pages/financial/components/EditTransactionModal.tsx\" \"src/pages/patients/components/EditValueModal.tsx\" \"src/pages/patients/components/PhotoGalleryModal.tsx\")",
       "Bash(do curl -s \"https://raw.githubusercontent.com/Nickcode25/Agenda-HOF/main/$file\" -o \"$file\")",
       "Bash(done)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(rm:*)",
+      "Bash(cat:*)",
+      "Bash(supabase projects:*)",
+      "Bash(C:Usersnicolscoopappssupabasecurrentsupabase.exe db push --project-ref zgdxszwjbbxepsvyjtrb)",
+      "Bash(cmd.exe /c \"C:\\Users\\nicol\\scoop\\apps\\supabase\\current\\supabase.exe db push:*)",
+      "Bash(node --check:*)",
+      "Bash(npm run build:check:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(del vitest.config.ts)",
+      "Bash(del src\\simple.test.ts)",
+      "Bash(grep:*)",
+      "Bash(git -C \"d:\\Agenda-HOF\" status --short)",
+      "Bash(git -C \"d:\\Agenda-HOF\" diff --stat HEAD -- \"src/lib/mercadopago.ts\" \"src/services/mercadopagoService.ts\")",
+      "Bash(git -C \"d:\\Agenda-HOF\" log -3 --oneline)"
     ]
   }
 }

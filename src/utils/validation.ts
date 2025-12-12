@@ -1,10 +1,54 @@
 /**
- * Valida força de senha
+ * @fileoverview Funcoes de validacao para dados de formularios brasileiros
+ * @module utils/validation
+ *
+ * @description
+ * Este modulo contem funcoes para validar dados comuns em formularios brasileiros,
+ * incluindo CPF, email, telefone, CEP e senhas. Todas as funcoes retornam um objeto
+ * padronizado com `isValid` (boolean) e `message` (string).
+ *
+ * @example
+ * import { validateCPF, validateEmail, validatePhone } from '@/utils/validation'
+ *
+ * const cpfResult = validateCPF('123.456.789-09')
+ * const emailResult = validateEmail('usuario@gmail.com')
+ * const phoneResult = validatePhone('(11) 99999-9999')
  */
-export function validatePasswordStrength(password: string): {
+
+/**
+ * Resultado padrao de uma validacao
+ */
+export interface ValidationResult {
+  /** Indica se a validacao passou */
   isValid: boolean
+  /** Mensagem descritiva do resultado */
   message: string
-} {
+}
+
+/**
+ * Valida a forca de uma senha
+ *
+ * @description
+ * Criterios de validacao:
+ * - Minimo 8 caracteres
+ * - Deve atender pelo menos 3 dos 4 requisitos:
+ *   - Letra maiuscula (A-Z)
+ *   - Letra minuscula (a-z)
+ *   - Numero (0-9)
+ *   - Caractere especial (!@#$%^&*(),.?":{}|<>)
+ *
+ * @param {string} password - Senha a ser validada
+ * @returns {ValidationResult} Resultado da validacao
+ *
+ * @example
+ * validatePasswordStrength('Abc123!@')
+ * // { isValid: true, message: 'Senha forte' }
+ *
+ * @example
+ * validatePasswordStrength('abc')
+ * // { isValid: false, message: 'Senha deve ter no mínimo 8 caracteres' }
+ */
+export function validatePasswordStrength(password: string): ValidationResult {
   if (password.length < 8) {
     return { isValid: false, message: 'Senha deve ter no mínimo 8 caracteres' }
   }
@@ -28,11 +72,23 @@ export function validatePasswordStrength(password: string): {
 
 /**
  * Valida formato de email
+ *
+ * @description
+ * Verifica se o email possui formato valido (RFC 5322 simplificado)
+ * e detecta erros de digitacao em dominios comuns (gmail, hotmail, outlook).
+ *
+ * @param {string} email - Email a ser validado
+ * @returns {ValidationResult} Resultado da validacao
+ *
+ * @example
+ * validateEmail('usuario@gmail.com')
+ * // { isValid: true, message: 'Email válido' }
+ *
+ * @example
+ * validateEmail('usuario@gmial.com')
+ * // { isValid: false, message: 'Você quis dizer @gmail.com?' }
  */
-export function validateEmail(email: string): {
-  isValid: boolean
-  message: string
-} {
+export function validateEmail(email: string): ValidationResult {
   if (!email) {
     return { isValid: false, message: 'Email é obrigatório' }
   }
@@ -67,12 +123,27 @@ export function validateEmail(email: string): {
 }
 
 /**
- * Valida telefone brasileiro
+ * Valida telefone brasileiro (fixo ou celular)
+ *
+ * @description
+ * Validacoes realizadas:
+ * - Deve ter 10 digitos (fixo) ou 11 digitos (celular)
+ * - DDD deve ser valido (lista de DDDs brasileiros)
+ * - Celular deve comecar com 9
+ * - Nao permite sequencias repetidas (ex: 999999999)
+ *
+ * @param {string} phone - Telefone a ser validado (pode conter formatacao)
+ * @returns {ValidationResult} Resultado da validacao
+ *
+ * @example
+ * validatePhone('(11) 99999-9999')
+ * // { isValid: true, message: 'Telefone válido' }
+ *
+ * @example
+ * validatePhone('(00) 99999-9999')
+ * // { isValid: false, message: 'DDD inválido' }
  */
-export function validatePhone(phone: string): {
-  isValid: boolean
-  message: string
-} {
+export function validatePhone(phone: string): ValidationResult {
   // Remove caracteres não numéricos
   const numbers = phone.replace(/\D/g, '')
 
@@ -88,7 +159,7 @@ export function validatePhone(phone: string): {
     return { isValid: false, message: 'Telefone inválido' }
   }
 
-  // Valida DDD
+  // Valida DDD - Lista completa de DDDs brasileiros
   const ddd = parseInt(numbers.substring(0, 2))
   const validDDDs = [
     11, 12, 13, 14, 15, 16, 17, 18, 19, // SP
@@ -143,11 +214,25 @@ export function validatePhone(phone: string): {
 
 /**
  * Valida CPF brasileiro
+ *
+ * @description
+ * Realiza validacao completa do CPF incluindo:
+ * - Verificacao de tamanho (11 digitos)
+ * - Rejeita sequencias repetidas (ex: 111.111.111-11)
+ * - Calculo dos digitos verificadores (algoritmo oficial)
+ *
+ * @param {string} cpf - CPF a ser validado (pode conter formatacao)
+ * @returns {ValidationResult} Resultado da validacao
+ *
+ * @example
+ * validateCPF('123.456.789-09')
+ * // { isValid: false, message: 'CPF inválido' }
+ *
+ * @example
+ * validateCPF('529.982.247-25')
+ * // { isValid: true, message: 'CPF válido' }
  */
-export function validateCPF(cpf: string): {
-  isValid: boolean
-  message: string
-} {
+export function validateCPF(cpf: string): ValidationResult {
   // Remove caracteres não numéricos
   const numbers = cpf.replace(/\D/g, '')
 
@@ -190,7 +275,18 @@ export function validateCPF(cpf: string): {
 }
 
 /**
- * Formata CPF para exibição (XXX.XXX.XXX-XX)
+ * Formata CPF para exibicao no padrao brasileiro
+ *
+ * @param {string} cpf - CPF a ser formatado (com ou sem formatacao)
+ * @returns {string} CPF formatado (XXX.XXX.XXX-XX) ou valor original se invalido
+ *
+ * @example
+ * formatCPF('52998224725')
+ * // '529.982.247-25'
+ *
+ * @example
+ * formatCPF('123')
+ * // '123' (retorna original se nao tiver 11 digitos)
  */
 export function formatCPF(cpf: string): string {
   const numbers = cpf.replace(/\D/g, '')
@@ -200,11 +296,25 @@ export function formatCPF(cpf: string): string {
 
 /**
  * Valida CEP brasileiro
+ *
+ * @description
+ * Validacoes realizadas:
+ * - Deve ter exatamente 8 digitos
+ * - Nao permite sequencias repetidas
+ * - Verifica faixa valida (01000-000 a 99999-999)
+ *
+ * @param {string} cep - CEP a ser validado (pode conter formatacao)
+ * @returns {ValidationResult} Resultado da validacao
+ *
+ * @example
+ * validateCEP('01310-100')
+ * // { isValid: true, message: 'CEP válido' }
+ *
+ * @example
+ * validateCEP('00000-000')
+ * // { isValid: false, message: 'CEP inválido' }
  */
-export function validateCEP(cep: string): {
-  isValid: boolean
-  message: string
-} {
+export function validateCEP(cep: string): ValidationResult {
   // Remove caracteres não numéricos
   const numbers = cep.replace(/\D/g, '')
 
@@ -231,7 +341,18 @@ export function validateCEP(cep: string): {
 }
 
 /**
- * Formata CEP para exibição (XXXXX-XXX)
+ * Formata CEP para exibicao no padrao brasileiro
+ *
+ * @param {string} cep - CEP a ser formatado (com ou sem formatacao)
+ * @returns {string} CEP formatado (XXXXX-XXX) ou valor original se invalido
+ *
+ * @example
+ * formatCEP('01310100')
+ * // '01310-100'
+ *
+ * @example
+ * formatCEP('123')
+ * // '123' (retorna original se nao tiver 8 digitos)
  */
 export function formatCEP(cep: string): string {
   const numbers = cep.replace(/\D/g, '')
