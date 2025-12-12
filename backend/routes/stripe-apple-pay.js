@@ -1,6 +1,10 @@
 /**
- * Rotas do Stripe para Apple Pay
- * Integração com iOS App - Agenda HOF
+ * Rotas do Stripe para Apple Pay e Pagamentos
+ * Integração com iOS App e Web - Agenda HOF
+ *
+ * Suporta:
+ *   - paymentToken: Token direto do Apple Pay (iOS nativo)
+ *   - paymentMethodId: ID de PaymentMethod criado via Stripe.js (Web)
  */
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -12,83 +16,179 @@ const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
   ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
   : null
 
+// ============================================
+// FUNÇÕES AUXILIARES
+// ============================================
+
+/**
+ * Busca ou cria um cliente no Stripe
+ */
+async function getOrCreateCustomer(email, name, metadata = {}) {
+  const existingCustomers = await stripe.customers.list({
+    email: email,
+    limit: 1
+  })
+
+  if (existingCustomers.data.length > 0) {
+    return existingCustomers.data[0]
+  }
+
+  return await stripe.customers.create({
+    email: email,
+    name: name,
+    metadata: metadata
+  })
+}
+
+/**
+ * Busca ou cria um produto e preço no Stripe
+ */
+async function getOrCreateProductAndPrice(planName, planId, amountInCents) {
+  // Buscar produto existente
+  const products = await stripe.products.list({
+    active: true,
+    limit: 100
+  })
+
+  let product = products.data.find(p => p.name === planName)
+
+  if (!product) {
+    product = await stripe.products.create({
+      name: planName,
+      metadata: {
+        plan_id: planId || ''
+      }
+    })
+  }
+
+  // Buscar preço existente
+  const prices = await stripe.prices.list({
+    product: product.id,
+    active: true,
+    limit: 100
+  })
+
+  let price = prices.data.find(p =>
+    p.unit_amount === amountInCents &&
+    p.recurring?.interval === 'month'
+  )
+
+  if (!price) {
+    price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: amountInCents,
+      currency: 'brl',
+      recurring: {
+        interval: 'month'
+      }
+    })
+  }
+
+  return { product, price }
+}
+
+// ============================================
+// ENDPOINT: PAGAMENTO ÚNICO APPLE PAY
+// ============================================
+
 /**
  * Processar pagamento único com Apple Pay
  * POST /api/stripe/apple-pay
+ *
+ * Aceita:
+ *   - paymentToken: Token do Apple Pay (iOS nativo)
+ *   - paymentMethodId: ID de PaymentMethod (Web/Stripe.js)
  */
 async function handleApplePayPayment(req, res) {
   try {
     const {
-      paymentMethodId,
+      paymentToken,      // Token do Apple Pay (iOS)
+      paymentMethodId,   // PaymentMethod ID (Web)
       amount,
       currency = 'brl',
+      planName,
       description,
       customerEmail,
       customerName,
+      customerId,
+      couponId,
+      discountPercentage,
       metadata = {}
     } = req.body
 
-    logger.payment('Apple Pay:', { amount, currency, customerEmail })
+    logger.payment('Apple Pay:', { amount, currency, customerEmail, hasToken: !!paymentToken, hasMethodId: !!paymentMethodId })
 
     // Validar dados obrigatórios
-    if (!paymentMethodId || !amount) {
+    if (!paymentToken && !paymentMethodId) {
       return res.status(400).json({
-        error: 'Dados obrigatórios faltando',
-        required: ['paymentMethodId', 'amount']
+        success: false,
+        error: 'paymentToken ou paymentMethodId é obrigatório'
       })
     }
 
-    // Criar ou buscar cliente no Stripe
-    let customer
-    if (customerEmail) {
-      const existingCustomers = await stripe.customers.list({
-        email: customerEmail,
-        limit: 1
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'amount must be greater than 0'
       })
-
-      if (existingCustomers.data.length > 0) {
-        customer = existingCustomers.data[0]
-        logger.debug('Cliente existente:', customer.id)
-      } else {
-        customer = await stripe.customers.create({
-          email: customerEmail,
-          name: customerName,
-          metadata: {
-            source: 'ios_app',
-            ...metadata
-          }
-        })
-        logger.debug('Novo cliente criado:', customer.id)
-      }
     }
+
+    if (!customerEmail) {
+      return res.status(400).json({
+        success: false,
+        error: 'customerEmail is required'
+      })
+    }
+
+    const amountInCents = Math.round(amount * 100)
+
+    // Buscar ou criar cliente
+    const customer = await getOrCreateCustomer(customerEmail, customerName, {
+      supabase_user_id: customerId || '',
+      source: paymentToken ? 'apple_pay' : 'web'
+    })
+
+    logger.debug('Cliente:', customer.id)
 
     // Criar PaymentIntent
     const paymentIntentData = {
-      amount: Math.round(amount * 100), // Stripe usa centavos
+      amount: amountInCents,
       currency: currency.toLowerCase(),
-      payment_method: paymentMethodId,
+      customer: customer.id,
       confirmation_method: 'automatic',
       confirm: true,
-      description: description || 'Agenda HOF - Pagamento',
+      description: description || planName || 'Agenda HOF - Pagamento',
       metadata: {
-        source: 'apple_pay',
-        app: 'ios',
+        source: paymentToken ? 'apple_pay' : 'web',
+        app: paymentToken ? 'ios' : 'web',
+        plan_name: planName || '',
+        supabase_user_id: customerId || '',
+        coupon_id: couponId || '',
+        discount_percentage: discountPercentage?.toString() || '0',
         ...metadata
       },
-      // Configurações para Apple Pay
-      payment_method_options: {
+      receipt_email: customerEmail,
+      return_url: process.env.STRIPE_RETURN_URL || 'agendahof://payment-complete'
+    }
+
+    // Usar paymentToken (iOS) ou paymentMethodId (Web)
+    if (paymentToken) {
+      // iOS: Criar PaymentMethod a partir do token Apple Pay
+      paymentIntentData.payment_method_data = {
+        type: 'card',
+        card: {
+          token: paymentToken
+        }
+      }
+    } else {
+      // Web: Usar PaymentMethod já criado
+      paymentIntentData.payment_method = paymentMethodId
+      paymentIntentData.payment_method_options = {
         card: {
           request_three_d_secure: 'automatic'
         }
       }
     }
-
-    if (customer) {
-      paymentIntentData.customer = customer.id
-    }
-
-    // Necessário para evitar problemas de redirect no mobile
-    paymentIntentData.return_url = process.env.STRIPE_RETURN_URL || 'agendahof://payment-complete'
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentData)
 
@@ -96,29 +196,31 @@ async function handleApplePayPayment(req, res) {
 
     // Resposta baseada no status
     if (paymentIntent.status === 'succeeded') {
-      res.json({
+      return res.json({
         success: true,
         paymentIntentId: paymentIntent.id,
-        status: paymentIntent.status,
+        status: 'approved',
         amount: amount,
         currency: currency,
-        receiptUrl: paymentIntent.charges?.data[0]?.receipt_url
+        customerId: customer.id,
+        receiptUrl: paymentIntent.charges?.data[0]?.receipt_url || null
       })
     } else if (paymentIntent.status === 'requires_action') {
       // 3D Secure necessário
-      res.json({
+      return res.json({
         success: false,
         requiresAction: true,
         paymentIntentId: paymentIntent.id,
         clientSecret: paymentIntent.client_secret,
-        status: paymentIntent.status
+        status: 'requires_action',
+        error: 'Additional authentication required'
       })
     } else {
-      res.json({
+      return res.json({
         success: false,
         paymentIntentId: paymentIntent.id,
         status: paymentIntent.status,
-        message: 'Pagamento não concluído'
+        error: 'Payment was not completed'
       })
     }
 
@@ -128,133 +230,156 @@ async function handleApplePayPayment(req, res) {
     // Tratar erros específicos do Stripe
     if (error.type === 'StripeCardError') {
       return res.status(400).json({
+        success: false,
         error: error.message,
         code: error.code,
         declineCode: error.decline_code
       })
     }
 
-    res.status(500).json({
-      error: error.message || 'Erro ao processar pagamento',
+    if (error.type === 'StripeInvalidRequestError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid payment data',
+        code: error.code
+      })
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error processing payment',
       code: error.code
     })
   }
 }
 
+// ============================================
+// ENDPOINT: ASSINATURA APPLE PAY
+// ============================================
+
 /**
  * Criar assinatura recorrente com Apple Pay
  * POST /api/stripe/create-subscription-apple-pay
+ *
+ * Aceita:
+ *   - paymentToken: Token do Apple Pay (iOS nativo)
+ *   - paymentMethodId: ID de PaymentMethod (Web/Stripe.js)
  */
 async function handleApplePaySubscription(req, res) {
   try {
     const {
-      paymentMethodId,
+      paymentToken,      // Token do Apple Pay (iOS)
+      paymentMethodId,   // PaymentMethod ID (Web)
       customerEmail,
       customerName,
       customerPhone,
-      priceId,          // ID do Price criado no Stripe Dashboard
-      amount,           // Valor da assinatura (se não usar priceId)
+      customerId,
+      priceId,           // ID do Price criado no Stripe Dashboard
+      amount,            // Valor da assinatura (se não usar priceId)
       planName,
+      planId,
       trialDays = 0,
+      couponId,
+      discountPercentage,
       metadata = {}
     } = req.body
 
-    logger.payment('Assinatura Apple Pay:', { customerEmail, priceId, amount, planName })
+    logger.payment('Assinatura Apple Pay:', { customerEmail, amount, planName, hasToken: !!paymentToken, hasMethodId: !!paymentMethodId })
 
     // Validar dados obrigatórios
-    if (!paymentMethodId || !customerEmail) {
+    if (!paymentToken && !paymentMethodId) {
       return res.status(400).json({
-        error: 'Dados obrigatórios faltando',
-        required: ['paymentMethodId', 'customerEmail']
+        success: false,
+        error: 'paymentToken ou paymentMethodId é obrigatório'
+      })
+    }
+
+    if (!customerEmail) {
+      return res.status(400).json({
+        success: false,
+        error: 'customerEmail is required'
       })
     }
 
     if (!priceId && !amount) {
       return res.status(400).json({
-        error: 'Informe priceId ou amount',
-        required: ['priceId ou amount']
+        success: false,
+        error: 'Informe priceId ou amount'
       })
     }
 
-    // 1. Criar ou buscar cliente
-    let customer
-    const existingCustomers = await stripe.customers.list({
-      email: customerEmail,
-      limit: 1
+    const amountInCents = amount ? Math.round(amount * 100) : null
+
+    // 1. Buscar ou criar cliente
+    const customer = await getOrCreateCustomer(customerEmail, customerName, {
+      supabase_user_id: customerId || '',
+      source: paymentToken ? 'apple_pay' : 'web'
     })
 
-    if (existingCustomers.data.length > 0) {
-      customer = existingCustomers.data[0]
-      logger.debug('Cliente existente:', customer.id)
+    logger.debug('Cliente:', customer.id)
 
-      // Atualizar método de pagamento padrão
-      await stripe.paymentMethods.attach(paymentMethodId, {
+    // 2. Obter ou criar PaymentMethod
+    let finalPaymentMethodId
+
+    if (paymentToken) {
+      // iOS: Criar PaymentMethod a partir do token Apple Pay
+      const paymentMethod = await stripe.paymentMethods.create({
+        type: 'card',
+        card: {
+          token: paymentToken
+        }
+      })
+
+      // Anexar ao cliente
+      await stripe.paymentMethods.attach(paymentMethod.id, {
         customer: customer.id
       })
 
-      await stripe.customers.update(customer.id, {
-        invoice_settings: {
-          default_payment_method: paymentMethodId
-        }
-      })
+      finalPaymentMethodId = paymentMethod.id
+      logger.debug('PaymentMethod criado do token:', finalPaymentMethodId)
     } else {
-      customer = await stripe.customers.create({
-        email: customerEmail,
-        name: customerName,
-        phone: customerPhone,
-        payment_method: paymentMethodId,
-        invoice_settings: {
-          default_payment_method: paymentMethodId
-        },
-        metadata: {
-          source: 'ios_app',
-          ...metadata
-        }
-      })
-      logger.debug('Novo cliente criado:', customer.id)
+      // Web: Usar PaymentMethod já existente
+      const existingMethod = await stripe.paymentMethods.retrieve(paymentMethodId)
+      if (!existingMethod.customer) {
+        await stripe.paymentMethods.attach(paymentMethodId, {
+          customer: customer.id
+        })
+      }
+      finalPaymentMethodId = paymentMethodId
     }
 
-    // 2. Criar Price dinamicamente se não tiver priceId
+    // Definir como método de pagamento padrão
+    await stripe.customers.update(customer.id, {
+      invoice_settings: {
+        default_payment_method: finalPaymentMethodId
+      }
+    })
+
+    // 3. Buscar ou criar produto e preço
     let finalPriceId = priceId
 
-    if (!priceId && amount) {
-      // Criar produto e price dinâmico
-      const product = await stripe.products.create({
-        name: planName || 'Agenda HOF - Plano Profissional',
-        metadata: {
-          source: 'ios_app'
-        }
-      })
-
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: Math.round(amount * 100), // Centavos
-        currency: 'brl',
-        recurring: {
-          interval: 'month',
-          interval_count: 1
-        }
-      })
-
+    if (!priceId && amountInCents) {
+      const { price } = await getOrCreateProductAndPrice(
+        planName || 'Agenda HOF - Plano Profissional',
+        planId,
+        amountInCents
+      )
       finalPriceId = price.id
-      logger.debug('Price criado dinamicamente:', finalPriceId)
+      logger.debug('Price criado/encontrado:', finalPriceId)
     }
 
-    // 3. Criar assinatura
+    // 4. Criar assinatura
     const subscriptionData = {
       customer: customer.id,
       items: [{ price: finalPriceId }],
-      default_payment_method: paymentMethodId,
-      payment_behavior: 'default_incomplete',
-      payment_settings: {
-        payment_method_types: ['card'],
-        save_default_payment_method: 'on_subscription'
-      },
-      expand: ['latest_invoice.payment_intent'],
+      default_payment_method: finalPaymentMethodId,
       metadata: {
-        source: 'apple_pay',
-        app: 'ios',
+        source: paymentToken ? 'apple_pay' : 'web',
+        app: paymentToken ? 'ios' : 'web',
         plan_name: planName || 'Profissional',
+        supabase_user_id: customerId || '',
+        coupon_id: couponId || '',
+        discount_percentage: discountPercentage?.toString() || '0',
         ...metadata
       }
     }
@@ -268,36 +393,59 @@ async function handleApplePaySubscription(req, res) {
 
     logger.info('Assinatura criada:', subscription.id, 'Status:', subscription.status)
 
-    // Verificar se precisa de confirmação
-    const invoice = subscription.latest_invoice
-    const paymentIntent = invoice?.payment_intent
+    // Buscar informações do cartão
+    let cardLastDigits = ''
+    let cardBrand = ''
+    try {
+      const pm = await stripe.paymentMethods.retrieve(finalPaymentMethodId)
+      cardLastDigits = pm.card?.last4 || ''
+      cardBrand = pm.card?.brand || ''
+    } catch (e) {
+      logger.debug('Não foi possível obter detalhes do cartão')
+    }
 
+    const nextBillingDate = new Date(subscription.current_period_end * 1000)
+
+    // Verificar status
     if (subscription.status === 'active' || subscription.status === 'trialing') {
-      res.json({
+      // Salvar histórico de pagamento no Supabase
+      if (supabase && amount) {
+        try {
+          await supabase.from('payment_history').insert({
+            payment_id: `sub_first_${subscription.id}`,
+            subscription_id: subscription.id,
+            amount: amount,
+            status: 'approved',
+            status_detail: 'first_payment',
+            payment_method: cardBrand ? `${cardBrand} ****${cardLastDigits}` : 'apple_pay',
+            payer_email: customerEmail,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        } catch (e) {
+          logger.warn('Erro ao salvar histórico:', e.message)
+        }
+      }
+
+      return res.json({
         success: true,
         subscriptionId: subscription.id,
         customerId: customer.id,
-        status: subscription.status,
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+        status: subscription.status === 'active' ? 'approved' : subscription.status,
+        nextBillingDate: nextBillingDate.toISOString(),
+        currentPeriodEnd: nextBillingDate.toISOString(),
+        cardLastDigits: cardLastDigits,
+        cardBrand: cardBrand,
         trialEnd: subscription.trial_end
           ? new Date(subscription.trial_end * 1000).toISOString()
           : null
       })
-    } else if (paymentIntent?.status === 'requires_action') {
-      res.json({
-        success: false,
-        requiresAction: true,
-        subscriptionId: subscription.id,
-        clientSecret: paymentIntent.client_secret,
-        status: subscription.status
-      })
     } else {
-      res.json({
+      return res.json({
         success: false,
         subscriptionId: subscription.id,
         status: subscription.status,
-        paymentStatus: paymentIntent?.status,
-        message: 'Assinatura criada, aguardando confirmação do pagamento'
+        error: 'Assinatura criada, aguardando confirmação do pagamento'
       })
     }
 
@@ -306,15 +454,16 @@ async function handleApplePaySubscription(req, res) {
 
     if (error.type === 'StripeCardError') {
       return res.status(400).json({
+        success: false,
         error: error.message,
         code: error.code,
         declineCode: error.decline_code
       })
     }
 
-    res.status(500).json({
-      error: error.message || 'Erro ao criar assinatura',
-      code: error.code
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error creating subscription'
     })
   }
 }
